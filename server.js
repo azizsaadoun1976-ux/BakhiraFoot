@@ -544,6 +544,23 @@ app.get("/api/test-api", async (req, res) => {
         });
     }
 });
+app.get("/api/dns-test", async (req, res) => {
+    try {
+        const response = await fetch("https://example.com");
+
+        res.json({
+            ok: true,
+            status: response.status
+        });
+
+    } catch (error) {
+        res.json({
+            ok: false,
+            error: error.message,
+            cause: error.cause?.message || null
+        });
+    }
+});
 app.listen(
     PORT,
     "0.0.0.0",
