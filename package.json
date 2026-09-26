@@ -1,17 +1,13 @@
 {
-  "name": "bakhirafoot_pro",
+  "name": "bakhirafoot-pro",
   "version": "1.0.0",
-  "description": "",
-  "main": "script.js",
+  "description": "BakhiraFoot - Football Scores Website",
+  "main": "server.js",
   "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
+    "start": "node server.js"
   },
-  "keywords": [],
-  "author": "",
-  "license": "ISC",
-  "type": "commonjs",
   "dependencies": {
-    "dotenv": "^18.0.4",
-    "express": "^5.2.1"
+    "dotenv": "^17.2.2",
+    "express": "^5.1.0"
   }
 }
