@@ -8,7 +8,8 @@ const PORT = process.env.PORT || 3000;
 
 app.use(express.static("."));
 
-const KICKOFF_API = "https://api.kickoffapi.com/api/v2/fixtures";
+const KICKOFF_API =
+    "https://api.kickoffapi.com/api/v2/fixtures";
 
 const headers = {
     "x-api-key": process.env.KICKOFF_API_KEY
@@ -37,7 +38,7 @@ app.get("/", (req, res) => {
 });
 
 // ================================
-// MATCHES
+// MATCHES BY DATE
 // ================================
 
 app.get("/api/matches", async (req, res) => {
@@ -46,10 +47,13 @@ app.get("/api/matches", async (req, res) => {
             req.query.date ||
             new Date().toISOString().split("T")[0];
 
-        const cached = matchesCache.get(date);
         const now = Date.now();
+        const cached = matchesCache.get(date);
 
-        if (cached && now - cached.time < MATCH_CACHE_TIME) {
+        if (
+            cached &&
+            now - cached.time < MATCH_CACHE_TIME
+        ) {
             console.log(`CACHE MATCHES: ${date}`);
 
             return res.json({
@@ -69,12 +73,9 @@ app.get("/api/matches", async (req, res) => {
 
         const data = await response.json();
 
-        console.log(
-            "KICKOFF MATCHES:",
-            data.meta?.count || data.data?.length || 0
-        );
-
         if (data.error) {
+            console.error("KICKOFF ERROR:", data.error);
+
             return res.status(500).json({
                 error: data.error,
                 data: []
@@ -82,6 +83,10 @@ app.get("/api/matches", async (req, res) => {
         }
 
         const matches = data.data || [];
+
+        console.log(
+            `MATCHES FOUND: ${matches.length}`
+        );
 
         matchesCache.set(date, {
             data: matches,
@@ -104,7 +109,7 @@ app.get("/api/matches", async (req, res) => {
 });
 
 // ================================
-// LIVE
+// LIVE MATCHES
 // ================================
 
 app.get("/api/live", async (req, res) => {
@@ -134,12 +139,9 @@ app.get("/api/live", async (req, res) => {
 
         const data = await response.json();
 
-        console.log(
-            "KICKOFF LIVE:",
-            data.meta?.count || data.data?.length || 0
-        );
-
         if (data.error) {
+            console.error("KICKOFF LIVE ERROR:", data.error);
+
             return res.status(500).json({
                 error: data.error,
                 data: []
@@ -147,6 +149,10 @@ app.get("/api/live", async (req, res) => {
         }
 
         const matches = data.data || [];
+
+        console.log(
+            `LIVE MATCHES: ${matches.length}`
+        );
 
         liveCache = {
             data: matches,
@@ -169,7 +175,7 @@ app.get("/api/live", async (req, res) => {
 });
 
 // ================================
-// TEST
+// TEST SERVER
 // ================================
 
 app.get("/api/test", (req, res) => {
@@ -182,7 +188,7 @@ app.get("/api/test", (req, res) => {
 });
 
 // ================================
-// API TEST
+// TEST KICKOFF API
 // ================================
 
 app.get("/api/test-api", async (req, res) => {
@@ -199,7 +205,7 @@ app.get("/api/test-api", async (req, res) => {
         res.json(data);
 
     } catch (error) {
-        res.json({
+        res.status(500).json({
             error: error.message
         });
     }
@@ -218,25 +224,28 @@ app.get("/api/cache", (req, res) => {
                 Math.round(
                     (Date.now() - value.time) / 1000
                 ) + " seconds",
+
             matches: value.data.length
         };
     }
 
     res.json({
         matches,
+
         live: {
             age: liveCache.time
                 ? Math.round(
                     (Date.now() - liveCache.time) / 1000
                 ) + " seconds"
                 : null,
+
             matches: liveCache.data.length
         }
     });
 });
 
 // ================================
-// START
+// START SERVER
 // ================================
 
 app.listen(PORT, "0.0.0.0", () => {
