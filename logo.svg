@@ -1,0 +1,27 @@
+<svg width="220" height="60" viewBox="0 0 220 60" xmlns="http://www.w3.org/2000/svg">
+  <defs>
+    <linearGradient id="g" x1="0" y1="0" x2="1" y2="1">
+      <stop offset="0%" stop-color="#19d66b"/>
+      <stop offset="100%" stop-color="#0aa85a"/>
+    </linearGradient>
+  </defs>
+
+  <circle cx="30" cy="30" r="25" fill="url(#g)"/>
+
+  <path d="M30 13 L37 19 L35 28 L25 28 L22 19 Z"
+        fill="white"/>
+
+  <path d="M22 19 L14 25 L17 36 L26 40 L25 28"
+        fill="none" stroke="white" stroke-width="3"/>
+
+  <path d="M37 19 L45 25 L42 36 L34 40 L35 28"
+        fill="none" stroke="white" stroke-width="3"/>
+
+  <text x="65" y="38"
+        font-family="Arial, sans-serif"
+        font-size="28"
+        font-weight="800"
+        fill="#111827">
+    Bakhira<tspan fill="#10b981">Foot</tspan>
+  </text>
+</svg>
