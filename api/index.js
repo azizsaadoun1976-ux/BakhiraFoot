@@ -1,7 +1,7 @@
 module.exports = async (req, res) => {
   try {
     const response = await fetch(
-      "https://api.kickoffapi.com/v2/live",
+      "https://api.kickoffapi.com/api/v2/fixtures?live=all",
       {
         headers: {
           "x-api-key": process.env.KICKOFF_API_KEY
@@ -11,7 +11,7 @@ module.exports = async (req, res) => {
 
     const data = await response.json();
 
-    res.status(200).json(data);
+    res.status(response.status).json(data);
 
   } catch (error) {
     res.status(500).json({
