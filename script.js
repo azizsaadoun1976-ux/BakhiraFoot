@@ -2,6 +2,8 @@
 // BAKHIRAFOOT
 // ========================================
 
+const API_BASE = "https://bakhirafoot.de.deplexo.com";
+
 let currentDate = new Date();
 
 // ========================================
@@ -16,6 +18,11 @@ function formatDate(date) {
     return `${year}-${month}-${day}`;
 }
 
+function monthName(date) {
+    return date.toLocaleDateString("fr-FR", {
+        month: "short"
+    }).replace(".", "").toUpperCase();
+}
 
 // ========================================
 // DATE BAR
@@ -29,35 +36,44 @@ function createDateBar() {
 
     datesBox.innerHTML = "";
 
-    // 25 → 31 septembre 2026
-    const startDate = new Date("2026-09-25T00:00:00");
+    const today = new Date();
+
+    const names = [
+        "DIM",
+        "LUN",
+        "MAR",
+        "MER",
+        "JEU",
+        "VEN",
+        "SAM"
+    ];
 
     for (let i = 0; i < 7; i++) {
 
-        const date = new Date(startDate);
-        date.setDate(startDate.getDate() + i);
+        const date = new Date(today);
+
+        date.setHours(0, 0, 0, 0);
+        date.setDate(today.getDate() + i);
 
         const day = date.getDate();
-        const month = date.getMonth() + 1;
-
-        const names = [
-            "VEN",
-            "SAM",
-            "DIM",
-            "LUN",
-            "MAR",
-            "MER",
-            "JEU"
-        ];
-
-        const dateString = formatDate(date);
+        const month = monthName(date);
 
         const button = document.createElement("button");
 
+        let label = "";
+
+        if (i === 0) {
+            label = "Aujourd'hui";
+        } else if (i === 1) {
+            label = "Demain";
+        } else {
+            label = `${day} ${month}`;
+        }
+
         button.innerHTML = `
-            <b>${day} SEP</b>
+            <b>${label}</b>
             <br>
-            <small>${names[i]}</small>
+            <small>${names[date.getDay()]}</small>
         `;
 
         button.onclick = () => {
@@ -73,7 +89,7 @@ function createDateBar() {
             loadMatches(currentDate);
         };
 
-        if (i === 1) {
+        if (i === 0) {
             button.classList.add("selected");
             currentDate = new Date(date);
         }
@@ -81,7 +97,6 @@ function createDateBar() {
         datesBox.appendChild(button);
     }
 }
-
 
 // ========================================
 // LOAD MATCHES
@@ -94,7 +109,7 @@ async function loadMatches(date = currentDate) {
         const dateString = formatDate(date);
 
         const response = await fetch(
-            `/api/matches?date=${dateString}`
+            `${API_BASE}/api/matches?date=${dateString}`
         );
 
         const data = await response.json();
@@ -108,20 +123,19 @@ async function loadMatches(date = currentDate) {
 
     } catch (error) {
 
-        console.error(error);
+        console.error("Erreur matchs :", error);
 
         const box = document.getElementById("scoreList");
 
         if (box) {
             box.innerHTML = `
                 <div class="card">
-                    ❌ Erreur de chargement des matchs
+                    ❌ Erreur de connexion au serveur
                 </div>
             `;
         }
     }
 }
-
 
 // ========================================
 // RENDER MATCHES
@@ -134,7 +148,6 @@ function renderMatches(matches) {
 
     const homeMatches =
         document.getElementById("homeMatches");
-
 
     if (!matches.length) {
 
@@ -149,7 +162,6 @@ function renderMatches(matches) {
 
         return;
     }
-
 
     const html = matches.map(match => {
 
@@ -181,34 +193,27 @@ function renderMatches(matches) {
             match.fixture?.status?.short || "";
 
         const time =
-            new Date(match.fixture.date)
-                .toLocaleTimeString("fr-FR", {
-                    hour: "2-digit",
-                    minute: "2-digit"
-                });
-
+            match.fixture?.date
+                ? new Date(match.fixture.date)
+                    .toLocaleTimeString("fr-FR", {
+                        hour: "2-digit",
+                        minute: "2-digit"
+                    })
+                : "--:--";
 
         let statusText = `🕐 ${time}`;
 
         if (
-            status === "1H" ||
-            status === "2H" ||
-            status === "HT" ||
-            status === "ET" ||
-            status === "P" ||
-            status === "BT"
+            ["1H", "2H", "HT", "ET", "P", "BT"].includes(status)
         ) {
             statusText = "🔴 LIVE";
         }
 
         if (
-            status === "FT" ||
-            status === "AET" ||
-            status === "PEN"
+            ["FT", "AET", "PEN"].includes(status)
         ) {
             statusText = "✅ Terminé";
         }
-
 
         return `
             <div class="card match-card">
@@ -226,7 +231,6 @@ function renderMatches(matches) {
 
                 </div>
 
-
                 <div style="
                     display:grid;
                     grid-template-columns:1fr 90px 1fr;
@@ -234,9 +238,6 @@ function renderMatches(matches) {
                     gap:15px;
                     text-align:center;
                 ">
-
-
-                    <!-- HOME -->
 
                     <div>
 
@@ -252,33 +253,21 @@ function renderMatches(matches) {
                             "
                         >
 
-                        <strong>
-                            ${home}
-                        </strong>
+                        <strong>${home}</strong>
 
                     </div>
 
-
-                    <!-- SCORE -->
-
                     <div>
 
-                        <strong style="
-                            font-size:22px;
-                        ">
+                        <strong style="font-size:22px;">
                             ${homeScore} - ${awayScore}
                         </strong>
 
                         <br>
 
-                        <small>
-                            ${statusText}
-                        </small>
+                        <small>${statusText}</small>
 
                     </div>
-
-
-                    <!-- AWAY -->
 
                     <div>
 
@@ -294,9 +283,7 @@ function renderMatches(matches) {
                             "
                         >
 
-                        <strong>
-                            ${away}
-                        </strong>
+                        <strong>${away}</strong>
 
                     </div>
 
@@ -307,13 +294,9 @@ function renderMatches(matches) {
 
     }).join("");
 
-
     if (scoreList) {
         scoreList.innerHTML = html;
     }
-
-
-    // HOME PAGE
 
     if (homeMatches) {
 
@@ -344,14 +327,16 @@ function renderMatches(matches) {
                         match.league?.name || "Football";
 
                     const time =
-                        new Date(match.fixture.date)
-                            .toLocaleTimeString(
-                                "fr-FR",
-                                {
-                                    hour: "2-digit",
-                                    minute: "2-digit"
-                                }
-                            );
+                        match.fixture?.date
+                            ? new Date(match.fixture.date)
+                                .toLocaleTimeString(
+                                    "fr-FR",
+                                    {
+                                        hour: "2-digit",
+                                        minute: "2-digit"
+                                    }
+                                )
+                            : "--:--";
 
                     return `
                         <div class="card">
@@ -382,18 +367,13 @@ function renderMatches(matches) {
 
                                     <br>
 
-                                    <span>
-                                        ${home}
-                                    </span>
+                                    <span>${home}</span>
 
                                 </div>
 
-
                                 <strong>
-                                    ${homeScore} -
-                                    ${awayScore}
+                                    ${homeScore} - ${awayScore}
                                 </strong>
-
 
                                 <div>
 
@@ -408,9 +388,7 @@ function renderMatches(matches) {
 
                                     <br>
 
-                                    <span>
-                                        ${away}
-                                    </span>
+                                    <span>${away}</span>
 
                                 </div>
 
@@ -428,7 +406,6 @@ function renderMatches(matches) {
     }
 }
 
-
 // ========================================
 // LIVE
 // ========================================
@@ -438,7 +415,7 @@ async function loadLive() {
     try {
 
         const response =
-            await fetch("/api/live");
+            await fetch(`${API_BASE}/api/live`);
 
         const data =
             await response.json();
@@ -451,7 +428,6 @@ async function loadLive() {
 
         if (!live) return;
 
-
         if (!matches.length) {
 
             live.innerHTML =
@@ -461,16 +437,14 @@ async function loadLive() {
 
             live.innerHTML =
                 `🔴 ${matches.length} MATCH(S) LIVE`;
-
         }
 
     } catch (error) {
 
-        console.error(error);
+        console.error("Erreur LIVE :", error);
 
     }
 }
-
 
 // ========================================
 // TEAMS
@@ -503,12 +477,9 @@ function loadTeams() {
 
             <div class="card">
 
-                <h3>
-                    ⚽ ${team}
-                </h3>
+                <h3>⚽ ${team}</h3>
 
-                <button
-                    onclick="showTeam('${team}')">
+                <button onclick="showTeam('${team}')">
                     Voir l'équipe →
                 </button>
 
@@ -516,7 +487,6 @@ function loadTeams() {
 
         `).join("");
 }
-
 
 function showTeam(team) {
 
@@ -529,9 +499,7 @@ function showTeam(team) {
 
         <div class="card">
 
-            <h2>
-                ⚽ ${team}
-            </h2>
+            <h2>⚽ ${team}</h2>
 
             <p>
                 Informations de l'équipe.
@@ -541,7 +509,6 @@ function showTeam(team) {
 
     `;
 }
-
 
 // ========================================
 // NEWS
@@ -573,35 +540,26 @@ function loadNews() {
 
     ];
 
-
     const html =
         news.map(item => `
 
             <div class="card">
 
-                <h3>
-                    ${item.title}
-                </h3>
+                <h3>${item.title}</h3>
 
-                <p>
-                    ${item.text}
-                </p>
+                <p>${item.text}</p>
 
-                <small>
-                    📰 BakhiraFoot
-                </small>
+                <small>📰 BakhiraFoot</small>
 
             </div>
 
         `).join("");
-
 
     const newsGrid =
         document.getElementById("newsGrid");
 
     const homeNews =
         document.getElementById("homeNews");
-
 
     if (newsGrid) {
         newsGrid.innerHTML = html;
@@ -611,7 +569,6 @@ function loadNews() {
         homeNews.innerHTML = html;
     }
 }
-
 
 // ========================================
 // NAVIGATION
@@ -624,14 +581,12 @@ function go(page) {
             p.classList.remove("active");
         });
 
-
     const target =
         document.getElementById(page);
 
     if (target) {
         target.classList.add("active");
     }
-
 
     document.querySelectorAll("nav button")
         .forEach(button => {
@@ -644,24 +599,17 @@ function go(page) {
         });
 }
 
+document.querySelectorAll("nav button")
+    .forEach(button => {
 
-// ========================================
-// NAV BUTTONS
-// ========================================
+        button.addEventListener(
+            "click",
+            () => {
+                go(button.dataset.page);
+            }
+        );
 
-document.querySelectorAll(
-    "nav button"
-).forEach(button => {
-
-    button.addEventListener(
-        "click",
-        () => {
-            go(button.dataset.page);
-        }
-    );
-
-});
-
+    });
 
 // ========================================
 // DARK MODE
@@ -675,14 +623,11 @@ if (theme) {
     theme.addEventListener(
         "click",
         () => {
-
             document.body.classList.toggle("dark");
-
         }
     );
 
 }
-
 
 // ========================================
 // SEARCH
@@ -700,25 +645,23 @@ if (search) {
             const value =
                 this.value.toLowerCase();
 
-            document.querySelectorAll(
-                ".card"
-            ).forEach(card => {
+            document.querySelectorAll(".card")
+                .forEach(card => {
 
-                const text =
-                    card.innerText.toLowerCase();
+                    const text =
+                        card.innerText.toLowerCase();
 
-                card.style.display =
-                    text.includes(value)
-                        ? ""
-                        : "none";
+                    card.style.display =
+                        text.includes(value)
+                            ? ""
+                            : "none";
 
-            });
+                });
 
         }
     );
 
 }
-
 
 // ========================================
 // START
@@ -734,11 +677,11 @@ loadTeams();
 
 loadNews();
 
-
 // ========================================
 // AUTO UPDATE
 // ========================================
 
+// كل 30 ثانية
 setInterval(() => {
 
     loadMatches(currentDate);
@@ -746,3 +689,10 @@ setInterval(() => {
     loadLive();
 
 }, 30000);
+
+// كل ساعة نعاودو نبنيو التاريخ
+setInterval(() => {
+
+    createDateBar();
+
+}, 60 * 60 * 1000);
