@@ -793,3 +793,217 @@ footer{
     grid-template-columns:1fr;
   }
 }
+/* ================= BAKHIRAFOOT HERO ================= */
+
+.hero{
+  position:relative;
+  min-height:330px;
+  overflow:hidden;
+}
+
+.hero-content{
+  position:relative;
+  z-index:5;
+  max-width:700px;
+}
+
+.hero-badge{
+  display:inline-flex;
+  align-items:center;
+  gap:7px;
+  padding:7px 12px;
+  margin-bottom:15px;
+  border:1px solid rgba(255,255,255,.15);
+  border-radius:30px;
+  background:rgba(255,255,255,.07);
+  color:#dffaf0;
+  font-size:11px;
+  font-weight:900;
+  letter-spacing:1px;
+}
+
+.hero h1{
+  max-width:680px;
+}
+
+.hero h1 span{
+  display:block;
+  color:#28e58b;
+}
+
+.hero-actions{
+  display:flex;
+  gap:10px;
+  align-items:center;
+}
+
+.hero-more{
+  padding:13px 20px;
+  border:1px solid rgba(255,255,255,.2);
+  border-radius:10px;
+  background:rgba(255,255,255,.08);
+  color:white;
+  font-weight:850;
+  cursor:pointer;
+  transition:.25s;
+}
+
+.hero-more:hover{
+  background:rgba(255,255,255,.14);
+  transform:translateY(-3px);
+}
+
+/* البحر */
+
+.sea-scene{
+  position:absolute;
+  right:0;
+  top:0;
+  width:48%;
+  height:100%;
+  overflow:hidden;
+}
+
+/* الشمس */
+
+.sun{
+  position:absolute;
+  top:38px;
+  right:95px;
+  font-size:55px;
+  opacity:.7;
+  filter:drop-shadow(0 0 20px rgba(255,220,100,.4));
+  animation:sunFloat 5s ease-in-out infinite;
+}
+
+@keyframes sunFloat{
+  0%,100%{
+    transform:translateY(0);
+  }
+  50%{
+    transform:translateY(-8px);
+  }
+}
+
+/* الكرة */
+
+.ball-floating{
+  position:absolute;
+  right:120px;
+  top:100px;
+  font-size:68px;
+  z-index:4;
+  opacity:.9;
+  animation:ballFloat 4s ease-in-out infinite;
+}
+
+@keyframes ballFloat{
+  0%,100%{
+    transform:translateY(0) rotate(0deg);
+  }
+  50%{
+    transform:translateY(-15px) rotate(12deg);
+  }
+}
+
+/* الباخيرة */
+
+.boat{
+  position:absolute;
+  right:65px;
+  bottom:105px;
+  font-size:80px;
+  z-index:4;
+  filter:drop-shadow(0 7px 5px rgba(0,0,0,.25));
+  animation:boatMove 7s ease-in-out infinite;
+}
+
+@keyframes boatMove{
+  0%,100%{
+    transform:translateX(0) rotate(-1deg);
+  }
+  50%{
+    transform:translateX(-18px) rotate(1deg);
+  }
+}
+
+/* الأمواج */
+
+.wave{
+  position:absolute;
+  left:-10%;
+  width:125%;
+  height:90px;
+  border-radius:50%;
+}
+
+.wave1{
+  bottom:-50px;
+  background:#08758b;
+  animation:waveMove 7s ease-in-out infinite;
+}
+
+.wave2{
+  bottom:-70px;
+  background:#0a8ca0;
+  opacity:.8;
+  animation:waveMove 5s ease-in-out infinite reverse;
+}
+
+.wave3{
+  bottom:-95px;
+  background:#19b0b1;
+  opacity:.45;
+  animation:waveMove 6s ease-in-out infinite;
+}
+
+@keyframes waveMove{
+  0%,100%{
+    transform:translateX(-10px);
+  }
+  50%{
+    transform:translateX(20px);
+  }
+}
+
+/* Mobile */
+
+@media(max-width:900px){
+
+  .sea-scene{
+    opacity:.28;
+    width:100%;
+  }
+
+  .hero-content{
+    position:relative;
+    z-index:10;
+  }
+
+}
+
+@media(max-width:600px){
+
+  .hero-actions{
+    flex-direction:column;
+    align-items:flex-start;
+  }
+
+  .hero-more,
+  .green{
+    width:100%;
+  }
+
+  .ball-floating{
+    right:70px;
+  }
+
+  .boat{
+    right:25px;
+  }
+
+  .sun{
+    right:45px;
+  }
+
+}
