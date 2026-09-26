@@ -522,6 +522,28 @@ app.get("/api/cache", (req, res) => {
 // START SERVER
 // ========================================
 
+app.get("/api/test-api", async (req, res) => {
+    try {
+        const response = await fetch(
+            "https://v3.football.api-sports.io/status",
+            {
+                headers: {
+                    "x-apisports-key": process.env.API_FOOTBALL_KEY
+                }
+            }
+        );
+
+        const data = await response.json();
+
+        res.json(data);
+
+    } catch (error) {
+        res.json({
+            error: error.message,
+            cause: error.cause?.message || null
+        });
+    }
+});
 app.listen(
     PORT,
     "0.0.0.0",
