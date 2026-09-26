@@ -3,9 +3,9 @@
 // ========================================
 
 const API_BASE = "https://bakhira-foot-evhxls5ni-saad-c86e.vercel.app";
+
 let currentDate = new Date();
 let currentFilter = "all";
-
 
 // ========================================
 // DATE
@@ -25,7 +25,6 @@ function monthName(date) {
     }).replace(".", "").toUpperCase();
 }
 
-
 // ========================================
 // TOAST
 // ========================================
@@ -43,13 +42,11 @@ function toast(message) {
     }, 2500);
 }
 
-
 // ========================================
 // NAVIGATION
 // ========================================
 
 function go(page) {
-
     const target = document.getElementById(page);
 
     if (!target) return;
@@ -73,22 +70,14 @@ function go(page) {
     });
 }
 
-
-// ========================================
-// NAV BUTTONS
-// ========================================
-
 document.querySelectorAll("nav button").forEach(button => {
-
     button.addEventListener("click", () => {
         go(button.dataset.page);
     });
-
 });
 
-
 // ========================================
-// DATE BAR / CALENDRIER
+// DATE BAR
 // ========================================
 
 function createDateBar() {
@@ -111,7 +100,6 @@ function createDateBar() {
         "SAM"
     ];
 
-    // زر السابق
     const previous = document.createElement("button");
 
     previous.innerHTML = "‹";
@@ -128,8 +116,6 @@ function createDateBar() {
 
     datesBox.appendChild(previous);
 
-
-    // 7 أيام
     for (let i = 0; i < 7; i++) {
 
         const date = new Date(today);
@@ -176,14 +162,11 @@ function createDateBar() {
             createDateBar();
 
             loadMatches(currentDate);
-
         };
 
         datesBox.appendChild(button);
     }
 
-
-    // زر التالي
     const next = document.createElement("button");
 
     next.innerHTML = "›";
@@ -202,7 +185,6 @@ function createDateBar() {
     datesBox.appendChild(next);
 }
 
-
 // ========================================
 // LOAD MATCHES
 // ========================================
@@ -220,24 +202,16 @@ async function loadMatches(date = currentDate) {
         const data = await response.json();
 
         console.log("DATE :", dateString);
-        console.log("API :", data);
+        console.log("KICKOFF API :", data);
 
-        let matches = data.response || [];
+        let matches = data.data || [];
 
-        // فلترة حسب البطولة
         if (currentFilter !== "all") {
 
             matches = matches.filter(match => {
 
                 const league =
                     match.league?.name || "";
-
-                if (currentFilter === "Botola") {
-                    return (
-                        league.toLowerCase().includes("botola") ||
-                        league.toLowerCase().includes("botola pro")
-                    );
-                }
 
                 return league
                     .toLowerCase()
@@ -271,7 +245,6 @@ async function loadMatches(date = currentDate) {
     }
 }
 
-
 // ========================================
 // RENDER MATCHES
 // ========================================
@@ -283,7 +256,6 @@ function renderMatches(matches) {
 
     const homeMatches =
         document.getElementById("homeMatches");
-
 
     if (!matches.length) {
 
@@ -302,40 +274,36 @@ function renderMatches(matches) {
         return;
     }
 
-
     const html = matches.map(match => {
 
         const home =
-            match.teams?.home?.name || "?";
+            match.home?.name || "?";
 
         const away =
-            match.teams?.away?.name || "?";
+            match.away?.name || "?";
 
         const homeLogo =
-            match.teams?.home?.logo || "";
+            match.home?.logo || "";
 
         const awayLogo =
-            match.teams?.away?.logo || "";
+            match.away?.logo || "";
 
         const homeScore =
-            match.goals?.home ?? "-";
+            match.score?.home ?? "-";
 
         const awayScore =
-            match.goals?.away ?? "-";
+            match.score?.away ?? "-";
 
         const league =
             match.league?.name || "Football";
 
-        const country =
-            match.league?.country || "";
-
         const status =
-            match.fixture?.status?.short || "";
+            match.status?.short || "";
 
         const time =
-            match.fixture?.date
+            match.date
                 ? new Date(
-                    match.fixture.date
+                    match.date
                 ).toLocaleTimeString(
                     "fr-FR",
                     {
@@ -345,10 +313,8 @@ function renderMatches(matches) {
                 )
                 : "--:--";
 
-
         let statusText =
             `🕐 ${time}`;
-
 
         if (
             [
@@ -363,7 +329,6 @@ function renderMatches(matches) {
             statusText = "🔴 LIVE";
         }
 
-
         if (
             [
                 "FT",
@@ -373,7 +338,6 @@ function renderMatches(matches) {
         ) {
             statusText = "✅ Terminé";
         }
-
 
         return `
             <div class="card match-card">
@@ -387,10 +351,13 @@ function renderMatches(matches) {
 
                     <b>🏆 ${league}</b>
 
-                    <small>${country}</small>
+                    <small>
+                        ${match.status?.elapsed
+                            ? match.status.elapsed + "'"
+                            : ""}
+                    </small>
 
                 </div>
-
 
                 <div style="
                     display:grid;
@@ -420,7 +387,6 @@ function renderMatches(matches) {
 
                     </div>
 
-
                     <div>
 
                         <strong style="
@@ -437,7 +403,6 @@ function renderMatches(matches) {
                         </small>
 
                     </div>
-
 
                     <div>
 
@@ -466,13 +431,10 @@ function renderMatches(matches) {
 
     }).join("");
 
-
     if (scoreList) {
         scoreList.innerHTML = html;
     }
 
-
-    // Home
     if (homeMatches) {
 
         homeMatches.innerHTML =
@@ -481,22 +443,22 @@ function renderMatches(matches) {
                 .map(match => {
 
                     const home =
-                        match.teams?.home?.name || "?";
+                        match.home?.name || "?";
 
                     const away =
-                        match.teams?.away?.name || "?";
+                        match.away?.name || "?";
 
                     const homeLogo =
-                        match.teams?.home?.logo || "";
+                        match.home?.logo || "";
 
                     const awayLogo =
-                        match.teams?.away?.logo || "";
+                        match.away?.logo || "";
 
                     const homeScore =
-                        match.goals?.home ?? "-";
+                        match.score?.home ?? "-";
 
                     const awayScore =
-                        match.goals?.away ?? "-";
+                        match.score?.away ?? "-";
 
                     const league =
                         match.league?.name ||
@@ -538,13 +500,11 @@ function renderMatches(matches) {
 
                                 </div>
 
-
                                 <strong>
                                     ${homeScore}
                                     -
                                     ${awayScore}
                                 </strong>
-
 
                                 <div>
 
@@ -575,7 +535,6 @@ function renderMatches(matches) {
     }
 }
 
-
 // ========================================
 // LIVE
 // ========================================
@@ -586,20 +545,19 @@ async function loadLive() {
 
         const response =
             await fetch(
-                `${API_BASE}/api/live`
+                `${API_BASE}/api/live?live=all`
             );
 
         const data =
             await response.json();
 
         const matches =
-            data.response || [];
+            data.data || [];
 
         const live =
             document.getElementById("live");
 
         if (!live) return;
-
 
         if (!matches.length) {
 
@@ -622,7 +580,6 @@ async function loadLive() {
         );
     }
 }
-
 
 // ========================================
 // COMPETITIONS
@@ -674,14 +631,12 @@ const competitions = [
 
 ];
 
-
 function loadLeagues() {
 
     const box =
         document.getElementById("leagueGrid");
 
     if (!box) return;
-
 
     box.innerHTML =
         competitions.map(league => `
@@ -715,7 +670,6 @@ function loadLeagues() {
         `).join("");
 }
 
-
 function selectLeague(league) {
 
     currentFilter = league;
@@ -738,7 +692,6 @@ function selectLeague(league) {
         `🏆 ${league} sélectionnée`
     );
 }
-
 
 // ========================================
 // SIDEBAR FILTERS
@@ -774,7 +727,6 @@ document.querySelectorAll(".filter[data-filter]")
 
     });
 
-
 // ========================================
 // FAVORIS
 // ========================================
@@ -785,7 +737,6 @@ let favorites =
             "bakhirafoot_favorites"
         )
     ) || [];
-
 
 function toggleFavorite(team) {
 
@@ -810,7 +761,6 @@ function toggleFavorite(team) {
         );
     }
 
-
     localStorage.setItem(
         "bakhirafoot_favorites",
         JSON.stringify(favorites)
@@ -818,7 +768,6 @@ function toggleFavorite(team) {
 
     loadTeams();
 }
-
 
 function showFavorites() {
 
@@ -828,7 +777,6 @@ function showFavorites() {
         document.getElementById("teamGrid");
 
     if (!box) return;
-
 
     if (!favorites.length) {
 
@@ -842,7 +790,6 @@ function showFavorites() {
 
         return;
     }
-
 
     box.innerHTML =
         favorites.map(team => `
@@ -870,21 +817,16 @@ function showFavorites() {
         `).join("");
 }
 
-
-// Favoris sidebar
 const favoriteButton =
     [...document.querySelectorAll(".filter")]
         .find(button =>
             button.textContent.includes("Favoris")
         );
 
-
 if (favoriteButton) {
-
     favoriteButton.onclick =
         showFavorites;
 }
-
 
 // ========================================
 // TEAMS
@@ -907,14 +849,12 @@ const teams = [
 
 ];
 
-
 function loadTeams() {
 
     const box =
         document.getElementById("teamGrid");
 
     if (!box) return;
-
 
     box.innerHTML =
         teams.map(team => {
@@ -959,14 +899,12 @@ function loadTeams() {
         }).join("");
 }
 
-
 function showTeam(team) {
 
     const box =
         document.getElementById("teamDetail");
 
     if (!box) return;
-
 
     box.innerHTML = `
 
@@ -995,9 +933,7 @@ function showTeam(team) {
         </div>
 
     `;
-
 }
-
 
 // ========================================
 // NEWS
@@ -1037,7 +973,6 @@ function loadNews() {
 
     ];
 
-
     const html =
         news.map(item => `
 
@@ -1059,7 +994,6 @@ function loadNews() {
 
         `).join("");
 
-
     const newsGrid =
         document.getElementById(
             "newsGrid"
@@ -1070,7 +1004,6 @@ function loadNews() {
             "homeNews"
         );
 
-
     if (newsGrid)
         newsGrid.innerHTML = html;
 
@@ -1078,14 +1011,12 @@ function loadNews() {
         homeNews.innerHTML = html;
 }
 
-
 // ========================================
 // DARK MODE
 // ========================================
 
 const theme =
     document.getElementById("theme");
-
 
 if (theme) {
 
@@ -1112,7 +1043,6 @@ if (theme) {
         }
     );
 
-
     if (
         localStorage.getItem(
             "bakhirafoot_dark"
@@ -1125,14 +1055,12 @@ if (theme) {
     }
 }
 
-
 // ========================================
 // SEARCH
 // ========================================
 
 const search =
     document.getElementById("search");
-
 
 if (search) {
 
@@ -1145,7 +1073,6 @@ if (search) {
                     .toLowerCase()
                     .trim();
 
-
             if (!value) {
 
                 document
@@ -1156,7 +1083,6 @@ if (search) {
 
                 return;
             }
-
 
             document
                 .querySelectorAll(".card")
@@ -1176,7 +1102,6 @@ if (search) {
     );
 }
 
-
 // ========================================
 // START
 // ========================================
@@ -1192,7 +1117,6 @@ loadTeams();
 loadLeagues();
 
 loadNews();
-
 
 // ========================================
 // AUTO UPDATE
