@@ -1,12 +1,10 @@
 module.exports = async (req, res) => {
   try {
-    const date = req.query.date || new Date().toISOString().split("T")[0];
-
     const response = await fetch(
-      `https://v3.football.api-sports.io/fixtures?date=${date}`,
+      "https://api.kickoffapi.com/v2/live",
       {
         headers: {
-          "x-apisports-key": process.env.API_FOOTBALL_KEY
+          "x-api-key": process.env.KICKOFF_API_KEY
         }
       }
     );
