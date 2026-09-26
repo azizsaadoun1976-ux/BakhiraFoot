@@ -1,62 +1,349 @@
-<!doctype html><html lang="fr"><head><link rel="icon" type="image/svg+xml" href="favicon.svg"><meta name="google-site-verification" content="qo9pqQBHTJyMoM8zEBdcL7ETJdBfDhqPLlGl-COjL1g" /><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>BakhiraFoot Pro</title><link rel="stylesheet" href="style.css"></head><body>
-<header><div class="logo">
+<!doctype html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+
+<title>BakhiraFoot Pro</title>
+
+<meta name="description"
+content="BakhiraFoot - Scores, matchs, compétitions et actualités du football.">
+
+<!-- Google Search Console -->
+<meta name="google-site-verification" content="GOOGLE_VERIFICATION_CODE">
+
+<link rel="icon" type="image/svg+xml" href="favicon.svg">
+<link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+
+<header>
+
+  <div class="logo">
     <img src="logo.svg" alt="BakhiraFoot">
-</div><nav><button class="active" data-page="home">Accueil</button><button data-page="scores">Scores</button><button data-page="leagues">Compétitions</button><button data-page="teams">Équipes</button><button data-page="news">Actualités</button></nav><div class="tools"><input id="search" placeholder="Rechercher équipe ou joueur"><button id="theme">☾</button></div></header>
-<div class="layout"><aside><h4>COMPÉTITIONS</h4><button class="filter active" data-filter="all">⭐ Tous</button><button class="filter" data-filter="Champions League">🏆 Champions League</button><button class="filter" data-filter="Premier League">🏴 Premier League</button><button class="filter" data-filter="La Liga">🇪🇸 La Liga</button><button class="filter" data-filter="Ligue 1">🇫🇷 Ligue 1</button><button class="filter" data-filter="Botola">🇲🇦 Botola Pro</button><h4>MON FOOTBALL</h4><button class="filter" onclick="toast('Ajoute tes équipes favorites ⭐')">☆ Favoris</button><button class="filter" onclick="go('scores')">📅 Calendrier</button></aside>
-<main>
-<section id="home" class="page active"><div class="hero">
-
-  <div class="hero-content">
-
-    <div class="hero-badge">
-      ⚓ BAKHIRAFOOT
-    </div>
-
-    <small>⚽ FOOTBALL • 🌊 MER • 🚢 PASSION</small>
-
-    <h1>
-      Le football navigue
-      <span>avec passion.</span>
-    </h1>
-
-    <p>
-      Tous les scores, matchs, compétitions et actualités
-      du football réunis dans un seul port.
-    </p>
-
-    <div class="hero-actions">
-      <button class="green" onclick="go('scores')">
-        ⚽ Voir les matchs
-      </button>
-
-      <button class="hero-more" onclick="go('leagues')">
-        🏆 Compétitions
-      </button>
-    </div>
-
   </div>
 
-  <div class="sea-scene">
+  <nav>
+    <button class="active" data-page="home">Accueil</button>
+    <button data-page="scores">Scores</button>
+    <button data-page="leagues">Compétitions</button>
+    <button data-page="teams">Équipes</button>
+    <button data-page="news">Actualités</button>
+  </nav>
 
-    <div class="sun">☀️</div>
-
-    <div class="ball-floating">
-      ⚽
-    </div>
-
-    <div class="boat">
-      🚢
-    </div>
-
-    <div class="wave wave1"></div>
-    <div class="wave wave2"></div>
-    <div class="wave wave3"></div>
-
+  <div class="tools">
+    <input id="search" placeholder="Rechercher équipe ou joueur">
+    <button id="theme">☾</button>
   </div>
 
-</div><div class="head"><h2>Matchs du jour</h2><button onclick="go('scores')">Tout voir</button></div><div id="homeMatches" class="cards"></div><div class="head"><h2>Classements</h2><button onclick="go('leagues')">Voir les compétitions</button></div><div id="homeTables" class="tables"></div><div class="head"><h2>Actualités</h2><button onclick="go('news')">Toutes les news</button></div><div id="homeNews" class="cards"></div></section>
-<section id="scores" class="page"><div class="title"><div><small>EN DIRECT & PROGRAMMÉS</small><h1>Scores</h1></div><span id="live" class="pill"></span></div><div class="dates"><button>‹</button><button class="selected">Aujourd'hui<br><small>25 SEP</small></button><button>Demain<br><small>26 SEP</small></button><button>27 SEP<br><small>SAM</small></button><button>›</button></div><div id="scoreList"></div></section>
-<section id="leagues" class="page"><small>COMPÉTITIONS</small><h1>Compétitions & classements</h1><div id="leagueGrid" class="cards"></div></section>
-<section id="teams" class="page"><small>ÉQUIPES</small><h1>Clubs populaires</h1><div id="teamGrid" class="cards"></div><div id="teamDetail"></div></section>
-<section id="news" class="page"><small>DERNIÈRES INFOS</small><h1>Actualités</h1><div id="newsGrid" class="cards"></div></section>
-</main></div><div id="toast"></div><footer>© 2026 BakhiraFoot — Démo indépendante</footer><script src="script.js"></script></body></html>
+</header>
+
+
+<div class="layout">
+
+  <aside>
+
+    <h4>COMPÉTITIONS</h4>
+
+    <button class="filter active" data-filter="all">
+      ⭐ Tous
+    </button>
+
+    <button class="filter" data-filter="Champions League">
+      🏆 Champions League
+    </button>
+
+    <button class="filter" data-filter="Premier League">
+      🏴 Premier League
+    </button>
+
+    <button class="filter" data-filter="La Liga">
+      🇪🇸 La Liga
+    </button>
+
+    <button class="filter" data-filter="Ligue 1">
+      🇫🇷 Ligue 1
+    </button>
+
+    <button class="filter" data-filter="Botola">
+      🇲🇦 Botola Pro
+    </button>
+
+
+    <h4>MON FOOTBALL</h4>
+
+    <button
+      class="filter"
+      onclick="toast('Ajoute tes équipes favorites ⭐')">
+      ☆ Favoris
+    </button>
+
+    <button
+      class="filter"
+      onclick="go('scores')">
+      📅 Calendrier
+    </button>
+
+  </aside>
+
+
+  <main>
+
+    <!-- ================= HOME ================= -->
+
+    <section id="home" class="page active">
+
+      <div class="hero">
+
+        <div class="hero-content">
+
+          <div class="hero-badge">
+            ⚓ BAKHIRAFOOT
+          </div>
+
+          <small>
+            ⚽ FOOTBALL • 🌊 MER • 🚢 PASSION
+          </small>
+
+          <h1>
+            Le football navigue
+            <span>avec passion.</span>
+          </h1>
+
+          <p>
+            Tous les scores, matchs, compétitions et actualités
+            du football réunis dans un seul port.
+          </p>
+
+          <div class="hero-actions">
+
+            <button
+              class="green"
+              onclick="go('scores')">
+              ⚽ Voir les matchs
+            </button>
+
+            <button
+              class="hero-more"
+              onclick="go('leagues')">
+              🏆 Compétitions
+            </button>
+
+          </div>
+
+        </div>
+
+
+        <div class="sea-scene">
+
+          <div class="sun">
+            ☀️
+          </div>
+
+          <div class="ball-floating">
+            ⚽
+          </div>
+
+          <div class="boat">
+            🚢
+          </div>
+
+          <div class="wave wave1"></div>
+          <div class="wave wave2"></div>
+          <div class="wave wave3"></div>
+
+        </div>
+
+      </div>
+
+
+      <!-- MATCHS -->
+
+      <div class="head">
+
+        <h2>
+          Matchs du jour
+        </h2>
+
+        <button onclick="go('scores')">
+          Tout voir
+        </button>
+
+      </div>
+
+      <div
+        id="homeMatches"
+        class="cards">
+      </div>
+
+
+      <!-- CLASSEMENTS -->
+
+      <div class="head">
+
+        <h2>
+          Classements
+        </h2>
+
+        <button onclick="go('leagues')">
+          Voir les compétitions
+        </button>
+
+      </div>
+
+      <div
+        id="homeTables"
+        class="tables">
+      </div>
+
+
+      <!-- ACTUALITÉS -->
+
+      <div class="head">
+
+        <h2>
+          Actualités
+        </h2>
+
+        <button onclick="go('news')">
+          Toutes les news
+        </button>
+
+      </div>
+
+      <div
+        id="homeNews"
+        class="cards">
+      </div>
+
+    </section>
+
+
+    <!-- ================= SCORES ================= -->
+
+    <section
+      id="scores"
+      class="page">
+
+      <div class="title">
+
+        <div>
+
+          <small>
+            EN DIRECT & PROGRAMMÉS
+          </small>
+
+          <h1>
+            Scores
+          </h1>
+
+        </div>
+
+        <span
+          id="live"
+          class="pill">
+        </span>
+
+      </div>
+
+
+      <div
+        id="dateBar"
+        class="dates">
+      </div>
+
+
+      <div
+        id="scoreList">
+      </div>
+
+    </section>
+
+
+    <!-- ================= COMPETITIONS ================= -->
+
+    <section
+      id="leagues"
+      class="page">
+
+      <small>
+        COMPÉTITIONS
+      </small>
+
+      <h1>
+        Compétitions & classements
+      </h1>
+
+      <div
+        id="leagueGrid"
+        class="cards">
+      </div>
+
+    </section>
+
+
+    <!-- ================= TEAMS ================= -->
+
+    <section
+      id="teams"
+      class="page">
+
+      <small>
+        ÉQUIPES
+      </small>
+
+      <h1>
+        Clubs populaires
+      </h1>
+
+      <div
+        id="teamGrid"
+        class="cards">
+      </div>
+
+      <div
+        id="teamDetail">
+      </div>
+
+    </section>
+
+
+    <!-- ================= NEWS ================= -->
+
+    <section
+      id="news"
+      class="page">
+
+      <small>
+        DERNIÈRES INFOS
+      </small>
+
+      <h1>
+        Actualités
+      </h1>
+
+      <div
+        id="newsGrid"
+        class="cards">
+      </div>
+
+    </section>
+
+  </main>
+
+</div>
+
+
+<div id="toast"></div>
+
+
+<footer>
+  © 2026 BakhiraFoot — Tous les droits réservés
+</footer>
+
+
+<script src="script.js"></script>
+
+</body>
+</html>
