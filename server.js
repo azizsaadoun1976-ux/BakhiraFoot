@@ -1,12 +1,18 @@
 const express = require("express");
+const cors = require("cors");
 const dotenv = require("dotenv");
 
 dotenv.config();
 
 const app = express();
-const PORT = 3000;
 
-app.use(express.static("."));
+const PORT = process.env.PORT || 3000;
+
+app.use(cors({
+    origin: "*"
+}));
+
+app.use(express.json());
 
 const headers = {
     "x-apisports-key": process.env.API_FOOTBALL_KEY
@@ -24,7 +30,9 @@ app.get("/api/matches", async (req, res) => {
             req.query.date ||
             new Date().toISOString().split("T")[0];
 
-        const leagues = [39, 140, 61, 135, 78, 2];
+        const leagues = [
+            39, 140, 61, 135, 78, 2
+        ];
 
         let allMatches = [];
 
@@ -40,7 +48,6 @@ app.get("/api/matches", async (req, res) => {
             if (data.response) {
                 allMatches.push(...data.response);
             }
-
         }
 
         res.json({
@@ -58,7 +65,6 @@ app.get("/api/matches", async (req, res) => {
     }
 
 });
-
 
 // ========================================
 // LIVE
@@ -89,15 +95,14 @@ app.get("/api/live", async (req, res) => {
 
 });
 
-
 // ========================================
-// SERVER
+// START
 // ========================================
 
 app.listen(PORT, () => {
 
     console.log(
-        `BakhiraFoot: http://localhost:${PORT}`
+        `BakhiraFoot Backend running on port ${PORT}`
     );
 
 });
