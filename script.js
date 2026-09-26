@@ -2,7 +2,7 @@
 // BAKHIRAFOOT PRO
 // ========================================
 
-const API_BASE = "https://bakhira-foot-evhxls5ni-saad-c86e.vercel.app";
+const API_BASE = "";
 
 let currentDate = new Date();
 let currentFilter = "all";
@@ -198,6 +198,10 @@ async function loadMatches(date = currentDate) {
         const response = await fetch(
             `${API_BASE}/api/matches?date=${dateString}`
         );
+
+        if (!response.ok) {
+            throw new Error("Server error");
+        }
 
         const data = await response.json();
 
@@ -545,8 +549,12 @@ async function loadLive() {
 
         const response =
             await fetch(
-                `${API_BASE}/api/live?live=all`
+                `${API_BASE}/api/live`
             );
+
+        if (!response.ok) {
+            throw new Error("Live server error");
+        }
 
         const data =
             await response.json();
