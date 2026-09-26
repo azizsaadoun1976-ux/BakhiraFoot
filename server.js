@@ -12,12 +12,10 @@ const headers = {
     "x-apisports-key": process.env.API_FOOTBALL_KEY
 };
 
-// الصفحة الرئيسية
 app.get("/", (req, res) => {
     res.sendFile(__dirname + "/index.html");
 });
 
-// MATCHS
 app.get("/api/matches", async (req, res) => {
     try {
         const date =
@@ -31,17 +29,23 @@ app.get("/api/matches", async (req, res) => {
 
         const data = await response.json();
 
-        res.json(data);
+        console.log("API MATCHES:", JSON.stringify(data));
+
+        res.json({
+            results: data.results,
+            errors: data.errors,
+            response: data.response
+        });
+
     } catch (error) {
-        console.error("MATCHES ERROR:", error);
+        console.error(error);
 
         res.status(500).json({
-            error: "Erreur API matches"
+            error: error.message
         });
     }
 });
 
-// LIVE
 app.get("/api/live", async (req, res) => {
     try {
         const response = await fetch(
@@ -51,25 +55,29 @@ app.get("/api/live", async (req, res) => {
 
         const data = await response.json();
 
-        res.json(data);
+        console.log("API LIVE:", JSON.stringify(data));
+
+        res.json({
+            results: data.results,
+            errors: data.errors,
+            response: data.response
+        });
+
     } catch (error) {
-        console.error("LIVE ERROR:", error);
+        console.error(error);
 
         res.status(500).json({
-            error: "Erreur API live"
+            error: error.message
         });
     }
 });
 
-// TEST
 app.get("/api/test", (req, res) => {
     res.json({
-        status: "ok",
-        message: "BakhiraFoot server is running"
+        status: "ok"
     });
 });
 
-// START SERVER
 app.listen(PORT, "0.0.0.0", () => {
     console.log(`BakhiraFoot running on port ${PORT}`);
 });
