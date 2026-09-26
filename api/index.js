@@ -1,16 +1,18 @@
 module.exports = async (req, res) => {
   try {
-    const url = new URL(
-      "https://api.kickoffapi.com/api/v2/fixtures"
-    );
+    const path = req.url.split("?")[0];
 
-    if (req.query.live === "all") {
-      url.searchParams.set("live", "all");
+    let url =
+      "https://api.kickoffapi.com/api/v2/fixtures";
+
+    if (path === "/api/live") {
+      url += "?live=all";
     } else {
-      url.searchParams.set(
-        "date",
-        req.query.date || new Date().toISOString().split("T")[0]
-      );
+      const date =
+        new URL(req.url, "http://localhost").searchParams.get("date") ||
+        new Date().toISOString().split("T")[0];
+
+      url += `?date=${date}`;
     }
 
     const response = await fetch(url, {
