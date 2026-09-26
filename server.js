@@ -43,6 +43,7 @@ app.get("/", (req, res) => {
 
 app.get("/api/matches", async (req, res) => {
     try {
+
         const date =
             req.query.date ||
             new Date().toISOString().split("T")[0];
@@ -74,7 +75,11 @@ app.get("/api/matches", async (req, res) => {
         const data = await response.json();
 
         if (data.error) {
-            console.error("KICKOFF ERROR:", data.error);
+
+            console.error(
+                "KICKOFF ERROR:",
+                data.error
+            );
 
             return res.status(500).json({
                 error: data.error,
@@ -98,8 +103,13 @@ app.get("/api/matches", async (req, res) => {
             cached: false
         });
 
-    } catch (error) {
-        console.error("MATCHES ERROR:", error);
+    }
+    catch (error) {
+
+        console.error(
+            "MATCHES ERROR:",
+            error
+        );
 
         res.status(500).json({
             error: error.message,
@@ -114,12 +124,14 @@ app.get("/api/matches", async (req, res) => {
 
 app.get("/api/live", async (req, res) => {
     try {
+
         const now = Date.now();
 
         if (
             liveCache.time &&
             now - liveCache.time < LIVE_CACHE_TIME
         ) {
+
             console.log("CACHE LIVE");
 
             return res.json({
@@ -140,7 +152,11 @@ app.get("/api/live", async (req, res) => {
         const data = await response.json();
 
         if (data.error) {
-            console.error("KICKOFF LIVE ERROR:", data.error);
+
+            console.error(
+                "KICKOFF LIVE ERROR:",
+                data.error
+            );
 
             return res.status(500).json({
                 error: data.error,
@@ -164,8 +180,13 @@ app.get("/api/live", async (req, res) => {
             cached: false
         });
 
-    } catch (error) {
-        console.error("LIVE ERROR:", error);
+    }
+    catch (error) {
+
+        console.error(
+            "LIVE ERROR:",
+            error
+        );
 
         res.status(500).json({
             error: error.message,
@@ -179,12 +200,14 @@ app.get("/api/live", async (req, res) => {
 // ================================
 
 app.get("/api/test", (req, res) => {
+
     res.json({
         status: "ok",
         service: "BakhiraFoot",
         api: "KickoffAPI",
         cache: "active"
     });
+
 });
 
 // ================================
@@ -192,7 +215,9 @@ app.get("/api/test", (req, res) => {
 // ================================
 
 app.get("/api/test-api", async (req, res) => {
+
     try {
+
         const response = await fetch(
             `${KICKOFF_API}?live=all`,
             {
@@ -200,15 +225,20 @@ app.get("/api/test-api", async (req, res) => {
             }
         );
 
-        const data = await response.json();
+        const data =
+            await response.json();
 
         res.json(data);
 
-    } catch (error) {
+    }
+    catch (error) {
+
         res.status(500).json({
             error: error.message
         });
+
     }
+
 });
 
 // ================================
@@ -216,40 +246,58 @@ app.get("/api/test-api", async (req, res) => {
 // ================================
 
 app.get("/api/cache", (req, res) => {
+
     const matches = {};
 
-    for (const [date, value] of matchesCache) {
+    for (
+        const [date, value]
+        of matchesCache
+    ) {
+
         matches[date] = {
+
             age:
                 Math.round(
                     (Date.now() - value.time) / 1000
                 ) + " seconds",
 
-            matches: value.data.length
+            matches:
+                value.data.length
         };
     }
 
     res.json({
+
         matches,
 
         live: {
+
             age: liveCache.time
                 ? Math.round(
                     (Date.now() - liveCache.time) / 1000
                 ) + " seconds"
                 : null,
 
-            matches: liveCache.data.length
+            matches:
+                liveCache.data.length
         }
+
     });
+
 });
 
 // ================================
 // START SERVER
 // ================================
 
-app.listen(PORT, "0.0.0.0", () => {
-    console.log(
-        `BakhiraFoot running on port ${PORT}`
-    );
-});
+app.listen(
+    PORT,
+    "0.0.0.0",
+    () => {
+
+        console.log(
+            `BakhiraFoot running on http://localhost:${PORT}`
+        );
+
+    }
+);
