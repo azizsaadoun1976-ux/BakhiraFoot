@@ -1,10 +1,12 @@
 // ========================================
-// BAKHIRAFOOT
+// BAKHIRAFOOT PRO
 // ========================================
 
 const API_BASE = "https://bakhirafoot.de.deplexo.com";
 
 let currentDate = new Date();
+let currentFilter = "all";
+
 
 // ========================================
 // DATE
@@ -24,8 +26,70 @@ function monthName(date) {
     }).replace(".", "").toUpperCase();
 }
 
+
 // ========================================
-// DATE BAR
+// TOAST
+// ========================================
+
+function toast(message) {
+    const box = document.getElementById("toast");
+
+    if (!box) return;
+
+    box.textContent = message;
+    box.style.display = "block";
+
+    setTimeout(() => {
+        box.style.display = "none";
+    }, 2500);
+}
+
+
+// ========================================
+// NAVIGATION
+// ========================================
+
+function go(page) {
+
+    const target = document.getElementById(page);
+
+    if (!target) return;
+
+    document.querySelectorAll(".page").forEach(section => {
+        section.classList.remove("active");
+    });
+
+    target.classList.add("active");
+
+    document.querySelectorAll("nav button").forEach(button => {
+        button.classList.toggle(
+            "active",
+            button.dataset.page === page
+        );
+    });
+
+    window.scrollTo({
+        top: 0,
+        behavior: "smooth"
+    });
+}
+
+
+// ========================================
+// NAV BUTTONS
+// ========================================
+
+document.querySelectorAll("nav button").forEach(button => {
+
+    button.addEventListener("click", () => {
+        go(button.dataset.page);
+    });
+
+});
+
+
+// ========================================
+// DATE BAR / CALENDRIER
 // ========================================
 
 function createDateBar() {
@@ -48,26 +112,49 @@ function createDateBar() {
         "SAM"
     ];
 
+    // زر السابق
+    const previous = document.createElement("button");
+
+    previous.innerHTML = "‹";
+
+    previous.onclick = () => {
+
+        currentDate.setDate(
+            currentDate.getDate() - 1
+        );
+
+        createDateBar();
+        loadMatches(currentDate);
+    };
+
+    datesBox.appendChild(previous);
+
+
+    // 7 أيام
     for (let i = 0; i < 7; i++) {
 
         const date = new Date(today);
 
         date.setHours(0, 0, 0, 0);
-        date.setDate(today.getDate() + i);
 
-        const day = date.getDate();
-        const month = monthName(date);
+        date.setDate(
+            today.getDate() + i
+        );
 
-        const button = document.createElement("button");
+        const button =
+            document.createElement("button");
 
-        let label = "";
+        let label;
 
         if (i === 0) {
             label = "Aujourd'hui";
-        } else if (i === 1) {
+        }
+        else if (i === 1) {
             label = "Demain";
-        } else {
-            label = `${day} ${month}`;
+        }
+        else {
+            label =
+                `${date.getDate()} ${monthName(date)}`;
         }
 
         button.innerHTML = `
@@ -76,27 +163,46 @@ function createDateBar() {
             <small>${names[date.getDay()]}</small>
         `;
 
+        if (
+            formatDate(date) ===
+            formatDate(currentDate)
+        ) {
+            button.classList.add("selected");
+        }
+
         button.onclick = () => {
 
             currentDate = new Date(date);
 
-            document
-                .querySelectorAll(".dates button")
-                .forEach(btn => btn.classList.remove("selected"));
-
-            button.classList.add("selected");
+            createDateBar();
 
             loadMatches(currentDate);
-        };
 
-        if (i === 0) {
-            button.classList.add("selected");
-            currentDate = new Date(date);
-        }
+        };
 
         datesBox.appendChild(button);
     }
+
+
+    // زر التالي
+    const next = document.createElement("button");
+
+    next.innerHTML = "›";
+
+    next.onclick = () => {
+
+        currentDate.setDate(
+            currentDate.getDate() + 1
+        );
+
+        createDateBar();
+
+        loadMatches(currentDate);
+    };
+
+    datesBox.appendChild(next);
 }
+
 
 // ========================================
 // LOAD MATCHES
@@ -104,9 +210,9 @@ function createDateBar() {
 
 async function loadMatches(date = currentDate) {
 
-    try {
+    const dateString = formatDate(date);
 
-        const dateString = formatDate(date);
+    try {
 
         const response = await fetch(
             `${API_BASE}/api/matches?date=${dateString}`
@@ -114,20 +220,49 @@ async function loadMatches(date = currentDate) {
 
         const data = await response.json();
 
-        const matches = data.response || [];
-
         console.log("DATE :", dateString);
-        console.log("MATCHS :", matches.length);
+        console.log("API :", data);
+
+        let matches = data.response || [];
+
+        // فلترة حسب البطولة
+        if (currentFilter !== "all") {
+
+            matches = matches.filter(match => {
+
+                const league =
+                    match.league?.name || "";
+
+                if (currentFilter === "Botola") {
+                    return (
+                        league.toLowerCase().includes("botola") ||
+                        league.toLowerCase().includes("botola pro")
+                    );
+                }
+
+                return league
+                    .toLowerCase()
+                    .includes(
+                        currentFilter.toLowerCase()
+                    );
+            });
+        }
 
         renderMatches(matches);
 
-    } catch (error) {
+    }
+    catch (error) {
 
-        console.error("Erreur matchs :", error);
+        console.error(
+            "Erreur matchs :",
+            error
+        );
 
-        const box = document.getElementById("scoreList");
+        const box =
+            document.getElementById("scoreList");
 
         if (box) {
+
             box.innerHTML = `
                 <div class="card">
                     ❌ Erreur de connexion au serveur
@@ -136,6 +271,7 @@ async function loadMatches(date = currentDate) {
         }
     }
 }
+
 
 // ========================================
 // RENDER MATCHES
@@ -149,6 +285,7 @@ function renderMatches(matches) {
     const homeMatches =
         document.getElementById("homeMatches");
 
+
     if (!matches.length) {
 
         const empty = `
@@ -157,11 +294,15 @@ function renderMatches(matches) {
             </div>
         `;
 
-        if (scoreList) scoreList.innerHTML = empty;
-        if (homeMatches) homeMatches.innerHTML = empty;
+        if (scoreList)
+            scoreList.innerHTML = empty;
+
+        if (homeMatches)
+            homeMatches.innerHTML = empty;
 
         return;
     }
+
 
     const html = matches.map(match => {
 
@@ -194,26 +335,46 @@ function renderMatches(matches) {
 
         const time =
             match.fixture?.date
-                ? new Date(match.fixture.date)
-                    .toLocaleTimeString("fr-FR", {
+                ? new Date(
+                    match.fixture.date
+                ).toLocaleTimeString(
+                    "fr-FR",
+                    {
                         hour: "2-digit",
                         minute: "2-digit"
-                    })
+                    }
+                )
                 : "--:--";
 
-        let statusText = `🕐 ${time}`;
+
+        let statusText =
+            `🕐 ${time}`;
+
 
         if (
-            ["1H", "2H", "HT", "ET", "P", "BT"].includes(status)
+            [
+                "1H",
+                "2H",
+                "HT",
+                "ET",
+                "P",
+                "BT"
+            ].includes(status)
         ) {
             statusText = "🔴 LIVE";
         }
 
+
         if (
-            ["FT", "AET", "PEN"].includes(status)
+            [
+                "FT",
+                "AET",
+                "PEN"
+            ].includes(status)
         ) {
             statusText = "✅ Terminé";
         }
+
 
         return `
             <div class="card match-card">
@@ -230,6 +391,7 @@ function renderMatches(matches) {
                     <small>${country}</small>
 
                 </div>
+
 
                 <div style="
                     display:grid;
@@ -253,21 +415,30 @@ function renderMatches(matches) {
                             "
                         >
 
-                        <strong>${home}</strong>
+                        <strong>
+                            ${home}
+                        </strong>
 
                     </div>
 
+
                     <div>
 
-                        <strong style="font-size:22px;">
-                            ${homeScore} - ${awayScore}
+                        <strong style="
+                            font-size:22px;
+                        ">
+                            ${homeScore} -
+                            ${awayScore}
                         </strong>
 
                         <br>
 
-                        <small>${statusText}</small>
+                        <small>
+                            ${statusText}
+                        </small>
 
                     </div>
+
 
                     <div>
 
@@ -283,7 +454,9 @@ function renderMatches(matches) {
                             "
                         >
 
-                        <strong>${away}</strong>
+                        <strong>
+                            ${away}
+                        </strong>
 
                     </div>
 
@@ -294,10 +467,13 @@ function renderMatches(matches) {
 
     }).join("");
 
+
     if (scoreList) {
         scoreList.innerHTML = html;
     }
 
+
+    // Home
     if (homeMatches) {
 
         homeMatches.innerHTML =
@@ -324,19 +500,8 @@ function renderMatches(matches) {
                         match.goals?.away ?? "-";
 
                     const league =
-                        match.league?.name || "Football";
-
-                    const time =
-                        match.fixture?.date
-                            ? new Date(match.fixture.date)
-                                .toLocaleTimeString(
-                                    "fr-FR",
-                                    {
-                                        hour: "2-digit",
-                                        minute: "2-digit"
-                                    }
-                                )
-                            : "--:--";
+                        match.league?.name ||
+                        "Football";
 
                     return `
                         <div class="card">
@@ -347,7 +512,8 @@ function renderMatches(matches) {
 
                             <div style="
                                 display:grid;
-                                grid-template-columns:1fr 70px 1fr;
+                                grid-template-columns:
+                                    1fr 70px 1fr;
                                 align-items:center;
                                 text-align:center;
                                 gap:10px;
@@ -367,13 +533,19 @@ function renderMatches(matches) {
 
                                     <br>
 
-                                    <span>${home}</span>
+                                    <span>
+                                        ${home}
+                                    </span>
 
                                 </div>
 
+
                                 <strong>
-                                    ${homeScore} - ${awayScore}
+                                    ${homeScore}
+                                    -
+                                    ${awayScore}
                                 </strong>
+
 
                                 <div>
 
@@ -388,15 +560,13 @@ function renderMatches(matches) {
 
                                     <br>
 
-                                    <span>${away}</span>
+                                    <span>
+                                        ${away}
+                                    </span>
 
                                 </div>
 
                             </div>
-
-                            <small>
-                                🕐 ${time}
-                            </small>
 
                         </div>
                     `;
@@ -405,6 +575,7 @@ function renderMatches(matches) {
                 .join("");
     }
 }
+
 
 // ========================================
 // LIVE
@@ -415,7 +586,9 @@ async function loadLive() {
     try {
 
         const response =
-            await fetch(`${API_BASE}/api/live`);
+            await fetch(
+                `${API_BASE}/api/live`
+            );
 
         const data =
             await response.json();
@@ -428,27 +601,313 @@ async function loadLive() {
 
         if (!live) return;
 
+
         if (!matches.length) {
 
             live.innerHTML =
                 "⚪ Aucun match live";
 
-        } else {
+        }
+        else {
 
             live.innerHTML =
                 `🔴 ${matches.length} MATCH(S) LIVE`;
         }
 
-    } catch (error) {
+    }
+    catch (error) {
 
-        console.error("Erreur LIVE :", error);
-
+        console.error(
+            "Erreur LIVE :",
+            error
+        );
     }
 }
+
+
+// ========================================
+// COMPETITIONS
+// ========================================
+
+const competitions = [
+
+    {
+        name: "Champions League",
+        icon: "🏆",
+        filter: "Champions League"
+    },
+
+    {
+        name: "Premier League",
+        icon: "🏴",
+        filter: "Premier League"
+    },
+
+    {
+        name: "La Liga",
+        icon: "🇪🇸",
+        filter: "La Liga"
+    },
+
+    {
+        name: "Ligue 1",
+        icon: "🇫🇷",
+        filter: "Ligue 1"
+    },
+
+    {
+        name: "Botola Pro",
+        icon: "🇲🇦",
+        filter: "Botola"
+    },
+
+    {
+        name: "Serie A",
+        icon: "🇮🇹",
+        filter: "Serie A"
+    },
+
+    {
+        name: "Bundesliga",
+        icon: "🇩🇪",
+        filter: "Bundesliga"
+    }
+
+];
+
+
+function loadLeagues() {
+
+    const box =
+        document.getElementById("leagueGrid");
+
+    if (!box) return;
+
+
+    box.innerHTML =
+        competitions.map(league => `
+
+            <div
+                class="card league"
+                onclick="
+                    selectLeague(
+                        '${league.filter}'
+                    )
+                "
+            >
+
+                <div style="
+                    font-size:38px;
+                    margin-bottom:10px;
+                ">
+                    ${league.icon}
+                </div>
+
+                <h3>
+                    ${league.name}
+                </h3>
+
+                <small>
+                    Voir les matchs →
+                </small>
+
+            </div>
+
+        `).join("");
+}
+
+
+function selectLeague(league) {
+
+    currentFilter = league;
+
+    go("scores");
+
+    document.querySelectorAll(".filter")
+        .forEach(button => {
+
+            button.classList.toggle(
+                "active",
+                button.dataset.filter === league
+            );
+
+        });
+
+    loadMatches(currentDate);
+
+    toast(
+        `🏆 ${league} sélectionnée`
+    );
+}
+
+
+// ========================================
+// SIDEBAR FILTERS
+// ========================================
+
+document.querySelectorAll(".filter[data-filter]")
+    .forEach(button => {
+
+        button.addEventListener(
+            "click",
+            () => {
+
+                currentFilter =
+                    button.dataset.filter;
+
+                document
+                    .querySelectorAll(
+                        ".filter[data-filter]"
+                    )
+                    .forEach(btn => {
+                        btn.classList.remove(
+                            "active"
+                        );
+                    });
+
+                button.classList.add("active");
+
+                go("scores");
+
+                loadMatches(currentDate);
+            }
+        );
+
+    });
+
+
+// ========================================
+// FAVORIS
+// ========================================
+
+let favorites =
+    JSON.parse(
+        localStorage.getItem(
+            "bakhirafoot_favorites"
+        )
+    ) || [];
+
+
+function toggleFavorite(team) {
+
+    if (favorites.includes(team)) {
+
+        favorites =
+            favorites.filter(
+                item => item !== team
+            );
+
+        toast(
+            `❌ ${team} supprimée des favoris`
+        );
+
+    }
+    else {
+
+        favorites.push(team);
+
+        toast(
+            `⭐ ${team} ajoutée aux favoris`
+        );
+    }
+
+
+    localStorage.setItem(
+        "bakhirafoot_favorites",
+        JSON.stringify(favorites)
+    );
+
+    loadTeams();
+}
+
+
+function showFavorites() {
+
+    go("teams");
+
+    const box =
+        document.getElementById("teamGrid");
+
+    if (!box) return;
+
+
+    if (!favorites.length) {
+
+        box.innerHTML = `
+            <div class="card">
+                ⭐ Aucun favori pour le moment.
+                <br><br>
+                Ajoute tes équipes préférées.
+            </div>
+        `;
+
+        return;
+    }
+
+
+    box.innerHTML =
+        favorites.map(team => `
+
+            <div class="card team">
+
+                <div class="teamLogo">
+                    ⚽
+                </div>
+
+                <h3>
+                    ${team}
+                </h3>
+
+                <button
+                    onclick="
+                        toggleFavorite('${team}')
+                    "
+                >
+                    ❌ Retirer
+                </button>
+
+            </div>
+
+        `).join("");
+}
+
+
+// Favoris sidebar
+const favoriteButton =
+    [...document.querySelectorAll(".filter")]
+        .find(button =>
+            button.textContent.includes("Favoris")
+        );
+
+
+if (favoriteButton) {
+
+    favoriteButton.onclick =
+        showFavorites;
+}
+
 
 // ========================================
 // TEAMS
 // ========================================
+
+const teams = [
+
+    "Real Madrid",
+    "FC Barcelona",
+    "Manchester City",
+    "Manchester United",
+    "Liverpool",
+    "Arsenal",
+    "Chelsea",
+    "PSG",
+    "Bayern Munich",
+    "Inter",
+    "AC Milan",
+    "Juventus"
+
+];
+
 
 function loadTeams() {
 
@@ -457,36 +916,50 @@ function loadTeams() {
 
     if (!box) return;
 
-    const teams = [
-        "Real Madrid",
-        "FC Barcelona",
-        "Manchester City",
-        "Manchester United",
-        "Liverpool",
-        "Arsenal",
-        "Chelsea",
-        "PSG",
-        "Bayern Munich",
-        "Inter",
-        "AC Milan",
-        "Juventus"
-    ];
 
     box.innerHTML =
-        teams.map(team => `
+        teams.map(team => {
 
-            <div class="card">
+            const isFavorite =
+                favorites.includes(team);
 
-                <h3>⚽ ${team}</h3>
+            return `
 
-                <button onclick="showTeam('${team}')">
-                    Voir l'équipe →
-                </button>
+                <div class="card team">
 
-            </div>
+                    <div class="teamLogo">
+                        ⚽
+                    </div>
 
-        `).join("");
+                    <h3>
+                        ${team}
+                    </h3>
+
+                    <button
+                        onclick="
+                            toggleFavorite('${team}')
+                        "
+                    >
+                        ${isFavorite
+                            ? "⭐ Favori"
+                            : "☆ Ajouter aux favoris"}
+                    </button>
+
+                    <button
+                        onclick="
+                            showTeam('${team}')
+                        "
+                    >
+                        Voir l'équipe →
+                    </button>
+
+                </div>
+
+            `;
+
+        }).join("");
 }
+
 
 function showTeam(team) {
 
@@ -495,20 +968,37 @@ function showTeam(team) {
 
     if (!box) return;
 
+
     box.innerHTML = `
 
-        <div class="card">
+        <div class="card detail">
 
-            <h2>⚽ ${team}</h2>
+            <div class="detailHead">
 
-            <p>
-                Informations de l'équipe.
-            </p>
+                <div class="big">
+                    ⚽
+                </div>
+
+                <div>
+
+                    <h2>
+                        ${team}
+                    </h2>
+
+                    <p>
+                        Informations de l'équipe.
+                    </p>
+
+                </div>
+
+            </div>
 
         </div>
 
     `;
+
 }
+
 
 // ========================================
 // NEWS
@@ -519,97 +1009,76 @@ function loadNews() {
     const news = [
 
         {
-            title: "⚽ Actualités football",
-            text: "Toutes les dernières informations du football."
+            title:
+                "⚽ Actualités football",
+            text:
+                "Toutes les dernières informations du football."
         },
 
         {
-            title: "🏆 Compétitions",
-            text: "Suivez les grandes compétitions européennes."
+            title:
+                "🏆 Compétitions",
+            text:
+                "Suivez les grandes compétitions européennes."
         },
 
         {
-            title: "🔥 Matchs du jour",
-            text: "Découvrez les matchs programmés."
+            title:
+                "🔥 Matchs du jour",
+            text:
+                "Découvrez les matchs programmés."
         },
 
         {
-            title: "🇲🇦 Football marocain",
-            text: "Suivez l'actualité du football marocain."
+            title:
+                "🇲🇦 Football marocain",
+            text:
+                "Suivez l'actualité du football marocain."
         }
 
     ];
+
 
     const html =
         news.map(item => `
 
             <div class="card">
 
-                <h3>${item.title}</h3>
+                <h3>
+                    ${item.title}
+                </h3>
 
-                <p>${item.text}</p>
+                <p>
+                    ${item.text}
+                </p>
 
-                <small>📰 BakhiraFoot</small>
+                <small>
+                    📰 BakhiraFoot
+                </small>
 
             </div>
 
         `).join("");
 
+
     const newsGrid =
-        document.getElementById("newsGrid");
-
-    const homeNews =
-        document.getElementById("homeNews");
-
-    if (newsGrid) {
-        newsGrid.innerHTML = html;
-    }
-
-    if (homeNews) {
-        homeNews.innerHTML = html;
-    }
-}
-
-// ========================================
-// NAVIGATION
-// ========================================
-
-function go(page) {
-
-    document.querySelectorAll(".page")
-        .forEach(p => {
-            p.classList.remove("active");
-        });
-
-    const target =
-        document.getElementById(page);
-
-    if (target) {
-        target.classList.add("active");
-    }
-
-    document.querySelectorAll("nav button")
-        .forEach(button => {
-
-            button.classList.toggle(
-                "active",
-                button.dataset.page === page
-            );
-
-        });
-}
-
-document.querySelectorAll("nav button")
-    .forEach(button => {
-
-        button.addEventListener(
-            "click",
-            () => {
-                go(button.dataset.page);
-            }
+        document.getElementById(
+            "newsGrid"
         );
 
-    });
+    const homeNews =
+        document.getElementById(
+            "homeNews"
+        );
+
+
+    if (newsGrid)
+        newsGrid.innerHTML = html;
+
+    if (homeNews)
+        homeNews.innerHTML = html;
+}
+
 
 // ========================================
 // DARK MODE
@@ -618,16 +1087,45 @@ document.querySelectorAll("nav button")
 const theme =
     document.getElementById("theme");
 
+
 if (theme) {
 
     theme.addEventListener(
         "click",
         () => {
-            document.body.classList.toggle("dark");
+
+            document.body.classList.toggle(
+                "dark"
+            );
+
+            const isDark =
+                document.body.classList.contains(
+                    "dark"
+                );
+
+            localStorage.setItem(
+                "bakhirafoot_dark",
+                isDark
+            );
+
+            theme.textContent =
+                isDark ? "☀️" : "☾";
         }
     );
 
+
+    if (
+        localStorage.getItem(
+            "bakhirafoot_dark"
+        ) === "true"
+    ) {
+
+        document.body.classList.add("dark");
+
+        theme.textContent = "☀️";
+    }
 }
+
 
 // ========================================
 // SEARCH
@@ -636,6 +1134,7 @@ if (theme) {
 const search =
     document.getElementById("search");
 
+
 if (search) {
 
     search.addEventListener(
@@ -643,25 +1142,41 @@ if (search) {
         function () {
 
             const value =
-                this.value.toLowerCase();
+                this.value
+                    .toLowerCase()
+                    .trim();
 
-            document.querySelectorAll(".card")
+
+            if (!value) {
+
+                document
+                    .querySelectorAll(".card")
+                    .forEach(card => {
+                        card.style.display = "";
+                    });
+
+                return;
+            }
+
+
+            document
+                .querySelectorAll(".card")
                 .forEach(card => {
 
                     const text =
-                        card.innerText.toLowerCase();
+                        card.innerText
+                            .toLowerCase();
 
                     card.style.display =
                         text.includes(value)
                             ? ""
                             : "none";
-
                 });
 
         }
     );
-
 }
+
 
 // ========================================
 // START
@@ -675,24 +1190,19 @@ loadLive();
 
 loadTeams();
 
+loadLeagues();
+
 loadNews();
+
 
 // ========================================
 // AUTO UPDATE
 // ========================================
 
-// كل 30 ثانية
 setInterval(() => {
 
     loadMatches(currentDate);
 
     loadLive();
 
-}, 30000);
-
-// كل ساعة نعاودو نبنيو التاريخ
-setInterval(() => {
-
-    createDateBar();
-
-}, 60 * 60 * 1000);
+}, 60000);
