@@ -1248,8 +1248,3 @@ document.addEventListener(
 );
 ```
 
-**مهم بزاف:** فالكود الجديد استعملت `/api?live=all` و`/api?date=...` باش يتوافق مباشرة مع `vercel.json` الموجود عندك، اللي كيوجه `/api/*` لـ `api/index.js`.
-
-ومن بعد دير **Commit changes** فـ GitHub، وVercel غادي يدير deploy تلقائياً إذا كان مربوط بالـrepo.
-
-**ملاحظة:** ما تبدلش `KICKOFF_API_KEY` داخل الملفات. خاصها تبقى فـ **Vercel → Project → Settings → Environment Variables** باسم `KICKOFF_API_KEY`، حيث `api/index.js` كيقراها من `process.env`.
