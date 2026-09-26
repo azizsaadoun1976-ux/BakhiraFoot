@@ -2,8 +2,7 @@
 // BAKHIRAFOOT PRO
 // ========================================
 
-const API_BASE = "https://bakhirafoot.de.deplexo.com";
-
+const API_BASE = "https://bakhira-foot-evhxls5ni-saad-c86e.vercel.app";
 let currentDate = new Date();
 let currentFilter = "all";
 
