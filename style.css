@@ -1382,3 +1382,108 @@ footer{
     font-size: 13px;
   }
 }
+/* =========================================
+   BAKHIRAFOOT - FLASHCORE STYLE
+   ========================================= */
+
+.matches-list {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+}
+
+.match-card {
+  background: #fff;
+  border: 1px solid #e5e9ec;
+  border-radius: 6px;
+  padding: 10px 14px;
+  transition: background .15s ease;
+}
+
+.match-card:hover {
+  background: #f7f9fa;
+}
+
+.match-card .comp {
+  font-size: 11px;
+  color: #7b858d;
+  font-weight: 700;
+  margin-bottom: 7px;
+}
+
+.match-card .teams {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 8px;
+  align-items: center;
+}
+
+.match-card .team {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  font-weight: 700;
+  font-size: 14px;
+}
+
+.match-card .score {
+  font-weight: 900;
+  min-width: 25px;
+  text-align: center;
+}
+
+.match-card .time {
+  font-size: 12px;
+  color: #707980;
+  font-weight: 700;
+}
+
+.match-card.live {
+  border-left: 3px solid #16a34a;
+}
+
+.match-card.live .time {
+  color: #16a34a;
+  font-weight: 900;
+}
+
+/* Competition header */
+
+.competition-block {
+  margin-bottom: 10px;
+  border-radius: 7px;
+  box-shadow: none;
+}
+
+.competition-header {
+  padding: 9px 12px;
+  background: #eef2f4;
+  border-bottom: 1px solid #dfe4e7;
+}
+
+.competition-header .league-name {
+  font-size: 13px;
+}
+
+/* Mobile */
+
+@media (max-width: 768px) {
+
+  .match-card {
+    padding: 9px 10px;
+    border-radius: 5px;
+  }
+
+  .match-card .team {
+    font-size: 13px;
+  }
+
+  .match-card .comp {
+    font-size: 10px;
+  }
+
+  .competition-header {
+    padding: 8px 10px;
+  }
+}
