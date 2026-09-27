@@ -1,23 +1,17 @@
-```javascript
 /* =========================================================
-   BAKHIRAFOOT PRO
-   LIVE + MATCH DETAILS + MATCH URL
-   API-FOOTBALL
-   No HTML/CSS changes required
+   BAKHIRAFOOT - SCRIPT.JS
+   LIVE + SCORES + LEAGUES + TEAMS + NEWS
+   API CACHE PROTECTION
 ========================================================= */
 
 const API_BASE = "";
-
-/* =========================================================
-   GLOBAL DATA
-========================================================= */
 
 let currentMatches = [];
 let currentDate = null;
 let currentFilter = "all";
 
-/* Store matches by real API fixture ID */
 const matchStore = new Map();
+
 /* =========================================================
    API CACHE - PROTECTION
 ========================================================= */
@@ -29,235 +23,241 @@ const LIVE_CACHE_TIME = 60 * 1000;    // 1 minute
 
 async function fetchCached(url, options = {}) {
 
-  const now = Date.now();
-  const isLive = url.includes("live=all");
+    const now = Date.now();
+    const isLive = url.includes("live=all");
 
-  const cacheTime =
-    isLive
-      ? LIVE_CACHE_TIME
-      : API_CACHE_TIME;
+    const cacheTime =
+        isLive
+            ? LIVE_CACHE_TIME
+            : API_CACHE_TIME;
 
-  const saved = apiCache.get(url);
+    const saved = apiCache.get(url);
 
-  /* Use cache if still valid */
-  if (
-    saved &&
-    now - saved.time < cacheTime
-  ) {
+    /* USE CACHE */
+    if (
+        saved &&
+        now - saved.time < cacheTime
+    ) {
 
-    console.log("⚡ CACHE:", url);
-
-    return saved.data;
-  }
-
-  try {
-
-    console.log("🌐 API:", url);
-
-    const response =
-      await fetch(url, {
-        ...options,
-        cache: "no-store"
-      });
-
-    if (!response.ok) {
-
-      /* If API fails, use old cache */
-      if (saved) {
-
-        console.log(
-          "⚠️ API failed → old cache"
-        );
+        console.log("⚡ CACHE:", url);
 
         return saved.data;
-      }
-
-      throw new Error(
-        `HTTP ${response.status}`
-      );
     }
 
-    const data =
-      await response.json();
+    try {
 
-    apiCache.set(
-      url,
-      {
-        time: now,
-        data: data
-      }
-    );
+        console.log("🌐 API:", url);
 
-    return data;
+        const response = await fetch(url, {
+            ...options,
+            cache: "no-store"
+        });
 
-  } catch (error) {
+        if (!response.ok) {
 
-    console.error(
-      "API CACHE ERROR:",
-      error
-    );
+            if (saved) {
 
-    /* Old data is better than nothing */
-    if (saved) {
-      return saved.data;
+                console.log(
+                    "⚠️ API failed → old cache"
+                );
+
+                return saved.data;
+            }
+
+            throw new Error(
+                `HTTP ${response.status}`
+            );
+        }
+
+        const data =
+            await response.json();
+
+        apiCache.set(
+            url,
+            {
+                time: now,
+                data: data
+            }
+        );
+
+        return data;
+
+    } catch (error) {
+
+        console.error(
+            "API CACHE ERROR:",
+            error
+        );
+
+        if (saved) {
+            return saved.data;
+        }
+
+        throw error;
     }
-
-    throw error;
-  }
 }
+
 
 /* =========================================================
    HELPERS
 ========================================================= */
 
-function $(id) {
-  return document.getElementById(id);
+function $(selector) {
+    return document.querySelector(selector);
 }
 
 function escapeHTML(value) {
-  return String(value ?? "")
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&#039;");
+
+    return String(value ?? "")
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
 }
 
 function formatDate(dateString) {
-  if (!dateString) return "";
 
-  const date = new Date(dateString);
+    if (!dateString) return "";
 
-  if (Number.isNaN(date.getTime())) {
-    return dateString;
-  }
+    const date =
+        new Date(dateString);
 
-  return date.toLocaleString("fr-FR", {
-    day: "2-digit",
-    month: "2-digit",
-    year: "numeric",
-    hour: "2-digit",
-    minute: "2-digit"
-  });
+    if (Number.isNaN(date.getTime())) {
+        return dateString;
+    }
+
+    return date.toLocaleDateString(
+        "fr-FR",
+        {
+            day: "2-digit",
+            month: "2-digit",
+            year: "numeric"
+        }
+    );
 }
 
+
+/* =========================================================
+   API NORMALIZATION
+========================================================= */
+
 function getStatus(match) {
-  return (
-    match?.fixture?.status?.long ||
-    match?.status?.long ||
-    match?.status?.short ||
-    match?.status ||
-    "MATCH"
-  );
+
+    return (
+        match?.fixture?.status?.short ||
+        match?.fixture?.status?.long ||
+        match?.status ||
+        ""
+    );
 }
 
 function getMinute(match) {
-  return (
-    match?.fixture?.status?.elapsed ??
-    match?.status?.elapsed ??
-    match?.minute ??
-    null
-  );
+
+    return (
+        match?.fixture?.status?.elapsed ??
+        match?.status?.elapsed ??
+        ""
+    );
 }
 
 function getHome(match) {
-  return (
-    match?.teams?.home?.name ||
-    match?.home?.name ||
-    match?.home ||
-    "Domicile"
-  );
+
+    return (
+        match?.teams?.home?.name ||
+        match?.home?.name ||
+        "Home"
+    );
 }
 
 function getAway(match) {
-  return (
-    match?.teams?.away?.name ||
-    match?.away?.name ||
-    match?.away ||
-    "Extérieur"
-  );
+
+    return (
+        match?.teams?.away?.name ||
+        match?.away?.name ||
+        "Away"
+    );
 }
 
 function getHomeLogo(match) {
-  return (
-    match?.teams?.home?.logo ||
-    match?.home?.logo ||
-    ""
-  );
+
+    return (
+        match?.teams?.home?.logo ||
+        match?.home?.logo ||
+        ""
+    );
 }
 
 function getAwayLogo(match) {
-  return (
-    match?.teams?.away?.logo ||
-    match?.away?.logo ||
-    ""
-  );
+
+    return (
+        match?.teams?.away?.logo ||
+        match?.away?.logo ||
+        ""
+    );
 }
 
 function getHomeScore(match) {
-  return (
-    match?.goals?.home ??
-    match?.score?.fulltime?.home ??
-    match?.score?.home ??
-    match?.homeScore ??
-    "-"
-  );
+
+    return (
+        match?.goals?.home ??
+        match?.score?.fulltime?.home ??
+        match?.home?.score ??
+        "-"
+    );
 }
 
 function getAwayScore(match) {
-  return (
-    match?.goals?.away ??
-    match?.score?.fulltime?.away ??
-    match?.score?.away ??
-    match?.awayScore ??
-    "-"
-  );
+
+    return (
+        match?.goals?.away ??
+        match?.score?.fulltime?.away ??
+        match?.away?.score ??
+        "-"
+    );
 }
 
 function getLeague(match) {
-  return (
-    match?.league?.name ||
-    match?.competition?.name ||
-    match?.league ||
-    "Football"
-  );
+
+    return (
+        match?.league?.name ||
+        match?.competition?.name ||
+        "Football"
+    );
 }
 
 function getFixtureId(match) {
-  return (
-    match?.fixture?.id ||
-    match?.id ||
-    null
-  );
+
+    return (
+        match?.fixture?.id ||
+        match?.id ||
+        ""
+    );
 }
 
 function normalizeMatches(data) {
-  if (Array.isArray(data)) {
-    return data;
-  }
 
-  if (Array.isArray(data?.response)) {
-    return data.response;
-  }
+    if (Array.isArray(data)) {
+        return data;
+    }
 
-  if (Array.isArray(data?.data)) {
-    return data.data;
-  }
+    if (
+        data &&
+        Array.isArray(data.response)
+    ) {
+        return data.response;
+    }
 
-  if (Array.isArray(data?.data?.fixtures)) {
-    return data.data.fixtures;
-  }
+    if (
+        data &&
+        Array.isArray(data.data)
+    ) {
+        return data.data;
+    }
 
-  if (Array.isArray(data?.fixtures)) {
-    return data.fixtures;
-  }
-
-  if (Array.isArray(data?.matches)) {
-    return data.matches;
-  }
-
-  return [];
+    return [];
 }
+
 
 /* =========================================================
    STORE MATCHES
@@ -265,23 +265,21 @@ function normalizeMatches(data) {
 
 function storeMatches(matches) {
 
-  if (!Array.isArray(matches)) {
-    return;
-  }
+    matches.forEach(match => {
 
-  matches.forEach(match => {
+        const id =
+            getFixtureId(match);
 
-    const id = getFixtureId(match);
+        if (id) {
 
-    if (id) {
-      matchStore.set(
-        String(id),
-        match
-      );
-    }
-
-  });
+            matchStore.set(
+                String(id),
+                match
+            );
+        }
+    });
 }
+
 
 /* =========================================================
    NAVIGATION
@@ -289,598 +287,684 @@ function storeMatches(matches) {
 
 function go(page) {
 
-  const pages =
-    document.querySelectorAll(".page");
+    document
+        .querySelectorAll(".page")
+        .forEach(section => {
 
-  const buttons =
-    document.querySelectorAll("nav button");
+            section.classList.remove(
+                "active"
+            );
+        });
 
-  pages.forEach(section => {
-    section.classList.remove("active");
-  });
+    const target =
+        document.getElementById(
+            page
+        );
 
-  const target = $(page);
+    if (target) {
 
-  if (!target) return;
-
-  target.classList.add("active");
-
-  buttons.forEach(button => {
-
-    button.classList.remove("active");
-
-    if (
-      button.dataset.page === page
-    ) {
-      button.classList.add("active");
+        target.classList.add(
+            "active"
+        );
     }
 
-  });
+    document
+        .querySelectorAll(
+            "[data-page]"
+        )
+        .forEach(button => {
 
-  window.scrollTo({
-    top: 0,
-    behavior: "smooth"
-  });
+            button.classList.remove(
+                "active"
+            );
 
-  if (page === "home") {
-    renderHome();
-  }
+            if (
+                button.dataset.page === page
+            ) {
 
-  if (page === "scores") {
-    createDateBar();
-    loadMatches(currentDate);
-  }
+                button.classList.add(
+                    "active"
+                );
+            }
+        });
 
-  if (page === "leagues") {
-    renderLeagues();
-  }
+    window.scrollTo({
+        top: 0,
+        behavior: "smooth"
+    });
 
-  if (page === "teams") {
-    renderTeams();
-  }
 
-  if (page === "news") {
-    renderNews();
-  }
+    /* PAGE ACTIONS */
+
+    if (page === "home") {
+
+        renderHome();
+    }
+
+    if (page === "scores") {
+
+        if (!currentDate) {
+
+            currentDate =
+                new Date()
+                    .toISOString()
+                    .split("T")[0];
+        }
+
+        loadMatches(
+            currentDate
+        );
+    }
+
+    if (page === "leagues") {
+
+        renderLeagues();
+    }
+
+    if (page === "teams") {
+
+        renderTeams();
+    }
+
+    if (page === "news") {
+
+        renderNews();
+    }
 }
+
 
 /* =========================================================
    TOAST
 ========================================================= */
 
-function toast(message) {
+function showToast(message) {
 
-  const box = $("toast");
+    let toast =
+        document.getElementById(
+            "toast"
+        );
 
-  if (!box) return;
+    if (!toast) {
 
-  box.textContent = message;
+        toast =
+            document.createElement(
+                "div"
+            );
 
-  box.style.display = "block";
+        toast.id = "toast";
 
-  clearTimeout(window.toastTimer);
+        toast.style.position =
+            "fixed";
 
-  window.toastTimer =
-    setTimeout(() => {
+        toast.style.bottom =
+            "25px";
 
-      box.style.display = "none";
+        toast.style.right =
+            "25px";
 
-    }, 2500);
+        toast.style.zIndex =
+            "99999";
+
+        toast.style.padding =
+            "12px 18px";
+
+        toast.style.borderRadius =
+            "12px";
+
+        toast.style.background =
+            "#111827";
+
+        toast.style.color =
+            "#fff";
+
+        toast.style.fontWeight =
+            "600";
+
+        document.body.appendChild(
+            toast
+        );
+    }
+
+    toast.textContent =
+        message;
+
+    toast.style.display =
+        "block";
+
+    clearTimeout(
+        toast._timer
+    );
+
+    toast._timer =
+        setTimeout(() => {
+
+            toast.style.display =
+                "none";
+
+        }, 2500);
 }
 
+
 /* =========================================================
-   MATCH STATUS
+   STATUS
 ========================================================= */
 
 function statusLabel(match) {
 
-  const status =
-    String(getStatus(match)).toUpperCase();
+    const status =
+        getStatus(match);
 
-  const minute =
-    getMinute(match);
+    const minute =
+        getMinute(match);
 
-  const liveStatuses = [
-    "1H",
-    "2H",
-    "LIVE",
-    "ET",
-    "P",
-    "BT"
-  ];
+    const liveStatuses = [
+        "1H",
+        "2H",
+        "ET",
+        "P",
+        "LIVE",
+        "HT"
+    ];
 
-  if (
-    liveStatuses.includes(status) ||
-    status.includes("LIVE")
-  ) {
+    if (
+        liveStatuses.includes(
+            String(status).toUpperCase()
+        )
+    ) {
 
-    return minute
-      ? `🔴 LIVE ${minute}'`
-      : "🔴 LIVE";
-  }
+        if (
+            String(status).toUpperCase()
+            === "HT"
+        ) {
 
-  if (
-    status === "HT" ||
-    status.includes("HALF")
-  ) {
-    return "⏸ MI-TEMPS";
-  }
+            return "MT";
+        }
 
-  if (
-    status === "FT" ||
-    status.includes("FINISHED")
-  ) {
-    return "✅ TERMINÉ";
-  }
+        return minute
+            ? `${minute}'`
+            : "LIVE";
+    }
 
-  if (
-    status === "NS" ||
-    status.includes("NOT STARTED")
-  ) {
-    return "🕒 À VENIR";
-  }
+    if (
+        [
+            "FT",
+            "AET",
+            "PEN"
+        ].includes(
+            String(status).toUpperCase()
+        )
+    ) {
 
-  if (
-    status === "PST" ||
-    status.includes("POSTPONED")
-  ) {
-    return "⏸ REPORTÉ";
-  }
+        return "Terminé";
+    }
 
-  if (
-    status === "CANC" ||
-    status.includes("CANCEL")
-  ) {
-    return "❌ ANNULÉ";
-  }
+    if (
+        [
+            "NS",
+            "TBD"
+        ].includes(
+            String(status).toUpperCase()
+        )
+    ) {
 
-  return status || "MATCH";
+        const date =
+            match?.fixture?.date;
+
+        if (date) {
+
+            return new Date(date)
+                .toLocaleTimeString(
+                    "fr-FR",
+                    {
+                        hour: "2-digit",
+                        minute: "2-digit"
+                    }
+                );
+        }
+
+        return "À venir";
+    }
+
+    return status || "À venir";
 }
+
 
 /* =========================================================
    TEAM HTML
 ========================================================= */
 
-function teamHTML(name, logo) {
+function teamHTML(
+    name,
+    logo
+) {
 
-  return `
-    <div class="team">
+    return `
+        <div class="team">
+            ${
+                logo
+                    ? `
+                        <img
+                            src="${escapeHTML(logo)}"
+                            alt="${escapeHTML(name)}"
+                            loading="lazy"
+                        >
+                    `
+                    : `
+                        <div class="team-logo-placeholder">
+                            ⚽
+                        </div>
+                    `
+            }
 
-      ${
-        logo
-          ? `
-            <img
-              class="teamLogo"
-              src="${escapeHTML(logo)}"
-              alt="${escapeHTML(name)}"
-              loading="lazy"
-            >
-          `
-          : `
-            <div class="teamLogo">
-              ⚽
-            </div>
-          `
-      }
-
-      <span>
-        ${escapeHTML(name)}
-      </span>
-
-    </div>
-  `;
+            <span>
+                ${escapeHTML(name)}
+            </span>
+        </div>
+    `;
 }
+
 
 /* =========================================================
    MATCH CARD
 ========================================================= */
 
-function createMatchHTML(match, index) {
+function createMatchHTML(
+    match,
+    index
+) {
 
-  const home =
-    getHome(match);
+    const fixtureId =
+        getFixtureId(match);
 
-  const away =
-    getAway(match);
+    const home =
+        getHome(match);
 
-  const homeLogo =
-    getHomeLogo(match);
+    const away =
+        getAway(match);
 
-  const awayLogo =
-    getAwayLogo(match);
+    const homeLogo =
+        getHomeLogo(match);
 
-  const homeScore =
-    getHomeScore(match);
+    const awayLogo =
+        getAwayLogo(match);
 
-  const awayScore =
-    getAwayScore(match);
+    const homeScore =
+        getHomeScore(match);
 
-  const league =
-    getLeague(match);
+    const awayScore =
+        getAwayScore(match);
 
-  const status =
-    statusLabel(match);
+    const league =
+        getLeague(match);
 
-  const date =
-    match?.fixture?.date ||
-    match?.date ||
-    null;
+    const status =
+        statusLabel(match);
 
-  const fixtureId =
-    getFixtureId(match);
+    const isLive =
+        [
+            "1H",
+            "2H",
+            "ET",
+            "P",
+            "LIVE",
+            "HT"
+        ].includes(
+            String(
+                getStatus(match)
+            ).toUpperCase()
+        );
 
-  /* Save match by real API ID */
-  if (fixtureId) {
+    return `
+        <div
+            class="match-card ${isLive ? "live-match" : ""}"
+            data-fixture-id="${escapeHTML(String(fixtureId))}"
+            onclick="openMatchDetailsById('${escapeHTML(String(fixtureId))}')"
+        >
 
-    matchStore.set(
-      String(fixtureId),
-      match
-    );
+            <div class="match-top">
 
-  }
+                <span class="league-name">
+                    ${escapeHTML(league)}
+                </span>
 
-  return `
-    <div
-      class="card match-card"
-      data-match-index="${index}"
-      data-fixture-id="${escapeHTML(
-        fixtureId || ""
-      )}"
-      onclick="openMatchDetailsById('${escapeHTML(
-        String(fixtureId || "")
-      )}')"
-      style="cursor:pointer"
-    >
+                <span class="match-status ${isLive ? "live" : ""}">
+                    ${escapeHTML(status)}
+                </span>
 
-      <div class="comp">
-        🏆 ${escapeHTML(league)}
-      </div>
+            </div>
 
-      <div class="teams">
+            <div class="match-main">
 
-        ${teamHTML(
-          home,
-          homeLogo
-        )}
+                <div class="match-team home-team">
 
-        <div class="score">
+                    ${
+                        homeLogo
+                            ? `
+                                <img
+                                    src="${escapeHTML(homeLogo)}"
+                                    alt="${escapeHTML(home)}"
+                                    loading="lazy"
+                                >
+                            `
+                            : "⚽"
+                    }
 
-          <strong>
-            ${escapeHTML(homeScore)}
-            -
-            ${escapeHTML(awayScore)}
-          </strong>
+                    <span>
+                        ${escapeHTML(home)}
+                    </span>
 
-          <small class="red">
-            ${escapeHTML(status)}
-          </small>
+                </div>
+
+                <div class="match-score">
+
+                    <strong>
+                        ${escapeHTML(homeScore)}
+                    </strong>
+
+                    <span>:</span>
+
+                    <strong>
+                        ${escapeHTML(awayScore)}
+                    </strong>
+
+                </div>
+
+                <div class="match-team away-team">
+
+                    ${
+                        awayLogo
+                            ? `
+                                <img
+                                    src="${escapeHTML(awayLogo)}"
+                                    alt="${escapeHTML(away)}"
+                                    loading="lazy"
+                                >
+                            `
+                            : "⚽"
+                    }
+
+                    <span>
+                        ${escapeHTML(away)}
+                    </span>
+
+                </div>
+
+            </div>
+
+            <div class="match-bottom">
+
+                <span>
+                    ${formatDate(match?.fixture?.date)}
+                </span>
+
+                <span>
+                    Voir détails →
+                </span>
+
+            </div>
 
         </div>
-
-        ${teamHTML(
-          away,
-          awayLogo
-        )}
-
-      </div>
-
-      ${
-        date
-          ? `
-            <div class="match-time">
-              🕒 ${escapeHTML(
-                formatDate(date)
-              )}
-            </div>
-          `
-          : ""
-      }
-
-      <div
-        style="
-          text-align:center;
-          margin-top:10px;
-          font-size:12px;
-          opacity:.65;
-        "
-      >
-        👆 Cliquer pour voir les détails
-      </div>
-
-    </div>
-  `;
+    `;
 }
 
+
 /* =========================================================
-   LOAD LIVE
+   LIVE
 ========================================================= */
 
 async function loadLive() {
 
-  const liveElement =
-    $("live");
+    const liveContainer =
+        $("#live");
 
-  try {
+    const scoreList =
+        $("#scoreList");
 
-    if (liveElement) {
+    try {
 
-      liveElement.textContent =
-        "🟡 Chargement du LIVE...";
+        const data =
+            await fetchCached(
+                `${API_BASE}/api?live=all`
+            );
 
-    }
+        const matches =
+            normalizeMatches(data);
 
-    const response =
-      await fetch(
-        `${API_BASE}/api?live=all`,
-        {
-          cache: "no-store"
+        currentMatches =
+            matches;
+
+        storeMatches(
+            matches
+        );
+
+        if (!matches.length) {
+
+            const empty =
+                emptyCard(
+                    "Aucun match en direct"
+                );
+
+            if (liveContainer) {
+                liveContainer.innerHTML =
+                    empty;
+            }
+
+            if (scoreList) {
+                scoreList.innerHTML =
+                    empty;
+            }
+
+            return;
         }
-      );
 
-    if (!response.ok) {
-
-      throw new Error(
-        `HTTP ${response.status}`
-      );
-
-    }
-
-    const data =
-      await response.json();
-
-    const matches =
-      normalizeMatches(data);
-
-    currentMatches =
-      matches;
-
-    storeMatches(
-      matches
-    );
-
-    if (liveElement) {
-
-      liveElement.textContent =
-        matches.length
-          ? `🔴 ${matches.length} MATCH(S) LIVE`
-          : "⚪ Aucun match live";
-
-    }
-
-    const list =
-      $("scoreList");
-
-    if (list) {
-
-      if (!matches.length) {
-
-        list.innerHTML =
-          emptyCard(
-            "Aucun match en direct actuellement."
-          );
-
-      } else {
-
-        list.innerHTML =
-          matches
-            .map(
-              (match, index) =>
-                createMatchHTML(
-                  match,
-                  index
+        const html =
+            matches
+                .map(
+                    createMatchHTML
                 )
-            )
-            .join("");
+                .join("");
 
-      }
+        if (liveContainer) {
 
+            liveContainer.innerHTML =
+                html;
+        }
+
+        if (scoreList) {
+
+            scoreList.innerHTML =
+                html;
+        }
+
+    } catch (error) {
+
+        console.error(
+            "LIVE ERROR:",
+            error
+        );
+
+        if (liveContainer) {
+
+            liveContainer.innerHTML =
+                emptyCard(
+                    "Impossible de charger les matchs"
+                );
+        }
     }
-
-    return matches;
-
-  } catch (error) {
-
-    console.error(
-      "LIVE ERROR:",
-      error
-    );
-
-    if (liveElement) {
-
-      liveElement.textContent =
-        "⚪ Live indisponible";
-
-    }
-
-    return [];
-  }
 }
+
 
 /* =========================================================
-   LOAD MATCHES BY DATE
+   MATCHES BY DATE
 ========================================================= */
 
-async function loadMatches(date) {
+async function loadMatches(
+    date
+) {
 
-  const list =
-    $("scoreList");
+    currentDate =
+        date ||
+        new Date()
+            .toISOString()
+            .split("T")[0];
 
-  if (!list) return;
+    const container =
+        $("#scoreList");
 
-  currentDate =
-    date ||
-    new Date()
-      .toISOString()
-      .split("T")[0];
+    if (!container) {
+        return;
+    }
 
-  list.innerHTML =
-    emptyCard(
-      "Chargement des matchs..."
-    );
+    try {
 
-  try {
+        const data =
+            await fetchCached(
+                `${API_BASE}/api?date=${encodeURIComponent(
+                    currentDate
+                )}`
+            );
 
-    const response =
-      await fetch(
-        `${API_BASE}/api?date=${encodeURIComponent(
-          currentDate
-        )}`,
-        {
-          cache: "no-store"
+        const allMatches =
+            normalizeMatches(data);
+
+        currentMatches =
+            allMatches;
+
+        storeMatches(
+            allMatches
+        );
+
+        let matches =
+            allMatches;
+
+        /* FILTER */
+
+        if (
+            currentFilter &&
+            currentFilter !== "all"
+        ) {
+
+            matches =
+                allMatches.filter(
+                    match =>
+                        getLeague(
+                            match
+                        )
+                        .toLowerCase()
+                        .includes(
+                            currentFilter
+                                .toLowerCase()
+                        )
+                );
         }
-      );
 
-    if (!response.ok) {
+        if (!matches.length) {
 
-      throw new Error(
-        `HTTP ${response.status}`
-      );
+            container.innerHTML =
+                emptyCard(
+                    "Aucun match pour cette date"
+                );
 
-    }
+            return;
+        }
 
-    const data =
-      await response.json();
+        container.innerHTML =
+            matches
+                .map(
+                    createMatchHTML
+                )
+                .join("");
 
-    let matches =
-      normalizeMatches(data);
+    } catch (error) {
 
-    currentMatches =
-      matches;
-
-    storeMatches(
-      matches
-    );
-
-    /* FILTER */
-
-    if (
-      currentFilter &&
-      currentFilter !== "all"
-    ) {
-
-      matches =
-        matches.filter(
-          match =>
-            getLeague(match)
-              .toLowerCase()
-              .includes(
-                currentFilter.toLowerCase()
-              )
+        console.error(
+            "MATCHES ERROR:",
+            error
         );
 
+        container.innerHTML =
+            emptyCard(
+                "Erreur lors du chargement"
+            );
     }
-
-    if (!matches.length) {
-
-      list.innerHTML =
-        emptyCard(
-          "Aucun match trouvé pour cette date."
-        );
-
-      return;
-    }
-
-    list.innerHTML =
-      matches
-        .map(
-          (match, index) =>
-            createMatchHTML(
-              match,
-              index
-            )
-        )
-        .join("");
-
-  } catch (error) {
-
-    console.error(
-      "MATCHES ERROR:",
-      error
-    );
-
-    list.innerHTML =
-      emptyCard(
-        "Impossible de charger les matchs."
-      );
-  }
 }
+
 
 /* =========================================================
    EMPTY CARD
 ========================================================= */
 
-function emptyCard(message) {
+function emptyCard(
+    message
+) {
 
-  return `
-    <div class="card">
+    return `
+        <div class="empty-card">
+            <div class="empty-icon">
+                ⚽
+            </div>
 
-      <div class="newsImg">
-        ⚽
-      </div>
-
-      <h3>
-        BakhiraFoot
-      </h3>
-
-      <p>
-        ${escapeHTML(message)}
-      </p>
-
-    </div>
-  `;
+            <p>
+                ${escapeHTML(message)}
+            </p>
+        </div>
+    `;
 }
 
+
 /* =========================================================
-   MATCH DETAILS MODAL
+   MATCH MODAL
 ========================================================= */
 
 function createMatchModal() {
 
-  if ($("matchModal")) {
-    return;
-  }
+    if (
+        document.getElementById(
+            "matchDetailsModal"
+        )
+    ) {
 
-  const modal =
-    document.createElement("div");
+        return;
+    }
 
-  modal.id =
-    "matchModal";
+    const modal =
+        document.createElement(
+            "div"
+        );
 
-  modal.innerHTML = `
+    modal.id =
+        "matchDetailsModal";
 
-    <div
-      class="bf-modal-overlay"
-      onclick="closeMatchDetails(event)"
-    >
+    modal.className =
+        "match-modal";
 
-      <div
-        class="bf-modal"
-        onclick="event.stopPropagation()"
-      >
-
-        <button
-          class="bf-modal-close"
-          onclick="closeMatchDetails()"
-          aria-label="Fermer"
-        >
-          ✕
-        </button>
-
-        <div id="matchDetailsContent">
+    modal.innerHTML = `
+        <div class="match-modal-overlay"
+             onclick="closeMatchDetails()">
         </div>
 
-      </div>
+        <div class="match-modal-box">
 
-    </div>
+            <button
+                class="match-modal-close"
+                onclick="closeMatchDetails()"
+            >
+                ×
+            </button>
 
-  `;
+            <div id="matchModalContent">
+            </div>
 
-  document.body.appendChild(
-    modal
-  );
+        </div>
+    `;
 
-  addModalStyles();
+    document.body.appendChild(
+        modal
+    );
+
+    addModalStyles();
 }
+
 
 /* =========================================================
    MODAL STYLES
@@ -888,1087 +972,791 @@ function createMatchModal() {
 
 function addModalStyles() {
 
-  if ($("bakhira-modal-style")) {
-    return;
-  }
-
-  const style =
-    document.createElement("style");
-
-  style.id =
-    "bakhira-modal-style";
-
-  style.textContent = `
-
-    #matchModal {
-      position: fixed;
-      inset: 0;
-      z-index: 99999;
-      display: none;
+    if (
+        document.getElementById(
+            "bakhira-modal-style"
+        )
+    ) {
+        return;
     }
 
-    .bf-modal-overlay {
-      position: fixed;
-      inset: 0;
-      background: rgba(0,0,0,.72);
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      padding: 20px;
-      overflow-y: auto;
-    }
+    const style =
+        document.createElement(
+            "style"
+        );
 
-    .bf-modal {
-      position: relative;
-      width: min(760px, 100%);
-      max-height: 90vh;
-      overflow-y: auto;
-      background: var(--card, #ffffff);
-      color: var(--text, #111827);
-      border-radius: 22px;
-      padding: 28px;
-      box-shadow: 0 25px 80px rgba(0,0,0,.35);
-      animation: bfModalIn .2s ease;
-    }
+    style.id =
+        "bakhira-modal-style";
 
-    @keyframes bfModalIn {
+    style.textContent = `
 
-      from {
-        opacity: 0;
-        transform: translateY(20px) scale(.97);
-      }
+        .match-modal {
+            position: fixed;
+            inset: 0;
+            z-index: 99999;
+            display: none;
+        }
 
-      to {
-        opacity: 1;
-        transform: translateY(0) scale(1);
-      }
+        .match-modal.show {
+            display: block;
+        }
 
-    }
+        .match-modal-overlay {
+            position: absolute;
+            inset: 0;
+            background: rgba(0,0,0,.70);
+            backdrop-filter: blur(5px);
+        }
 
-    .bf-modal-close {
-      position: absolute;
-      top: 14px;
-      right: 14px;
-      width: 38px;
-      height: 38px;
-      border: 0;
-      border-radius: 50%;
-      cursor: pointer;
-      font-size: 18px;
-      background: rgba(127,127,127,.12);
-      color: inherit;
-      z-index: 2;
-    }
+        .match-modal-box {
+            position: relative;
+            z-index: 2;
+            width: min(720px, 94%);
+            max-height: 90vh;
+            overflow-y: auto;
+            margin: 5vh auto;
+            background: #fff;
+            border-radius: 22px;
+            padding: 25px;
+            box-shadow: 0 20px 60px rgba(0,0,0,.35);
+        }
 
-    .bf-modal-close:hover {
-      transform: scale(1.05);
-    }
+        .match-modal-close {
+            position: absolute;
+            right: 15px;
+            top: 12px;
+            width: 38px;
+            height: 38px;
+            border: none;
+            border-radius: 50%;
+            background: #f1f1f1;
+            font-size: 28px;
+            cursor: pointer;
+            z-index: 5;
+        }
 
-    .bf-details-league {
-      text-align: center;
-      font-size: 13px;
-      opacity: .7;
-      margin-bottom: 18px;
-    }
+        .modal-league {
+            text-align: center;
+            color: #777;
+            font-size: 14px;
+            margin-bottom: 12px;
+        }
 
-    .bf-details-status {
-      display: inline-block;
-      padding: 7px 13px;
-      border-radius: 999px;
-      background: rgba(220,38,38,.1);
-      margin-bottom: 18px;
-      font-size: 13px;
-      font-weight: 700;
-    }
+        .modal-teams {
+            display: grid;
+            grid-template-columns: 1fr auto 1fr;
+            align-items: center;
+            gap: 20px;
+            text-align: center;
+        }
 
-    .bf-details-teams {
-      display: grid;
-      grid-template-columns: 1fr auto 1fr;
-      align-items: center;
-      gap: 20px;
-      text-align: center;
-    }
+        .modal-team img {
+            width: 75px;
+            height: 75px;
+            object-fit: contain;
+        }
 
-    .bf-details-team {
-      display: flex;
-      flex-direction: column;
-      align-items: center;
-      gap: 10px;
-      font-weight: 700;
-    }
+        .modal-team-name {
+            font-weight: 700;
+            margin-top: 8px;
+        }
 
-    .bf-details-team img,
-    .bf-details-logo {
-      width: 72px;
-      height: 72px;
-      object-fit: contain;
-    }
+        .modal-score {
+            font-size: 34px;
+            font-weight: 900;
+        }
 
-    .bf-details-fallback-logo {
-      width: 72px;
-      height: 72px;
-      display: flex;
-      align-items: center;
-      justify-content: center;
-      font-size: 42px;
-    }
+        .modal-status {
+            margin-top: 7px;
+            font-size: 13px;
+            color: #666;
+        }
 
-    .bf-details-score {
-      font-size: 34px;
-      font-weight: 900;
-      white-space: nowrap;
-    }
+        .modal-info {
+            display: grid;
+            grid-template-columns: repeat(2,1fr);
+            gap: 10px;
+            margin-top: 25px;
+        }
 
-    .bf-details-time {
-      text-align: center;
-      opacity: .65;
-      margin-top: 12px;
-      font-size: 13px;
-    }
+        .modal-info-item {
+            background: #f7f7f7;
+            padding: 12px;
+            border-radius: 12px;
+        }
 
-    .bf-detail-section {
-      margin-top: 25px;
-      border-top: 1px solid rgba(127,127,127,.18);
-      padding-top: 20px;
-    }
+        .modal-info-item small {
+            display: block;
+            color: #777;
+            margin-bottom: 4px;
+        }
 
-    .bf-detail-section h3 {
-      margin: 0 0 14px;
-    }
+        .modal-section {
+            margin-top: 25px;
+        }
 
-    .bf-detail-grid {
-      display: grid;
-      grid-template-columns: repeat(2, 1fr);
-      gap: 10px;
-    }
+        .modal-section h3 {
+            margin-bottom: 12px;
+        }
 
-    .bf-detail-item {
-      padding: 12px;
-      border-radius: 12px;
-      background: rgba(127,127,127,.08);
-    }
+        .event-row {
+            display: flex;
+            justify-content: space-between;
+            padding: 9px 0;
+            border-bottom: 1px solid #eee;
+        }
 
-    .bf-detail-item strong {
-      display: block;
-      margin-bottom: 4px;
-    }
+        .stat-row {
+            display: grid;
+            grid-template-columns: 1fr 80px 1fr;
+            gap: 10px;
+            align-items: center;
+            padding: 8px 0;
+        }
 
-    .bf-events {
-      display: flex;
-      flex-direction: column;
-      gap: 9px;
-    }
+        .stat-row .stat-home {
+            text-align: right;
+        }
 
-    .bf-event {
-      padding: 10px 12px;
-      border-radius: 10px;
-      background: rgba(127,127,127,.08);
-    }
+        .stat-row .stat-name {
+            text-align: center;
+            font-size: 12px;
+            color: #777;
+        }
 
-    .bf-stat {
-      display: grid;
-      grid-template-columns: 1fr 80px 1fr;
-      gap: 10px;
-      align-items: center;
-      margin: 10px 0;
-    }
+        @media(max-width:600px) {
 
-    .bf-stat span:nth-child(1) {
-      text-align: right;
-    }
+            .match-modal-box {
+                padding: 18px;
+            }
 
-    .bf-stat span:nth-child(3) {
-      text-align: left;
-    }
+            .modal-teams {
+                gap: 8px;
+            }
 
-    .bf-stat-name {
-      text-align: center !important;
-      font-size: 12px;
-      opacity: .7;
-    }
+            .modal-team img {
+                width: 55px;
+                height: 55px;
+            }
 
-    @media (max-width: 600px) {
+            .modal-score {
+                font-size: 25px;
+            }
 
-      .bf-modal {
-        padding: 20px 15px;
-        border-radius: 18px;
-      }
+            .modal-info {
+                grid-template-columns: 1fr;
+            }
+        }
+    `;
 
-      .bf-details-teams {
-        gap: 8px;
-      }
-
-      .bf-details-score {
-        font-size: 26px;
-      }
-
-      .bf-details-team {
-        font-size: 13px;
-      }
-
-      .bf-details-team img,
-      .bf-details-logo,
-      .bf-details-fallback-logo {
-        width: 55px;
-        height: 55px;
-      }
-
-      .bf-detail-grid {
-        grid-template-columns: 1fr;
-      }
-
-    }
-
-  `;
-
-  document.head.appendChild(
-    style
-  );
+    document.head.appendChild(
+        style
+    );
 }
 
+
 /* =========================================================
-   OPEN MATCH DETAILS BY ID
+   OPEN MATCH
 ========================================================= */
 
 function openMatchDetailsById(
-  fixtureId
+    id
 ) {
 
-  if (!fixtureId) {
+    const match =
+        matchStore.get(
+            String(id)
+        );
 
-    toast(
-      "ID du match introuvable"
+    if (!match) {
+
+        showToast(
+            "Détails du match indisponibles"
+        );
+
+        return;
+    }
+
+    openMatchModal(
+        match
     );
-
-    return;
-  }
-
-  const match =
-    matchStore.get(
-      String(fixtureId)
-    );
-
-  if (!match) {
-
-    toast(
-      "Détails du match non disponibles"
-    );
-
-    return;
-  }
-
-  /* Add match ID to URL */
-
-  const url =
-    new URL(
-      window.location.href
-    );
-
-  url.searchParams.set(
-    "match",
-    fixtureId
-  );
-
-  window.history.pushState(
-    {
-      match: fixtureId
-    },
-    "",
-    url
-  );
-
-  openMatchModal(
-    match
-  );
 }
 
-/* =========================================================
-   OPEN MATCH MODAL
-========================================================= */
 
-function openMatchModal(match) {
+function openMatchModal(
+    match
+) {
 
-  if (!match) {
+    createMatchModal();
 
-    toast(
-      "Détails du match non disponibles"
-    );
+    const modal =
+        document.getElementById(
+            "matchDetailsModal"
+        );
 
-    return;
-  }
+    const content =
+        document.getElementById(
+            "matchModalContent"
+        );
 
-  createMatchModal();
+    const home =
+        getHome(match);
 
-  const content =
-    $("matchDetailsContent");
+    const away =
+        getAway(match);
 
-  if (!content) return;
+    const homeLogo =
+        getHomeLogo(match);
 
-  const home =
-    getHome(match);
+    const awayLogo =
+        getAwayLogo(match);
 
-  const away =
-    getAway(match);
+    const homeScore =
+        getHomeScore(match);
 
-  const homeLogo =
-    getHomeLogo(match);
+    const awayScore =
+        getAwayScore(match);
 
-  const awayLogo =
-    getAwayLogo(match);
+    const league =
+        getLeague(match);
 
-  const homeScore =
-    getHomeScore(match);
+    const status =
+        statusLabel(match);
 
-  const awayScore =
-    getAwayScore(match);
+    const fixture =
+        match?.fixture || {};
 
-  const league =
-    getLeague(match);
+    const venue =
+        fixture?.venue?.name ||
+        "Non disponible";
 
-  const status =
-    statusLabel(match);
+    const city =
+        fixture?.venue?.city ||
+        "";
 
-  const date =
-    match?.fixture?.date ||
-    match?.date ||
-    null;
+    const referee =
+        fixture?.referee ||
+        "Non disponible";
 
-  const venue =
-    match?.fixture?.venue?.name ||
-    match?.venue?.name ||
-    match?.venue ||
-    null;
+    const round =
+        match?.league?.round ||
+        "Non disponible";
 
-  const city =
-    match?.fixture?.venue?.city ||
-    match?.venue?.city ||
-    null;
+    const season =
+        match?.league?.season ||
+        "Non disponible";
 
-  const referee =
-    match?.fixture?.referee ||
-    match?.referee ||
-    null;
+    const events =
+        match?.events || [];
 
-  const round =
-    match?.league?.round ||
-    match?.round ||
-    null;
+    const statistics =
+        match?.statistics || [];
 
-  const season =
-    match?.league?.season ||
-    match?.season ||
-    null;
+    let eventsHTML =
+        "";
 
-  const events =
-    match?.events ||
-    match?.fixture?.events ||
-    [];
+    if (events.length) {
 
-  const statistics =
-    match?.statistics ||
-    [];
+        eventsHTML =
+            events
+                .map(event => {
 
-  content.innerHTML = `
+                    const player =
+                        event?.player?.name ||
+                        "";
 
-    <div class="bf-details-league">
-      🏆 ${escapeHTML(league)}
-    </div>
+                    const type =
+                        event?.type ||
+                        "";
 
-    <div style="text-align:center">
+                    const detail =
+                        event?.detail ||
+                        "";
 
-      <div class="bf-details-status">
-        ${escapeHTML(status)}
-      </div>
+                    const minute =
+                        event?.time?.elapsed ??
+                        "";
 
-    </div>
+                    return `
+                        <div class="event-row">
 
-    <div class="bf-details-teams">
+                            <span>
+                                ${escapeHTML(
+                                    minute
+                                        ? minute + "'"
+                                        : ""
+                                )}
+                            </span>
 
-      <div class="bf-details-team">
+                            <span>
+                                ${escapeHTML(
+                                    player
+                                )}
+                                ${
+                                    detail
+                                        ? " - " +
+                                          escapeHTML(
+                                              detail
+                                          )
+                                        : ""
+                                }
+                            </span>
 
-        ${
-          homeLogo
-            ? `
-              <img
-                class="bf-details-logo"
-                src="${escapeHTML(homeLogo)}"
-                alt="${escapeHTML(home)}"
-              >
-            `
-            : `
-              <div class="bf-details-fallback-logo">
-                ⚽
-              </div>
-            `
-        }
+                            <span>
+                                ${escapeHTML(
+                                    type
+                                )}
+                            </span>
 
-        <span>
-          ${escapeHTML(home)}
-        </span>
+                        </div>
+                    `;
+                })
+                .join("");
 
-      </div>
+    } else {
 
-      <div>
+        eventsHTML =
+            "<p>Aucun événement disponible.</p>";
+    }
 
-        <div class="bf-details-score">
 
-          ${escapeHTML(homeScore)}
-          -
-          ${escapeHTML(awayScore)}
+    let statsHTML =
+        "";
+
+    if (
+        Array.isArray(
+            statistics
+        ) &&
+        statistics.length
+    ) {
+
+        const homeStats =
+            statistics[0]?.statistics ||
+            [];
+
+        const awayStats =
+            statistics[1]?.statistics ||
+            [];
+
+        const statMap =
+            new Map();
+
+        homeStats.forEach(
+            stat => {
+
+                statMap.set(
+                    stat.type,
+                    {
+                        home: stat.value,
+                        away: "-"
+                    }
+                );
+            }
+        );
+
+        awayStats.forEach(
+            stat => {
+
+                if (
+                    statMap.has(
+                        stat.type
+                    )
+                ) {
+
+                    statMap.get(
+                        stat.type
+                    ).away =
+                        stat.value;
+                }
+            }
+        );
+
+        statsHTML =
+            Array.from(
+                statMap.entries()
+            )
+            .map(
+                ([name, value]) => `
+                    <div class="stat-row">
+
+                        <div class="stat-home">
+                            ${escapeHTML(
+                                value.home ?? "-"
+                            )}
+                        </div>
+
+                        <div class="stat-name">
+                            ${escapeHTML(
+                                name
+                            )}
+                        </div>
+
+                        <div>
+                            ${escapeHTML(
+                                value.away ?? "-"
+                            )}
+                        </div>
+
+                    </div>
+                `
+            )
+            .join("");
+
+    } else {
+
+        statsHTML =
+            "<p>Statistiques indisponibles.</p>";
+    }
+
+
+    content.innerHTML = `
+
+        <div class="modal-league">
+            ${escapeHTML(league)}
+        </div>
+
+        <div class="modal-teams">
+
+            <div class="modal-team">
+
+                ${
+                    homeLogo
+                        ? `
+                            <img
+                                src="${escapeHTML(homeLogo)}"
+                                alt="${escapeHTML(home)}"
+                            >
+                        `
+                        : "⚽"
+                }
+
+                <div class="modal-team-name">
+                    ${escapeHTML(home)}
+                </div>
+
+            </div>
+
+
+            <div>
+
+                <div class="modal-score">
+                    ${escapeHTML(homeScore)}
+                    -
+                    ${escapeHTML(awayScore)}
+                </div>
+
+                <div class="modal-status">
+                    ${escapeHTML(status)}
+                </div>
+
+            </div>
+
+
+            <div class="modal-team">
+
+                ${
+                    awayLogo
+                        ? `
+                            <img
+                                src="${escapeHTML(awayLogo)}"
+                                alt="${escapeHTML(away)}"
+                            >
+                        `
+                        : "⚽"
+                }
+
+                <div class="modal-team-name">
+                    ${escapeHTML(away)}
+                </div>
+
+            </div>
 
         </div>
 
-        ${
-          date
-            ? `
-              <div class="bf-details-time">
 
+        <div class="modal-info">
+
+            <div class="modal-info-item">
+                <small>Date</small>
                 ${escapeHTML(
-                  formatDate(date)
+                    formatDate(
+                        fixture?.date
+                    )
                 )}
+            </div>
 
-              </div>
-            `
-            : ""
-        }
+            <div class="modal-info-item">
+                <small>Heure</small>
+                ${
+                    fixture?.date
+                        ? new Date(
+                            fixture.date
+                          ).toLocaleTimeString(
+                            "fr-FR",
+                            {
+                                hour: "2-digit",
+                                minute: "2-digit"
+                            }
+                          )
+                        : "-"
+                }
+            </div>
 
-      </div>
+            <div class="modal-info-item">
+                <small>Stade</small>
+                ${escapeHTML(
+                    venue
+                )}
+            </div>
 
-      <div class="bf-details-team">
+            <div class="modal-info-item">
+                <small>Ville</small>
+                ${escapeHTML(
+                    city
+                )}
+            </div>
 
-        ${
-          awayLogo
-            ? `
-              <img
-                class="bf-details-logo"
-                src="${escapeHTML(awayLogo)}"
-                alt="${escapeHTML(away)}"
-              >
-            `
-            : `
-              <div class="bf-details-fallback-logo">
-                ⚽
-              </div>
-            `
-        }
+            <div class="modal-info-item">
+                <small>Arbitre</small>
+                ${escapeHTML(
+                    referee
+                )}
+            </div>
 
-        <span>
-          ${escapeHTML(away)}
-        </span>
+            <div class="modal-info-item">
+                <small>Journée</small>
+                ${escapeHTML(
+                    round
+                )}
+            </div>
 
-      </div>
+            <div class="modal-info-item">
+                <small>Saison</small>
+                ${escapeHTML(
+                    season
+                )}
+            </div>
 
-    </div>
+        </div>
 
-    ${
-      venue ||
-      city ||
-      referee ||
-      round ||
-      season
-        ? `
 
-          <div class="bf-detail-section">
+        <div class="modal-section">
 
             <h3>
-              📋 Informations
+                Événements
             </h3>
 
-            <div class="bf-detail-grid">
+            ${eventsHTML}
 
-              ${
-                venue
-                  ? `
-                    <div class="bf-detail-item">
+        </div>
 
-                      <strong>
-                        🏟️ Stade
-                      </strong>
 
-                      ${escapeHTML(venue)}
+        <div class="modal-section">
 
-                      ${
-                        city
-                          ? `
-                            — ${escapeHTML(city)}
-                          `
-                          : ""
-                      }
+            <h3>
+                Statistiques
+            </h3>
 
-                    </div>
-                  `
-                  : ""
-              }
+            ${statsHTML}
 
-              ${
-                referee
-                  ? `
-                    <div class="bf-detail-item">
+        </div>
+    `;
 
-                      <strong>
-                        👨‍⚖️ Arbitre
-                      </strong>
-
-                      ${escapeHTML(referee)}
-
-                    </div>
-                  `
-                  : ""
-              }
-
-              ${
-                round
-                  ? `
-                    <div class="bf-detail-item">
-
-                      <strong>
-                        🔢 Journée
-                      </strong>
-
-                      ${escapeHTML(round)}
-
-                    </div>
-                  `
-                  : ""
-              }
-
-              ${
-                season
-                  ? `
-                    <div class="bf-detail-item">
-
-                      <strong>
-                        📅 Saison
-                      </strong>
-
-                      ${escapeHTML(season)}
-
-                    </div>
-                  `
-                  : ""
-              }
-
-            </div>
-
-          </div>
-
-        `
-        : ""
-    }
-
-    <div class="bf-detail-section">
-
-      <h3>
-        ⚡ Événements
-      </h3>
-
-      ${
-        events.length
-          ? `
-
-            <div class="bf-events">
-
-              ${
-                events
-                  .map(event => {
-
-                    const minute =
-                      event?.time?.elapsed ??
-                      event?.minute ??
-                      "";
-
-                    const player =
-                      event?.player?.name ||
-                      event?.player ||
-                      "";
-
-                    const assist =
-                      event?.assist?.name ||
-                      "";
-
-                    const type =
-                      event?.type ||
-                      "";
-
-                    const detail =
-                      event?.detail ||
-                      "";
-
-                    return `
-
-                      <div class="bf-event">
-
-                        <strong>
-
-                          ${escapeHTML(
-                            minute
-                              ? minute + "'"
-                              : ""
-                          )}
-
-                        </strong>
-
-                        ${escapeHTML(type)}
-                        ${escapeHTML(detail)}
-
-                        ${
-                          player
-                            ? `
-                              — ${escapeHTML(
-                                player
-                              )}
-                            `
-                            : ""
-                        }
-
-                        ${
-                          assist
-                            ? `
-
-                              <small>
-
-                                · Assist:
-                                ${escapeHTML(
-                                  assist
-                                )}
-
-                              </small>
-
-                            `
-                            : ""
-                        }
-
-                      </div>
-
-                    `;
-
-                  })
-                  .join("")
-              }
-
-            </div>
-
-          `
-          : `
-
-            <p style="opacity:.65">
-
-              Aucun événement disponible
-              pour ce match.
-
-            </p>
-
-          `
-      }
-
-    </div>
-
-    <div class="bf-detail-section">
-
-      <h3>
-        📊 Statistiques
-      </h3>
-
-      ${
-        statistics.length
-          ? renderStatistics(
-              statistics
-            )
-          : `
-
-            <p style="opacity:.65">
-
-              Les statistiques détaillées
-              ne sont pas disponibles
-              pour ce match.
-
-            </p>
-
-          `
-      }
-
-    </div>
-
-  `;
-
-  const modal =
-    $("matchModal");
-
-  if (modal) {
-
-    modal.style.display =
-      "block";
+    modal.classList.add(
+        "show"
+    );
 
     document.body.style.overflow =
-      "hidden";
-
-  }
+        "hidden";
 }
 
+
+function closeMatchDetails() {
+
+    const modal =
+        document.getElementById(
+            "matchDetailsModal"
+        );
+
+    if (modal) {
+
+        modal.classList.remove(
+            "show"
+        );
+    }
+
+    document.body.style.overflow =
+        "";
+}
+
+
 /* =========================================================
-   OPEN MATCH FROM URL
+   URL MATCH
 ========================================================= */
 
 function openMatchFromURL() {
 
-  const params =
-    new URLSearchParams(
-      window.location.search
-    );
-
-  const fixtureId =
-    params.get("match");
-
-  if (!fixtureId) {
-    return;
-  }
-
-  const match =
-    matchStore.get(
-      String(fixtureId)
-    );
-
-  if (!match) {
-    return;
-  }
-
-  openMatchModal(
-    match
-  );
-}
-
-/* =========================================================
-   STATISTICS
-========================================================= */
-
-function renderStatistics(
-  statistics
-) {
-
-  if (!Array.isArray(statistics)) {
-    return "";
-  }
-
-  let html = "";
-
-  statistics.forEach(
-    teamStats => {
-
-      const team =
-        teamStats?.team?.name ||
-        "";
-
-      const stats =
-        teamStats?.statistics ||
-        [];
-
-      if (!stats.length) return;
-
-      html += `
-
-        <div style="margin-bottom:18px">
-
-          <strong>
-            ${escapeHTML(team)}
-          </strong>
-
-          ${
-            stats
-              .slice(0, 10)
-              .map(stat => {
-
-                const name =
-                  stat?.type ||
-                  stat?.name ||
-                  "Stat";
-
-                const value =
-                  stat?.value ??
-                  "-";
-
-                return `
-
-                  <div
-                    class="bf-detail-item"
-                    style="margin-top:7px"
-                  >
-
-                    <strong>
-                      ${escapeHTML(name)}
-                    </strong>
-
-                    ${escapeHTML(value)}
-
-                  </div>
-
-                `;
-
-              })
-              .join("")
-          }
-
-        </div>
-
-      `;
-    }
-  );
-
-  return (
-    html ||
-    `
-      <p style="opacity:.65">
-        Aucune statistique disponible.
-      </p>
-    `
-  );
-}
-
-/* =========================================================
-   CLOSE MODAL
-========================================================= */
-
-function closeMatchDetails(event) {
-
-  if (
-    event &&
-    event.target &&
-    !event.target.classList.contains(
-      "bf-modal-overlay"
-    )
-  ) {
-    return;
-  }
-
-  const modal =
-    $("matchModal");
-
-  if (modal) {
-
-    modal.style.display =
-      "none";
-
-  }
-
-  document.body.style.overflow =
-    "";
-
-  /* Remove match from URL */
-
-  const url =
-    new URL(
-      window.location.href
-    );
-
-  if (
-    url.searchParams.has(
-      "match"
-    )
-  ) {
-
-    url.searchParams.delete(
-      "match"
-    );
-
-    window.history.pushState(
-      {},
-      "",
-      url
-    );
-
-  }
-}
-
-/* =========================================================
-   BROWSER BACK BUTTON
-========================================================= */
-
-window.addEventListener(
-  "popstate",
-  () => {
-
     const params =
-      new URLSearchParams(
-        window.location.search
-      );
+        new URLSearchParams(
+            window.location.search
+        );
 
-    const fixtureId =
-      params.get("match");
+    const matchId =
+        params.get(
+            "match"
+        );
 
-    const modal =
-      $("matchModal");
-
-    if (!fixtureId) {
-
-      if (modal) {
-        modal.style.display =
-          "none";
-      }
-
-      document.body.style.overflow =
-        "";
-
-      return;
+    if (!matchId) {
+        return;
     }
 
     const match =
-      matchStore.get(
-        String(fixtureId)
-      );
+        matchStore.get(
+            String(matchId)
+        );
 
     if (match) {
 
-      openMatchModal(
-        match
-      );
-
+        openMatchModal(
+            match
+        );
     }
+}
 
-  }
+
+window.addEventListener(
+    "popstate",
+    openMatchFromURL
 );
 
-/* =========================================================
-   ESC KEY
-========================================================= */
 
 document.addEventListener(
-  "keydown",
-  event => {
+    "keydown",
+    event => {
 
-    if (
-      event.key === "Escape"
-    ) {
+        if (
+            event.key === "Escape"
+        ) {
 
-      closeMatchDetails();
-
+            closeMatchDetails();
+        }
     }
-
-  }
 );
+
 
 /* =========================================================
    DATE BAR
 ========================================================= */
 
-function createDateBar() {
+function initDateBar() {
 
-  const bar =
-    $("dateBar");
-
-  if (!bar) return;
-
-  bar.innerHTML = "";
-
-  const today =
-    new Date();
-
-  for (
-    let i = -2;
-    i <= 4;
-    i++
-  ) {
-
-    const date =
-      new Date(today);
-
-    date.setDate(
-      today.getDate() + i
-    );
-
-    const iso =
-      date
-        .toISOString()
-        .split("T")[0];
-
-    let label;
-
-    if (i === 0) {
-
-      label =
-        "Aujourd'hui";
-
-    } else if (i === -1) {
-
-      label =
-        "Hier";
-
-    } else if (i === 1) {
-
-      label =
-        "Demain";
-
-    } else {
-
-      label =
-        date.toLocaleDateString(
-          "fr-FR",
-          {
-            weekday: "short",
-            day: "numeric",
-            month: "short"
-          }
+    const dateInput =
+        document.getElementById(
+            "datePicker"
         );
 
+    if (!dateInput) {
+        return;
     }
 
-    const button =
-      document.createElement(
-        "button"
-      );
+    if (!dateInput.value) {
 
-    button.textContent =
-      label;
-
-    if (
-      iso ===
-      (
-        currentDate ||
-        today
-          .toISOString()
-          .split("T")[0]
-      )
-    ) {
-
-      button.classList.add(
-        "selected"
-      );
-
+        dateInput.value =
+            new Date()
+                .toISOString()
+                .split("T")[0];
     }
 
-    button.addEventListener(
-      "click",
-      () => {
+    currentDate =
+        dateInput.value;
 
-        bar
-          .querySelectorAll(
-            "button"
-          )
-          .forEach(
-            btn =>
-              btn.classList.remove(
-                "selected"
-              )
-          );
+    dateInput.addEventListener(
+        "change",
+        () => {
 
-        button.classList.add(
-          "selected"
-        );
+            currentDate =
+                dateInput.value;
 
-        currentDate =
-          iso;
+            currentFilter =
+                "all";
 
-        loadMatches(
-          iso
-        );
-
-      }
+            go("scores");
+        }
     );
 
-    bar.appendChild(
-      button
-    );
 
-  }
+    const previous =
+        document.getElementById(
+            "prevDay"
+        );
+
+    const next =
+        document.getElementById(
+            "nextDay"
+        );
+
+    if (previous) {
+
+        previous.addEventListener(
+            "click",
+            () => {
+
+                const date =
+                    new Date(
+                        currentDate
+                    );
+
+                date.setDate(
+                    date.getDate() - 1
+                );
+
+                currentDate =
+                    date
+                        .toISOString()
+                        .split("T")[0];
+
+                dateInput.value =
+                    currentDate;
+
+                loadMatches(
+                    currentDate
+                );
+            }
+        );
+    }
+
+
+    if (next) {
+
+        next.addEventListener(
+            "click",
+            () => {
+
+                const date =
+                    new Date(
+                        currentDate
+                    );
+
+                date.setDate(
+                    date.getDate() + 1
+                );
+
+                currentDate =
+                    date
+                        .toISOString()
+                        .split("T")[0];
+
+                dateInput.value =
+                    currentDate;
+
+                loadMatches(
+                    currentDate
+                );
+            }
+        );
+    }
 }
+
 
 /* =========================================================
    LEAGUES
@@ -1976,104 +1764,123 @@ function createDateBar() {
 
 const leagues = [
 
-  {
-    name: "🏆 Champions League",
-    key: "Champions League",
-    country: "Europe"
-  },
+    {
+        name: "Premier League",
+        country: "England",
+        logo: "https://media.api-sports.io/football/leagues/39.png"
+    },
 
-  {
-    name: "🏴 Premier League",
-    key: "Premier League",
-    country: "England"
-  },
+    {
+        name: "La Liga",
+        country: "Spain",
+        logo: "https://media.api-sports.io/football/leagues/140.png"
+    },
 
-  {
-    name: "🇪🇸 La Liga",
-    key: "La Liga",
-    country: "Spain"
-  },
+    {
+        name: "Serie A",
+        country: "Italy",
+        logo: "https://media.api-sports.io/football/leagues/135.png"
+    },
 
-  {
-    name: "🇫🇷 Ligue 1",
-    key: "Ligue 1",
-    country: "France"
-  },
+    {
+        name: "Bundesliga",
+        country: "Germany",
+        logo: "https://media.api-sports.io/football/leagues/78.png"
+    },
 
-  {
-    name: "🇲🇦 Botola Pro",
-    key: "Botola",
-    country: "Morocco"
-  }
+    {
+        name: "Ligue 1",
+        country: "France",
+        logo: "https://media.api-sports.io/football/leagues/61.png"
+    },
+
+    {
+        name: "UEFA Champions League",
+        country: "Europe",
+        logo: "https://media.api-sports.io/football/leagues/2.png"
+    },
+
+    {
+        name: "Europa League",
+        country: "Europe",
+        logo: "https://media.api-sports.io/football/leagues/3.png"
+    },
+
+    {
+        name: "Botola Pro",
+        country: "Morocco",
+        logo: "https://media.api-sports.io/football/leagues/200.png"
+    }
 
 ];
 
+
 function renderLeagues() {
 
-  const grid =
-    $("leagueGrid");
+    const container =
+        document.getElementById(
+            "leagueList"
+        );
 
-  if (!grid) return;
+    if (!container) {
+        return;
+    }
 
-  grid.innerHTML =
-    leagues
-      .map(
-        league => `
+    container.innerHTML =
+        leagues
+            .map(
+                league => `
 
-          <div
-            class="league"
-            data-league="${escapeHTML(
-              league.key
-            )}"
-            onclick="filterLeague('${escapeHTML(
-              league.key
-            )}')"
-            style="cursor:pointer"
-          >
+                    <div
+                        class="league-card"
+                        onclick="filterLeague('${escapeHTML(
+                            league.name
+                        )}')"
+                    >
 
-            ${escapeHTML(
-              league.name
-            )}
+                        <img
+                            src="${escapeHTML(
+                                league.logo
+                            )}"
+                            alt="${escapeHTML(
+                                league.name
+                            )}"
+                            loading="lazy"
+                        >
 
-            <small>
-              ${escapeHTML(
-                league.country
-              )}
-            </small>
+                        <div>
 
-          </div>
+                            <h3>
+                                ${escapeHTML(
+                                    league.name
+                                )}
+                            </h3>
 
-        `
-      )
-      .join("");
+                            <p>
+                                ${escapeHTML(
+                                    league.country
+                                )}
+                            </p>
+
+                        </div>
+
+                    </div>
+                `
+            )
+            .join("");
 }
+
 
 function filterLeague(
-  league
+    leagueName
 ) {
 
-  currentFilter =
-    league;
+    currentFilter =
+        leagueName;
 
-  go(
-    "scores"
-  );
-
-  setTimeout(
-    () => {
-
-      loadMatches(
-        currentDate
-      );
-
-      toast(
-        `🏆 ${league}`
-      );
-
-    },
-    100
-  );
+    go("scores");
 }
+
 
 /* =========================================================
    TEAMS
@@ -2081,152 +1888,125 @@ function filterLeague(
 
 const teams = [
 
-  {
-    name: "Barcelona",
-    logo: "🔵🔴",
-    country: "Spain"
-  },
+    {
+        name: "Real Madrid",
+        country: "Spain",
+        logo: "https://media.api-sports.io/football/teams/541.png"
+    },
 
-  {
-    name: "Real Madrid",
-    logo: "⚪",
-    country: "Spain"
-  },
+    {
+        name: "Barcelona",
+        country: "Spain",
+        logo: "https://media.api-sports.io/football/teams/529.png"
+    },
 
-  {
-    name: "Liverpool",
-    logo: "🔴",
-    country: "England"
-  },
+    {
+        name: "Manchester City",
+        country: "England",
+        logo: "https://media.api-sports.io/football/teams/50.png"
+    },
 
-  {
-    name: "Chelsea",
-    logo: "🔵",
-    country: "England"
-  },
+    {
+        name: "Manchester United",
+        country: "England",
+        logo: "https://media.api-sports.io/football/teams/33.png"
+    },
 
-  {
-    name: "Arsenal",
-    logo: "🔴⚪",
-    country: "England"
-  },
+    {
+        name: "Liverpool",
+        country: "England",
+        logo: "https://media.api-sports.io/football/teams/40.png"
+    },
 
-  {
-    name: "PSG",
-    logo: "🔵🔴",
-    country: "France"
-  },
+    {
+        name: "Bayern Munich",
+        country: "Germany",
+        logo: "https://media.api-sports.io/football/teams/157.png"
+    },
 
-  {
-    name: "Raja CA",
-    logo: "🟢",
-    country: "Morocco"
-  },
+    {
+        name: "PSG",
+        country: "France",
+        logo: "https://media.api-sports.io/football/teams/85.png"
+    },
 
-  {
-    name: "Wydad",
-    logo: "🔴",
-    country: "Morocco"
-  }
+    {
+        name: "Wydad AC",
+        country: "Morocco",
+        logo: "https://media.api-sports.io/football/teams/967.png"
+    },
+
+    {
+        name: "Raja Casablanca",
+        country: "Morocco",
+        logo: "https://media.api-sports.io/football/teams/968.png"
+    }
 
 ];
 
+
 function renderTeams() {
 
-  const grid =
-    $("teamGrid");
+    const container =
+        document.getElementById(
+            "teamList"
+        );
 
-  if (!grid) return;
+    if (!container) {
+        return;
+    }
 
-  grid.innerHTML =
-    teams
-      .map(
-        team => `
+    container.innerHTML =
+        teams
+            .map(
+                team => `
 
-          <div
-            class="card"
-            onclick="showTeam('${escapeHTML(
-              team.name
-            )}')"
-            style="cursor:pointer"
-          >
+                    <div
+                        class="team-card"
+                        onclick="showTeam('${escapeHTML(
+                            team.name
+                        )}')"
+                    >
 
-            <div
-              class="teamLogo"
-              style="font-size:45px"
-            >
-              ${team.logo}
-            </div>
+                        <img
+                            src="${escapeHTML(
+                                team.logo
+                            )}"
+                            alt="${escapeHTML(
+                                team.name
+                            )}"
+                            loading="lazy"
+                        >
 
-            <h3>
-              ${escapeHTML(
-                team.name
-              )}
-            </h3>
+                        <h3>
+                            ${escapeHTML(
+                                team.name
+                            )}
+                        </h3>
 
-            <p>
-              ${escapeHTML(
-                team.country
-              )}
-            </p>
+                        <p>
+                            ${escapeHTML(
+                                team.country
+                            )}
+                        </p>
 
-          </div>
+                    </div>
 
-        `
-      )
-      .join("");
+                `
+            )
+            .join("");
 }
+
 
 function showTeam(
-  name
+    teamName
 ) {
 
-  const detail =
-    $("teamDetail");
-
-  if (!detail) return;
-
-  const team =
-    teams.find(
-      item =>
-        item.name === name
+    showToast(
+        `Équipe: ${teamName}`
     );
-
-  if (!team) return;
-
-  detail.innerHTML = `
-
-    <div class="card">
-
-      <div
-        style="
-          text-align:center;
-          font-size:55px;
-        "
-      >
-        ${team.logo}
-      </div>
-
-      <h2>
-        ${escapeHTML(
-          team.name
-        )}
-      </h2>
-
-      <p>
-        ${escapeHTML(
-          team.country
-        )}
-      </p>
-
-    </div>
-
-  `;
-
-  detail.scrollIntoView({
-    behavior: "smooth"
-  });
 }
+
 
 /* =========================================================
    NEWS
@@ -2234,274 +2014,253 @@ function showTeam(
 
 const news = [
 
-  {
-    title: "BakhiraFoot",
-    text: "Bienvenue sur BakhiraFoot : scores, matchs, compétitions et actualités football.",
-    icon: "⚽"
-  },
+    {
+        title: "Toute l'actualité du football",
+        text: "Suivez les résultats, matchs et compétitions sur BakhiraFoot.",
+        image: "https://images.unsplash.com/photo-1579952363873-27f3bade9f55?auto=format&fit=crop&w=900&q=80"
+    },
 
-  {
-    title: "Football mondial",
-    text: "Retrouve les grandes compétitions et les résultats de tes équipes préférées.",
-    icon: "🌍"
-  },
+    {
+        title: "Les grands matchs",
+        text: "Retrouvez les informations essentielles des rencontres.",
+        image: "https://images.unsplash.com/photo-1579952363873-27f3bade9f55?auto=format&fit=crop&w=900&q=80"
+    },
 
-  {
-    title: "Botola Pro",
-    text: "Suivez également le football marocain et les grands clubs de la Botola.",
-    icon: "🇲🇦"
-  }
+    {
+        title: "Football mondial",
+        text: "Premier League, Liga, Ligue 1, Serie A et plus encore.",
+        image: "https://images.unsplash.com/photo-1518600506278-4e8ef466b810?auto=format&fit=crop&w=900&q=80"
+    }
 
 ];
 
+
 function renderNews() {
 
-  const grid =
-    $("newsGrid");
+    const container =
+        document.getElementById(
+            "newsList"
+        );
 
-  if (!grid) return;
+    if (!container) {
+        return;
+    }
 
-  grid.innerHTML =
-    news
-      .map(
-        item => `
+    container.innerHTML =
+        news
+            .map(
+                article => `
 
-          <div class="card">
+                    <article
+                        class="news-card"
+                    >
 
-            <div class="newsImg">
-              ${item.icon}
-            </div>
+                        <img
+                            src="${escapeHTML(
+                                article.image
+                            )}"
+                            alt="${escapeHTML(
+                                article.title
+                            )}"
+                            loading="lazy"
+                        >
 
-            <h3>
-              ${escapeHTML(
-                item.title
-              )}
-            </h3>
+                        <div class="news-content">
 
-            <p>
-              ${escapeHTML(
-                item.text
-              )}
-            </p>
+                            <h3>
+                                ${escapeHTML(
+                                    article.title
+                                )}
+                            </h3>
 
-          </div>
+                            <p>
+                                ${escapeHTML(
+                                    article.text
+                                )}
+                            </p>
 
-        `
-      )
-      .join("");
+                        </div>
+
+                    </article>
+
+                `
+            )
+            .join("");
 }
+
 
 function renderHomeNews() {
 
-  const grid =
-    $("homeNews");
+    const container =
+        document.getElementById(
+            "homeNews"
+        );
 
-  if (!grid) return;
+    if (!container) {
+        return;
+    }
 
-  grid.innerHTML =
-    news
-      .map(
-        item => `
+    container.innerHTML =
+        news
+            .slice(0, 3)
+            .map(
+                article => `
 
-          <div class="card">
+                    <article
+                        class="news-card"
+                    >
 
-            <div class="newsImg">
-              ${item.icon}
-            </div>
+                        <img
+                            src="${escapeHTML(
+                                article.image
+                            )}"
+                            alt="${escapeHTML(
+                                article.title
+                            )}"
+                            loading="lazy"
+                        >
+
+                        <div class="news-content">
+
+                            <h3>
+                                ${escapeHTML(
+                                    article.title
+                                )}
+                            </h3>
+
+                            <p>
+                                ${escapeHTML(
+                                    article.text
+                                )}
+                            </p>
+
+                        </div>
+
+                    </article>
+
+                `
+            )
+            .join("");
+}
+
+
+/* =========================================================
+   HOME MATCHES
+========================================================= */
+
+async function renderHomeMatches() {
+
+    const container =
+        document.getElementById(
+            "homeMatches"
+        );
+
+    if (!container) {
+        return;
+    }
+
+    const today =
+        new Date()
+            .toISOString()
+            .split("T")[0];
+
+    try {
+
+        const data =
+            await fetchCached(
+                `${API_BASE}/api?date=${today}`
+            );
+
+        const matches =
+            normalizeMatches(data);
+
+        storeMatches(
+            matches
+        );
+
+        const firstMatches =
+            matches.slice(
+                0,
+                6
+            );
+
+        if (!firstMatches.length) {
+
+            container.innerHTML =
+                emptyCard(
+                    "Aucun match aujourd'hui"
+                );
+
+            return;
+        }
+
+        container.innerHTML =
+            firstMatches
+                .map(
+                    createMatchHTML
+                )
+                .join("");
+
+    } catch (error) {
+
+        console.error(
+            "HOME MATCHES ERROR:",
+            error
+        );
+
+        container.innerHTML =
+            emptyCard(
+                "Impossible de charger les matchs"
+            );
+    }
+}
+
+
+/* =========================================================
+   TABLES
+========================================================= */
+
+function renderTables() {
+
+    const container =
+        document.getElementById(
+            "tables"
+        );
+
+    if (!container) {
+        return;
+    }
+
+    container.innerHTML = `
+
+        <div class="table-card">
 
             <h3>
-              ${escapeHTML(
-                item.title
-              )}
+                Classement
             </h3>
 
             <p>
-              ${escapeHTML(
-                item.text
-              )}
+                Les classements seront disponibles prochainement.
             </p>
 
-          </div>
-
-        `
-      )
-      .join("");
+        </div>
+    `;
 }
+
 
 /* =========================================================
    HOME
 ========================================================= */
 
-async function renderHomeMatches() {
-
-  const container =
-    $("homeMatches");
-
-  if (!container) return;
-
-  try {
-
-    const today =
-      new Date()
-        .toISOString()
-        .split("T")[0];
-
-    const response =
-      await fetch(
-        `${API_BASE}/api?date=${today}`,
-        {
-          cache: "no-store"
-        }
-      );
-
-    if (!response.ok) {
-
-      throw new Error(
-        `HTTP ${response.status}`
-      );
-
-    }
-
-    const data =
-      await response.json();
-
-    const matches =
-      normalizeMatches(data);
-
-    storeMatches(
-      matches
-    );
-
-    if (!matches.length) {
-
-      container.innerHTML =
-        emptyCard(
-          "Aucun match aujourd'hui."
-        );
-
-      return;
-    }
-
-    container.innerHTML =
-      matches
-        .slice(0, 6)
-        .map(
-          (match, index) =>
-            createMatchHTML(
-              match,
-              index
-            )
-        )
-        .join("");
-
-  } catch (error) {
-
-    console.error(
-      "HOME MATCH ERROR:",
-      error
-    );
-
-    container.innerHTML =
-      emptyCard(
-        "Impossible de charger les matchs."
-      );
-
-  }
-}
-
-function renderTables() {
-
-  const container =
-    $("homeTables");
-
-  if (!container) return;
-
-  container.innerHTML = `
-
-    <div class="table">
-
-      <h3>
-        🇪🇸 La Liga
-      </h3>
-
-      <table>
-
-        <tr>
-          <th>#</th>
-          <th>Équipe</th>
-          <th>Pts</th>
-        </tr>
-
-        <tr>
-          <td>1</td>
-          <td>Barcelona</td>
-          <td>--</td>
-        </tr>
-
-        <tr>
-          <td>2</td>
-          <td>Real Madrid</td>
-          <td>--</td>
-        </tr>
-
-        <tr>
-          <td>3</td>
-          <td>Atlético</td>
-          <td>--</td>
-        </tr>
-
-      </table>
-
-    </div>
-
-    <div class="table">
-
-      <h3>
-        🇲🇦 Botola Pro
-      </h3>
-
-      <table>
-
-        <tr>
-          <th>#</th>
-          <th>Équipe</th>
-          <th>Pts</th>
-        </tr>
-
-        <tr>
-          <td>1</td>
-          <td>Raja CA</td>
-          <td>--</td>
-        </tr>
-
-        <tr>
-          <td>2</td>
-          <td>Wydad</td>
-          <td>--</td>
-        </tr>
-
-        <tr>
-          <td>3</td>
-          <td>FAR</td>
-          <td>--</td>
-        </tr>
-
-      </table>
-
-    </div>
-
-  `;
-}
-
 function renderHome() {
 
-  renderHomeMatches();
+    renderHomeNews();
 
-  renderTables();
+    renderTables();
 
-  renderHomeNews();
-
+    renderHomeMatches();
 }
+
 
 /* =========================================================
    FILTERS
@@ -2509,57 +2268,43 @@ function renderHome() {
 
 function initFilters() {
 
-  const filters =
-    document.querySelectorAll(
-      ".filter[data-filter]"
-    );
+    document
+        .querySelectorAll(
+            "[data-filter]"
+        )
+        .forEach(button => {
 
-  filters.forEach(
-    button => {
+            button.addEventListener(
+                "click",
+                () => {
 
-      button.addEventListener(
-        "click",
-        () => {
+                    document
+                        .querySelectorAll(
+                            "[data-filter]"
+                        )
+                        .forEach(
+                            btn =>
+                                btn.classList.remove(
+                                    "active"
+                                )
+                        );
 
-          filters.forEach(
-            btn =>
-              btn.classList.remove(
-                "active"
-              )
-          );
+                    button.classList.add(
+                        "active"
+                    );
 
-          button.classList.add(
-            "active"
-          );
+                    currentFilter =
+                        button.dataset.filter ||
+                        "all";
 
-          currentFilter =
-            button.dataset.filter ||
-            "all";
-
-          if (
-            $("scores")?.classList.contains(
-              "active"
-            )
-          ) {
-
-            loadMatches(
-              currentDate
+                    loadMatches(
+                        currentDate
+                    );
+                }
             );
-
-          } else {
-
-            go(
-              "scores"
-            );
-
-          }
-
-        }
-      );
-
-    }
-  );
+        });
 }
+
 
 /* =========================================================
    SEARCH
@@ -2567,46 +2312,45 @@ function initFilters() {
 
 function initSearch() {
 
-  const input =
-    $("search");
-
-  if (!input) return;
-
-  input.addEventListener(
-    "input",
-    () => {
-
-      const value =
-        input.value
-          .trim()
-          .toLowerCase();
-
-      if (!value) return;
-
-      go(
-        "teams"
-      );
-
-      document
-        .querySelectorAll(
-          "#teamGrid .card"
-        )
-        .forEach(
-          card => {
-
-            card.style.display =
-              card.textContent
-                .toLowerCase()
-                .includes(value)
-                ? ""
-                : "none";
-
-          }
+    const search =
+        document.getElementById(
+            "searchInput"
         );
 
+    if (!search) {
+        return;
     }
-  );
+
+    search.addEventListener(
+        "input",
+        () => {
+
+            const query =
+                search.value
+                    .trim()
+                    .toLowerCase();
+
+            document
+                .querySelectorAll(
+                    ".match-card"
+                )
+                .forEach(card => {
+
+                    const text =
+                        card.textContent
+                            .toLowerCase();
+
+                    card.style.display =
+                        text.includes(
+                            query
+                        )
+                            ? ""
+                            : "none";
+                });
+        }
+    );
 }
+
 
 /* =========================================================
    THEME
@@ -2614,57 +2358,53 @@ function initSearch() {
 
 function initTheme() {
 
-  const button =
-    $("theme");
-
-  if (!button) return;
-
-  const saved =
-    localStorage.getItem(
-      "bakhirafoot-theme"
-    );
-
-  if (
-    saved === "dark"
-  ) {
-
-    document.body.classList.add(
-      "dark"
-    );
-
-    button.textContent =
-      "☀";
-
-  }
-
-  button.addEventListener(
-    "click",
-    () => {
-
-      document.body.classList.toggle(
-        "dark"
-      );
-
-      const dark =
-        document.body.classList.contains(
-          "dark"
+    const button =
+        document.getElementById(
+            "themeToggle"
         );
 
-      button.textContent =
-        dark
-          ? "☀"
-          : "☾";
-
-      localStorage.setItem(
-        "bakhirafoot-theme",
-        dark
-          ? "dark"
-          : "light"
-      );
-
+    if (!button) {
+        return;
     }
-  );
+
+    const savedTheme =
+        localStorage.getItem(
+            "bakhira-theme"
+        );
+
+    if (
+        savedTheme === "dark"
+    ) {
+
+        document.body.classList.add(
+            "dark"
+        );
+    }
+
+
+    button.addEventListener(
+        "click",
+        () => {
+
+            document.body.classList.toggle(
+                "dark"
+            );
+
+            const dark =
+                document.body.classList.contains(
+                    "dark"
+                );
+
+            localStorage.setItem(
+                "bakhira-theme",
+                dark
+                    ? "dark"
+                    : "light"
+            );
+        }
+    );
 }
+
 
 /* =========================================================
    NAVIGATION BUTTONS
@@ -2672,106 +2412,163 @@ function initTheme() {
 
 function initNavigation() {
 
-  const buttons =
-    document.querySelectorAll(
-      "nav button[data-page]"
-    );
+    document
+        .querySelectorAll(
+            "[data-page]"
+        )
+        .forEach(button => {
 
-  buttons.forEach(
-    button => {
+            button.addEventListener(
+                "click",
+                event => {
 
-      button.addEventListener(
-        "click",
-        () => {
+                    event.preventDefault();
 
-          go(
-            button.dataset.page
-          );
+                    const page =
+                        button.dataset.page;
 
-        }
-      );
+                    if (page) {
 
-    }
-  );
+                        go(page);
+                    }
+                }
+            );
+        });
+
+
+    /* Special links */
+
+    document
+        .querySelectorAll(
+            ".nav-link"
+        )
+        .forEach(link => {
+
+            link.addEventListener(
+                "click",
+                event => {
+
+                    const page =
+                        link.dataset.page;
+
+                    if (page) {
+
+                        event.preventDefault();
+
+                        go(page);
+                    }
+                }
+            );
+        });
 }
 
+
 /* =========================================================
-   LIVE REFRESH
+   LIVE AUTO REFRESH
 ========================================================= */
+
+let liveRefreshTimer =
+    null;
+
 
 function startLiveRefresh() {
 
-  setInterval(
-    () => {
+    if (
+        liveRefreshTimer
+    ) {
 
-      if (
-        $("scores")?.classList.contains(
-          "active"
-        )
-      ) {
+        clearInterval(
+            liveRefreshTimer
+        );
+    }
 
-        loadLive();
+    liveRefreshTimer =
+        setInterval(
+            () => {
 
-      }
+                const scoresPage =
+                    document.getElementById(
+                        "scores"
+                    );
 
-    },
-    60000
-  );
+                if (
+                    scoresPage &&
+                    scoresPage.classList.contains(
+                        "active"
+                    )
+                ) {
+
+                    loadLive();
+                }
+
+            },
+            60 * 1000
+        );
 }
 
+
 /* =========================================================
-   START APP
+   INITIALIZATION
 ========================================================= */
 
 document.addEventListener(
-  "DOMContentLoaded",
-  () => {
+    "DOMContentLoaded",
+    () => {
 
-    console.log(
-      "⚓ BakhiraFoot Pro chargé"
-    );
+        console.log(
+            "⚽ BakhiraFoot started"
+        );
 
-    createMatchModal();
+        createMatchModal();
 
-    initNavigation();
+        initDateBar();
 
-    initFilters();
+        initFilters();
 
-    initSearch();
+        initSearch();
 
-    initTheme();
+        initTheme();
 
-    currentDate =
-      new Date()
-        .toISOString()
-        .split("T")[0];
+        initNavigation();
 
-    createDateBar();
+        renderLeagues();
 
-    renderHome();
+        renderTeams();
 
-    renderLeagues();
+        renderNews();
 
-    renderTeams();
+        renderHome();
 
-    renderNews();
+        startLiveRefresh();
 
-    startLiveRefresh();
 
-    /*
-      Open match from URL if the
-      match is already stored.
-    */
+        /* Default page */
 
-    setTimeout(
-      () => {
+        const activePage =
+            document.querySelector(
+                ".page.active"
+            );
 
-        openMatchFromURL();
+        if (!activePage) {
 
-      },
-      1500
-    );
+            go("home");
+        }
 
-  }
+
+        /* Load LIVE */
+
+        loadLive();
+
+
+        /* URL match */
+
+        setTimeout(
+            () => {
+
+                openMatchFromURL();
+
+            },
+            1500
+        );
+    }
 );
-```
