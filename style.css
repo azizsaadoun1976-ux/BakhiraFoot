@@ -1564,3 +1564,81 @@ footer{
   background: #182128;
   color: #fff;
 }
+/* =========================================
+   BAKHIRAFOOT - MATCH ROW STYLE
+   ========================================= */
+
+.match-card {
+  position: relative;
+  padding: 10px 14px;
+  min-height: 72px;
+}
+
+.match-card .teams {
+  display: grid;
+  grid-template-columns: 55px 1fr 45px;
+  align-items: center;
+  gap: 10px;
+}
+
+.match-card .time {
+  text-align: center;
+  font-size: 12px;
+  font-weight: 800;
+}
+
+.match-card .team {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  min-height: 25px;
+  font-size: 14px;
+}
+
+.match-card .score {
+  font-size: 14px;
+  font-weight: 900;
+  text-align: center;
+}
+
+.match-card .comp {
+  margin-bottom: 5px;
+  padding-bottom: 5px;
+  border-bottom: 1px solid #edf0f2;
+}
+
+/* LIVE */
+
+.match-card.live {
+  border-left: 3px solid #16a34a;
+}
+
+.match-card.live .time {
+  color: #16a34a;
+}
+
+/* Mobile */
+
+@media (max-width: 768px) {
+
+  .match-card {
+    padding: 9px 9px;
+  }
+
+  .match-card .teams {
+    grid-template-columns: 48px 1fr 38px;
+    gap: 7px;
+  }
+
+  .match-card .team {
+    font-size: 13px;
+  }
+
+  .match-card .time {
+    font-size: 11px;
+  }
+
+  .match-card .score {
+    font-size: 13px;
+  }
+}
