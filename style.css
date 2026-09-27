@@ -1642,3 +1642,78 @@ footer{
     font-size: 13px;
   }
 }
+/* =========================================
+   BAKHIRAFOOT - COMPETITION HEADER
+   ========================================= */
+
+.competition-header {
+  min-height: 42px;
+  padding: 9px 12px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  background: #eef2f4;
+  border-bottom: 1px solid #dfe4e7;
+}
+
+.competition-header .country {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.competition-header .country span:first-child {
+  font-size: 16px;
+  flex-shrink: 0;
+}
+
+.competition-header .league-name {
+  font-size: 13px;
+  font-weight: 900;
+  color: #20282e;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.competition-header > span:last-child {
+  flex-shrink: 0;
+  font-size: 11px;
+  font-weight: 800;
+  color: #7a858d;
+}
+
+/* Dark mode */
+
+.dark .competition-header {
+  background: #202b32;
+  border-color: #303b43;
+}
+
+.dark .competition-header .league-name {
+  color: #f1f4f5;
+}
+
+.dark .competition-header > span:last-child {
+  color: #9da8ae;
+}
+
+/* Mobile */
+
+@media (max-width: 768px) {
+
+  .competition-header {
+    min-height: 40px;
+    padding: 8px 10px;
+  }
+
+  .competition-header .league-name {
+    font-size: 12px;
+  }
+
+  .competition-header > span:last-child {
+    font-size: 10px;
+  }
+}
