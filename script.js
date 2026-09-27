@@ -1,7 +1,6 @@
 /* =========================================================
    BAKHIRAFOOT - SCRIPT.JS
-   LIVE + SCORES + LEAGUES + TEAMS + NEWS
-   API CACHE PROTECTION
+   VERSION STABLE + API CACHE
 ========================================================= */
 
 const API_BASE = "";
@@ -13,48 +12,61 @@ let currentFilter = "all";
 const matchStore = new Map();
 
 /* =========================================================
-   API CACHE - PROTECTION
+   API CACHE
+   - LIVE: 60 seconds
+   - DATE MATCHES: 5 minutes
 ========================================================= */
 
 const apiCache = new Map();
 
-const API_CACHE_TIME = 5 * 60 * 1000; // 5 minutes
-const LIVE_CACHE_TIME = 60 * 1000;    // 1 minute
+const API_CACHE_TIME = 5 * 60 * 1000;
+const LIVE_CACHE_TIME = 60 * 1000;
 
 async function fetchCached(url, options = {}) {
 
     const now = Date.now();
-    const isLive = url.includes("live=all");
+
+    const isLive =
+        url.includes("live=all");
 
     const cacheTime =
         isLive
             ? LIVE_CACHE_TIME
             : API_CACHE_TIME;
 
-    const saved = apiCache.get(url);
+    const saved =
+        apiCache.get(url);
 
-    /* USE CACHE */
+    /* CACHE STILL VALID */
     if (
         saved &&
         now - saved.time < cacheTime
     ) {
 
-        console.log("⚡ CACHE:", url);
+        console.log(
+            "⚡ CACHE:",
+            url
+        );
 
         return saved.data;
     }
 
     try {
 
-        console.log("🌐 API:", url);
+        console.log(
+            "🌐 API:",
+            url
+        );
 
-        const response = await fetch(url, {
-            ...options,
-            cache: "no-store"
-        });
+        const response =
+            await fetch(url, {
+                ...options,
+                cache: "no-store"
+            });
 
         if (!response.ok) {
 
+            /* Use old data if API fails */
             if (saved) {
 
                 console.log(
@@ -106,6 +118,7 @@ function $(selector) {
     return document.querySelector(selector);
 }
 
+
 function escapeHTML(value) {
 
     return String(value ?? "")
@@ -116,14 +129,21 @@ function escapeHTML(value) {
         .replace(/'/g, "&#039;");
 }
 
+
 function formatDate(dateString) {
 
-    if (!dateString) return "";
+    if (!dateString) {
+        return "";
+    }
 
     const date =
         new Date(dateString);
 
-    if (Number.isNaN(date.getTime())) {
+    if (
+        Number.isNaN(
+            date.getTime()
+        )
+    ) {
         return dateString;
     }
 
@@ -138,10 +158,6 @@ function formatDate(dateString) {
 }
 
 
-/* =========================================================
-   API NORMALIZATION
-========================================================= */
-
 function getStatus(match) {
 
     return (
@@ -152,6 +168,7 @@ function getStatus(match) {
     );
 }
 
+
 function getMinute(match) {
 
     return (
@@ -160,6 +177,7 @@ function getMinute(match) {
         ""
     );
 }
+
 
 function getHome(match) {
 
@@ -170,6 +188,7 @@ function getHome(match) {
     );
 }
 
+
 function getAway(match) {
 
     return (
@@ -178,6 +197,7 @@ function getAway(match) {
         "Away"
     );
 }
+
 
 function getHomeLogo(match) {
 
@@ -188,6 +208,7 @@ function getHomeLogo(match) {
     );
 }
 
+
 function getAwayLogo(match) {
 
     return (
@@ -196,6 +217,7 @@ function getAwayLogo(match) {
         ""
     );
 }
+
 
 function getHomeScore(match) {
 
@@ -207,6 +229,7 @@ function getHomeScore(match) {
     );
 }
 
+
 function getAwayScore(match) {
 
     return (
@@ -217,6 +240,7 @@ function getAwayScore(match) {
     );
 }
 
+
 function getLeague(match) {
 
     return (
@@ -226,6 +250,7 @@ function getLeague(match) {
     );
 }
 
+
 function getFixtureId(match) {
 
     return (
@@ -234,6 +259,7 @@ function getFixtureId(match) {
         ""
     );
 }
+
 
 function normalizeMatches(data) {
 
@@ -258,10 +284,6 @@ function normalizeMatches(data) {
     return [];
 }
 
-
-/* =========================================================
-   STORE MATCHES
-========================================================= */
 
 function storeMatches(matches) {
 
@@ -297,9 +319,7 @@ function go(page) {
         });
 
     const target =
-        document.getElementById(
-            page
-        );
+        document.getElementById(page);
 
     if (target) {
 
@@ -309,9 +329,7 @@ function go(page) {
     }
 
     document
-        .querySelectorAll(
-            "[data-page]"
-        )
+        .querySelectorAll("[data-page]")
         .forEach(button => {
 
             button.classList.remove(
@@ -334,12 +352,11 @@ function go(page) {
     });
 
 
-    /* PAGE ACTIONS */
-
     if (page === "home") {
 
         renderHome();
     }
+
 
     if (page === "scores") {
 
@@ -356,15 +373,18 @@ function go(page) {
         );
     }
 
+
     if (page === "leagues") {
 
         renderLeagues();
     }
 
+
     if (page === "teams") {
 
         renderTeams();
     }
+
 
     if (page === "news") {
 
@@ -540,6 +560,7 @@ function teamHTML(
 
     return `
         <div class="team">
+
             ${
                 logo
                     ? `
@@ -559,6 +580,7 @@ function teamHTML(
             <span>
                 ${escapeHTML(name)}
             </span>
+
         </div>
     `;
 }
@@ -617,8 +639,8 @@ function createMatchHTML(
     return `
         <div
             class="match-card ${isLive ? "live-match" : ""}"
-            data-fixture-id="${escapeHTML(String(fixtureId))}"
-            onclick="openMatchDetailsById('${escapeHTML(String(fixtureId))}')"
+            data-fixture-id="${escapeHTML(String(fixtureId || ""))}"
+            onclick="openMatchDetailsById('${escapeHTML(String(fixtureId || ""))}')"
         >
 
             <div class="match-top">
@@ -627,11 +649,14 @@ function createMatchHTML(
                     ${escapeHTML(league)}
                 </span>
 
-                <span class="match-status ${isLive ? "live" : ""}">
+                <span
+                    class="match-status ${isLive ? "live" : ""}"
+                >
                     ${escapeHTML(status)}
                 </span>
 
             </div>
+
 
             <div class="match-main">
 
@@ -655,6 +680,7 @@ function createMatchHTML(
 
                 </div>
 
+
                 <div class="match-score">
 
                     <strong>
@@ -668,6 +694,7 @@ function createMatchHTML(
                     </strong>
 
                 </div>
+
 
                 <div class="match-team away-team">
 
@@ -691,10 +718,13 @@ function createMatchHTML(
 
             </div>
 
+
             <div class="match-bottom">
 
                 <span>
-                    ${formatDate(match?.fixture?.date)}
+                    ${formatDate(
+                        match?.fixture?.date
+                    )}
                 </span>
 
                 <span>
@@ -745,11 +775,13 @@ async function loadLive() {
                 );
 
             if (liveContainer) {
+
                 liveContainer.innerHTML =
                     empty;
             }
 
             if (scoreList) {
+
                 scoreList.innerHTML =
                     empty;
             }
@@ -798,9 +830,7 @@ async function loadLive() {
    MATCHES BY DATE
 ========================================================= */
 
-async function loadMatches(
-    date
-) {
+async function loadMatches(date) {
 
     currentDate =
         date ||
@@ -837,8 +867,6 @@ async function loadMatches(
         let matches =
             allMatches;
 
-        /* FILTER */
-
         if (
             currentFilter &&
             currentFilter !== "all"
@@ -847,14 +875,12 @@ async function loadMatches(
             matches =
                 allMatches.filter(
                     match =>
-                        getLeague(
-                            match
-                        )
-                        .toLowerCase()
-                        .includes(
-                            currentFilter
-                                .toLowerCase()
-                        )
+                        getLeague(match)
+                            .toLowerCase()
+                            .includes(
+                                currentFilter
+                                    .toLowerCase()
+                            )
                 );
         }
 
@@ -891,15 +917,14 @@ async function loadMatches(
 
 
 /* =========================================================
-   EMPTY CARD
+   EMPTY
 ========================================================= */
 
-function emptyCard(
-    message
-) {
+function emptyCard(message) {
 
     return `
         <div class="empty-card">
+
             <div class="empty-icon">
                 ⚽
             </div>
@@ -907,6 +932,7 @@ function emptyCard(
             <p>
                 ${escapeHTML(message)}
             </p>
+
         </div>
     `;
 }
@@ -939,9 +965,11 @@ function createMatchModal() {
         "match-modal";
 
     modal.innerHTML = `
-        <div class="match-modal-overlay"
-             onclick="closeMatchDetails()">
-        </div>
+
+        <div
+            class="match-modal-overlay"
+            onclick="closeMatchDetails()"
+        ></div>
 
         <div class="match-modal-box">
 
@@ -967,7 +995,7 @@ function createMatchModal() {
 
 
 /* =========================================================
-   MODAL STYLES
+   MODAL CSS
 ========================================================= */
 
 function addModalStyles() {
@@ -977,6 +1005,7 @@ function addModalStyles() {
             "bakhira-modal-style"
         )
     ) {
+
         return;
     }
 
@@ -1159,9 +1188,7 @@ function addModalStyles() {
    OPEN MATCH
 ========================================================= */
 
-function openMatchDetailsById(
-    id
-) {
+function openMatchDetailsById(id) {
 
     const match =
         matchStore.get(
@@ -1183,9 +1210,7 @@ function openMatchDetailsById(
 }
 
 
-function openMatchModal(
-    match
-) {
+function openMatchModal(match) {
 
     createMatchModal();
 
@@ -1252,8 +1277,8 @@ function openMatchModal(
     const statistics =
         match?.statistics || [];
 
-    let eventsHTML =
-        "";
+
+    let eventsHTML = "";
 
     if (events.length) {
 
@@ -1292,6 +1317,7 @@ function openMatchModal(
                                 ${escapeHTML(
                                     player
                                 )}
+
                                 ${
                                     detail
                                         ? " - " +
@@ -1320,13 +1346,10 @@ function openMatchModal(
     }
 
 
-    let statsHTML =
-        "";
+    let statsHTML = "";
 
     if (
-        Array.isArray(
-            statistics
-        ) &&
+        Array.isArray(statistics) &&
         statistics.length
     ) {
 
@@ -1341,35 +1364,31 @@ function openMatchModal(
         const statMap =
             new Map();
 
-        homeStats.forEach(
-            stat => {
+        homeStats.forEach(stat => {
 
-                statMap.set(
-                    stat.type,
-                    {
-                        home: stat.value,
-                        away: "-"
-                    }
-                );
-            }
-        );
-
-        awayStats.forEach(
-            stat => {
-
-                if (
-                    statMap.has(
-                        stat.type
-                    )
-                ) {
-
-                    statMap.get(
-                        stat.type
-                    ).away =
-                        stat.value;
+            statMap.set(
+                stat.type,
+                {
+                    home: stat.value,
+                    away: "-"
                 }
+            );
+        });
+
+        awayStats.forEach(stat => {
+
+            if (
+                statMap.has(
+                    stat.type
+                )
+            ) {
+
+                statMap.get(
+                    stat.type
+                ).away =
+                    stat.value;
             }
-        );
+        });
 
         statsHTML =
             Array.from(
@@ -1377,6 +1396,7 @@ function openMatchModal(
             )
             .map(
                 ([name, value]) => `
+
                     <div class="stat-row">
 
                         <div class="stat-home">
@@ -1414,6 +1434,7 @@ function openMatchModal(
         <div class="modal-league">
             ${escapeHTML(league)}
         </div>
+
 
         <div class="modal-teams">
 
@@ -1477,16 +1498,22 @@ function openMatchModal(
         <div class="modal-info">
 
             <div class="modal-info-item">
+
                 <small>Date</small>
+
                 ${escapeHTML(
                     formatDate(
                         fixture?.date
                     )
                 )}
+
             </div>
 
+
             <div class="modal-info-item">
+
                 <small>Heure</small>
+
                 ${
                     fixture?.date
                         ? new Date(
@@ -1500,41 +1527,62 @@ function openMatchModal(
                           )
                         : "-"
                 }
+
             </div>
 
+
             <div class="modal-info-item">
+
                 <small>Stade</small>
+
                 ${escapeHTML(
                     venue
                 )}
+
             </div>
 
+
             <div class="modal-info-item">
+
                 <small>Ville</small>
+
                 ${escapeHTML(
                     city
                 )}
+
             </div>
 
+
             <div class="modal-info-item">
+
                 <small>Arbitre</small>
+
                 ${escapeHTML(
                     referee
                 )}
+
             </div>
 
+
             <div class="modal-info-item">
+
                 <small>Journée</small>
+
                 ${escapeHTML(
                     round
                 )}
+
             </div>
 
+
             <div class="modal-info-item">
+
                 <small>Saison</small>
+
                 ${escapeHTML(
                     season
                 )}
+
             </div>
 
         </div>
@@ -1670,6 +1718,7 @@ function initDateBar() {
     currentDate =
         dateInput.value;
 
+
     dateInput.addEventListener(
         "change",
         () => {
@@ -1694,6 +1743,7 @@ function initDateBar() {
         document.getElementById(
             "nextDay"
         );
+
 
     if (previous) {
 
@@ -1991,16 +2041,13 @@ function renderTeams() {
                         </p>
 
                     </div>
-
                 `
             )
             .join("");
 }
 
 
-function showTeam(
-    teamName
-) {
+function showTeam(teamName) {
 
     showToast(
         `Équipe: ${teamName}`
@@ -2082,7 +2129,6 @@ function renderNews() {
                         </div>
 
                     </article>
-
                 `
             )
             .join("");
@@ -2137,7 +2183,6 @@ function renderHomeNews() {
                         </div>
 
                     </article>
-
                 `
             )
             .join("");
@@ -2407,7 +2452,7 @@ function initTheme() {
 
 
 /* =========================================================
-   NAVIGATION BUTTONS
+   NAVIGATION
 ========================================================= */
 
 function initNavigation() {
@@ -2436,8 +2481,6 @@ function initNavigation() {
         });
 
 
-    /* Special links */
-
     document
         .querySelectorAll(
             ".nav-link"
@@ -2464,7 +2507,7 @@ function initNavigation() {
 
 
 /* =========================================================
-   LIVE AUTO REFRESH
+   LIVE REFRESH
 ========================================================= */
 
 let liveRefreshTimer =
@@ -2508,7 +2551,7 @@ function startLiveRefresh() {
 
 
 /* =========================================================
-   INITIALIZATION
+   INIT
 ========================================================= */
 
 document.addEventListener(
@@ -2541,9 +2584,6 @@ document.addEventListener(
 
         startLiveRefresh();
 
-
-        /* Default page */
-
         const activePage =
             document.querySelector(
                 ".page.active"
@@ -2554,13 +2594,7 @@ document.addEventListener(
             go("home");
         }
 
-
-        /* Load LIVE */
-
         loadLive();
-
-
-        /* URL match */
 
         setTimeout(
             () => {
