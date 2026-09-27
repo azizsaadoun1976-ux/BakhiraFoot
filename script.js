@@ -18,6 +18,93 @@ let currentFilter = "all";
 
 /* Store matches by real API fixture ID */
 const matchStore = new Map();
+/* =========================================================
+   API CACHE - PROTECTION
+========================================================= */
+
+const apiCache = new Map();
+
+const API_CACHE_TIME = 5 * 60 * 1000; // 5 minutes
+const LIVE_CACHE_TIME = 60 * 1000;    // 1 minute
+
+async function fetchCached(url, options = {}) {
+
+  const now = Date.now();
+  const isLive = url.includes("live=all");
+
+  const cacheTime =
+    isLive
+      ? LIVE_CACHE_TIME
+      : API_CACHE_TIME;
+
+  const saved = apiCache.get(url);
+
+  /* Use cache if still valid */
+  if (
+    saved &&
+    now - saved.time < cacheTime
+  ) {
+
+    console.log("⚡ CACHE:", url);
+
+    return saved.data;
+  }
+
+  try {
+
+    console.log("🌐 API:", url);
+
+    const response =
+      await fetch(url, {
+        ...options,
+        cache: "no-store"
+      });
+
+    if (!response.ok) {
+
+      /* If API fails, use old cache */
+      if (saved) {
+
+        console.log(
+          "⚠️ API failed → old cache"
+        );
+
+        return saved.data;
+      }
+
+      throw new Error(
+        `HTTP ${response.status}`
+      );
+    }
+
+    const data =
+      await response.json();
+
+    apiCache.set(
+      url,
+      {
+        time: now,
+        data: data
+      }
+    );
+
+    return data;
+
+  } catch (error) {
+
+    console.error(
+      "API CACHE ERROR:",
+      error
+    );
+
+    /* Old data is better than nothing */
+    if (saved) {
+      return saved.data;
+    }
+
+    throw error;
+  }
+}
 
 /* =========================================================
    HELPERS
