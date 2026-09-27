@@ -1288,3 +1288,97 @@ footer{
     max-width: 100%;
   }
 }
+/* =================================
+   BAKHIRAFOOT - COMPETITION BLOCKS
+   ================================= */
+
+.competition-block,
+.league-block,
+.league-section {
+  background: #ffffff;
+  border: 1px solid #e1e6e9;
+  border-radius: 14px;
+  margin-bottom: 18px;
+  overflow: hidden;
+  box-shadow: 0 4px 14px rgba(0,0,0,0.04);
+}
+
+.competition-header,
+.league-header,
+.league-title {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 14px 18px;
+  background: #f5f8f9;
+  border-bottom: 1px solid #e1e6e9;
+  font-weight: 900;
+}
+
+.competition-header .country,
+.league-header .country {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+
+.competition-header .league-name,
+.league-header .league-name {
+  font-size: 15px;
+}
+
+.competition-matches,
+.league-matches {
+  width: 100%;
+}
+
+.competition-block .match-row,
+.league-block .match-row {
+  border-bottom: 1px solid #edf0f2;
+}
+
+.competition-block .match-row:last-child,
+.league-block .match-row:last-child {
+  border-bottom: 0;
+}
+
+/* Dark mode */
+
+.dark .competition-block,
+.dark .league-block,
+.dark .league-section {
+  background: #182128;
+  border-color: #29343d;
+}
+
+.dark .competition-header,
+.dark .league-header,
+.dark .league-title {
+  background: #202b32;
+  border-color: #29343d;
+}
+
+/* Mobile */
+
+@media (max-width: 768px) {
+
+  .competition-block,
+  .league-block,
+  .league-section {
+    border-radius: 11px;
+    margin-bottom: 13px;
+  }
+
+  .competition-header,
+  .league-header,
+  .league-title {
+    padding: 12px 13px;
+    font-size: 14px;
+  }
+
+  .competition-header .league-name,
+  .league-header .league-name {
+    font-size: 13px;
+  }
+}
