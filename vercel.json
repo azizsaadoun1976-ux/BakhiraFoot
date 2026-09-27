@@ -1,13 +1,9 @@
 {
-  "$schema": "https://openapi.vercel.sh/vercel.json",
-  "rewrites": [
+  "version": 2,
+  "routes": [
     {
-      "source": "/api/:path*",
-      "destination": "/api/index.js"
-    },
-    {
-      "source": "/match/:id",
-      "destination": "/index.html"
+      "src": "/api/(.*)",
+      "dest": "/api/index.js"
     }
   ]
 }
