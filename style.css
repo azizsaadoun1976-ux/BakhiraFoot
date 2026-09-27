@@ -1487,3 +1487,80 @@ footer{
     padding: 8px 10px;
   }
 }
+/* =========================================
+   BAKHIRAFOOT - FLASHCORE TOP TABS
+   ========================================= */
+
+.date-tabs {
+  display: flex;
+  align-items: stretch;
+  gap: 3px;
+  margin: 0 0 14px;
+  background: #eef2f4;
+  border-radius: 6px;
+  padding: 3px;
+}
+
+.date-tabs button {
+  flex: 1;
+  border: 0;
+  background: transparent;
+  color: #68737b;
+  font-weight: 800;
+  font-size: 13px;
+  padding: 11px 12px;
+  border-radius: 5px;
+  cursor: pointer;
+  transition: .15s ease;
+}
+
+.date-tabs button:hover {
+  background: #e2e7ea;
+}
+
+.date-tabs button.active {
+  background: #fff;
+  color: #111820;
+  box-shadow: 0 1px 3px rgba(0,0,0,.08);
+}
+
+.date-tabs button.live {
+  color: #159447;
+}
+
+.date-tabs button.live.active {
+  color: #fff;
+  background: #159447;
+}
+
+/* Mobile */
+
+@media (max-width: 768px) {
+  .date-tabs {
+    margin-bottom: 10px;
+  }
+
+  .date-tabs button {
+    font-size: 12px;
+    padding: 10px 5px;
+  }
+}
+
+/* Dark mode */
+
+.dark .date-tabs {
+  background: #202a31;
+}
+
+.dark .date-tabs button {
+  color: #aeb8be;
+}
+
+.dark .date-tabs button:hover {
+  background: #29343b;
+}
+
+.dark .date-tabs button.active {
+  background: #182128;
+  color: #fff;
+}
