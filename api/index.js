@@ -1,20 +1,16 @@
 module.exports = async (req, res) => {
     try {
-
         const { live, date } = req.query;
 
-        let url =
-            "https://api.kickoffapi.com/api/v2/fixtures";
+        let url = "https://v3.football.api-sports.io/fixtures";
 
-        // LIVE
+        // LIVE MATCHES
         if (live === "all") {
-
             url += "?live=all";
-
         }
+
         // MATCHES BY DATE
         else {
-
             const matchDate =
                 date ||
                 new Date().toISOString().split("T")[0];
@@ -24,21 +20,29 @@ module.exports = async (req, res) => {
 
         const response = await fetch(url, {
             headers: {
-                "x-api-key":
-                    process.env.KICKOFF_API_KEY
+                "x-apisports-key": process.env.API_FOOTBALL_KEY
             }
         });
 
-        const data =
-            await response.json();
+        const data = await response.json();
 
-        res.status(response.status).json(data);
+        // API-Football error
+        if (!response.ok) {
+            return res.status(response.status).json({
+                error: data?.errors || "API-Football error",
+                data: []
+            });
+        }
+
+        // Keep the same format expected by BakhiraFoot
+        return res.status(200).json({
+            data: data.response || []
+        });
 
     } catch (error) {
+        console.error("API FOOTBALL ERROR:", error);
 
-        console.error("API ERROR:", error);
-
-        res.status(500).json({
+        return res.status(500).json({
             error: error.message,
             data: []
         });
