@@ -1151,3 +1151,140 @@ footer{
   }
 
 }
+/* ================================
+   BAKHIRAFOOT - MOBILE FIX
+   ================================ */
+
+@media (max-width: 768px) {
+
+  * {
+    box-sizing: border-box;
+  }
+
+  html,
+  body {
+    width: 100%;
+    max-width: 100%;
+    overflow-x: hidden;
+  }
+
+  body {
+    margin: 0;
+  }
+
+  header {
+    width: 100%;
+    min-height: auto;
+    padding: 12px 14px;
+    flex-wrap: wrap;
+  }
+
+  .logo {
+    max-width: 150px;
+  }
+
+  .logo img {
+    max-width: 100%;
+    height: auto;
+  }
+
+  nav {
+    width: 100%;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    flex-wrap: wrap;
+    gap: 4px;
+  }
+
+  nav a,
+  nav button {
+    padding: 10px 8px !important;
+    font-size: 13px;
+    white-space: nowrap;
+  }
+
+  main,
+  .page,
+  .container,
+  .content {
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .hero {
+    width: calc(100% - 20px);
+    margin-left: auto;
+    margin-right: auto;
+  }
+
+  .hero h1 {
+    font-size: 28px;
+    line-height: 1.2;
+  }
+
+  .hero p {
+    font-size: 14px;
+  }
+
+  .layout {
+    display: block;
+    width: 100%;
+  }
+
+  aside,
+  .sidebar {
+    width: 100%;
+    max-width: 100%;
+    margin-bottom: 15px;
+  }
+
+  section {
+    max-width: 100%;
+  }
+
+  .cards,
+  .card-grid,
+  .article-grid,
+  .teams-grid,
+  .league-grid {
+    grid-template-columns: 1fr !important;
+    width: 100%;
+  }
+
+  .card,
+  .match-card,
+  .news-card,
+  .team-card,
+  .league-card {
+    width: 100%;
+    max-width: 100%;
+  }
+
+  table {
+    width: 100%;
+    display: block;
+    overflow-x: auto;
+    white-space: nowrap;
+  }
+
+  img {
+    max-width: 100%;
+  }
+
+  input,
+  select,
+  button {
+    max-width: 100%;
+  }
+
+  footer {
+    width: 100%;
+    padding: 20px 12px;
+    text-align: center;
+  }
+
+  footer div {
+    max-width: 100%;
+  }
+}
