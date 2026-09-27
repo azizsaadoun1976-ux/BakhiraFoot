@@ -361,58 +361,44 @@ function createMatchHTML(match, index) {
 
   return `
     <div
-      class="card match-card"
+      class="match-card"
       data-match-index="${index}"
       data-fixture-id="${escapeHTML(fixtureId || "")}"
       onclick="openMatchDetails(${index})"
-      style="cursor:pointer"
     >
 
-      <div class="comp">
-        🏆 ${escapeHTML(league)}
+      <div class="flash-league">
+        <span>🏆 ${escapeHTML(league)}</span>
       </div>
 
-      <div class="teams">
+      <div class="flash-match">
 
-        ${teamHTML(home, homeLogo)}
+        <div class="flash-time">
+          <span>${escapeHTML(status)}</span>
+          ${
+            date
+              ? `<small>${escapeHTML(formatDate(date))}</small>`
+              : ""
+          }
+        </div>
 
-        <div class="score">
+        <div class="flash-teams">
 
-          <strong>
-            ${escapeHTML(homeScore)}
-            -
-            ${escapeHTML(awayScore)}
-          </strong>
+          <div class="flash-team">
+            ${teamHTML(home, homeLogo)}
+          </div>
 
-          <small class="red">
-            ${escapeHTML(status)}
-          </small>
+          <div class="flash-team">
+            ${teamHTML(away, awayLogo)}
+          </div>
 
         </div>
 
-        ${teamHTML(away, awayLogo)}
+        <div class="flash-score">
+          <strong>${escapeHTML(homeScore)}</strong>
+          <strong>${escapeHTML(awayScore)}</strong>
+        </div>
 
-      </div>
-
-      ${
-        date
-          ? `
-            <div class="match-time">
-              🕒 ${escapeHTML(formatDate(date))}
-            </div>
-          `
-          : ""
-      }
-
-      <div
-        style="
-          text-align:center;
-          margin-top:10px;
-          font-size:12px;
-          opacity:.65;
-        "
-      >
-        👆 Cliquer pour voir les détails
       </div>
 
     </div>
