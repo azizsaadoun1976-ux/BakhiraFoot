@@ -4,16 +4,115 @@
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width, initial-scale=1">
 
-<title>BakhiraFoot Pro</title>
+<!-- ================= SEO ================= -->
 
-<meta name="description"
-content="BakhiraFoot - Scores, matchs, compétitions et actualités du football.">
+<title>BakhiraFoot – Scores, Résultats, Matchs & Actualités Football</title>
+
+<meta
+  name="description"
+  content="BakhiraFoot : scores en direct, résultats, matchs, compétitions, équipes, classements et actualités du football."
+>
+
+<meta
+  name="keywords"
+  content="football, scores football, résultats football, matchs, scores en direct, actualités football, compétitions, équipes, Botola, Champions League, Premier League, La Liga, Ligue 1"
+>
+
+<meta name="robots" content="index, follow">
+
+<link
+  rel="canonical"
+  href="https://bakhira-foot.vercel.app/"
+>
 
 <!-- Google Search Console -->
-<meta name="google-site-verification" content="SF2OXJ1_RHN_7TrUUZS_eAyWnHqwcRjcMXBqjGQ-iVE"/>
+<meta
+  name="google-site-verification"
+  content="SF2OXJ1_RHN_7TrUUZS_eAyWnHqwcRjcMXBqjGQ-iVE"
+/>
 
+<!-- Favicon -->
 <link rel="icon" type="image/svg+xml" href="favicon.svg">
+
+<!-- Theme -->
+<meta name="theme-color" content="#0b1724">
+
+<!-- ================= Open Graph ================= -->
+
+<meta property="og:type" content="website">
+
+<meta
+  property="og:title"
+  content="BakhiraFoot – Scores, Matchs & Actualités Football"
+>
+
+<meta
+  property="og:description"
+  content="Scores en direct, résultats, matchs, compétitions, équipes, classements et actualités du football."
+>
+
+<meta
+  property="og:url"
+  content="https://bakhira-foot.vercel.app/"
+>
+
+<meta
+  property="og:site_name"
+  content="BakhiraFoot"
+>
+
+<meta
+  property="og:image"
+  content="https://bakhira-foot.vercel.app/logo.svg"
+>
+
+<meta property="og:locale" content="fr_FR">
+
+<!-- ================= Twitter / X ================= -->
+
+<meta name="twitter:card" content="summary">
+
+<meta
+  name="twitter:title"
+  content="BakhiraFoot – Scores, Matchs & Actualités Football"
+>
+
+<meta
+  name="twitter:description"
+  content="Scores en direct, résultats, matchs, compétitions, équipes et actualités du football."
+>
+
+<meta
+  name="twitter:image"
+  content="https://bakhira-foot.vercel.app/logo.svg"
+>
+
+<!-- CSS -->
 <link rel="stylesheet" href="style.css">
+
+<!-- ================= STRUCTURED DATA ================= -->
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "WebSite",
+  "name": "BakhiraFoot",
+  "alternateName": "Bakhira Foot",
+  "url": "https://bakhira-foot.vercel.app/",
+  "description": "Scores en direct, résultats, matchs, compétitions, équipes, classements et actualités du football."
+}
+</script>
+
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Organization",
+  "name": "BakhiraFoot",
+  "url": "https://bakhira-foot.vercel.app/",
+  "logo": "https://bakhira-foot.vercel.app/logo.svg"
+}
+</script>
+
 </head>
 
 <body>
@@ -21,7 +120,7 @@ content="BakhiraFoot - Scores, matchs, compétitions et actualités du football.
 <header>
 
   <div class="logo">
-    <img src="logo.svg" alt="BakhiraFoot">
+    <img src="logo.svg" alt="BakhiraFoot - Football">
   </div>
 
   <nav>
@@ -33,8 +132,12 @@ content="BakhiraFoot - Scores, matchs, compétitions et actualités du football.
   </nav>
 
   <div class="tools">
-    <input id="search" placeholder="Rechercher équipe ou joueur">
-    <button id="theme">☾</button>
+    <input
+      id="search"
+      placeholder="Rechercher équipe ou joueur"
+      aria-label="Rechercher une équipe ou un joueur"
+    >
+    <button id="theme" aria-label="Changer le thème">☾</button>
   </div>
 
 </header>
