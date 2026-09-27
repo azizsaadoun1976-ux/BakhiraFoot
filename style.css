@@ -1819,3 +1819,45 @@ section > h3 {
     margin-bottom: 8px;
   }
 }
+/* =========================================
+   BAKHIRAFOOT - AD SLOTS
+   ========================================= */
+
+.ad-slot {
+  width: 100%;
+  min-height: 90px;
+  margin: 18px 0;
+  padding: 12px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  box-sizing: border-box;
+  background: #fafbfc;
+  border: 1px solid #e5e9ec;
+  border-radius: 6px;
+  color: #8a949b;
+  font-size: 10px;
+  font-weight: 700;
+  text-align: center;
+}
+
+.ad-slot::before {
+  content: "PUBLICITÉ";
+}
+
+/* Mobile */
+
+@media (max-width: 768px) {
+  .ad-slot {
+    min-height: 80px;
+    margin: 14px 0;
+  }
+}
+
+/* Dark mode */
+
+.dark .ad-slot {
+  background: #20282e;
+  border-color: #303a41;
+  color: #89949b;
+}
