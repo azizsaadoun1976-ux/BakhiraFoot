@@ -1,7 +1,7 @@
-```javascript
 /* =========================================================
    BAKHIRAFOOT PRO
-   LIVE + MATCH DETAILS + COMPETITION GROUPING
+   LIVE + MATCH DETAILS
+   No HTML/CSS changes required
 ========================================================= */
 
 const API_BASE = "";
@@ -420,188 +420,24 @@ function createMatchHTML(match, index) {
 }
 
 /* =========================================================
-   COMPETITION ICON
-========================================================= */
-
-function getCompetitionIcon(league) {
-
-  const name =
-    String(league || "").toLowerCase();
-
-  if (
-    name.includes("botola") ||
-    name.includes("morocco") ||
-    name.includes("maroc")
-  ) {
-    return "🇲🇦";
-  }
-
-  if (
-    name.includes("premier")
-  ) {
-    return "🏴";
-  }
-
-  if (
-    name.includes("la liga") ||
-    name.includes("laliga")
-  ) {
-    return "🇪🇸";
-  }
-
-  if (
-    name.includes("ligue 1")
-  ) {
-    return "🇫🇷";
-  }
-
-  if (
-    name.includes("bundesliga")
-  ) {
-    return "🇩🇪";
-  }
-
-  if (
-    name.includes("serie a")
-  ) {
-    return "🇮🇹";
-  }
-
-  if (
-    name.includes("champions")
-  ) {
-    return "🏆";
-  }
-
-  if (
-    name.includes("europa")
-  ) {
-    return "🌍";
-  }
-
-  if (
-    name.includes("conference")
-  ) {
-    return "🌍";
-  }
-
-  if (
-    name.includes("world cup") ||
-    name.includes("world")
-  ) {
-    return "🌎";
-  }
-
-  return "⚽";
-}
-
-/* =========================================================
-   GROUP MATCHES BY COMPETITION
-========================================================= */
-
-function renderGroupedMatches(matches) {
-
-  if (
-    !Array.isArray(matches) ||
-    !matches.length
-  ) {
-    return "";
-  }
-
-  const groups = {};
-
-  matches.forEach((match, index) => {
-
-    const league =
-      getLeague(match);
-
-    if (!groups[league]) {
-      groups[league] = [];
-    }
-
-    groups[league].push({
-      match,
-      index
-    });
-
-  });
-
-  return Object.entries(groups)
-    .map(([league, items]) => {
-
-      const icon =
-        getCompetitionIcon(league);
-
-      return `
-        <div class="competition-block">
-
-          <div class="competition-header">
-
-            <div class="country">
-
-              <span>
-                ${icon}
-              </span>
-
-              <span class="league-name">
-                ${escapeHTML(league)}
-              </span>
-
-            </div>
-
-            <span>
-              ${items.length}
-              ${items.length === 1
-                ? "match"
-                : "matchs"}
-            </span>
-
-          </div>
-
-          <div class="competition-matches">
-
-            ${items
-              .map(item =>
-                createMatchHTML(
-                  item.match,
-                  item.index
-                )
-              )
-              .join("")
-            }
-
-          </div>
-
-        </div>
-      `;
-
-    })
-    .join("");
-}
-
-/* =========================================================
    LOAD LIVE
 ========================================================= */
 
 async function loadLive() {
-
-  const liveElement =
-    $("live");
+  const liveElement = $("live");
 
   try {
-
     if (liveElement) {
       liveElement.textContent =
         "🟡 Chargement du LIVE...";
     }
 
-    const response =
-      await fetch(
-        `${API_BASE}/api?live=all`,
-        {
-          cache: "no-store"
-        }
-      );
+    const response = await fetch(
+      `${API_BASE}/api?live=all`,
+      {
+        cache: "no-store"
+      }
+    );
 
     if (!response.ok) {
       throw new Error(
@@ -615,8 +451,7 @@ async function loadLive() {
     const matches =
       normalizeMatches(data);
 
-    currentMatches =
-      matches;
+    currentMatches = matches;
 
     if (liveElement) {
       liveElement.textContent =
@@ -640,10 +475,14 @@ async function loadLive() {
       } else {
 
         list.innerHTML =
-          renderGroupedMatches(
-            matches
-          );
-
+          matches
+            .map((match, index) =>
+              createMatchHTML(
+                match,
+                index
+              )
+            )
+            .join("");
       }
     }
 
@@ -709,11 +548,9 @@ async function loadMatches(date) {
     let matches =
       normalizeMatches(data);
 
-    currentMatches =
-      matches;
+    currentMatches = matches;
 
     /* FILTER */
-
     if (
       currentFilter &&
       currentFilter !== "all"
@@ -740,9 +577,14 @@ async function loadMatches(date) {
     }
 
     list.innerHTML =
-      renderGroupedMatches(
-        matches
-      );
+      matches
+        .map((match, index) =>
+          createMatchHTML(
+            match,
+            index
+          )
+        )
+        .join("");
 
   } catch (error) {
 
@@ -795,8 +637,7 @@ function createMatchModal() {
   const modal =
     document.createElement("div");
 
-  modal.id =
-    "matchModal";
+  modal.id = "matchModal";
 
   modal.innerHTML = `
     <div
@@ -825,9 +666,7 @@ function createMatchModal() {
     </div>
   `;
 
-  document.body.appendChild(
-    modal
-  );
+  document.body.appendChild(modal);
 
   addModalStyles();
 }
@@ -1067,9 +906,7 @@ function addModalStyles() {
     }
   `;
 
-  document.head.appendChild(
-    style
-  );
+  document.head.appendChild(style);
 }
 
 /* =========================================================
@@ -1082,9 +919,7 @@ function openMatchDetails(index) {
     currentMatches[index];
 
   if (!match) {
-    toast(
-      "تفاصيل الماتش غير متوفرة"
-    );
+    toast("تفاصيل الماتش غير متوفرة");
     return;
   }
 
@@ -1447,11 +1282,8 @@ function openMatchDetails(index) {
     $("matchModal");
 
   if (modal) {
-    modal.style.display =
-      "block";
-
-    document.body.style.overflow =
-      "hidden";
+    modal.style.display = "block";
+    document.body.style.overflow = "hidden";
   }
 }
 
@@ -1549,16 +1381,13 @@ function closeMatchDetails(event) {
     $("matchModal");
 
   if (modal) {
-    modal.style.display =
-      "none";
+    modal.style.display = "none";
   }
 
-  document.body.style.overflow =
-    "";
+  document.body.style.overflow = "";
 }
 
 /* ESC KEY */
-
 document.addEventListener(
   "keydown",
   event => {
@@ -1607,14 +1436,11 @@ function createDateBar() {
     let label;
 
     if (i === 0) {
-      label =
-        "Aujourd'hui";
+      label = "Aujourd'hui";
     } else if (i === -1) {
-      label =
-        "Hier";
+      label = "Hier";
     } else if (i === 1) {
-      label =
-        "Demain";
+      label = "Demain";
     } else {
       label =
         date.toLocaleDateString(
@@ -1628,9 +1454,7 @@ function createDateBar() {
     }
 
     const button =
-      document.createElement(
-        "button"
-      );
+      document.createElement("button");
 
     button.textContent =
       label;
@@ -1665,16 +1489,13 @@ function createDateBar() {
           "selected"
         );
 
-        currentDate =
-          iso;
+        currentDate = iso;
 
         loadMatches(iso);
       }
     );
 
-    bar.appendChild(
-      button
-    );
+    bar.appendChild(button);
   }
 }
 
@@ -1742,16 +1563,13 @@ function renderLeagues() {
 
 function filterLeague(league) {
 
-  currentFilter =
-    league;
+  currentFilter = league;
 
   go("scores");
 
   setTimeout(() => {
 
-    loadMatches(
-      currentDate
-    );
+    loadMatches(currentDate);
 
     toast(
       `🏆 ${league}`
@@ -2023,9 +1841,15 @@ async function renderHomeMatches() {
     }
 
     container.innerHTML =
-      renderGroupedMatches(
-        matches.slice(0, 6)
-      );
+      matches
+        .slice(0, 6)
+        .map((match, index) =>
+          createMatchHTML(
+            match,
+            index
+          )
+        )
+        .join("");
 
   } catch (error) {
 
@@ -2166,9 +1990,7 @@ function initFilters() {
             "active"
           )
         ) {
-          loadMatches(
-            currentDate
-          );
+          loadMatches(currentDate);
         } else {
           go("scores");
         }
@@ -2356,4 +2178,3 @@ document.addEventListener(
 
   }
 );
-```
