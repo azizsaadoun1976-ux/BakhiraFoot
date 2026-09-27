@@ -1936,3 +1936,40 @@ section > h3 {
     min-height: 80px;
   }
 }
+/* =========================================
+   BAKHIRAFOOT - LAST AD
+   ========================================= */
+
+#news::before {
+  content: "PUBLICITÉ";
+  width: 100%;
+  min-height: 90px;
+  margin: 0 0 14px;
+  padding: 12px;
+  box-sizing: border-box;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  background: #fafbfc;
+  border: 1px solid #e5e9ec;
+  border-radius: 6px;
+
+  color: #8a949b;
+  font-size: 10px;
+  font-weight: 700;
+  letter-spacing: .5px;
+}
+
+.dark #news::before {
+  background: #20282e;
+  border-color: #303a41;
+  color: #89949b;
+}
+
+@media (max-width: 768px) {
+  #news::before {
+    min-height: 80px;
+  }
+}
