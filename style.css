@@ -1717,3 +1717,105 @@ footer{
     font-size: 10px;
   }
 }
+/* =========================================
+   BAKHIRAFOOT - MATCH STATUS
+   ========================================= */
+
+.match-card.live {
+  border-left: 3px solid #16a34a;
+}
+
+.match-card.live .time {
+  color: #16a34a;
+  font-weight: 900;
+}
+
+.match-card.live .score {
+  color: #111820;
+  font-weight: 900;
+}
+
+/* Match terminée */
+
+.match-card.finished .time {
+  color: #8a949b;
+}
+
+.match-card.finished .score {
+  color: #555f66;
+}
+
+/* Match à venir */
+
+.match-card.upcoming .time {
+  color: #20282e;
+  font-weight: 900;
+}
+
+.match-card.upcoming .score {
+  color: #7a858d;
+}
+
+/* Dark mode */
+
+.dark .match-card.live .score {
+  color: #fff;
+}
+
+.dark .match-card.finished .score {
+  color: #aab3b8;
+}
+
+.dark .match-card.upcoming .time {
+  color: #fff;
+}
+
+.dark .match-card.upcoming .score {
+  color: #aab3b8;
+}
+/* =========================================
+   BAKHIRAFOOT - FLASHCORE SECTIONS
+   ========================================= */
+
+section {
+  margin-bottom: 18px;
+}
+
+section > h2,
+section > h3 {
+  font-size: 17px;
+  font-weight: 900;
+  margin-bottom: 10px;
+  color: #182128;
+}
+
+.dark section > h2,
+.dark section > h3 {
+  color: #f1f4f5;
+}
+
+/* المسافة بين مجموعات البطولات */
+
+.competition-block + .competition-block {
+  margin-top: 8px;
+}
+
+/* خفيف ومرتب */
+
+.competition-block {
+  box-shadow: 0 1px 3px rgba(0,0,0,.05);
+}
+
+/* Mobile */
+
+@media (max-width: 768px) {
+  section {
+    margin-bottom: 13px;
+  }
+
+  section > h2,
+  section > h3 {
+    font-size: 15px;
+    margin-bottom: 8px;
+  }
+}
