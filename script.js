@@ -220,6 +220,61 @@ function getMatchPriority(match) {
 }
 
 function sortMatchesByImportance(matches) {
+   function renderMatchesByCompetition(matches) {
+  const groups = {};
+
+  matches.forEach((match) => {
+    const league = getLeague(match);
+
+    if (!groups[league]) {
+      groups[league] = [];
+    }
+
+    groups[league].push(match);
+  });
+
+  return Object.entries(groups)
+    .map(([league, leagueMatches]) => {
+
+      const competitionMatches =
+        leagueMatches
+          .map((match) => {
+            const index =
+              currentMatches.indexOf(match);
+
+            return createMatchHTML(
+              match,
+              index
+            );
+          })
+          .join("");
+
+      return `
+        <section class="competition-block">
+
+          <div class="competition-header">
+
+            <div class="competition-title">
+              <span class="competition-icon">🏆</span>
+              <strong>${escapeHTML(league)}</strong>
+            </div>
+
+            <span class="competition-count">
+              ${leagueMatches.length}
+              ${leagueMatches.length > 1 ? "matchs" : "match"}
+            </span>
+
+          </div>
+
+          <div class="competition-matches">
+            ${competitionMatches}
+          </div>
+
+        </section>
+      `;
+    })
+    .join("");
+}
   return [...matches].sort((a, b) => {
     const priorityA = getMatchPriority(a);
     const priorityB = getMatchPriority(b);
@@ -553,15 +608,8 @@ async function loadLive() {
 
       } else {
 
-        list.innerHTML =
-          matches
-            .map((match, index) =>
-              createMatchHTML(
-                match,
-                index
-              )
-            )
-            .join("");
+       list.innerHTML =
+  renderMatchesByCompetition(matches);
       }
     }
 
@@ -654,15 +702,8 @@ async function loadMatches(date) {
       return;
     }
 
-    list.innerHTML =
-      matches
-        .map((match, index) =>
-          createMatchHTML(
-            match,
-            index
-          )
-        )
-        .join("");
+   list.innerHTML =
+  renderMatchesByCompetition(matches);
 
   } catch (error) {
 
