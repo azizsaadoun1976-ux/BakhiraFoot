@@ -2482,3 +2482,337 @@ button:hover,
     min-width: 18px;
   }
 }
+/* =========================================
+   BAKHIRAFOOT — PREMIUM HEADER + HERO
+   ========================================= */
+
+header {
+  min-height: 70px;
+  padding: 0 28px;
+  border-bottom: 1px solid #e7ecef;
+  background: rgba(255, 255, 255, .96);
+  backdrop-filter: blur(12px);
+  -webkit-backdrop-filter: blur(12px);
+}
+
+.logo {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+
+.logo img {
+  width: 42px;
+  height: 42px;
+  object-fit: contain;
+}
+
+.logo::after {
+  content: "BAKHIRAFOOT";
+  font-size: 15px;
+  font-weight: 900;
+  letter-spacing: -.02em;
+  color: #182630;
+}
+
+nav {
+  gap: 5px;
+}
+
+nav button,
+nav a {
+  border-radius: 9px !important;
+  padding: 9px 12px !important;
+  font-size: 12px !important;
+  font-weight: 750 !important;
+  transition:
+    background .15s ease,
+    color .15s ease,
+    transform .15s ease;
+}
+
+nav button:hover,
+nav a:hover {
+  transform: translateY(-1px);
+}
+
+nav button.active {
+  background: #182630 !important;
+  color: #fff !important;
+}
+
+/* SEARCH */
+
+.tools {
+  gap: 8px;
+}
+
+#search {
+  min-width: 190px;
+  height: 40px;
+  padding: 0 13px !important;
+  border: 1px solid #dfe6ea !important;
+  border-radius: 10px !important;
+  background: #f8fafb !important;
+  font-size: 12px !important;
+  outline: none;
+  transition:
+    border-color .15s ease,
+    background .15s ease,
+    box-shadow .15s ease;
+}
+
+#search:focus {
+  border-color: #b8c5cd !important;
+  background: #fff !important;
+  box-shadow: 0 0 0 3px rgba(100, 120, 135, .08);
+}
+
+/* THEME BUTTON */
+
+#theme {
+  width: 40px;
+  height: 40px;
+  border-radius: 10px !important;
+  border: 1px solid #dfe6ea !important;
+  background: #f8fafb !important;
+  color: #34424c;
+  font-size: 16px;
+}
+
+/* =========================================
+   HOME HERO
+   ========================================= */
+
+#home {
+  padding-top: 8px;
+}
+
+#home .hero,
+#home .intro,
+#home .hero-section {
+  border-radius: 18px;
+}
+
+/*
+ * The existing home content gets
+ * more visual hierarchy without changing HTML.
+ */
+
+#home h1 {
+  max-width: 780px;
+  margin-bottom: 14px;
+  font-size: clamp(32px, 4.2vw, 54px);
+  line-height: 1.03;
+  letter-spacing: -.045em;
+  font-weight: 900;
+  color: #16232c;
+}
+
+#home h1 span {
+  display: inline;
+  color: #526875;
+}
+
+#home p {
+  max-width: 680px;
+  font-size: 15px;
+  line-height: 1.7;
+  color: #71808a;
+}
+
+/* HERO VISUAL EMPHASIS */
+
+#home .title {
+  position: relative;
+  padding: 30px;
+  border: 1px solid #e6ecef;
+  border-radius: 20px;
+  background:
+    radial-gradient(
+      circle at 90% 10%,
+      rgba(110, 130, 145, .10),
+      transparent 34%
+    ),
+    linear-gradient(
+      145deg,
+      #ffffff,
+      #f7fafb
+    );
+  overflow: hidden;
+}
+
+#home .title::after {
+  content: "";
+  position: absolute;
+  width: 180px;
+  height: 180px;
+  right: -70px;
+  bottom: -90px;
+  border-radius: 50%;
+  border: 1px solid rgba(100, 120, 135, .10);
+}
+
+/* HOME BUTTONS */
+
+#home button,
+#home .btn,
+#home a.button {
+  min-height: 42px;
+  border-radius: 10px !important;
+  font-size: 12px !important;
+  font-weight: 800 !important;
+}
+
+/* =========================================
+   HOME SECTIONS
+   ========================================= */
+
+#home h2 {
+  margin-top: 34px;
+  margin-bottom: 12px;
+  font-size: 18px;
+  font-weight: 850;
+  letter-spacing: -.02em;
+  color: #1b2933;
+}
+
+#home .cards {
+  gap: 12px;
+}
+
+/* =========================================
+   DARK MODE
+   ========================================= */
+
+.dark header {
+  border-bottom-color: #29343d;
+  background: rgba(16, 23, 29, .96);
+}
+
+.dark .logo::after {
+  color: #edf2f5;
+}
+
+.dark nav button.active {
+  background: #edf2f5 !important;
+  color: #151d24 !important;
+}
+
+.dark #search,
+.dark #theme {
+  border-color: #34414b !important;
+  background: #1b252d !important;
+  color: #edf2f5;
+}
+
+.dark #search:focus {
+  background: #202c35 !important;
+}
+
+.dark #home h1 {
+  color: #edf2f5;
+}
+
+.dark #home h1 span {
+  color: #aebbc3;
+}
+
+.dark #home p {
+  color: #91a0aa;
+}
+
+.dark #home .title {
+  border-color: #29343d;
+  background:
+    radial-gradient(
+      circle at 90% 10%,
+      rgba(160, 180, 195, .08),
+      transparent 34%
+    ),
+    linear-gradient(
+      145deg,
+      #151d24,
+      #11181e
+    );
+}
+
+.dark #home h2 {
+  color: #edf2f5;
+}
+
+/* =========================================
+   RESPONSIVE
+   ========================================= */
+
+@media (max-width: 950px) {
+
+  header {
+    padding: 0 16px;
+  }
+
+  #search {
+    min-width: 150px;
+  }
+
+  nav button,
+  nav a {
+    padding: 8px 9px !important;
+  }
+}
+
+@media (max-width: 700px) {
+
+  header {
+    min-height: 62px;
+    padding: 0 10px;
+  }
+
+  .logo img {
+    width: 36px;
+    height: 36px;
+  }
+
+  .logo::after {
+    font-size: 12px;
+  }
+
+  #search {
+    min-width: 0;
+    width: 120px;
+  }
+
+  #home .title {
+    padding: 22px 16px;
+    border-radius: 16px;
+  }
+
+  #home h1 {
+    font-size: 31px;
+  }
+
+  #home p {
+    font-size: 13px;
+  }
+}
+
+@media (max-width: 520px) {
+
+  .logo::after {
+    display: none;
+  }
+
+  #search {
+    width: 105px;
+  }
+
+  nav {
+    gap: 2px;
+  }
+
+  nav button,
+  nav a {
+    padding: 7px 7px !important;
+    font-size: 10px !important;
+  }
+}
