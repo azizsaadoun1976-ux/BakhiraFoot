@@ -1973,3 +1973,226 @@ section > h3 {
     min-height: 80px;
   }
 }
+/* ================================
+   BAKHIRAFOOT - MATCHES FIX
+   ================================ */
+
+.match-card {
+  display: block !important;
+  width: 100%;
+  box-sizing: border-box;
+  cursor: pointer;
+  position: relative;
+  overflow: hidden;
+}
+
+.match-content {
+  display: grid !important;
+  grid-template-columns: 90px minmax(0, 1fr) 110px;
+  align-items: center;
+  gap: 14px;
+  min-height: 68px;
+}
+
+.match-status {
+  display: flex !important;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  font-size: 13px;
+}
+
+.match-status strong {
+  font-weight: 700;
+}
+
+.match-status small {
+  font-size: 11px;
+  opacity: .7;
+}
+
+.match-teams {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) 80px minmax(0, 1fr);
+  align-items: center;
+  gap: 12px;
+}
+
+.match-team {
+  display: flex !important;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+
+.home-team {
+  justify-content: flex-end;
+  text-align: right;
+}
+
+.away-team {
+  justify-content: flex-start;
+  text-align: left;
+}
+
+.team-name {
+  font-size: 14px;
+  font-weight: 600;
+  line-height: 1.2;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.match-team-logo {
+  width: 30px !important;
+  height: 30px !important;
+  object-fit: contain;
+  flex: 0 0 30px;
+}
+
+.fallback-logo {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 20px;
+}
+
+.match-score {
+  display: flex !important;
+  align-items: center;
+  justify-content: center;
+  gap: 7px;
+  font-size: 21px;
+  font-weight: 800;
+  white-space: nowrap;
+}
+
+.score-separator {
+  opacity: .45;
+  font-size: 16px;
+}
+
+.match-league {
+  display: flex !important;
+  align-items: center;
+  gap: 6px;
+  margin-bottom: 7px;
+  font-size: 12px;
+  font-weight: 700;
+  opacity: .75;
+}
+
+.match-league-icon {
+  font-size: 14px;
+}
+
+.match-status-right {
+  text-align: center;
+  font-size: 11px;
+  opacity: .65;
+}
+
+/* LIVE */
+.match-card.is-live {
+  border-left: 3px solid #ef4444 !important;
+}
+
+.match-card.is-live .match-status {
+  color: #ef4444;
+}
+
+.live-dot {
+  width: 7px;
+  height: 7px;
+  background: #ef4444;
+  border-radius: 50%;
+  display: inline-block;
+  animation: bakhiraLivePulse 1.2s infinite;
+}
+
+@keyframes bakhiraLivePulse {
+  0%, 100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: .35;
+  }
+}
+
+/* FINISHED */
+.match-card.is-finished {
+  opacity: .9;
+}
+
+/* BOUTONS */
+button,
+.date-tabs button,
+.filter-btn,
+.nav-btn {
+  cursor: pointer !important;
+}
+
+button:hover,
+.date-tabs button:hover,
+.filter-btn:hover,
+.nav-btn:hover {
+  cursor: pointer !important;
+}
+
+/* DARK MODE */
+.dark .match-card {
+  background: #182128 !important;
+  border-color: #29343d !important;
+}
+
+.dark .match-card:hover {
+  background: #202b32 !important;
+}
+
+.dark .match-league {
+  color: #d7e0e5;
+}
+
+.dark .team-name,
+.dark .match-score,
+.dark .match-status {
+  color: #f1f5f7;
+}
+
+.dark .match-status-right {
+  color: #aebbc3;
+}
+
+/* MOBILE */
+@media (max-width: 700px) {
+  .match-content {
+    grid-template-columns: 65px minmax(0, 1fr) 75px;
+    gap: 7px;
+  }
+
+  .match-teams {
+    grid-template-columns: minmax(0, 1fr) 55px minmax(0, 1fr);
+    gap: 6px;
+  }
+
+  .team-name {
+    font-size: 12px;
+  }
+
+  .match-team-logo {
+    width: 25px !important;
+    height: 25px !important;
+    flex-basis: 25px;
+  }
+
+  .match-score {
+    font-size: 18px;
+    gap: 4px;
+  }
+
+  .match-status-right {
+    font-size: 9px;
+  }
+}
