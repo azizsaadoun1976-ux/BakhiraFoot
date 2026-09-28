@@ -1,339 +1,723 @@
+```html
 <!doctype html>
 <html lang="fr">
+
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
 
-<title>Articles Football – BakhiraFoot</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
 
-<meta
-  name="description"
-  content="Articles, analyses et contenus football sur le football marocain, africain et international."
->
+  <title>Articles Football – BakhiraFoot</title>
 
-<meta name="robots" content="index, follow">
+  <meta
+    name="description"
+    content="Articles, analyses et contenus football sur le football marocain, africain et international."
+  >
 
-<link
-  rel="canonical"
-  href="https://bakhira-foot.vercel.app/articles.html"
->
+  <meta name="robots" content="index, follow">
 
-<link rel="icon" type="image/svg+xml" href="favicon.svg">
-<link rel="stylesheet" href="style.css">
+  <link
+    rel="canonical"
+    href="https://bakhira-foot.vercel.app/articles.html"
+  >
 
-<style>
-.articles-page{
-  max-width:1100px;
-  margin:auto;
-}
+  <link
+    rel="icon"
+    href="/favicon.svg"
+    type="image/svg+xml"
+  >
 
-.articles-header{
-  background:#0b1724;
-  color:white;
-  border-radius:14px;
-  padding:30px;
-  margin-bottom:22px;
-}
+  <link
+    rel="stylesheet"
+    href="style.css"
+  >
 
-.articles-header h1{
-  margin:8px 0;
-}
+  <style>
+    /* =========================================
+       ARTICLES PAGE
+       ========================================= */
 
-.articles-header p{
-  color:#c5d0d7;
-  line-height:1.7;
-}
+    .articles-page {
+      width: min(1100px, calc(100% - 40px));
+      margin: 0 auto;
+      padding: 34px 0 55px;
+    }
 
-.article-grid{
-  display:grid;
-  grid-template-columns:repeat(2,1fr);
-  gap:18px;
-}
+    .articles-hero {
+      position: relative;
+      overflow: hidden;
 
-.article-card{
-  background:#fff;
-  border:1px solid #e1e6e9;
-  border-radius:12px;
-  padding:24px;
-}
+      padding: 34px;
 
-.article-card .category{
-  display:inline-block;
-  background:#20d486;
-  color:#062016;
-  padding:6px 10px;
-  border-radius:7px;
-  font-size:12px;
-  font-weight:900;
-}
+      border: 1px solid #e1e8ec;
+      border-radius: 20px;
 
-.article-card h2{
-  margin:15px 0 10px;
-}
+      background:
+        radial-gradient(
+          circle at 90% 10%,
+          rgba(32, 212, 134, .08),
+          transparent 32%
+        ),
+        linear-gradient(
+          145deg,
+          #ffffff,
+          #f7fafb
+        );
 
-.article-card p{
-  color:#68757e;
-  line-height:1.7;
-}
+      box-shadow:
+        0 10px 30px rgba(15, 23, 42, .05);
+    }
 
-.article-card a{
-  display:inline-block;
-  margin-top:10px;
-  color:#087f51;
-  font-weight:900;
-  text-decoration:none;
-}
+    .articles-eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
 
-.back{
-  display:inline-block;
-  margin-top:25px;
-  background:#20d486;
-  color:#062016;
-  padding:12px 18px;
-  border-radius:9px;
-  text-decoration:none;
-  font-weight:900;
-}
+      margin-bottom: 12px;
 
-.dark .articles-header{
-  background:#101c27;
-}
+      padding: 6px 9px;
 
-.dark .article-card{
-  background:#182128;
-  color:#e9eef1;
-  border-color:#29343d;
-}
+      border-radius: 7px;
 
-.dark .article-card p{
-  color:#bac4ca;
-}
+      background: #eef8f4;
+      color: #087f51;
 
-.dark .article-card a{
-  color:#20d486;
-}
+      font-size: 10px;
+      font-weight: 850;
+      letter-spacing: .04em;
+    }
 
-@media(max-width:700px){
-  .article-grid{
-    grid-template-columns:1fr;
-  }
-}
-</style>
+    .articles-hero h1 {
+      margin: 0 0 12px;
+
+      color: #15232d;
+
+      font-size: clamp(32px, 4vw, 48px);
+      line-height: 1.05;
+      letter-spacing: -.04em;
+
+      font-weight: 900;
+    }
+
+    .articles-hero p {
+      max-width: 700px;
+
+      margin: 0;
+
+      color: #687984;
+
+      font-size: 14px;
+      line-height: 1.7;
+    }
+
+    .article-grid {
+      display: grid;
+
+      grid-template-columns:
+        repeat(2, minmax(0, 1fr));
+
+      gap: 14px;
+
+      margin-top: 18px;
+    }
+
+    .article-card {
+      display: flex;
+      flex-direction: column;
+
+      min-width: 0;
+
+      padding: 20px;
+
+      border: 1px solid #e1e8ec;
+      border-radius: 14px;
+
+      background: #ffffff;
+
+      box-shadow:
+        0 5px 20px rgba(15, 23, 42, .04);
+
+      transition:
+        transform .18s ease,
+        border-color .18s ease,
+        box-shadow .18s ease;
+    }
+
+    .article-card:hover {
+      transform: translateY(-2px);
+
+      border-color: #ced8de;
+
+      box-shadow:
+        0 11px 28px rgba(15, 23, 42, .075);
+    }
+
+    .article-card .category {
+      display: inline-flex;
+      align-self: flex-start;
+
+      padding: 5px 8px;
+
+      border-radius: 6px;
+
+      background: #eef8f4;
+      color: #087f51;
+
+      font-size: 9px;
+      font-weight: 850;
+      letter-spacing: .03em;
+    }
+
+    .article-card h2 {
+      margin: 14px 0 9px;
+
+      color: #1b2a34;
+
+      font-size: 17px;
+      line-height: 1.3;
+
+      letter-spacing: -.015em;
+
+      font-weight: 850;
+    }
+
+    .article-card p {
+      margin: 0;
+
+      color: #687984;
+
+      font-size: 12px;
+      line-height: 1.7;
+    }
+
+    .article-card a {
+      display: inline-flex;
+      align-items: center;
+      gap: 5px;
+
+      align-self: flex-start;
+
+      margin-top: 15px;
+
+      color: #087f51;
+
+      text-decoration: none;
+
+      font-size: 11px;
+      font-weight: 850;
+    }
+
+    .article-card a:hover {
+      text-decoration: underline;
+      text-underline-offset: 3px;
+    }
+
+    .articles-back {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+
+      margin-top: 20px;
+
+      min-height: 42px;
+      padding: 0 15px;
+
+      border-radius: 9px;
+
+      background: #172730;
+      color: #ffffff;
+
+      text-decoration: none;
+
+      font-size: 12px;
+      font-weight: 800;
+
+      transition:
+        transform .15s ease,
+        background .15s ease;
+    }
+
+    .articles-back:hover {
+      transform: translateY(-1px);
+      background: #263a45;
+    }
+
+    /* =========================================
+       FOOTER
+       ========================================= */
+
+    .articles-footer {
+      padding: 28px 20px;
+
+      border-top: 1px solid #e1e8ec;
+
+      background: #eef3f5;
+
+      text-align: center;
+    }
+
+    .articles-footer-copy {
+      margin-bottom: 10px;
+
+      color: #64747f;
+
+      font-size: 11px;
+    }
+
+    .articles-footer-links {
+      display: flex;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 8px 18px;
+    }
+
+    .articles-footer-links a {
+      color: #53636e;
+
+      text-decoration: none;
+
+      font-size: 11px;
+      font-weight: 700;
+    }
+
+    .articles-footer-links a:hover {
+      color: #1c303b;
+    }
+
+    /* =========================================
+       DARK MODE
+       ========================================= */
+
+    .dark .articles-hero {
+      border-color: #29343d;
+
+      background:
+        radial-gradient(
+          circle at 90% 10%,
+          rgba(32, 212, 134, .06),
+          transparent 32%
+        ),
+        linear-gradient(
+          145deg,
+          #151d24,
+          #10171c
+        );
+
+      box-shadow:
+        0 10px 30px rgba(0, 0, 0, .16);
+    }
+
+    .dark .articles-eyebrow {
+      background: #173229;
+      color: #68dda5;
+    }
+
+    .dark .articles-hero h1 {
+      color: #edf2f5;
+    }
+
+    .dark .articles-hero p {
+      color: #96a4ad;
+    }
+
+    .dark .article-card {
+      background: #151d24;
+      border-color: #29343d;
+
+      box-shadow:
+        0 8px 25px rgba(0, 0, 0, .16);
+    }
+
+    .dark .article-card:hover {
+      border-color: #3a4853;
+    }
+
+    .dark .article-card .category {
+      background: #173229;
+      color: #68dda5;
+    }
+
+    .dark .article-card h2 {
+      color: #edf2f5;
+    }
+
+    .dark .article-card p {
+      color: #96a4ad;
+    }
+
+    .dark .article-card a {
+      color: #68dda5;
+    }
+
+    .dark .articles-back {
+      background: #edf2f5;
+      color: #151d24;
+    }
+
+    .dark .articles-back:hover {
+      background: #ffffff;
+    }
+
+    .dark .articles-footer {
+      background: #11181e;
+      border-color: #29343d;
+    }
+
+    .dark .articles-footer-copy,
+    .dark .articles-footer-links a {
+      color: #95a3ac;
+    }
+
+    .dark .articles-footer-links a:hover {
+      color: #edf2f5;
+    }
+
+    /* =========================================
+       MOBILE
+       ========================================= */
+
+    @media (max-width: 700px) {
+
+      .articles-page {
+        width: min(
+          100% - 20px,
+          1100px
+        );
+
+        padding:
+          18px 0 35px;
+      }
+
+      .articles-hero {
+        padding: 21px 16px;
+        border-radius: 15px;
+      }
+
+      .articles-hero h1 {
+        font-size: 29px;
+      }
+
+      .articles-hero p {
+        font-size: 12px;
+        line-height: 1.6;
+      }
+
+      .article-grid {
+        grid-template-columns: 1fr;
+        gap: 10px;
+      }
+
+      .article-card {
+        padding: 16px;
+        border-radius: 11px;
+      }
+
+      .article-card h2 {
+        font-size: 16px;
+      }
+
+      .article-card p {
+        font-size: 12px;
+        line-height: 1.65;
+      }
+
+      .articles-back {
+        width: 100%;
+        justify-content: center;
+      }
+
+      .articles-footer {
+        padding:
+          22px 12px;
+      }
+    }
+  </style>
 
 </head>
 
 <body>
 
-<header>
+  <header>
 
-  <div class="logo">
-    <img src="logo.svg" alt="BakhiraFoot - Football">
-  </div>
+    <div class="logo">
 
-  <nav>
-
-    <a href="index.html"
-       style="color:#aeb9c1;text-decoration:none;padding:22px 12px;font-weight:800;">
-      Accueil
-    </a>
-
-    <a href="articles.html"
-       style="color:#fff;text-decoration:none;padding:22px 12px;font-weight:800;border-bottom:3px solid #20d486;">
-      Articles
-    </a>
-
-    <a href="about.html"
-       style="color:#aeb9c1;text-decoration:none;padding:22px 12px;font-weight:800;">
-      À propos
-    </a>
-
-    <a href="contact.html"
-       style="color:#aeb9c1;text-decoration:none;padding:22px 12px;font-weight:800;">
-      Contact
-    </a>
-
-  </nav>
-
-</header>
-
-
-<main>
-
-  <div class="articles-page">
-
-    <div class="articles-header">
-
-      <small>⚽ BAKHIRAFOOT</small>
-
-      <h1>Articles Football</h1>
-
-      <p>
-        Analyses, football marocain, compétitions africaines
-        et actualités du football international.
-      </p>
+      <img
+        src="logo.svg"
+        alt="BakhiraFoot - Football"
+      >
 
     </div>
 
+    <nav>
 
-    <div class="article-grid">
+      <a
+        href="index.html"
+        style="
+          color:#aeb9c1;
+          text-decoration:none;
+          padding:22px 12px;
+          font-weight:800;
+        "
+      >
+        Accueil
+      </a>
+
+      <a
+        href="articles.html"
+        style="
+          color:#fff;
+          text-decoration:none;
+          padding:22px 12px;
+          font-weight:800;
+          border-bottom:3px solid #20d486;
+        "
+      >
+        Articles
+      </a>
+
+      <a
+        href="about.html"
+        style="
+          color:#aeb9c1;
+          text-decoration:none;
+          padding:22px 12px;
+          font-weight:800;
+        "
+      >
+        À propos
+      </a>
+
+      <a
+        href="contact.html"
+        style="
+          color:#aeb9c1;
+          text-decoration:none;
+          padding:22px 12px;
+          font-weight:800;
+        "
+      >
+        Contact
+      </a>
+
+    </nav>
+
+  </header>
 
 
-      <article class="article-card">
+  <main>
 
-        <span class="category">🇲🇦 FOOTBALL MAROCAIN</span>
+    <div class="articles-page">
 
-        <h2>Le football marocain et son développement</h2>
+      <section class="articles-hero">
+
+        <div class="articles-eyebrow">
+          ⚽ BAKHIRAFOOT
+        </div>
+
+        <h1>
+          Articles Football
+        </h1>
 
         <p>
-          Le football marocain occupe une place importante dans
-          le paysage sportif national. Les clubs, les compétitions
-          nationales et la formation des jeunes participent au
-          développement du football au Maroc.
+          Analyses, football marocain, compétitions
+          africaines et actualités du football international.
         </p>
+
+      </section>
+
+
+      <section class="article-grid">
+
+
+        <article class="article-card">
+
+          <span class="category">
+            🇲🇦 FOOTBALL MAROCAIN
+          </span>
+
+          <h2>
+            Le football marocain et son développement
+          </h2>
+
+          <p>
+            Le football marocain occupe une place importante
+            dans le paysage sportif national. Les clubs,
+            les compétitions nationales et la formation des jeunes
+            participent au développement du football au Maroc.
+          </p>
 
           <a href="article-football-maroc.html">
-    Lire l'article →
-  </a>
+            Lire l'article →
+          </a>
+
+        </article>
 
 
-      </article>
+        <article class="article-card">
+
+          <span class="category">
+            🌍 FOOTBALL INTERNATIONAL
+          </span>
+
+          <h2>
+            Pourquoi les grandes compétitions attirent autant de supporters ?
+          </h2>
+
+          <p>
+            Les grandes compétitions internationales réunissent
+            des équipes, des joueurs et des supporters venus
+            de différents pays.
+          </p>
+
+          <a href="article-football-international.html">
+            Lire l'article →
+          </a>
+
+        </article>
 
 
-      <article class="article-card">
+        <article class="article-card">
 
-        <span class="category">🌍 FOOTBALL INTERNATIONAL</span>
+          <span class="category">
+            🏆 COMPÉTITIONS
+          </span>
 
-        <h2>Pourquoi les grandes compétitions attirent autant de supporters ?</h2>
+          <h2>
+            Comprendre le fonctionnement d'un championnat
+          </h2>
 
-        <p>
-          Les grandes compétitions internationales réunissent des
-          équipes, des joueurs et des supporters venus de différents
-          pays. Elles permettent également de suivre les évolutions
-          tactiques et les nouvelles générations de joueurs.
-        </p>
+          <p>
+            Dans un championnat, les équipes disputent plusieurs
+            rencontres au cours de la saison. Les résultats permettent
+            d'établir un classement qui évolue au fil des journées.
+          </p>
 
-        <a href="article-football-international.html">
-  Lire l'article →
-</a>
-      </article>
+          <a href="article-championnat.html">
+            Lire l'article →
+          </a>
 
-
-      <article class="article-card">
-
-        <span class="category">🏆 COMPÉTITIONS</span>
-
-        <h2>Comprendre le fonctionnement d'un championnat</h2>
-
-        <p>
-          Dans un championnat, les équipes disputent plusieurs
-          rencontres au cours de la saison. Les résultats permettent
-          d'établir un classement qui évolue au fil des journées.
-        </p>
-
-        <a href="article-championnat.html">
-  Lire l'article →
-</a>
-      </article>
+        </article>
 
 
-      <article class="article-card">
+        <article class="article-card">
 
-        <span class="category">📊 ANALYSE</span>
+          <span class="category">
+            📊 ANALYSE
+          </span>
 
-        <h2>Pourquoi les statistiques sont importantes dans le football</h2>
+          <h2>
+            Pourquoi les statistiques sont importantes dans le football
+          </h2>
 
-        <p>
-          Les statistiques permettent d'étudier les performances
-          d'une équipe ou d'un joueur. Possession, tirs, buts,
-          passes et résultats peuvent aider à mieux comprendre
-          le déroulement d'une saison.
-        </p>
+          <p>
+            Les statistiques permettent d'étudier les performances
+            d'une équipe ou d'un joueur : possession, tirs,
+            buts, passes et résultats.
+          </p>
 
-        <a href="article-statistiques-foot.html">
-  Lire l'article →
-</a>
-      </article>
+          <a href="article-statistiques-foot.html">
+            Lire l'article →
+          </a>
 
-
-      <article class="article-card">
-
-        <span class="category">⚽ TACTIQUE</span>
-
-        <h2>Le rôle du milieu de terrain dans une équipe</h2>
-
-        <p>
-          Le milieu de terrain joue souvent un rôle essentiel dans
-          la construction du jeu. Il peut participer à la récupération,
-          à la création des occasions et à la circulation du ballon.
-        </p>
-
-        <a href="article-milieu-terrain.html">
-  Lire l'article →
-</a>
-      </article>
+        </article>
 
 
-      <article class="article-card">
+        <article class="article-card">
 
-        <span class="category">🌟 JEUNES TALENTS</span>
+          <span class="category">
+            ⚽ TACTIQUE
+          </span>
 
-        <h2>La formation des jeunes joueurs</h2>
+          <h2>
+            Le rôle du milieu de terrain dans une équipe
+          </h2>
 
-        <p>
-          La formation représente une étape importante pour permettre
-          aux jeunes joueurs de progresser techniquement, tactiquement
-          et physiquement avant d'évoluer au plus haut niveau.
-        </p>
+          <p>
+            Le milieu de terrain joue souvent un rôle essentiel
+            dans la construction du jeu, la récupération et
+            la création des occasions.
+          </p>
 
-        <a href="article-jeunes-talents.html">
-  Lire l'article →
-</a>
-      </article>
+          <a href="article-milieu-terrain.html">
+            Lire l'article →
+          </a>
 
+        </article>
+
+
+        <article class="article-card">
+
+          <span class="category">
+            🌟 JEUNES TALENTS
+          </span>
+
+          <h2>
+            La formation des jeunes joueurs
+          </h2>
+
+          <p>
+            La formation représente une étape importante pour
+            permettre aux jeunes joueurs de progresser techniquement,
+            tactiquement et physiquement.
+          </p>
+
+          <a href="article-jeunes-talents.html">
+            Lire l'article →
+          </a>
+
+        </article>
+
+
+      </section>
+
+
+      <a
+        class="articles-back"
+        href="index.html"
+      >
+        ← Retour à BakhiraFoot
+      </a>
 
     </div>
 
-
-    <a class="back" href="index.html">
-      ← Retour à BakhiraFoot
-    </a>
-
-  </div>
-
-</main>
+  </main>
 
 
-<footer>
+  <footer class="articles-footer">
 
-  <div style="margin-bottom:10px;">
-    © 2026 BakhiraFoot — Made By Saâd Bouajaji
-  </div>
+    <div class="articles-footer-copy">
+      © 2026 BakhiraFoot — Made By Saâd Bouajaji
+    </div>
 
-  <div style="display:flex;justify-content:center;gap:18px;flex-wrap:wrap;">
+    <div class="articles-footer-links">
 
-    <a href="index.html" style="color:inherit;text-decoration:none;">
-      Accueil
-    </a>
+      <a href="index.html">
+        Accueil
+      </a>
 
-    <a href="about.html" style="color:inherit;text-decoration:none;">
-      À propos
-    </a>
+      <a href="about.html">
+        À propos
+      </a>
 
-    <a href="contact.html" style="color:inherit;text-decoration:none;">
-      Contact
-    </a>
+      <a href="contact.html">
+        Contact
+      </a>
 
-    <a href="privacy.html" style="color:inherit;text-decoration:none;">
-      Confidentialité
-    </a>
+      <a href="privacy.html">
+        Confidentialité
+      </a>
 
-    <a href="terms.html" style="color:inherit;text-decoration:none;">
-      Conditions
-    </a>
+      <a href="terms.html">
+        Conditions
+      </a>
 
-  </div>
+    </div>
 
-</footer>
+  </footer>
+
+  <script src="theme-auto.js"></script>
 
 </body>
+
 </html>
+```
