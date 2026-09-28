@@ -2857,12 +2857,6 @@ nav button.active {
    حسب إعدادات الهاتف / PC
    ========================================= */
 
-@media (prefers-color-scheme: dark) {
-
-  body {
-    background: #0f151a !important;
-    color: #edf2f5 !important;
-  }
 
   header {
     background: #11181e !important;
@@ -3001,13 +2995,7 @@ nav button.active {
    LIGHT MODE — FORCE HOME TITLE
    ========================================= */
 
-@media (prefers-color-scheme: light) {
 
-  #home .title h1,
-  #home .hero h1,
-  #home h1 {
-    color: #14212b !important;
-  }
 
   #home .title h1 span,
   #home .hero h1 span,
