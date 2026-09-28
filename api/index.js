@@ -125,38 +125,75 @@ module.exports = async (req, res) => {
        * Return everything
        */
 
-      return res.json({
-        fixture:
-          fixtureResult.data?.data ||
-          fixtureResult.data,
+const unwrapV2 = (result) => {
 
-        events:
-          eventsResult.ok
-            ? eventsResult.data?.data || []
-            : [],
+  if (!result?.ok) {
+    return {
+      data: [],
+      meta: {
+        status: result?.status || 0
+      }
+    };
+  }
 
-        lineups:
-          lineupsResult.ok
-            ? lineupsResult.data?.data || []
-            : [],
+  const body = result.data;
 
-        statistics:
-          statisticsResult.ok
-            ? statisticsResult.data?.data || []
-            : [],
+  return {
+    data:
+      body?.data ??
+      body?.response ??
+      (Array.isArray(body) ? body : []),
 
-        players:
-          playersResult.ok
-            ? playersResult.data?.data || []
-            : [],
+    meta:
+      body?.meta || {}
+  };
+};
 
-        apiStatus: {
-          events: eventsResult.status,
-          lineups: lineupsResult.status,
-          statistics: statisticsResult.status,
-          players: playersResult.status
-        }
-      });
+const eventsPack =
+  unwrapV2(eventsResult);
+
+const lineupsPack =
+  unwrapV2(lineupsResult);
+
+const statisticsPack =
+  unwrapV2(statisticsResult);
+
+const playersPack =
+  unwrapV2(playersResult);
+
+return res.json({
+
+  fixture:
+    fixtureResult.data?.data ||
+    fixtureResult.data,
+
+  events:
+    eventsPack.data,
+
+  lineups:
+    lineupsPack.data,
+
+  statistics:
+    statisticsPack.data,
+
+  players:
+    playersPack.data,
+
+  apiStatus: {
+    events: eventsResult.status,
+    lineups: lineupsResult.status,
+    statistics: statisticsResult.status,
+    players: playersResult.status
+  },
+
+  apiMeta: {
+    events: eventsPack.meta,
+    lineups: lineupsPack.meta,
+    statistics: statisticsPack.meta,
+    players: playersPack.meta
+  }
+
+});
     }
 
     /*
