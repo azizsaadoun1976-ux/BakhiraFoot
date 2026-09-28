@@ -2835,3 +2835,183 @@ nav button.active {
 .dark #home h1 span {
   color: #b8c5cc !important;
 }
+/* =========================================
+   HOME TITLE — WHITE MODE FIX
+   ========================================= */
+
+#home .title h1,
+#home .hero h1,
+#home h1 {
+  color: #14212b !important;
+  text-shadow: none !important;
+}
+
+#home .title h1 span,
+#home .hero h1 span,
+#home h1 span {
+  color: #536977 !important;
+}
+
+/* =========================================
+   AUTO DARK MODE
+   حسب إعدادات الهاتف / PC
+   ========================================= */
+
+@media (prefers-color-scheme: dark) {
+
+  body {
+    background: #0f151a !important;
+    color: #edf2f5 !important;
+  }
+
+  header {
+    background: #11181e !important;
+    border-color: #29343d !important;
+  }
+
+  nav button,
+  nav a {
+    color: #cbd5db !important;
+  }
+
+  nav button.active {
+    background: #edf2f5 !important;
+    color: #151d24 !important;
+  }
+
+  aside {
+    background: #11181e !important;
+    border-color: #29343d !important;
+  }
+
+  main,
+  .page {
+    background: transparent !important;
+    color: #edf2f5 !important;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    color: #edf2f5 !important;
+  }
+
+  p,
+  small {
+    color: #9aa8b1 !important;
+  }
+
+  a {
+    color: #cbd5db !important;
+  }
+
+  input,
+  textarea,
+  select {
+    background: #1b252d !important;
+    color: #edf2f5 !important;
+    border-color: #34414b !important;
+  }
+
+  input::placeholder,
+  textarea::placeholder {
+    color: #7f8d96 !important;
+  }
+
+  footer {
+    background: #11181e !important;
+    border-color: #29343d !important;
+    color: #cbd5db !important;
+  }
+
+  /* Articles */
+
+  article,
+  .article,
+  .article-card,
+  .articles,
+  .article-content,
+  .article-box,
+  .news-card,
+  .card {
+    background: #151d24 !important;
+    color: #edf2f5 !important;
+    border-color: #29343d !important;
+  }
+
+  /* À propos / Contact / pages secondaires */
+
+  .about,
+  .about-card,
+  .about-box,
+  .contact,
+  .contact-card,
+  .contact-box,
+  .legal,
+  .legal-card,
+  .content-box {
+    background: #151d24 !important;
+    color: #edf2f5 !important;
+    border-color: #29343d !important;
+  }
+
+  /* Home */
+
+  #home .title {
+    background:
+      linear-gradient(
+        145deg,
+        #151d24,
+        #10171c
+      ) !important;
+
+    border-color: #29343d !important;
+  }
+
+  #home .title h1,
+  #home .hero h1,
+  #home h1 {
+    color: #f1f5f7 !important;
+  }
+
+  #home .title h1 span,
+  #home .hero h1 span,
+  #home h1 span {
+    color: #b8c5cc !important;
+  }
+
+  #home p {
+    color: #9aa8b1 !important;
+  }
+
+  /* Search */
+
+  #search,
+  #theme {
+    background: #1b252d !important;
+    color: #edf2f5 !important;
+    border-color: #34414b !important;
+  }
+}
+
+/* =========================================
+   LIGHT MODE — FORCE HOME TITLE
+   ========================================= */
+
+@media (prefers-color-scheme: light) {
+
+  #home .title h1,
+  #home .hero h1,
+  #home h1 {
+    color: #14212b !important;
+  }
+
+  #home .title h1 span,
+  #home .hero h1 span,
+  #home h1 span {
+    color: #536977 !important;
+  }
+}
