@@ -1117,8 +1117,7 @@ function addModalStyles() {
 
 async function openMatchDetails(index) {
 
-  const match =
-    currentMatches[index];
+  const match = currentMatches[index];
 
   if (!match) {
     toast("تفاصيل الماتش غير متوفرة");
@@ -1127,10 +1126,518 @@ async function openMatchDetails(index) {
 
   createMatchModal();
 
-  const content =
-    $("matchDetailsContent");
+  const content = $("matchDetailsContent");
 
   if (!content) return;
+
+  const home = getHome(match);
+  const away = getAway(match);
+
+  const homeLogo = getHomeLogo(match);
+  const awayLogo = getAwayLogo(match);
+
+  const homeScore = getHomeScore(match);
+  const awayScore = getAwayScore(match);
+
+  const league = getLeague(match);
+  const status = statusLabel(match);
+
+  const date =
+    match?.fixture?.date ||
+    match?.date ||
+    null;
+
+  const fixtureId = getFixtureId(match);
+
+  if (!fixtureId) {
+    content.innerHTML = `
+      <div class="bf-detail-section">
+        <h3>⚠️ Match Center</h3>
+        <p style="opacity:.7">
+          معرف الماتش غير متوفر.
+        </p>
+      </div>
+    `;
+
+    const modal = $("matchModal");
+
+    if (modal) {
+      modal.style.display = "block";
+      document.body.style.overflow = "hidden";
+    }
+
+    return;
+  }
+
+  /*
+   * ==========================================
+   * SHOW BASIC MATCH IMMEDIATELY
+   * ==========================================
+   */
+
+  content.innerHTML = `
+
+    <div class="bf-details-league">
+      🏆 ${escapeHTML(league)}
+    </div>
+
+    <div style="text-align:center">
+      <div class="bf-details-status">
+        ${escapeHTML(status)}
+      </div>
+    </div>
+
+    <div class="bf-details-teams">
+
+      <div class="bf-details-team">
+
+        ${
+          homeLogo
+            ? `
+              <img
+                class="bf-details-logo"
+                src="${escapeHTML(homeLogo)}"
+                alt="${escapeHTML(home)}"
+              >
+            `
+            : `
+              <div class="bf-details-fallback-logo">
+                ⚽
+              </div>
+            `
+        }
+
+        <span>${escapeHTML(home)}</span>
+
+      </div>
+
+      <div>
+
+        <div class="bf-details-score">
+          ${escapeHTML(homeScore)}
+          -
+          ${escapeHTML(awayScore)}
+        </div>
+
+        ${
+          date
+            ? `
+              <div class="bf-details-time">
+                ${escapeHTML(formatDate(date))}
+              </div>
+            `
+            : ""
+        }
+
+      </div>
+
+      <div class="bf-details-team">
+
+        ${
+          awayLogo
+            ? `
+              <img
+                class="bf-details-logo"
+                src="${escapeHTML(awayLogo)}"
+                alt="${escapeHTML(away)}"
+              >
+            `
+            : `
+              <div class="bf-details-fallback-logo">
+                ⚽
+              </div>
+            `
+        }
+
+        <span>${escapeHTML(away)}</span>
+
+      </div>
+
+    </div>
+
+    <div class="bf-detail-section">
+      <h3>⏳ Match Center</h3>
+      <p style="opacity:.7">
+        Chargement des événements et statistiques...
+      </p>
+    </div>
+  `;
+
+  const modal = $("matchModal");
+
+  if (modal) {
+    modal.style.display = "block";
+    document.body.style.overflow = "hidden";
+  }
+
+  /*
+   * ==========================================
+   * LOAD ADVANCED DATA
+   * ==========================================
+   */
+
+  try {
+
+    const response = await fetch(
+      `${API_BASE}/api?fixture=${encodeURIComponent(
+        fixtureId
+      )}&details=all`,
+      {
+        cache: "no-store"
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error(
+        `HTTP ${response.status}`
+      );
+    }
+
+    const data = await response.json();
+
+    renderAdvancedMatchCenter(
+      content,
+      {
+        match,
+        data
+      }
+    );
+
+  } catch (error) {
+
+    console.error(
+      "MATCH CENTER ERROR:",
+      error
+    );
+
+    content.innerHTML += `
+      <div class="bf-detail-section">
+        <h3>⚠️ Match Center</h3>
+        <p style="opacity:.7">
+          تعذر تحميل التفاصيل الإضافية.
+        </p>
+      </div>
+    `;
+  }
+}
+
+function renderAdvancedMatchCenter(content, { match, data }) {
+
+  const events =
+    Array.isArray(data?.events)
+      ? data.events
+      : [];
+
+  const lineups =
+    Array.isArray(data?.lineups)
+      ? data.lineups
+      : [];
+
+  const statistics =
+    Array.isArray(data?.statistics)
+      ? data.statistics
+      : [];
+
+  const players =
+    Array.isArray(data?.players)
+      ? data.players
+      : [];
+
+  /*
+   * ==========================================
+   * EVENTS
+   * ==========================================
+   */
+
+  const eventsHTML = events.length
+    ? events.map(event => {
+
+        const minute =
+          event?.time ??
+          event?.minute ??
+          "";
+
+        const player =
+          event?.playerName ||
+          event?.player?.name ||
+          "";
+
+        const assist =
+          event?.assistName ||
+          event?.assist?.name ||
+          "";
+
+        const type =
+          event?.type ||
+          "";
+
+        const detail =
+          event?.detail ||
+          "";
+
+        let icon = "⚽";
+
+        if (
+          String(type).toLowerCase().includes("card")
+        ) {
+          icon =
+            String(detail)
+              .toLowerCase()
+              .includes("red")
+              ? "🟥"
+              : "🟨";
+        }
+
+        if (
+          String(type)
+            .toLowerCase()
+            .includes("subst")
+        ) {
+          icon = "🔄";
+        }
+
+        return `
+          <div class="bf-event">
+
+            <strong>
+              ${escapeHTML(
+                minute !== ""
+                  ? `${minute}'`
+                  : ""
+              )}
+            </strong>
+
+            <span>
+              ${icon}
+            </span>
+
+            <span>
+              ${escapeHTML(type)}
+              ${
+                detail
+                  ? ` · ${escapeHTML(detail)}`
+                  : ""
+              }
+
+              ${
+                player
+                  ? ` — ${escapeHTML(player)}`
+                  : ""
+              }
+
+              ${
+                assist
+                  ? `
+                    <small>
+                      · Assist:
+                      ${escapeHTML(assist)}
+                    </small>
+                  `
+                  : ""
+              }
+            </span>
+
+          </div>
+        `;
+      }).join("")
+    : `
+      <p style="opacity:.65">
+        Aucun événement détaillé disponible pour ce match.
+      </p>
+    `;
+
+  /*
+   * ==========================================
+   * LINEUPS
+   * ==========================================
+   */
+
+  const lineupsHTML = lineups.length
+    ? `
+      <div class="bf-detail-list">
+
+        ${
+          lineups.map(item => {
+
+            const team =
+              item?.team?.name ||
+              item?.teamName ||
+              "";
+
+            const formation =
+              item?.formation ||
+              "";
+
+            return `
+              <div class="bf-detail-item">
+
+                <strong>
+                  ${escapeHTML(team)}
+                </strong>
+
+                ${
+                  formation
+                    ? `
+                      <span>
+                        Formation:
+                        ${escapeHTML(
+                          formation
+                        )}
+                      </span>
+                    `
+                    : ""
+                }
+
+              </div>
+            `;
+          }).join("")
+        }
+
+      </div>
+    `
+    : `
+      <p style="opacity:.65">
+        Les compositions ne sont pas disponibles pour ce match.
+      </p>
+    `;
+
+  /*
+   * ==========================================
+   * STATISTICS
+   * ==========================================
+   */
+
+  const statisticsHTML = statistics.length
+    ? renderStatistics(statistics)
+    : `
+      <p style="opacity:.65">
+        Les statistiques détaillées ne sont pas disponibles pour ce match.
+      </p>
+    `;
+
+  /*
+   * ==========================================
+   * PLAYERS / RATINGS
+   * ==========================================
+   */
+
+  const playersHTML = players.length
+    ? `
+      <div class="bf-detail-list">
+
+        ${
+          players.map(player => {
+
+            const name =
+              player?.player?.name ||
+              player?.playerName ||
+              player?.name ||
+              "Joueur";
+
+            const rating =
+              player?.rating ??
+              player?.stats?.rating ??
+              player?.statistics?.rating ??
+              null;
+
+            const team =
+              player?.team?.name ||
+              player?.teamName ||
+              "";
+
+            return `
+              <div class="bf-detail-item">
+
+                <strong>
+                  ${escapeHTML(name)}
+                </strong>
+
+                ${
+                  team
+                    ? `
+                      <span>
+                        ${escapeHTML(team)}
+                      </span>
+                    `
+                    : ""
+                }
+
+                ${
+                  rating !== null &&
+                  rating !== undefined
+                    ? `
+                      <strong>
+                        ⭐ ${escapeHTML(rating)}
+                      </strong>
+                    `
+                    : ""
+                }
+
+              </div>
+            `;
+
+          }).join("")
+        }
+
+      </div>
+    `
+    : `
+      <p style="opacity:.65">
+        Les notes des joueurs ne sont pas disponibles pour ce match.
+      </p>
+    `;
+
+  /*
+   * ==========================================
+   * REBUILD MATCH CENTER
+   * ==========================================
+   */
+
+  content.innerHTML += `
+
+    <div class="bf-detail-section">
+
+      <h3>
+        ⚡ Événements
+      </h3>
+
+      <div class="bf-events">
+        ${eventsHTML}
+      </div>
+
+    </div>
+
+    <div class="bf-detail-section">
+
+      <h3>
+        👥 Compositions
+      </h3>
+
+      ${lineupsHTML}
+
+    </div>
+
+    <div class="bf-detail-section">
+
+      <h3>
+        📊 Statistiques
+      </h3>
+
+      ${statisticsHTML}
+
+    </div>
+
+    <div class="bf-detail-section">
+
+      <h3>
+        ⭐ Notes des joueurs
+      </h3>
+
+      ${playersHTML}
+
+    </div>
+  `;
+}
 
   // =========================
   // البيانات الموجودة حاليا
