@@ -13,6 +13,27 @@
 
   let requestId = 0;
 
+  let lastClickedFixtureId = null;
+
+document.addEventListener(
+  "click",
+  (event) => {
+
+    const card =
+      event.target.closest(".match-card");
+
+    if (!card) return;
+
+    const fixtureId =
+      card.dataset.fixtureId;
+
+    if (fixtureId) {
+      lastClickedFixtureId = fixtureId;
+    }
+  },
+  true
+);
+
   function escapeHTML(value) {
     return String(value ?? "")
       .replace(/&/g, "&amp;")
@@ -708,8 +729,244 @@
   appendStyle();
 
   window.openMatchDetails =
-    async function (index) {
+  async function (index) {
 
+    const clickedFixtureId =
+      lastClickedFixtureId;
+
+    /*
+     * Find the real match using fixture ID,
+     * not the visual card index.
+     */
+
+    let actualIndex = -1;
+
+    if (
+      clickedFixtureId &&
+      Array.isArray(window.currentMatches)
+    ) {
+      actualIndex =
+        window.currentMatches.findIndex(
+          (match) =>
+            String(
+              match?.fixture?.id ||
+              match?.id ||
+              ""
+            ) ===
+            String(clickedFixtureId)
+        );
+    }
+
+    /*
+     * Fallback for live matches / old behavior
+     */
+
+    if (
+      actualIndex < 0 &&
+      Array.isArray(window.currentMatches)
+    ) {
+      actualIndex = index;
+    }
+
+    /*
+     * Open the original modal
+     * using the REAL match index.
+     */
+
+    originalOpenMatchDetails(
+      actualIndex
+    );
+
+    /*
+     * Get the real fixture ID.
+     */
+
+    let fixtureId =
+      clickedFixtureId || null;
+
+    if (
+      !fixtureId &&
+      Array.isArray(window.currentMatches) &&
+      actualIndex >= 0
+    ) {
+      const match =
+        window.currentMatches[
+          actualIndex
+        ];
+
+      fixtureId =
+        match?.fixture?.id ||
+        match?.id ||
+        null;
+    }
+
+    const content =
+      getContent();
+
+    if (
+      !fixtureId ||
+      !content
+    ) {
+      return;
+    }
+
+    const currentRequest =
+      ++requestId;
+
+    /*
+     * Loading
+     */
+
+    content.insertAdjacentHTML(
+      "beforeend",
+      `
+        <div
+          id="bfMatchCenterLoading"
+          class="bf-detail-section bf-mc-section"
+        >
+          <h3>⚡ Match Center</h3>
+
+          <p style="opacity:.7;margin:0">
+            Chargement des détails...
+          </p>
+        </div>
+      `
+    );
+
+    try {
+
+      const response =
+        await fetch(
+          `/api?fixture=${encodeURIComponent(
+            fixtureId
+          )}&details=all`,
+          {
+            cache: "no-store"
+          }
+        );
+
+      if (!response.ok) {
+        throw new Error(
+          `HTTP ${response.status}`
+        );
+      }
+
+      const data =
+        await response.json();
+
+      /*
+       * Ignore old requests
+       */
+
+      if (
+        currentRequest !== requestId
+      ) {
+        return;
+      }
+
+      const loading =
+        document.getElementById(
+          "bfMatchCenterLoading"
+        );
+
+      if (loading) {
+        loading.remove();
+      }
+
+      const fixture =
+        data?.fixture || {};
+
+      const events =
+        Array.isArray(data?.events)
+          ? data.events
+          : [];
+
+      const lineups =
+        Array.isArray(data?.lineups)
+          ? data.lineups
+          : [];
+
+      const statistics =
+        Array.isArray(data?.statistics)
+          ? data.statistics
+          : [];
+
+      const players =
+        Array.isArray(data?.players)
+          ? data.players
+          : [];
+
+      /*
+       * Add details to the
+       * CORRECT match modal
+       */
+
+      const html = [
+
+        renderInfo(
+          fixture
+        ),
+
+        section(
+          "⚡ Événements",
+          renderEvents(
+            events,
+            fixture
+          )
+        ),
+
+        section(
+          "👥 Compositions",
+          renderLineups(
+            lineups
+          )
+        ),
+
+        section(
+          "📊 Statistiques",
+          renderStats(
+            statistics
+          )
+        ),
+
+        section(
+          "⭐ Joueurs",
+          renderPlayers(
+            players
+          )
+        )
+
+      ].join("");
+
+      content.insertAdjacentHTML(
+        "beforeend",
+        html
+      );
+
+    } catch (error) {
+
+      console.error(
+        "BF MATCH CENTER ERROR:",
+        error
+      );
+
+      const loading =
+        document.getElementById(
+          "bfMatchCenterLoading"
+        );
+
+      if (loading) {
+
+        loading.innerHTML = `
+          <h3>⚠️ Match Center</h3>
+
+          <p style="opacity:.7;margin:0">
+            تعذر تحميل التفاصيل الإضافية.
+          </p>
+        `;
+      }
+    }
+  };
       /*
        * أول حاجة: نخلي function القديمة
        * تخدم كما هي.
