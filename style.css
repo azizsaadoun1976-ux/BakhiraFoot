@@ -3003,3 +3003,121 @@ nav button.active {
     color: #536977 !important;
   }
 }
+/* =========================================
+   BAKHIRAFOOT — FORCE COMPLETE LIGHT MODE
+   ========================================= */
+
+html:not(.dark),
+body:not(.dark) {
+  background: #ffffff !important;
+  color: #17212b !important;
+}
+
+body:not(.dark) header {
+  background: #ffffff !important;
+  border-bottom-color: #e7ecef !important;
+  color: #17212b !important;
+}
+
+body:not(.dark) aside {
+  background: #ffffff !important;
+  border-color: #e7ecef !important;
+  color: #17212b !important;
+}
+
+body:not(.dark) main,
+body:not(.dark) .page {
+  background: #ffffff !important;
+  color: #17212b !important;
+}
+
+body:not(.dark) h1,
+body:not(.dark) h2,
+body:not(.dark) h3,
+body:not(.dark) h4,
+body:not(.dark) h5,
+body:not(.dark) h6 {
+  color: #17212b !important;
+}
+
+body:not(.dark) p,
+body:not(.dark) small {
+  color: #687780 !important;
+}
+
+/* Navigation */
+
+body:not(.dark) nav button,
+body:not(.dark) nav a {
+  color: #34424c !important;
+}
+
+body:not(.dark) nav button.active {
+  background: #17212b !important;
+  color: #ffffff !important;
+}
+
+/* Search */
+
+body:not(.dark) #search,
+body:not(.dark) #theme {
+  background: #f8fafb !important;
+  color: #26343e !important;
+  border-color: #dfe6ea !important;
+}
+
+/* Home */
+
+body:not(.dark) #home .title {
+  background: #ffffff !important;
+  border-color: #e6ecef !important;
+}
+
+body:not(.dark) #home h1 {
+  color: #14212b !important;
+}
+
+body:not(.dark) #home h1 span {
+  color: #536977 !important;
+}
+
+/* Cards */
+
+body:not(.dark) .card,
+body:not(.dark) .article-card,
+body:not(.dark) .news-card,
+body:not(.dark) .content-box {
+  background: #ffffff !important;
+  color: #17212b !important;
+  border-color: #e4e9ed !important;
+}
+
+/* Match Center */
+
+body:not(.dark) .bf-mc-section,
+body:not(.dark) .bf-mc-event,
+body:not(.dark) .bf-mc-info-card,
+body:not(.dark) .bf-mc-stat-team,
+body:not(.dark) .bf-mc-lineup-card,
+body:not(.dark) .bf-mc-rating-team,
+body:not(.dark) .bf-mc-empty {
+  background: #ffffff !important;
+  color: #17212b !important;
+  border-color: #e4e9ed !important;
+}
+
+/* Cookie */
+
+body:not(.dark) .bf-cookie-banner,
+body:not(.dark) .bf-cookie-settings {
+  background: #ffffff !important;
+  color: #17212b !important;
+}
+
+/* Footer */
+
+body:not(.dark) footer {
+  background: #ffffff !important;
+  color: #34424c !important;
+  border-color: #e7ecef !important;
+}
