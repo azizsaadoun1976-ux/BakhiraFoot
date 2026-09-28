@@ -338,7 +338,6 @@ function teamHTML(name, logo) {
    MATCH CARD
 ========================================================= */
 
-```js
 function createMatchHTML(match, index) {
   const home = getHome(match);
   const away = getAway(match);
