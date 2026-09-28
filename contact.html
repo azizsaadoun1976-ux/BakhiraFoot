@@ -1,208 +1,835 @@
 ```html
 <!doctype html>
 <html lang="fr">
+
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
 
-<title>Contact – BakhiraFoot</title>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
 
-<meta
-  name="description"
-  content="Contactez BakhiraFoot pour toute question, suggestion ou demande concernant le site."
->
+  <title>Contact – BakhiraFoot</title>
 
-<meta name="robots" content="index, follow">
+  <meta
+    name="description"
+    content="Contactez BakhiraFoot pour toute question, suggestion ou demande concernant le site."
+  >
 
-<link
-  rel="canonical"
-  href="https://bakhira-foot.vercel.app/contact.html"
->
+  <meta name="robots" content="index, follow">
 
-<link rel="icon" type="image/svg+xml" href="favicon.svg">
-<link rel="stylesheet" href="style.css">
+  <link
+    rel="canonical"
+    href="https://bakhira-foot.vercel.app/contact.html"
+  >
 
-<style>
-.contact-page{
-  max-width:1000px;
-  margin:auto;
-}
+  <link
+    rel="icon"
+    href="/favicon.svg"
+    type="image/svg+xml"
+  >
 
-.contact-card{
-  background:#fff;
-  border:1px solid #e1e6e9;
-  border-radius:12px;
-  padding:28px;
-  margin-top:18px;
-}
+  <link
+    rel="stylesheet"
+    href="style.css"
+  >
 
-.contact-card h1{
-  margin-top:0;
-}
+  <style>
+    /* =========================================
+       CONTACT PAGE
+       ========================================= */
 
-.contact-card p{
-  color:#68757e;
-  line-height:1.7;
-}
+    .contact-page {
+      width: min(1000px, calc(100% - 40px));
+      margin: 0 auto;
+      padding: 34px 0 55px;
+    }
 
-.contact-box{
-  background:#f4f7f8;
-  border-radius:10px;
-  padding:18px;
-  margin-top:20px;
-}
+    .contact-hero {
+      position: relative;
+      overflow: hidden;
 
-.contact-box strong{
-  display:block;
-  margin-bottom:7px;
-}
+      padding: 34px;
 
-.back{
-  display:inline-block;
-  margin-top:20px;
-  background:#20d486;
-  color:#062016;
-  padding:12px 18px;
-  border-radius:9px;
-  text-decoration:none;
-  font-weight:900;
-}
+      border: 1px solid #e1e8ec;
+      border-radius: 20px;
 
-.dark .contact-card{
-  background:#182128;
-  color:#e9eef1;
-  border-color:#29343d;
-}
+      background:
+        radial-gradient(
+          circle at 90% 10%,
+          rgba(32, 212, 134, .08),
+          transparent 32%
+        ),
+        linear-gradient(
+          145deg,
+          #ffffff,
+          #f7fafb
+        );
 
-.dark .contact-card p{
-  color:#bac4ca;
-}
+      box-shadow:
+        0 10px 30px rgba(15, 23, 42, .05);
+    }
 
-.dark .contact-box{
-  background:#202b32;
-}
-</style>
+    .contact-eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+
+      margin-bottom: 12px;
+
+      padding: 6px 9px;
+
+      border-radius: 7px;
+
+      background: #eef8f4;
+      color: #087f51;
+
+      font-size: 10px;
+      font-weight: 850;
+      letter-spacing: .04em;
+    }
+
+    .contact-hero h1 {
+      margin: 0 0 12px;
+
+      color: #15232d;
+
+      font-size: clamp(32px, 4vw, 48px);
+      line-height: 1.05;
+      letter-spacing: -.04em;
+
+      font-weight: 900;
+    }
+
+    .contact-hero p {
+      max-width: 690px;
+
+      margin: 0;
+
+      color: #687984;
+
+      font-size: 14px;
+      line-height: 1.7;
+    }
+
+    .contact-grid {
+      display: grid;
+
+      grid-template-columns:
+        minmax(0, 1.2fr)
+        minmax(260px, .8fr);
+
+      gap: 14px;
+
+      margin-top: 18px;
+    }
+
+    .contact-card,
+    .contact-side {
+      min-width: 0;
+
+      border: 1px solid #e1e8ec;
+      border-radius: 14px;
+
+      background: #ffffff;
+
+      box-shadow:
+        0 5px 20px rgba(15, 23, 42, .04);
+    }
+
+    .contact-card {
+      padding: 22px;
+    }
+
+    .contact-card h2,
+    .contact-side h2 {
+      margin: 0 0 9px;
+
+      color: #1b2a34;
+
+      font-size: 19px;
+      font-weight: 850;
+    }
+
+    .contact-card > p {
+      margin: 0 0 15px;
+
+      color: #687984;
+
+      font-size: 13px;
+      line-height: 1.7;
+    }
+
+    .contact-box {
+      display: flex;
+      align-items: flex-start;
+      gap: 11px;
+
+      padding: 13px;
+
+      border: 1px solid #edf1f3;
+      border-radius: 10px;
+
+      background: #f8fafb;
+    }
+
+    .contact-box + .contact-box {
+      margin-top: 9px;
+    }
+
+    .contact-box-icon {
+      width: 34px;
+      height: 34px;
+      min-width: 34px;
+
+      display: flex;
+      align-items: center;
+      justify-content: center;
+
+      border-radius: 8px;
+
+      background: #eef3f5;
+
+      font-size: 16px;
+    }
+
+    .contact-box-content {
+      min-width: 0;
+    }
+
+    .contact-box-content strong {
+      display: block;
+
+      margin-bottom: 3px;
+
+      color: #25343e;
+
+      font-size: 11px;
+      font-weight: 850;
+    }
+
+    .contact-box-content p {
+      margin: 0;
+
+      color: #71808a;
+
+      font-size: 11px;
+      line-height: 1.55;
+    }
+
+    .contact-email {
+      display: inline-block;
+
+      margin-top: 4px;
+
+      color: #087f51;
+
+      font-size: 12px;
+      font-weight: 850;
+
+      text-decoration: none;
+
+      word-break: break-word;
+    }
+
+    .contact-email:hover {
+      text-decoration: underline;
+      text-underline-offset: 3px;
+    }
+
+    .contact-side {
+      padding: 19px;
+    }
+
+    .contact-side-title {
+      margin-bottom: 12px;
+
+      color: #1b2a34;
+
+      font-size: 12px;
+      font-weight: 850;
+      text-transform: uppercase;
+      letter-spacing: .05em;
+    }
+
+    .contact-feature {
+      display: flex;
+      align-items: flex-start;
+      gap: 10px;
+
+      padding: 11px 0;
+
+      border-bottom: 1px solid #edf1f3;
+    }
+
+    .contact-feature:last-child {
+      border-bottom: 0;
+    }
+
+    .contact-feature-icon {
+      width: 31px;
+      height: 31px;
+      min-width: 31px;
+
+      display: flex;
+      align-items: center;
+      justify-content: center;
+
+      border-radius: 8px;
+
+      background: #f3f6f8;
+
+      font-size: 14px;
+    }
+
+    .contact-feature-text {
+      min-width: 0;
+    }
+
+    .contact-feature-text strong {
+      display: block;
+
+      margin-bottom: 2px;
+
+      color: #26343e;
+
+      font-size: 11px;
+      font-weight: 800;
+    }
+
+    .contact-feature-text span {
+      color: #80909a;
+
+      font-size: 10px;
+      line-height: 1.4;
+    }
+
+    .contact-back {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 7px;
+
+      width: fit-content;
+
+      margin-top: 19px;
+
+      min-height: 42px;
+      padding: 0 15px;
+
+      border-radius: 9px;
+
+      background: #172730;
+      color: #ffffff;
+
+      text-decoration: none;
+
+      font-size: 12px;
+      font-weight: 800;
+
+      transition:
+        transform .15s ease,
+        background .15s ease;
+    }
+
+    .contact-back:hover {
+      transform: translateY(-1px);
+      background: #263a45;
+    }
+
+    /* =========================================
+       FOOTER
+       ========================================= */
+
+    .contact-footer {
+      padding: 28px 20px;
+
+      border-top: 1px solid #e1e8ec;
+
+      background: #eef3f5;
+
+      text-align: center;
+    }
+
+    .contact-footer-copy {
+      margin-bottom: 10px;
+
+      color: #64747f;
+
+      font-size: 11px;
+    }
+
+    .contact-footer-links {
+      display: flex;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 8px 18px;
+    }
+
+    .contact-footer-links a {
+      color: #53636e;
+
+      text-decoration: none;
+
+      font-size: 11px;
+      font-weight: 700;
+    }
+
+    .contact-footer-links a:hover {
+      color: #1c303b;
+    }
+
+    /* =========================================
+       DARK MODE
+       ========================================= */
+
+    .dark .contact-hero {
+      border-color: #29343d;
+
+      background:
+        radial-gradient(
+          circle at 90% 10%,
+          rgba(32, 212, 134, .06),
+          transparent 32%
+        ),
+        linear-gradient(
+          145deg,
+          #151d24,
+          #10171c
+        );
+
+      box-shadow:
+        0 10px 30px rgba(0, 0, 0, .16);
+    }
+
+    .dark .contact-eyebrow {
+      background: #173229;
+      color: #68dda5;
+    }
+
+    .dark .contact-hero h1 {
+      color: #edf2f5;
+    }
+
+    .dark .contact-hero p {
+      color: #96a4ad;
+    }
+
+    .dark .contact-card,
+    .dark .contact-side {
+      background: #151d24;
+      border-color: #29343d;
+
+      box-shadow:
+        0 8px 25px rgba(0, 0, 0, .16);
+    }
+
+    .dark .contact-card h2,
+    .dark .contact-side h2,
+    .dark .contact-side-title,
+    .dark .contact-box-content strong,
+    .dark .contact-feature-text strong {
+      color: #edf2f5;
+    }
+
+    .dark .contact-card > p,
+    .dark .contact-box-content p {
+      color: #96a4ad;
+    }
+
+    .dark .contact-box {
+      background: #1b252d;
+      border-color: #29343d;
+    }
+
+    .dark .contact-box-icon,
+    .dark .contact-feature-icon {
+      background: #202b33;
+    }
+
+    .dark .contact-email {
+      color: #68dda5;
+    }
+
+    .dark .contact-feature {
+      border-color: #29343d;
+    }
+
+    .dark .contact-feature-text span {
+      color: #8d9ba4;
+    }
+
+    .dark .contact-back {
+      background: #edf2f5;
+      color: #151d24;
+    }
+
+    .dark .contact-back:hover {
+      background: #ffffff;
+    }
+
+    .dark .contact-footer {
+      background: #11181e;
+      border-color: #29343d;
+    }
+
+    .dark .contact-footer-copy,
+    .dark .contact-footer-links a {
+      color: #95a3ac;
+    }
+
+    .dark .contact-footer-links a:hover {
+      color: #edf2f5;
+    }
+
+    /* =========================================
+       MOBILE
+       ========================================= */
+
+    @media (max-width: 700px) {
+
+      .contact-page {
+        width: min(
+          100% - 20px,
+          1000px
+        );
+
+        padding:
+          18px 0 35px;
+      }
+
+      .contact-hero {
+        padding: 21px 16px;
+        border-radius: 15px;
+      }
+
+      .contact-hero h1 {
+        font-size: 29px;
+      }
+
+      .contact-hero p {
+        font-size: 12px;
+        line-height: 1.6;
+      }
+
+      .contact-grid {
+        grid-template-columns: 1fr;
+        gap: 10px;
+      }
+
+      .contact-card,
+      .contact-side {
+        border-radius: 11px;
+      }
+
+      .contact-card {
+        padding: 16px;
+      }
+
+      .contact-side {
+        padding: 14px;
+      }
+
+      .contact-back {
+        width: 100%;
+      }
+
+      .contact-footer {
+        padding:
+          22px 12px;
+      }
+    }
+  </style>
 
 </head>
 
 <body>
 
-<header>
+  <header>
 
-  <div class="logo">
-    <img src="logo.svg" alt="BakhiraFoot - Football">
-  </div>
+    <div class="logo">
 
-  <nav>
+      <img
+        src="logo.svg"
+        alt="BakhiraFoot - Football"
+      >
 
-    <a
-      href="index.html"
-      style="color:#aeb9c1;text-decoration:none;padding:22px 12px;font-weight:800;">
-      Accueil
-    </a>
+    </div>
 
-    <a
-      href="about.html"
-      style="color:#aeb9c1;text-decoration:none;padding:22px 12px;font-weight:800;">
-      À propos
-    </a>
+    <nav>
 
-    <a
-      href="contact.html"
-      style="color:#fff;text-decoration:none;padding:22px 12px;font-weight:800;border-bottom:3px solid #20d486;">
-      Contact
-    </a>
+      <a
+        href="index.html"
+        style="
+          color:#aeb9c1;
+          text-decoration:none;
+          padding:22px 12px;
+          font-weight:800;
+        "
+      >
+        Accueil
+      </a>
 
-  </nav>
+      <a
+        href="articles.html"
+        style="
+          color:#aeb9c1;
+          text-decoration:none;
+          padding:22px 12px;
+          font-weight:800;
+        "
+      >
+        Articles
+      </a>
 
-</header>
+      <a
+        href="about.html"
+        style="
+          color:#aeb9c1;
+          text-decoration:none;
+          padding:22px 12px;
+          font-weight:800;
+        "
+      >
+        À propos
+      </a>
+
+      <a
+        href="contact.html"
+        style="
+          color:#fff;
+          text-decoration:none;
+          padding:22px 12px;
+          font-weight:800;
+          border-bottom:3px solid #20d486;
+        "
+      >
+        Contact
+      </a>
+
+    </nav>
+
+  </header>
 
 
-<main>
+  <main>
 
-  <div class="contact-page">
+    <div class="contact-page">
 
-    <div class="contact-card">
+      <section class="contact-hero">
 
-      <h1>Contactez-nous</h1>
+        <div class="contact-eyebrow">
+          ✉️ BAKHIRAFOOT
+        </div>
 
-      <p>
-        Vous avez une question, une suggestion ou vous souhaitez
-        nous signaler un problème concernant BakhiraFoot ?
-      </p>
-
-      <p>
-        Nous sommes à votre écoute pour améliorer continuellement
-        l'expérience des visiteurs du site.
-      </p>
-
-      <div class="contact-box">
-
-        <strong>Email</strong>
-
-<p>
-  Vous pouvez nous contacter directement à l'adresse suivante :
-</p>
-
-<p>
-  <a
-    href="mailto:saadamerican86@gmail.com"
-    style="color:#20d486;font-weight:800;text-decoration:none;"
-  >
-    saadamerican86@gmail.com
-  </a>
-</p>
-      </div>
-
-      <div class="contact-box">
-
-        <strong>Suggestions</strong>
+        <h1>
+          Contactez-nous
+        </h1>
 
         <p>
-          Vos suggestions concernant les matchs, les compétitions,
-          les équipes ou les fonctionnalités du site sont les bienvenues.
+          Une question, une suggestion ou un problème concernant
+          BakhiraFoot ? Nous sommes à votre écoute.
         </p>
+
+      </section>
+
+
+      <div class="contact-grid">
+
+        <section class="contact-card">
+
+          <h2>
+            Restons en contact
+          </h2>
+
+          <p>
+            Votre avis nous aide à améliorer continuellement
+            BakhiraFoot et à proposer une meilleure expérience
+            aux passionnés de football.
+          </p>
+
+
+          <div class="contact-box">
+
+            <div class="contact-box-icon">
+              ✉️
+            </div>
+
+            <div class="contact-box-content">
+
+              <strong>
+                Email
+              </strong>
+
+              <p>
+                Vous pouvez nous contacter directement
+                à l'adresse suivante :
+              </p>
+
+              <a
+                class="contact-email"
+                href="mailto:saadamerican86@gmail.com"
+              >
+                saadamerican86@gmail.com
+              </a>
+
+            </div>
+
+          </div>
+
+
+          <div class="contact-box">
+
+            <div class="contact-box-icon">
+              💡
+            </div>
+
+            <div class="contact-box-content">
+
+              <strong>
+                Suggestions
+              </strong>
+
+              <p>
+                Vos suggestions concernant les matchs,
+                les compétitions, les équipes ou les
+                fonctionnalités du site sont les bienvenues.
+              </p>
+
+            </div>
+
+          </div>
+
+
+          <a
+            class="contact-back"
+            href="index.html"
+          >
+            ← Retour à BakhiraFoot
+          </a>
+
+        </section>
+
+
+        <aside class="contact-side">
+
+          <div class="contact-side-title">
+            Pourquoi nous contacter ?
+          </div>
+
+
+          <div class="contact-feature">
+
+            <div class="contact-feature-icon">
+              🐞
+            </div>
+
+            <div class="contact-feature-text">
+
+              <strong>
+                Signaler un problème
+              </strong>
+
+              <span>
+                Aidez-nous à identifier les problèmes
+                rencontrés sur le site.
+              </span>
+
+            </div>
+
+          </div>
+
+
+          <div class="contact-feature">
+
+            <div class="contact-feature-icon">
+              💡
+            </div>
+
+            <div class="contact-feature-text">
+
+              <strong>
+                Proposer une idée
+              </strong>
+
+              <span>
+                Suggérez une nouvelle fonctionnalité
+                pour BakhiraFoot.
+              </span>
+
+            </div>
+
+          </div>
+
+
+          <div class="contact-feature">
+
+            <div class="contact-feature-icon">
+              ⚽
+            </div>
+
+            <div class="contact-feature-text">
+
+              <strong>
+                Football
+              </strong>
+
+              <span>
+                Partagez vos remarques sur les matchs
+                et le contenu football.
+              </span>
+
+            </div>
+
+          </div>
+
+
+        </aside>
 
       </div>
 
-      <a class="back" href="index.html">
-        ← Retour à BakhiraFoot
+    </div>
+
+  </main>
+
+
+  <footer class="contact-footer">
+
+    <div class="contact-footer-copy">
+      © 2026 BakhiraFoot — Made By Saâd Bouajaji
+    </div>
+
+    <div class="contact-footer-links">
+
+      <a href="index.html">
+        Accueil
+      </a>
+
+      <a href="articles.html">
+        Articles
+      </a>
+
+      <a href="about.html">
+        À propos
+      </a>
+
+      <a href="contact.html">
+        Contact
+      </a>
+
+      <a href="privacy.html">
+        Confidentialité
+      </a>
+
+      <a href="terms.html">
+        Conditions
       </a>
 
     </div>
 
-  </div>
+  </footer>
 
-</main>
+  <script src="theme-auto.js"></script>
 
-
-<footer>
-  <div style="margin-bottom:10px;">
-    © 2026 BakhiraFoot — Made By Saâd Bouajaji
-  </div>
-
-  <div style="display:flex;justify-content:center;gap:18px;flex-wrap:wrap;">
-    <a href="index.html" style="color:inherit;text-decoration:none;">
-      Accueil
-    </a>
-
-    <a href="about.html" style="color:inherit;text-decoration:none;">
-      À propos
-    </a>
-
-    <a href="contact.html" style="color:inherit;text-decoration:none;">
-      Contact
-    </a>
-
-    <a href="privacy.html" style="color:inherit;text-decoration:none;">
-      Confidentialité
-    </a>
-
-    <a href="terms.html" style="color:inherit;text-decoration:none;">
-      Conditions
-    </a>
-  </div>
-</footer>
 </body>
+
 </html>
 ```
