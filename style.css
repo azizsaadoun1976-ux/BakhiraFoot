@@ -3357,3 +3357,516 @@ body:not(.dark) footer {
       0 2px 8px rgba(15,23,42,.03);
   }
 }
+/* =========================================
+   BAKHIRAFOOT — MOBILE / TELEPHONE
+   ========================================= */
+
+@media (max-width: 700px) {
+
+  /* ---------- GENERAL ---------- */
+
+  body {
+    overflow-x: hidden !important;
+  }
+
+  main {
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box;
+  }
+
+  .page {
+    width: 100% !important;
+    box-sizing: border-box;
+    padding-left: 10px !important;
+    padding-right: 10px !important;
+  }
+
+  /* ---------- HEADER ---------- */
+
+  header {
+    min-height: auto !important;
+    padding: 9px 10px !important;
+
+    display: flex !important;
+    flex-wrap: wrap !important;
+    align-items: center !important;
+    gap: 8px !important;
+  }
+
+  .logo {
+    flex: 0 0 auto !important;
+  }
+
+  .logo img {
+    width: 34px !important;
+    height: 34px !important;
+  }
+
+  .logo::after {
+    font-size: 11px !important;
+  }
+
+  nav {
+    order: 3 !important;
+    width: 100% !important;
+
+    display: flex !important;
+    align-items: center !important;
+    gap: 4px !important;
+
+    overflow-x: auto !important;
+    overflow-y: hidden !important;
+
+    padding: 3px 0 4px !important;
+
+    scrollbar-width: none;
+  }
+
+  nav::-webkit-scrollbar {
+    display: none;
+  }
+
+  nav button,
+  nav a {
+    flex: 0 0 auto !important;
+    white-space: nowrap !important;
+
+    min-height: 36px !important;
+
+    padding: 7px 10px !important;
+
+    font-size: 10px !important;
+    border-radius: 8px !important;
+  }
+
+  .tools {
+    margin-left: auto !important;
+    display: flex !important;
+    align-items: center !important;
+    gap: 5px !important;
+  }
+
+  #search {
+    width: 125px !important;
+    min-width: 0 !important;
+    height: 36px !important;
+
+    padding: 0 10px !important;
+
+    font-size: 11px !important;
+  }
+
+  #theme {
+    width: 36px !important;
+    height: 36px !important;
+    min-width: 36px !important;
+  }
+
+  /* ---------- SIDEBAR ---------- */
+
+  aside {
+    width: 100% !important;
+    max-width: 100% !important;
+
+    box-sizing: border-box !important;
+
+    overflow-x: auto !important;
+    overflow-y: hidden !important;
+
+    display: flex !important;
+    align-items: center !important;
+
+    gap: 6px !important;
+
+    padding: 8px 10px !important;
+
+    white-space: nowrap !important;
+
+    scrollbar-width: none;
+  }
+
+  aside::-webkit-scrollbar {
+    display: none;
+  }
+
+  aside h4 {
+    display: none !important;
+  }
+
+  aside .filter {
+    flex: 0 0 auto !important;
+
+    min-height: 34px !important;
+
+    padding: 7px 10px !important;
+
+    border-radius: 8px !important;
+
+    font-size: 10px !important;
+  }
+
+  /* ---------- HOME HERO ---------- */
+
+  #home .title {
+    width: 100% !important;
+    box-sizing: border-box;
+
+    padding: 20px 14px !important;
+
+    border-radius: 15px !important;
+  }
+
+  #home h1 {
+    font-size: clamp(
+      27px,
+      8vw,
+      36px
+    ) !important;
+
+    line-height: 1.08 !important;
+
+    letter-spacing: -.04em !important;
+  }
+
+  #home p {
+    font-size: 12px !important;
+    line-height: 1.6 !important;
+  }
+
+  #home h2 {
+    margin-top: 24px !important;
+    font-size: 16px !important;
+  }
+
+  /* ---------- MATCH CARDS ---------- */
+
+  #scoreList {
+    width: 100% !important;
+    gap: 8px !important;
+  }
+
+  .match-card {
+    width: 100% !important;
+    max-width: 100% !important;
+
+    border-radius: 10px !important;
+  }
+
+  .flash-league {
+    min-height: 30px !important;
+
+    padding:
+      0 9px !important;
+
+    font-size: 10px !important;
+  }
+
+  .flash-match {
+    min-height: 68px !important;
+
+    padding:
+      9px 7px !important;
+
+    grid-template-columns:
+      58px
+      minmax(0, 1fr)
+      40px !important;
+
+    gap: 5px !important;
+  }
+
+  .flash-teams {
+    gap: 5px !important;
+  }
+
+  .flash-team .team {
+    gap: 4px !important;
+  }
+
+  .flash-team .team span:not(.teamLogo) {
+    font-size: 10px !important;
+    line-height: 1.15 !important;
+  }
+
+  .flash-team .teamLogo {
+    width: 23px !important;
+    height: 23px !important;
+    min-width: 23px !important;
+  }
+
+  .flash-score {
+    min-width: 36px !important;
+    gap: 2px !important;
+  }
+
+  .flash-score strong {
+    font-size: 16px !important;
+  }
+
+  .flash-time span {
+    font-size: 9px !important;
+  }
+
+  /* ---------- DATE BAR ---------- */
+
+  .dates {
+    display: flex !important;
+    gap: 5px !important;
+
+    overflow-x: auto !important;
+    overflow-y: hidden !important;
+
+    scrollbar-width: none;
+
+    padding-bottom: 4px !important;
+  }
+
+  .dates::-webkit-scrollbar {
+    display: none;
+  }
+
+  .dates button {
+    flex: 0 0 auto !important;
+
+    min-height: 34px !important;
+
+    padding:
+      6px 9px !important;
+
+    font-size: 10px !important;
+  }
+
+  /* ---------- MATCH CENTER ---------- */
+
+  .bf-pro-match-header {
+    margin-top: 0 !important;
+    padding: 11px !important;
+    border-radius: 12px !important;
+  }
+
+  .bf-pro-match-top {
+    padding-bottom: 9px !important;
+    margin-bottom: 10px !important;
+  }
+
+  .bf-pro-competition {
+    font-size: 9px !important;
+  }
+
+  .bf-pro-status {
+    padding: 4px 6px !important;
+    font-size: 8px !important;
+  }
+
+  .bf-pro-match-main {
+    grid-template-columns:
+      minmax(0, 1fr)
+      68px
+      minmax(0, 1fr) !important;
+
+    gap: 5px !important;
+  }
+
+  .bf-pro-team img,
+  .bf-pro-logo-fallback {
+    width: 38px !important;
+    height: 38px !important;
+  }
+
+  .bf-pro-team strong {
+    max-width: 105px !important;
+    font-size: 10px !important;
+  }
+
+  .bf-pro-score span {
+    font-size: 22px !important;
+  }
+
+  .bf-pro-score b {
+    font-size: 15px !important;
+  }
+
+  .bf-pro-status-long {
+    margin-top: 5px !important;
+    font-size: 8px !important;
+  }
+
+  /* ---------- MATCH CENTER CONTENT ---------- */
+
+  .bf-mc-section {
+    margin-top: 14px !important;
+  }
+
+  .bf-mc-section-title h3 {
+    font-size: 12px !important;
+  }
+
+  .bf-mc-event {
+    grid-template-columns:
+      31px
+      27px
+      minmax(0, 1fr) !important;
+
+    gap: 6px !important;
+
+    padding: 7px !important;
+  }
+
+  .bf-mc-event-time {
+    font-size: 9px !important;
+  }
+
+  .bf-mc-event-marker span {
+    width: 25px !important;
+    height: 25px !important;
+    font-size: 12px !important;
+  }
+
+  .bf-mc-event-top strong {
+    font-size: 10px !important;
+  }
+
+  .bf-mc-event-detail {
+    font-size: 9px !important;
+  }
+
+  .bf-mc-event-assist {
+    font-size: 8px !important;
+  }
+
+  .bf-mc-info-grid {
+    grid-template-columns: 1fr !important;
+  }
+
+  .bf-mc-info-card {
+    padding: 8px !important;
+  }
+
+  .bf-mc-info-text strong {
+    font-size: 10px !important;
+  }
+
+  .bf-mc-lineups {
+    grid-template-columns: 1fr !important;
+  }
+
+  .bf-mc-stat-card {
+    padding: 7px !important;
+  }
+
+  .bf-mc-stat-name {
+    font-size: 9px !important;
+  }
+
+  .bf-mc-stat-value {
+    font-size: 10px !important;
+  }
+
+  /* ---------- FAVORITES ---------- */
+
+  .bf-favorite-wrap {
+    right: 5px !important;
+    top: 33px !important;
+  }
+
+  .bf-favorite-btn {
+    width: 22px !important;
+    height: 22px !important;
+
+    font-size: 12px !important;
+  }
+
+  /* ---------- COOKIE ---------- */
+
+  .bf-cookie-banner {
+    left: 8px !important;
+    right: 8px !important;
+    bottom: 8px !important;
+
+    width:
+      calc(100% - 16px) !important;
+
+    padding: 13px !important;
+
+    border-radius: 13px !important;
+  }
+
+  .bf-cookie-actions {
+    grid-template-columns:
+      1fr 1fr 1fr !important;
+
+    gap: 5px !important;
+  }
+
+  .bf-cookie-btn {
+    min-height: 38px !important;
+
+    padding: 0 6px !important;
+
+    font-size: 10px !important;
+  }
+}
+
+/* =========================================
+   VERY SMALL PHONES
+   ========================================= */
+
+@media (max-width: 380px) {
+
+  header {
+    padding: 8px !important;
+  }
+
+  .logo::after {
+    display: none !important;
+  }
+
+  #search {
+    width: 105px !important;
+  }
+
+  nav button,
+  nav a {
+    padding:
+      7px 8px !important;
+
+    font-size: 9px !important;
+  }
+
+  .flash-match {
+    grid-template-columns:
+      51px
+      minmax(0, 1fr)
+      36px !important;
+  }
+
+  .flash-team .team span:not(.teamLogo) {
+    font-size: 9px !important;
+  }
+
+  .flash-score strong {
+    font-size: 15px !important;
+  }
+
+  .bf-pro-match-main {
+    grid-template-columns:
+      minmax(0, 1fr)
+      60px
+      minmax(0, 1fr) !important;
+  }
+
+  .bf-pro-team img,
+  .bf-pro-logo-fallback {
+    width: 34px !important;
+    height: 34px !important;
+  }
+
+  .bf-pro-team strong {
+    font-size: 9px !important;
+  }
+
+  .bf-pro-score span {
+    font-size: 20px !important;
+  }
+}
