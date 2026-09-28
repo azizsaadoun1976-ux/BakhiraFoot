@@ -130,7 +130,103 @@ function getLeague(match) {
     "Football"
   );
 }
+// =========================================
+// BAKHIRAFOOT — MATCH IMPORTANCE
+// =========================================
 
+function getCompetitionPriority(match) {
+  const league = getLeague(match).toLowerCase();
+
+  if (league.includes("champions league")) return 100;
+  if (league.includes("europa league")) return 95;
+  if (league.includes("premier league")) return 90;
+  if (league.includes("la liga")) return 88;
+  if (league.includes("serie a")) return 86;
+  if (league.includes("bundesliga")) return 84;
+  if (league.includes("ligue 1")) return 82;
+  if (league.includes("botola")) return 80;
+  if (league.includes("conference league")) return 78;
+  if (league.includes("champions")) return 75;
+  if (league.includes("world cup")) return 100;
+  if (league.includes("africa cup")) return 95;
+
+  return 10;
+}
+
+function getTeamPriority(match) {
+  const home = getHome(match).toLowerCase();
+  const away = getAway(match).toLowerCase();
+
+  const bigTeams = [
+    "real madrid",
+    "barcelona",
+    "atletico madrid",
+    "manchester city",
+    "manchester united",
+    "liverpool",
+    "arsenal",
+    "chelsea",
+    "tottenham",
+    "bayern",
+    "borussia dortmund",
+    "psg",
+    "paris saint-germain",
+    "juventus",
+    "inter",
+    "ac milan",
+    "napoli",
+    "ajax",
+    "benfica",
+    "porto",
+    "wydad",
+    "wydad casablanca",
+    "raja",
+    "raja casablanca",
+    "fenerbahce",
+    "galatasaray"
+  ];
+
+  let priority = 0;
+
+  for (const team of bigTeams) {
+    if (home.includes(team)) priority += 20;
+    if (away.includes(team)) priority += 20;
+  }
+
+  return priority;
+}
+
+function getMatchPriority(match) {
+  const status = String(getStatus(match)).toUpperCase();
+
+  let priority =
+    getCompetitionPriority(match) +
+    getTeamPriority(match);
+
+  // LIVE ديما عندو أولوية
+  if (
+    ["1H", "2H", "LIVE", "ET", "P", "BT"].includes(status) ||
+    status.includes("LIVE")
+  ) {
+    priority += 1000;
+  }
+
+  // Half-time كذلك يبقى فوق
+  if (status === "HT" || status.includes("HALF")) {
+    priority += 900;
+  }
+
+  return priority;
+}
+
+function sortMatchesByImportance(matches) {
+  return [...matches].sort((a, b) => {
+    const priorityA = getMatchPriority(a);
+    const priorityB = getMatchPriority(b);
+
+    return priorityB - priorityA;
+  });
+}
 function getFixtureId(match) {
   return (
     match?.fixture?.id ||
@@ -432,8 +528,7 @@ async function loadLive() {
     const data =
       await response.json();
 
-    const matches =
-      normalizeMatches(data);
+    const matches = sortMatchesByImportance(normalizeMatches(data));
 
     currentMatches = matches;
 
@@ -529,8 +624,7 @@ async function loadMatches(date) {
     const data =
       await response.json();
 
-    let matches =
-      normalizeMatches(data);
+    let matches = sortMatchesByImportance(normalizeMatches(data));
 
     currentMatches = matches;
 
