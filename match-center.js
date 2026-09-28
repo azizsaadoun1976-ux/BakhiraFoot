@@ -1,209 +1,7 @@
 (() => {
   "use strict";
 
-  const originalOpenMatchDetails =
-    window.openMatchDetails;
-
-  if (typeof originalOpenMatchDetails !== "function") {
-    console.warn(
-      "BakhiraFoot Match Center: openMatchDetails not found."
-    );
-    return;
-  }
-
-  let requestId = 0;
-
-  window.openMatchDetails = async function (index) {
-
-  /*
-   * Find the exact card that was clicked.
-   * We do NOT use currentMatches here.
-   */
-
-  const cards =
-    document.querySelectorAll(
-      ".match-card"
-    );
-
-  const clickedCard =
-    cards[index];
-
-  if (!clickedCard) {
-    originalOpenMatchDetails(index);
-    return;
-  }
-
-  const fixtureId =
-    clickedCard.dataset.fixtureId;
-
-  /*
-   * First let the ORIGINAL working
-   * Match Details modal open.
-   */
-
-  originalOpenMatchDetails(index);
-
-  /*
-   * If there is no fixture ID,
-   * leave the original modal untouched.
-   */
-
-  if (!fixtureId) {
-    return;
-  }
-
-  const content =
-    getContent();
-
-  if (!content) {
-    return;
-  }
-
-  const currentRequest =
-    ++requestId;
-
-  /*
-   * Add loading section
-   */
-
-  content.insertAdjacentHTML(
-    "beforeend",
-    `
-      <div
-        id="bfMatchCenterLoading"
-        class="bf-detail-section bf-mc-section"
-      >
-        <h3>⚡ Match Center</h3>
-
-        <p style="opacity:.7;margin:0">
-          Chargement des détails...
-        </p>
-      </div>
-    `
-  );
-
-  try {
-
-    const response =
-      await fetch(
-        `/api?fixture=${encodeURIComponent(
-          fixtureId
-        )}&details=all`,
-        {
-          cache: "no-store"
-        }
-      );
-
-    if (!response.ok) {
-      throw new Error(
-        `HTTP ${response.status}`
-      );
-    }
-
-    const data =
-      await response.json();
-
-    /*
-     * Ignore old request
-     */
-
-    if (
-      currentRequest !== requestId
-    ) {
-      return;
-    }
-
-    const loading =
-      document.getElementById(
-        "bfMatchCenterLoading"
-      );
-
-    if (loading) {
-      loading.remove();
-    }
-
-    const fixture =
-      data?.fixture || {};
-
-    const events =
-      Array.isArray(data?.events)
-        ? data.events
-        : [];
-
-    const lineups =
-      Array.isArray(data?.lineups)
-        ? data.lineups
-        : [];
-
-    const statistics =
-      Array.isArray(data?.statistics)
-        ? data.statistics
-        : [];
-
-    const players =
-      Array.isArray(data?.players)
-        ? data.players
-        : [];
-
-    content.insertAdjacentHTML(
-      "beforeend",
-      [
-        renderInfo(fixture),
-
-        section(
-          "⚡ Événements",
-          renderEvents(
-            events,
-            fixture
-          )
-        ),
-
-        section(
-          "👥 Compositions",
-          renderLineups(
-            lineups
-          )
-        ),
-
-        section(
-          "📊 Statistiques",
-          renderStats(
-            statistics
-          )
-        ),
-
-        section(
-          "⭐ Joueurs",
-          renderPlayers(
-            players
-          )
-        )
-      ].join("")
-    );
-
-  } catch (error) {
-
-    console.error(
-      "BF MATCH CENTER ERROR:",
-      error
-    );
-
-    const loading =
-      document.getElementById(
-        "bfMatchCenterLoading"
-      );
-
-    if (loading) {
-      loading.innerHTML = `
-        <h3>⚠️ Match Center</h3>
-
-        <p style="opacity:.7;margin:0">
-          تعذر تحميل التفاصيل الإضافية.
-        </p>
-      `;
-    }
-  }
-};
+  let requestNumber = 0;
 
   function escapeHTML(value) {
     return String(value ?? "")
@@ -220,16 +18,16 @@
     );
   }
 
-  function section(title, content) {
+  function section(title, html) {
     return `
       <div class="bf-detail-section bf-mc-section">
         <h3>${title}</h3>
-        ${content}
+        ${html}
       </div>
     `;
   }
 
-  function emptyText(text) {
+  function emptyMessage(text) {
     return `
       <p style="opacity:.65;margin:0">
         ${escapeHTML(text)}
@@ -237,194 +35,184 @@
     `;
   }
 
-  function getTeamNameById(fixture, teamId) {
-    if (
-      teamId &&
-      String(teamId) ===
-        String(fixture?.home?.id)
-    ) {
-      return fixture?.home?.name || "Domicile";
-    }
-
-    if (
-      teamId &&
-      String(teamId) ===
-        String(fixture?.away?.id)
-    ) {
-      return fixture?.away?.name || "Extérieur";
-    }
-
-    return "";
-  }
-
-  function eventIcon(event) {
-    const type =
-      String(event?.type || "").toLowerCase();
-
-    const detail =
-      String(event?.detail || "").toLowerCase();
-
-    if (type.includes("goal")) {
-      return "⚽";
-    }
-
-    if (
-      type.includes("card") ||
-      detail.includes("yellow")
-    ) {
-      return "🟨";
-    }
-
-    if (
-      detail.includes("red") ||
-      detail.includes("second yellow")
-    ) {
-      return "🟥";
-    }
-
-    if (
-      type.includes("subst") ||
-      type.includes("substitution")
-    ) {
-      return "🔄";
-    }
-
-    return "•";
-  }
-
   function renderEvents(events, fixture) {
     if (!Array.isArray(events) || !events.length) {
-      return emptyText(
-        "Aucun événement supplémentaire disponible."
+      return emptyMessage(
+        "Aucun événement disponible pour ce match."
       );
     }
 
     return `
       <div class="bf-mc-events">
 
-        ${events
-          .map((event) => {
+        ${events.map(event => {
 
-            const minute =
-              event?.time ??
-              event?.minute ??
-              "";
+          const minute =
+            event?.time ??
+            event?.minute ??
+            "";
 
-            const player =
-              event?.playerName ||
-              event?.player?.name ||
-              "";
+          const player =
+            event?.playerName ||
+            event?.player?.name ||
+            "";
 
-            const assist =
-              event?.assistName ||
-              event?.assist?.name ||
-              "";
+          const assist =
+            event?.assistName ||
+            event?.assist?.name ||
+            "";
 
-            const team =
-              getTeamNameById(
-                fixture,
-                event?.teamId
-              );
+          const type =
+            event?.type ||
+            "";
 
-            const type =
-              event?.type || "";
+          const detail =
+            event?.detail ||
+            "";
 
-            const detail =
-              event?.detail || "";
+          const teamId =
+            event?.teamId;
 
-            return `
-              <div class="bf-mc-event-row">
+          let teamName = "";
 
-                <span class="bf-mc-event-minute">
+          if (
+            String(teamId) ===
+            String(fixture?.home?.id)
+          ) {
+            teamName =
+              fixture?.home?.name || "";
+          }
+
+          if (
+            String(teamId) ===
+            String(fixture?.away?.id)
+          ) {
+            teamName =
+              fixture?.away?.name || "";
+          }
+
+          let icon = "•";
+
+          const typeLower =
+            String(type).toLowerCase();
+
+          const detailLower =
+            String(detail).toLowerCase();
+
+          if (
+            typeLower.includes("goal")
+          ) {
+            icon = "⚽";
+          }
+
+          if (
+            typeLower.includes("card") ||
+            detailLower.includes("yellow")
+          ) {
+            icon = "🟨";
+          }
+
+          if (
+            detailLower.includes("red") ||
+            detailLower.includes("second yellow")
+          ) {
+            icon = "🟥";
+          }
+
+          if (
+            typeLower.includes("subst")
+          ) {
+            icon = "🔄";
+          }
+
+          return `
+            <div class="bf-mc-event-row">
+
+              <div class="bf-mc-event-minute">
+                ${
+                  minute !== ""
+                    ? escapeHTML(minute) + "'"
+                    : "—"
+                }
+              </div>
+
+              <div class="bf-mc-event-icon">
+                ${icon}
+              </div>
+
+              <div class="bf-mc-event-main">
+
+                <strong>
                   ${escapeHTML(
-                    minute !== ""
-                      ? `${minute}'`
-                      : "—"
+                    player || type
                   )}
-                </span>
+                </strong>
 
-                <span class="bf-mc-event-icon">
-                  ${eventIcon(event)}
-                </span>
+                ${
+                  detail
+                    ? `
+                      <span>
+                        ${escapeHTML(detail)}
+                      </span>
+                    `
+                    : ""
+                }
 
-                <div class="bf-mc-event-main">
+                ${
+                  assist
+                    ? `
+                      <small>
+                        Assist :
+                        ${escapeHTML(assist)}
+                      </small>
+                    `
+                    : ""
+                }
 
-                  <strong>
-                    ${escapeHTML(
-                      player || type
-                    )}
-                  </strong>
-
-                  ${
-                    detail
-                      ? `
-                        <span>
-                          ${escapeHTML(detail)}
-                        </span>
-                      `
-                      : ""
-                  }
-
-                  ${
-                    assist
-                      ? `
-                        <small>
-                          Assist :
-                          ${escapeHTML(assist)}
-                        </small>
-                      `
-                      : ""
-                  }
-
-                  ${
-                    team
-                      ? `
-                        <small>
-                          ${escapeHTML(team)}
-                        </small>
-                      `
-                      : ""
-                  }
-
-                </div>
+                ${
+                  teamName
+                    ? `
+                      <small>
+                        ${escapeHTML(teamName)}
+                      </small>
+                    `
+                    : ""
+                }
 
               </div>
-            `;
-          })
-          .join("")}
+
+            </div>
+          `;
+        }).join("")}
 
       </div>
     `;
   }
 
-  function renderStats(statistics) {
+  function renderStatistics(statistics) {
     if (
       !Array.isArray(statistics) ||
       !statistics.length
     ) {
-      return emptyText(
-        "Statistiques détaillées non disponibles pour ce match."
+      return emptyMessage(
+        "Les statistiques détaillées ne sont pas disponibles pour ce match."
       );
     }
 
     return statistics
-      .map((teamBlock) => {
+      .map(teamBlock => {
 
         const teamName =
           teamBlock?.team?.name ||
           teamBlock?.teamName ||
           "";
 
-        const values =
+        const list =
           Array.isArray(
             teamBlock?.statistics
           )
             ? teamBlock.statistics
             : [];
-
-        if (!values.length) {
-          return "";
-        }
 
         return `
           <div class="bf-mc-stat-team">
@@ -432,45 +220,48 @@
             ${
               teamName
                 ? `
-                  <strong class="bf-mc-stat-team-name">
+                  <strong>
                     ${escapeHTML(teamName)}
                   </strong>
                 `
                 : ""
             }
 
-            <div class="bf-mc-stat-list">
+            ${
+              list.length
+                ? `
+                  <div class="bf-mc-stat-list">
 
-              ${values
-                .map((stat) => {
+                    ${list.map(stat => {
 
-                  const label =
-                    stat?.type ||
-                    stat?.name ||
-                    "";
+                      const name =
+                        stat?.type ||
+                        stat?.name ||
+                        "";
 
-                  const value =
-                    stat?.value ??
-                    stat?.val ??
-                    "";
+                      const value =
+                        stat?.value ??
+                        "";
 
-                  return `
-                    <div class="bf-mc-stat-row">
+                      return `
+                        <div class="bf-mc-stat-row">
+                          <span>
+                            ${escapeHTML(name)}
+                          </span>
 
-                      <span>
-                        ${escapeHTML(label)}
-                      </span>
+                          <strong>
+                            ${escapeHTML(value)}
+                          </strong>
+                        </div>
+                      `;
+                    }).join("")}
 
-                      <strong>
-                        ${escapeHTML(value)}
-                      </strong>
-
-                    </div>
-                  `;
-                })
-                .join("")}
-
-            </div>
+                  </div>
+                `
+                : emptyMessage(
+                    "Aucune statistique."
+                  )
+            }
 
           </div>
         `;
@@ -483,26 +274,26 @@
       !Array.isArray(lineups) ||
       !lineups.length
     ) {
-      return emptyText(
+      return emptyMessage(
         "Les compositions ne sont pas disponibles pour ce match."
       );
     }
 
-    const blocks = [];
-
-    lineups.forEach((teamBlock) => {
+    return lineups.map(teamBlock => {
 
       const teamName =
         teamBlock?.team?.name ||
         teamBlock?.teamName ||
-        "";
+        "Équipe";
 
       const formation =
         teamBlock?.formation ||
         "";
 
       const startXI =
-        Array.isArray(teamBlock?.startXI)
+        Array.isArray(
+          teamBlock?.startXI
+        )
           ? teamBlock.startXI
           : [];
 
@@ -514,25 +305,23 @@
           : [];
 
       const players = [
-        ...startXI.map((item) => ({
-          item,
+        ...startXI.map(player => ({
+          player,
           status: "Titulaire"
         })),
-        ...substitutes.map((item) => ({
-          item,
+        ...substitutes.map(player => ({
+          player,
           status: "Remplaçant"
         }))
       ];
 
-      blocks.push(`
+      return `
         <div class="bf-mc-lineup-team">
 
           <div class="bf-mc-lineup-head">
 
             <strong>
-              ${escapeHTML(
-                teamName || "Équipe"
-              )}
+              ${escapeHTML(teamName)}
             </strong>
 
             ${
@@ -554,58 +343,50 @@
               ? `
                 <div class="bf-mc-player-list">
 
-                  ${players
-                    .map(({ item, status }) => {
+                  ${players.map(item => {
 
-                      const player =
-                        item?.player ||
-                        item;
+                    const player =
+                      item.player?.player ||
+                      item.player;
 
-                      const name =
-                        player?.name ||
-                        player?.playerName ||
-                        "Joueur";
+                    const name =
+                      player?.name ||
+                      player?.playerName ||
+                      "Joueur";
 
-                      const number =
-                        player?.number ??
-                        "";
+                    const number =
+                      player?.number ??
+                      "";
 
-                      return `
-                        <div class="bf-mc-player-row">
+                    return `
+                      <div class="bf-mc-player-row">
 
-                          <span class="bf-mc-shirt">
-                            ${escapeHTML(
-                              number
-                            )}
-                          </span>
+                        <span class="bf-mc-shirt">
+                          ${escapeHTML(number)}
+                        </span>
 
-                          <span>
-                            ${escapeHTML(
-                              name
-                            )}
-                          </span>
+                        <span>
+                          ${escapeHTML(name)}
+                        </span>
 
-                          <small>
-                            ${status}
-                          </small>
+                        <small>
+                          ${item.status}
+                        </small>
 
-                        </div>
-                      `;
-                    })
-                    .join("")}
+                      </div>
+                    `;
+                  }).join("")}
 
                 </div>
               `
-              : emptyText(
-                  "Aucun joueur détaillé."
+              : emptyMessage(
+                  "Aucun joueur."
                 )
           }
 
         </div>
-      `);
-    });
-
-    return blocks.join("");
+      `;
+    }).join("");
   }
 
   function renderPlayers(players) {
@@ -613,101 +394,85 @@
       !Array.isArray(players) ||
       !players.length
     ) {
-      return emptyText(
-        "Les notes/statistiques des joueurs ne sont pas disponibles."
+      return emptyMessage(
+        "Les notes des joueurs ne sont pas disponibles pour ce match."
       );
     }
 
-    return `
-      <div class="bf-mc-player-ratings">
+    return players.map(block => {
 
-        ${players
-          .map((block) => {
+      const teamName =
+        block?.team?.name ||
+        block?.teamName ||
+        "";
 
-            const teamName =
-              block?.team?.name ||
-              block?.teamName ||
-              "";
+      const list =
+        Array.isArray(block?.players)
+          ? block.players
+          : [block];
 
-            const list =
-              Array.isArray(block?.players)
-                ? block.players
-                : [block];
+      return `
+        <div class="bf-mc-player-team">
+
+          ${
+            teamName
+              ? `
+                <strong>
+                  ${escapeHTML(teamName)}
+                </strong>
+              `
+              : ""
+          }
+
+          ${list.map(item => {
+
+            const player =
+              item?.player ||
+              item;
+
+            const name =
+              player?.name ||
+              player?.playerName ||
+              "Joueur";
+
+            const rating =
+              item?.rating ??
+              item?.statistics?.rating ??
+              item?.stats?.rating ??
+              null;
 
             return `
-              <div class="bf-mc-player-team">
+              <div class="bf-mc-rating-row">
+
+                <span>
+                  ${escapeHTML(name)}
+                </span>
 
                 ${
-                  teamName
+                  rating !== null
                     ? `
                       <strong>
-                        ${escapeHTML(teamName)}
+                        ⭐ ${escapeHTML(rating)}
                       </strong>
                     `
-                    : ""
+                    : `
+                      <small>
+                        Pas de note
+                      </small>
+                    `
                 }
-
-                ${list
-                  .map((playerBlock) => {
-
-                    const player =
-                      playerBlock?.player ||
-                      playerBlock;
-
-                    const name =
-                      player?.name ||
-                      player?.playerName ||
-                      "Joueur";
-
-                    const statistics =
-                      playerBlock?.statistics ||
-                      playerBlock?.stats ||
-                      {};
-
-                    const rating =
-                      playerBlock?.rating ??
-                      statistics?.rating ??
-                      null;
-
-                    return `
-                      <div class="bf-mc-rating-row">
-
-                        <span>
-                          ${escapeHTML(name)}
-                        </span>
-
-                        ${
-                          rating !== null &&
-                          rating !== undefined
-                            ? `
-                              <strong>
-                                ⭐ ${escapeHTML(
-                                  rating
-                                )}
-                              </strong>
-                            `
-                            : `
-                              <small>
-                                Pas de note
-                              </small>
-                            `
-                        }
-
-                      </div>
-                    `;
-                  })
-                  .join("")}
 
               </div>
             `;
-          })
-          .join("")}
+          }).join("")}
 
-      </div>
-    `;
+        </div>
+      `;
+    }).join("");
   }
 
   function renderInfo(fixture) {
+
     const venue =
       fixture?.venue?.name ||
       fixture?.stadium?.name ||
@@ -763,7 +528,8 @@
     );
   }
 
-  function appendStyle() {
+  function addStyles() {
+
     if (
       document.getElementById(
         "bf-match-center-style"
@@ -819,7 +585,7 @@
 
       .bf-mc-event-main span,
       .bf-mc-event-main small {
-        opacity: .72;
+        opacity: .7;
       }
 
       .bf-mc-stat-team,
@@ -828,20 +594,12 @@
         margin-bottom: 14px;
       }
 
-      .bf-mc-stat-team-name,
-      .bf-mc-lineup-head,
-      .bf-mc-player-team > strong {
-        display: flex;
-        justify-content: space-between;
-        gap: 10px;
-        margin-bottom: 8px;
-      }
-
       .bf-mc-stat-list,
       .bf-mc-player-list {
         display: flex;
         flex-direction: column;
         gap: 5px;
+        margin-top: 8px;
       }
 
       .bf-mc-stat-row,
@@ -872,24 +630,27 @@
         opacity: .7;
       }
 
+      .bf-mc-lineup-head {
+        display: flex;
+        justify-content: space-between;
+        gap: 10px;
+        margin-bottom: 8px;
+      }
+
+      .bf-mc-lineup-head span {
+        opacity: .65;
+      }
+
       .bf-mc-player-ratings {
         display: flex;
         flex-direction: column;
-        gap: 12px;
-      }
-
-      .bf-mc-rating-row {
-        margin-top: 5px;
+        gap: 10px;
       }
 
       @media (max-width: 600px) {
         .bf-mc-event-row {
-          grid-template-columns: 36px 26px minmax(0,1fr);
+          grid-template-columns: 36px 26px minmax(0, 1fr);
           padding: 8px;
-        }
-
-        .bf-mc-event-main {
-          font-size: 12px;
         }
       }
     `;
@@ -897,415 +658,218 @@
     document.head.appendChild(style);
   }
 
-  appendStyle();
+  addStyles();
 
-  window.openMatchDetails =
-  async function (index) {
+  /*
+   * ==========================================
+   * IMPORTANT:
+   * We DO NOT replace openMatchDetails().
+   * We only listen to the card click.
+   * ==========================================
+   */
 
-    const clickedFixtureId =
-      lastClickedFixtureId;
-
-    /*
-     * Find the real match using fixture ID,
-     * not the visual card index.
-     */
-
-    let actualIndex = -1;
-
-    if (
-      clickedFixtureId &&
-      Array.isArray(window.currentMatches)
-    ) {
-      actualIndex =
-        window.currentMatches.findIndex(
-          (match) =>
-            String(
-              match?.fixture?.id ||
-              match?.id ||
-              ""
-            ) ===
-            String(clickedFixtureId)
-        );
-    }
-
-    /*
-     * Fallback for live matches / old behavior
-     */
-
-    if (
-      actualIndex < 0 &&
-      Array.isArray(window.currentMatches)
-    ) {
-      actualIndex = index;
-    }
-
-    /*
-     * Open the original modal
-     * using the REAL match index.
-     */
-
-    originalOpenMatchDetails(
-      actualIndex
-    );
-
-    /*
-     * Get the real fixture ID.
-     */
-
-    let fixtureId =
-      clickedFixtureId || null;
-
-    if (
-      !fixtureId &&
-      Array.isArray(window.currentMatches) &&
-      actualIndex >= 0
-    ) {
-      const match =
-        window.currentMatches[
-          actualIndex
-        ];
-
-      fixtureId =
-        match?.fixture?.id ||
-        match?.id ||
-        null;
-    }
-
-    const content =
-      getContent();
-
-    if (
-      !fixtureId ||
-      !content
-    ) {
-      return;
-    }
-
-    const currentRequest =
-      ++requestId;
-
-    /*
-     * Loading
-     */
-
-    content.insertAdjacentHTML(
-      "beforeend",
-      `
-        <div
-          id="bfMatchCenterLoading"
-          class="bf-detail-section bf-mc-section"
-        >
-          <h3>⚡ Match Center</h3>
-
-          <p style="opacity:.7;margin:0">
-            Chargement des détails...
-          </p>
-        </div>
-      `
-    );
-
-    try {
-
-      const response =
-        await fetch(
-          `/api?fixture=${encodeURIComponent(
-            fixtureId
-          )}&details=all`,
-          {
-            cache: "no-store"
-          }
-        );
-
-      if (!response.ok) {
-        throw new Error(
-          `HTTP ${response.status}`
-        );
-      }
-
-      const data =
-        await response.json();
-
-      /*
-       * Ignore old requests
-       */
-
-      if (
-        currentRequest !== requestId
-      ) {
-        return;
-      }
-
-      const loading =
-        document.getElementById(
-          "bfMatchCenterLoading"
-        );
-
-      if (loading) {
-        loading.remove();
-      }
-
-      const fixture =
-        data?.fixture || {};
-
-      const events =
-        Array.isArray(data?.events)
-          ? data.events
-          : [];
-
-      const lineups =
-        Array.isArray(data?.lineups)
-          ? data.lineups
-          : [];
-
-      const statistics =
-        Array.isArray(data?.statistics)
-          ? data.statistics
-          : [];
-
-      const players =
-        Array.isArray(data?.players)
-          ? data.players
-          : [];
-
-      /*
-       * Add details to the
-       * CORRECT match modal
-       */
-
-      const html = [
-
-        renderInfo(
-          fixture
-        ),
-
-        section(
-          "⚡ Événements",
-          renderEvents(
-            events,
-            fixture
-          )
-        ),
-
-        section(
-          "👥 Compositions",
-          renderLineups(
-            lineups
-          )
-        ),
-
-        section(
-          "📊 Statistiques",
-          renderStats(
-            statistics
-          )
-        ),
-
-        section(
-          "⭐ Joueurs",
-          renderPlayers(
-            players
-          )
-        )
-
-      ].join("");
-
-      content.insertAdjacentHTML(
-        "beforeend",
-        html
-      );
-
-    } catch (error) {
-
-      console.error(
-        "BF MATCH CENTER ERROR:",
-        error
-      );
-
-      const loading =
-        document.getElementById(
-          "bfMatchCenterLoading"
-        );
-
-      if (loading) {
-
-        loading.innerHTML = `
-          <h3>⚠️ Match Center</h3>
-
-          <p style="opacity:.7;margin:0">
-            تعذر تحميل التفاصيل الإضافية.
-          </p>
-        `;
-      }
-    }
-  };
-      /*
-       * أول حاجة: نخلي function القديمة
-       * تخدم كما هي.
-       */
-
-      originalOpenMatchDetails(index);
+  document.addEventListener(
+    "click",
+    event => {
 
       const card =
-        document.querySelector(
-          `.match-card[data-match-index="${index}"]`
+        event.target.closest(
+          ".match-card"
         );
 
-      const fixtureId =
-        card?.dataset?.fixtureId;
-
-      const content =
-        getContent();
-
-      if (!fixtureId || !content) {
+      if (!card) {
         return;
       }
 
-      const currentRequest =
-        ++requestId;
+      const fixtureId =
+        card.getAttribute(
+          "data-fixture-id"
+        );
+
+      if (!fixtureId) {
+        console.warn(
+          "BakhiraFoot: fixture ID missing."
+        );
+        return;
+      }
 
       /*
-       * Loading فقط داخل Match Center
+       * Wait for the original
+       * script.js modal to open.
        */
 
-      content.insertAdjacentHTML(
-        "beforeend",
-        `
-          <div
-            id="bfMatchCenterLoading"
-            class="bf-detail-section bf-mc-section"
-          >
+      const current =
+        ++requestNumber;
+
+      setTimeout(
+        async () => {
+
+          if (current !== requestNumber) {
+            return;
+          }
+
+          const content =
+            getContent();
+
+          if (!content) {
+            console.warn(
+              "BakhiraFoot: match modal content not found."
+            );
+            return;
+          }
+
+          const loading =
+            document.createElement(
+              "div"
+            );
+
+          loading.className =
+            "bf-detail-section bf-mc-section";
+
+          loading.id =
+            "bfMatchCenterLoading";
+
+          loading.innerHTML = `
             <h3>⚡ Match Center</h3>
+
             <p style="opacity:.7;margin:0">
               Chargement des détails...
             </p>
-          </div>
-        `
-      );
-
-      try {
-
-        const response =
-          await fetch(
-            `/api?fixture=${encodeURIComponent(
-              fixtureId
-            )}&details=all`,
-            {
-              cache: "no-store"
-            }
-          );
-
-        if (!response.ok) {
-          throw new Error(
-            `HTTP ${response.status}`
-          );
-        }
-
-        const data =
-          await response.json();
-
-        /*
-         * User may have opened another match
-         */
-
-        if (
-          currentRequest !== requestId
-        ) {
-          return;
-        }
-
-        const loading =
-          document.getElementById(
-            "bfMatchCenterLoading"
-          );
-
-        if (loading) {
-          loading.remove();
-        }
-
-        const fixture =
-          data?.fixture ||
-          {};
-
-        const events =
-          Array.isArray(data?.events)
-            ? data.events
-            : [];
-
-        const lineups =
-          Array.isArray(data?.lineups)
-            ? data.lineups
-            : [];
-
-        const statistics =
-          Array.isArray(data?.statistics)
-            ? data.statistics
-            : [];
-
-        const players =
-          Array.isArray(data?.players)
-            ? data.players
-            : [];
-
-        const html = [
-
-          renderInfo(fixture),
-
-          section(
-            "⚡ Événements",
-            renderEvents(
-              events,
-              fixture
-            )
-          ),
-
-          section(
-            "👥 Compositions",
-            renderLineups(
-              lineups
-            )
-          ),
-
-          section(
-            "📊 Statistiques",
-            renderStats(
-              statistics
-            )
-          ),
-
-          section(
-            "⭐ Joueurs",
-            renderPlayers(
-              players
-            )
-          )
-
-        ].join("");
-
-        content.insertAdjacentHTML(
-          "beforeend",
-          html
-        );
-
-      } catch (error) {
-
-        console.error(
-          "BF MATCH CENTER ERROR:",
-          error
-        );
-
-        const loading =
-          document.getElementById(
-            "bfMatchCenterLoading"
-          );
-
-        if (loading) {
-          loading.innerHTML = `
-            <h3>⚠️ Match Center</h3>
-            <p style="opacity:.7;margin:0">
-              تعذر تحميل التفاصيل الإضافية.
-            </p>
           `;
-        }
-      }
-    };
+
+          content.appendChild(
+            loading
+          );
+
+          try {
+
+            const response =
+              await fetch(
+                `/api?fixture=${encodeURIComponent(
+                  fixtureId
+                )}&details=all`,
+                {
+                  cache: "no-store"
+                }
+              );
+
+            if (!response.ok) {
+              throw new Error(
+                `HTTP ${response.status}`
+              );
+            }
+
+            const data =
+              await response.json();
+
+            if (
+              current !== requestNumber
+            ) {
+              return;
+            }
+
+            loading.remove();
+
+            const fixture =
+              data?.fixture ||
+              {};
+
+            const events =
+              Array.isArray(
+                data?.events
+              )
+                ? data.events
+                : [];
+
+            const lineups =
+              Array.isArray(
+                data?.lineups
+              )
+                ? data.lineups
+                : [];
+
+            const statistics =
+              Array.isArray(
+                data?.statistics
+              )
+                ? data.statistics
+                : [];
+
+            const players =
+              Array.isArray(
+                data?.players
+              )
+                ? data.players
+                : [];
+
+            const detailsHTML = [
+
+              renderInfo(
+                fixture
+              ),
+
+              section(
+                "⚡ Événements",
+                renderEvents(
+                  events,
+                  fixture
+                )
+              ),
+
+              section(
+                "👥 Compositions",
+                renderLineups(
+                  lineups
+                )
+              ),
+
+              section(
+                "📊 Statistiques",
+                renderStatistics(
+                  statistics
+                )
+              ),
+
+              section(
+                "⭐ Joueurs",
+                renderPlayers(
+                  players
+                )
+              )
+
+            ].join("");
+
+            content.insertAdjacentHTML(
+              "beforeend",
+              detailsHTML
+            );
+
+            console.log(
+              "BakhiraFoot Match Center loaded:",
+              fixtureId
+            );
+
+          } catch (error) {
+
+            console.error(
+              "BakhiraFoot Match Center:",
+              error
+            );
+
+            loading.innerHTML = `
+              <h3>⚠️ Match Center</h3>
+
+              <p style="opacity:.7;margin:0">
+                تعذر تحميل التفاصيل الإضافية.
+              </p>
+            `;
+          }
+
+        },
+        100
+      );
+    },
+    true
+  );
+
 })();
