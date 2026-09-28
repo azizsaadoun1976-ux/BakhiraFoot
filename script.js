@@ -655,6 +655,7 @@ async function loadLive() {
     const matches = sortMatchesByImportance(normalizeMatches(data));
 
     currentMatches = matches;
+     window.currentMatches = currentMatches;
 
     if (liveElement) {
       liveElement.textContent =
@@ -751,6 +752,7 @@ async function loadMatches(date) {
     let matches = sortMatchesByImportance(normalizeMatches(data));
 
     currentMatches = matches;
+     window.currentMatches = [];
 
     /* FILTER */
     if (
