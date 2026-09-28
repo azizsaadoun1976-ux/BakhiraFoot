@@ -2432,3 +2432,53 @@ button:hover,
     display: none;
   }
 }
+/* ================================
+   SCORE ALIGNMENT
+   ================================ */
+
+.flash-teams {
+  grid-column: 2;
+}
+
+.flash-score {
+  grid-column: 3;
+  grid-row: 1;
+  flex-direction: row;
+  gap: 8px;
+}
+
+.flash-score strong:first-child {
+  min-width: 22px;
+  text-align: right;
+}
+
+.flash-score strong:last-child {
+  min-width: 22px;
+  text-align: left;
+}
+
+.flash-score::before {
+  content: "HOME";
+  position: absolute;
+  opacity: 0;
+}
+
+/* نخلي كل score مقابل الفريق ديالو */
+.flash-match {
+  position: relative;
+}
+
+.flash-score {
+  position: relative;
+}
+
+/* Mobile */
+@media (max-width: 700px) {
+  .flash-score {
+    gap: 5px;
+  }
+
+  .flash-score strong {
+    min-width: 18px;
+  }
+}
