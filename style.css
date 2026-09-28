@@ -3870,3 +3870,421 @@ body:not(.dark) footer {
     font-size: 20px !important;
   }
 }
+/* =========================================
+   BAKHIRAFOOT — PAGES PREMIUM
+   Articles / À propos / Contact / Legal
+   ========================================= */
+
+.page-content,
+.article-page,
+.about-page,
+.contact-page,
+.legal-page,
+main.page-content {
+  max-width: 1100px;
+  margin: 0 auto;
+  padding: 30px 22px 50px;
+}
+
+/* TITRES */
+
+.page-content h1,
+.article-page h1,
+.about-page h1,
+.contact-page h1,
+.legal-page h1 {
+  margin: 0 0 12px;
+  color: #172630;
+  font-size: clamp(30px, 4vw, 46px);
+  line-height: 1.08;
+  letter-spacing: -.035em;
+  font-weight: 900;
+}
+
+.page-content h2,
+.article-page h2,
+.about-page h2,
+.contact-page h2,
+.legal-page h2 {
+  margin: 28px 0 10px;
+  color: #24343e;
+  font-size: 20px;
+  font-weight: 850;
+}
+
+.page-content p,
+.article-page p,
+.about-page p,
+.contact-page p,
+.legal-page p {
+  color: #687984;
+  font-size: 14px;
+  line-height: 1.75;
+}
+
+/* HERO */
+
+.page-hero,
+.article-hero,
+.about-hero,
+.contact-hero {
+  padding: 32px;
+  margin-bottom: 24px;
+  border: 1px solid #e1e8ec;
+  border-radius: 20px;
+  background:
+    radial-gradient(
+      circle at 90% 15%,
+      rgba(100,120,135,.08),
+      transparent 32%
+    ),
+    linear-gradient(
+      145deg,
+      #ffffff,
+      #f7fafb
+    );
+  box-shadow:
+    0 8px 28px rgba(15,23,42,.045);
+}
+
+/* CONTENT CARDS */
+
+.article-card,
+.about-card,
+.contact-card,
+.legal-card,
+.article-box,
+.about-box,
+.contact-box,
+.content-box {
+  background: #ffffff;
+  border: 1px solid #e1e8ec;
+  border-radius: 14px;
+  box-shadow:
+    0 5px 20px rgba(15,23,42,.04);
+}
+
+/* ARTICLES */
+
+.article-card {
+  overflow: hidden;
+  transition:
+    transform .18s ease,
+    box-shadow .18s ease,
+    border-color .18s ease;
+}
+
+.article-card:hover {
+  transform: translateY(-2px);
+  border-color: #ced8de;
+  box-shadow:
+    0 10px 28px rgba(15,23,42,.075);
+}
+
+.article-card img {
+  width: 100%;
+  display: block;
+  object-fit: cover;
+}
+
+.article-card > div,
+.article-card-content {
+  padding: 16px;
+}
+
+.article-card h2,
+.article-card h3 {
+  margin: 0 0 8px;
+  color: #1b2a34;
+  font-size: 16px;
+}
+
+.article-card p {
+  margin: 0;
+  font-size: 12px;
+}
+
+/* ARTICLE READING */
+
+.article-content {
+  max-width: 780px;
+  margin: 0 auto;
+}
+
+.article-content img {
+  width: 100%;
+  max-height: 480px;
+  object-fit: cover;
+  border-radius: 14px;
+  margin: 15px 0 24px;
+}
+
+.article-content blockquote {
+  margin: 20px 0;
+  padding: 14px 17px;
+  border-left: 3px solid #7d8d98;
+  border-radius: 0 9px 9px 0;
+  background: #f5f7f8;
+  color: #52636e;
+}
+
+/* CONTACT FORMS */
+
+.contact-card form,
+.contact-box form {
+  display: flex;
+  flex-direction: column;
+  gap: 11px;
+}
+
+.contact-card label,
+.contact-box label {
+  font-size: 11px;
+  font-weight: 800;
+  color: #52636e;
+}
+
+.contact-card input,
+.contact-card textarea,
+.contact-box input,
+.contact-box textarea {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 11px 12px;
+  border: 1px solid #dfe6ea;
+  border-radius: 9px;
+  background: #ffffff;
+  color: #26343e;
+  outline: none;
+}
+
+.contact-card textarea,
+.contact-box textarea {
+  min-height: 140px;
+  resize: vertical;
+}
+
+.contact-card input:focus,
+.contact-card textarea:focus,
+.contact-box input:focus,
+.contact-box textarea:focus {
+  border-color: #aebdc6;
+  box-shadow:
+    0 0 0 3px rgba(90,110,125,.08);
+}
+
+/* BUTTONS */
+
+.page-content button,
+.article-page button,
+.about-page button,
+.contact-page button,
+.contact-card button,
+.contact-box button {
+  min-height: 42px;
+  padding: 0 15px;
+  border: 0;
+  border-radius: 9px;
+  background: #182730;
+  color: #ffffff;
+  font-size: 12px;
+  font-weight: 800;
+  cursor: pointer;
+}
+
+/* LINKS */
+
+.page-content a,
+.article-page a,
+.about-page a,
+.contact-page a,
+.legal-page a {
+  color: #405966;
+  font-weight: 700;
+}
+
+/* FOOTER */
+
+footer {
+  margin-top: 35px;
+  padding: 30px 20px;
+  border-top: 1px solid #e1e8ec;
+}
+
+/* =========================================
+   DARK MODE
+   ========================================= */
+
+.dark .page-content h1,
+.dark .article-page h1,
+.dark .about-page h1,
+.dark .contact-page h1,
+.dark .legal-page h1,
+.dark .page-content h2,
+.dark .article-page h2,
+.dark .about-page h2,
+.dark .contact-page h2,
+.dark .legal-page h2 {
+  color: #edf2f5;
+}
+
+.dark .page-content p,
+.dark .article-page p,
+.dark .about-page p,
+.dark .contact-page p,
+.dark .legal-page p {
+  color: #96a4ad;
+}
+
+.dark .page-hero,
+.dark .article-hero,
+.dark .about-hero,
+.dark .contact-hero {
+  border-color: #29343d;
+  background:
+    radial-gradient(
+      circle at 90% 15%,
+      rgba(160,180,195,.07),
+      transparent 32%
+    ),
+    linear-gradient(
+      145deg,
+      #151d24,
+      #10171c
+    );
+}
+
+.dark .article-card,
+.dark .about-card,
+.dark .contact-card,
+.dark .legal-card,
+.dark .article-box,
+.dark .about-box,
+.dark .contact-box,
+.dark .content-box {
+  background: #151d24;
+  border-color: #29343d;
+  box-shadow:
+    0 7px 25px rgba(0,0,0,.16);
+}
+
+.dark .article-card h2,
+.dark .article-card h3 {
+  color: #edf2f5;
+}
+
+.dark .article-content blockquote {
+  background: #1b252d;
+  color: #aebbc3;
+  border-color: #61727d;
+}
+
+.dark .contact-card label,
+.dark .contact-box label {
+  color: #aebbc3;
+}
+
+.dark .contact-card input,
+.dark .contact-card textarea,
+.dark .contact-box input,
+.dark .contact-box textarea {
+  background: #1b252d;
+  border-color: #34414b;
+  color: #edf2f5;
+}
+
+.dark .page-content a,
+.dark .article-page a,
+.dark .about-page a,
+.dark .contact-page a,
+.dark .legal-page a {
+  color: #c4d0d7;
+}
+
+.dark footer {
+  border-color: #29343d;
+  background: #11181e;
+}
+
+/* =========================================
+   MOBILE
+   ========================================= */
+
+@media (max-width: 700px) {
+
+  .page-content,
+  .article-page,
+  .about-page,
+  .contact-page,
+  .legal-page,
+  main.page-content {
+    padding:
+      18px 10px 35px;
+  }
+
+  .page-content h1,
+  .article-page h1,
+  .about-page h1,
+  .contact-page h1,
+  .legal-page h1 {
+    font-size: 28px;
+  }
+
+  .page-content h2,
+  .article-page h2,
+  .about-page h2,
+  .contact-page h2,
+  .legal-page h2 {
+    font-size: 17px;
+  }
+
+  .page-content p,
+  .article-page p,
+  .about-page p,
+  .contact-page p,
+  .legal-page p {
+    font-size: 13px;
+    line-height: 1.65;
+  }
+
+  .page-hero,
+  .article-hero,
+  .about-hero,
+  .contact-hero {
+    padding: 19px 15px;
+    border-radius: 15px;
+  }
+
+  .article-card,
+  .about-card,
+  .contact-card,
+  .legal-card,
+  .article-box,
+  .about-box,
+  .contact-box,
+  .content-box {
+    border-radius: 11px;
+  }
+
+  .article-card > div,
+  .article-card-content {
+    padding: 13px;
+  }
+
+  .article-content {
+    width: 100%;
+  }
+
+  .article-content img {
+    border-radius: 10px;
+  }
+
+  .contact-card,
+  .contact-box {
+    padding: 14px;
+  }
+
+  footer {
+    padding: 23px 14px;
+  }
+}
