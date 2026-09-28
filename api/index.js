@@ -14,13 +14,30 @@ module.exports = async (req, res) => {
             url += `?date=${encodeURIComponent(matchDate)}`;
         }
 
-        const response = await fetch(url, {
+        // API 1
+        let response = await fetch(url, {
             headers: {
                 "x-api-key": process.env.KICKOFF_API_KEY
             }
         });
 
-        const data = await response.json();
+        let data = await response.json();
+
+        // إذا API 1 خدامة، رجع البيانات
+        if (response.ok) {
+            return res.status(response.status).json(data);
+        }
+
+        // API 1 فشلات → نجرب API 2
+        console.log("API 1 failed, trying API 2...");
+
+        response = await fetch(url, {
+            headers: {
+                "x-api-key": process.env.KICKOFF_API_KEY_2
+            }
+        });
+
+        data = await response.json();
 
         return res.status(response.status).json(data);
 
