@@ -1,10 +1,11 @@
 module.exports = async (req, res) => {
   try {
     const {
-      live,
-      date,
-      fixture
-    } = req.query;
+  live,
+  date,
+  fixture,
+  details
+} = req.query;
 
     const apiKeys = [
       process.env.KICKOFF_API_KEY,
@@ -13,6 +14,79 @@ module.exports = async (req, res) => {
       process.env.KICKOFF_API_KEY_4,
       process.env.KICKOFF_API_KEY_5
     ].filter(Boolean);
+
+    /*
+     * ==========================================
+     * ADVANCED MATCH DETAILS — V1
+     * events / lineups / statistics / players
+     * ==========================================
+     */
+
+    if (fixture && details) {
+
+      const allowedDetails = [
+        "events",
+        "lineups",
+        "statistics",
+        "players"
+      ];
+
+      if (!allowedDetails.includes(details)) {
+        return res.status(400).json({
+          error: "Invalid details type."
+        });
+      }
+
+      const url =
+        `https://api.kickoffapi.com/api/v1/fixtures/${details}?fixture=${encodeURIComponent(fixture)}`;
+
+      let lastResponse = null;
+      let lastData = null;
+
+      for (let i = 0; i < apiKeys.length; i++) {
+
+        const response = await fetch(url, {
+          headers: {
+            "x-api-key": apiKeys[i]
+          }
+        });
+
+        const data = await response.json();
+
+        lastResponse = response;
+        lastData = data;
+
+        if (response.ok) {
+          return res
+            .status(response.status)
+            .json(data);
+        }
+
+        const quotaFinished =
+          data?.code ===
+          "FREE_ALLOWANCE_AND_CREDITS_EXHAUSTED";
+
+        if (!quotaFinished) {
+          return res
+            .status(response.status)
+            .json(data);
+        }
+
+        console.log(
+          `API ${i + 1} quota exhausted → trying API ${i + 2}`
+        );
+      }
+
+      return res
+        .status(lastResponse?.status || 429)
+        .json(
+          lastData || {
+            error:
+              "All KickoffAPI keys have exhausted their quota."
+          }
+        );
+    }
+
 
     /*
      * ==========================================
