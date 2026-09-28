@@ -137,18 +137,87 @@ function getLeague(match) {
 function getCompetitionPriority(match) {
   const league = getLeague(match).toLowerCase();
 
-  if (league.includes("champions league")) return 100;
-  if (league.includes("europa league")) return 95;
-  if (league.includes("premier league")) return 90;
-  if (league.includes("la liga")) return 88;
-  if (league.includes("serie a")) return 86;
-  if (league.includes("bundesliga")) return 84;
-  if (league.includes("ligue 1")) return 82;
-  if (league.includes("botola")) return 80;
-  if (league.includes("conference league")) return 78;
-  if (league.includes("champions")) return 75;
-  if (league.includes("world cup")) return 100;
-  if (league.includes("africa cup")) return 95;
+  if (
+    league.includes("world cup") ||
+    league.includes("coupe du monde") ||
+    league.includes("mundial")
+  ) return 150;
+
+  if (
+    league === "euro" ||
+    league.includes("european championship") ||
+    league.includes("uefa euro")
+  ) return 140;
+
+  if (
+    league.includes("champions league") ||
+    league.includes("uefa champions")
+  ) return 130;
+
+  if (
+    league.includes("europa league") ||
+    league.includes("uefa europa")
+  ) return 120;
+
+  if (
+    league.includes("conference league") ||
+    league.includes("uefa conference")
+  ) return 110;
+
+  if (
+    league.includes("premier league") ||
+    league.includes("english premier")
+  ) return 100;
+
+  if (
+    league.includes("la liga") ||
+    league.includes("laliga")
+  ) return 95;
+
+  if (
+    league === "serie a" ||
+    league.includes("italian serie")
+  ) return 90;
+
+  if (
+    league.includes("afcon") ||
+    league.includes("africa cup") ||
+    league.includes("african cup") ||
+    league.includes("coupe d'afrique") ||
+    league.includes("cup of nations")
+  ) return 85;
+
+  if (
+    league.includes("copa america") ||
+    league.includes("copa américa")
+  ) return 80;
+
+  if (
+    league.includes("nations league") ||
+    league.includes("uefa nations")
+  ) return 75;
+
+  if (
+    league.includes("bundesliga") ||
+    league.includes("german bundesliga")
+  ) return 70;
+
+  if (
+    league === "ligue 1" ||
+    league.includes("ligue 1")
+  ) return 65;
+
+  if (
+    league.includes("world cup qualifier") ||
+    league.includes("world cup qualification") ||
+    league.includes("coupe du monde - qualification")
+  ) return 60;
+
+  if (
+    league.includes("botola") ||
+    league.includes("botola pro") ||
+    league.includes("morocco")
+  ) return 55;
 
   return 10;
 }
