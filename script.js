@@ -609,7 +609,14 @@ async function loadLive() {
       } else {
 
        list.innerHTML =
-  renderMatchesByCompetition(matches);
+  matches
+    .map((match, index) =>
+      createMatchHTML(
+        match,
+        index
+      )
+    )
+    .join("");
       }
     }
 
@@ -702,8 +709,15 @@ async function loadMatches(date) {
       return;
     }
 
-   list.innerHTML =
-  renderMatchesByCompetition(matches);
+  list.innerHTML =
+  matches
+    .map((match, index) =>
+      createMatchHTML(
+        match,
+        index
+      )
+    )
+    .join("");
 
   } catch (error) {
 
