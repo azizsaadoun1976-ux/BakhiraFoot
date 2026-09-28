@@ -2816,3 +2816,22 @@ nav button.active {
     font-size: 10px !important;
   }
 }
+/* FIX — HOME HERO TITLE / WHITE MODE */
+
+#home h1 {
+  color: #14212b !important;
+  text-shadow: none !important;
+}
+
+#home h1 span {
+  color: #536977 !important;
+}
+
+/* DARK MODE */
+.dark #home h1 {
+  color: #f1f5f7 !important;
+}
+
+.dark #home h1 span {
+  color: #b8c5cc !important;
+}
