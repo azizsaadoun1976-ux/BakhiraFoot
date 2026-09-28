@@ -1481,7 +1481,150 @@
               )
                 ? data.players
                 : [];
+function renderMatchHeader(fixture) {
+  const home = fixture?.home || {};
+  const away = fixture?.away || {};
+  const status = fixture?.status || {};
+  const score = fixture?.score || {};
 
+  const statusShort =
+    String(status?.short || "").toUpperCase();
+
+  const statusLong =
+    String(status?.long || "");
+
+  const liveStatuses = [
+    "1H",
+    "2H",
+    "HT",
+    "ET",
+    "P",
+    "BT"
+  ];
+
+  const isLive =
+    liveStatuses.includes(statusShort);
+
+  const isHalfTime =
+    statusShort === "HT";
+
+  const isFinished =
+    ["FT", "AET", "PEN"].includes(statusShort);
+
+  let badge = "À VENIR";
+  let badgeClass = "upcoming";
+
+  if (isLive) {
+    badge = isHalfTime
+      ? "MI-TEMPS"
+      : `🔴 LIVE ${status?.elapsed ? status.elapsed + "'" : ""}`;
+
+    badgeClass = "live";
+  }
+
+  if (isFinished) {
+    badge = "TERMINÉ";
+    badgeClass = "finished";
+  }
+
+  const homeScore =
+    score?.home ?? "-";
+
+  const awayScore =
+    score?.away ?? "-";
+
+  return `
+    <div class="bf-pro-match-header">
+
+      <div class="bf-pro-match-top">
+
+        <span class="bf-pro-competition">
+          🏆 ${escapeHTML(
+            fixture?.league?.name ||
+            "Football"
+          )}
+        </span>
+
+        <span class="bf-pro-status ${badgeClass}">
+          ${escapeHTML(badge)}
+        </span>
+
+      </div>
+
+      <div class="bf-pro-match-main">
+
+        <div class="bf-pro-team home">
+
+          ${
+            home?.logo
+              ? `
+                <img
+                  src="${escapeHTML(home.logo)}"
+                  alt="${escapeHTML(home.name || "Domicile")}"
+                >
+              `
+              : `
+                <div class="bf-pro-logo-fallback">
+                  ⚽
+                </div>
+              `
+          }
+
+          <strong>
+            ${escapeHTML(
+              home?.name || "Domicile"
+            )}
+          </strong>
+
+        </div>
+
+        <div class="bf-pro-score-box">
+
+          <div class="bf-pro-score">
+            <span>${escapeHTML(homeScore)}</span>
+            <b>-</b>
+            <span>${escapeHTML(awayScore)}</span>
+          </div>
+
+          <div class="bf-pro-status-long">
+            ${escapeHTML(
+              statusLong || "Match"
+            )}
+          </div>
+
+        </div>
+
+        <div class="bf-pro-team away">
+
+          ${
+            away?.logo
+              ? `
+                <img
+                  src="${escapeHTML(away.logo)}"
+                  alt="${escapeHTML(away.name || "Extérieur")}"
+                >
+              `
+              : `
+                <div class="bf-pro-logo-fallback">
+                  ⚽
+                </div>
+              `
+          }
+
+          <strong>
+            ${escapeHTML(
+              away?.name || "Extérieur"
+            )}
+          </strong>
+
+        </div>
+
+      </div>
+
+    </div>
+  `;
+}
+            
             const detailsHTML = [
 
               renderInfo(
