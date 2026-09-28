@@ -2196,3 +2196,239 @@ button:hover,
     font-size: 9px;
   }
 }
+/* =========================================
+   BAKHIRAFOOT — MATCH CARDS PRO DESIGN
+   ========================================= */
+
+#scoreList {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+/* Match card */
+.match-card {
+  width: 100%;
+  box-sizing: border-box;
+  padding: 0 !important;
+  overflow: hidden;
+  border: 1px solid #e3e8ec !important;
+  border-radius: 12px !important;
+  background: #ffffff !important;
+  cursor: pointer;
+  transition:
+    transform .15s ease,
+    box-shadow .15s ease,
+    border-color .15s ease;
+}
+
+.match-card:hover {
+  transform: translateY(-1px);
+  border-color: #cbd4da !important;
+  box-shadow: 0 5px 18px rgba(15, 23, 42, .07);
+}
+
+/* Competition */
+.flash-league {
+  min-height: 34px;
+  padding: 0 14px;
+  display: flex;
+  align-items: center;
+  border-bottom: 1px solid #edf0f2;
+  background: #f8fafb;
+  color: #334155;
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.flash-league span {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+/* Main match */
+.flash-match {
+  min-height: 76px;
+  padding: 12px 14px;
+  display: grid;
+  grid-template-columns: 105px minmax(0, 1fr) 75px;
+  align-items: center;
+  gap: 14px;
+}
+
+/* Status / time */
+.flash-time {
+  display: flex;
+  flex-direction: column;
+  align-items: flex-start;
+  justify-content: center;
+  gap: 3px;
+  min-width: 0;
+}
+
+.flash-time span {
+  font-size: 12px;
+  font-weight: 700;
+  color: #64748b;
+}
+
+.flash-time small {
+  font-size: 10px;
+  color: #94a3b8;
+}
+
+/* Teams */
+.flash-teams {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  gap: 22px;
+  min-width: 0;
+}
+
+.flash-team {
+  min-width: 0;
+}
+
+.flash-team .team {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  min-width: 0;
+}
+
+.flash-team:first-child .team {
+  justify-content: flex-end;
+  text-align: right;
+}
+
+.flash-team:last-child .team {
+  justify-content: flex-start;
+  text-align: left;
+}
+
+.flash-team .team span:not(.teamLogo) {
+  font-size: 14px;
+  font-weight: 650;
+  color: #1e293b;
+  line-height: 1.25;
+}
+
+/* Team logos */
+.flash-team .teamLogo {
+  width: 30px !important;
+  height: 30px !important;
+  min-width: 30px;
+  object-fit: contain;
+  border-radius: 50%;
+}
+
+/* Score */
+.flash-score {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  min-width: 45px;
+}
+
+.flash-score strong {
+  font-size: 19px;
+  line-height: 1;
+  font-weight: 800;
+  color: #0f172a;
+}
+
+/* LIVE */
+.match-card:has(.flash-time span:first-child) {
+  position: relative;
+}
+
+.match-card:has(.flash-time span:first-child) .flash-time span {
+  white-space: nowrap;
+}
+
+/* Dark mode */
+.dark .match-card {
+  background: #151d24 !important;
+  border-color: #29343d !important;
+}
+
+.dark .match-card:hover {
+  border-color: #3a4853 !important;
+  box-shadow: 0 5px 18px rgba(0, 0, 0, .22);
+}
+
+.dark .flash-league {
+  background: #1b252d;
+  border-bottom-color: #29343d;
+  color: #dbe4ea;
+}
+
+.dark .flash-team .team span:not(.teamLogo) {
+  color: #edf2f5;
+}
+
+.dark .flash-score strong {
+  color: #ffffff;
+}
+
+.dark .flash-time span {
+  color: #c2cdd5;
+}
+
+.dark .flash-time small {
+  color: #84939e;
+}
+
+/* Mobile */
+@media (max-width: 700px) {
+
+  #scoreList {
+    gap: 9px;
+  }
+
+  .flash-league {
+    min-height: 32px;
+    padding: 0 10px;
+    font-size: 11px;
+  }
+
+  .flash-match {
+    min-height: 70px;
+    padding: 10px;
+    grid-template-columns: 70px minmax(0, 1fr) 45px;
+    gap: 8px;
+  }
+
+  .flash-teams {
+    gap: 8px;
+  }
+
+  .flash-team .team {
+    gap: 6px;
+  }
+
+  .flash-team .team span:not(.teamLogo) {
+    font-size: 12px;
+  }
+
+  .flash-team .teamLogo {
+    width: 25px !important;
+    height: 25px !important;
+    min-width: 25px;
+  }
+
+  .flash-score strong {
+    font-size: 17px;
+  }
+
+  .flash-time span {
+    font-size: 10px;
+  }
+
+  .flash-time small {
+    display: none;
+  }
+}
