@@ -1468,19 +1468,32 @@
                 ? data.lineups
                 : [];
 
-            const statistics =
-              Array.isArray(
-                data?.statistics
-              )
-                ? data.statistics
-                : [];
+           const normalizeArray = (value) => {
 
-            const players =
-              Array.isArray(
-                data?.players
-              )
-                ? data.players
-                : [];
+  if (Array.isArray(value)) {
+    return value;
+  }
+
+  if (Array.isArray(value?.data)) {
+    return value.data;
+  }
+
+  if (Array.isArray(value?.response)) {
+    return value.response;
+  }
+
+  return [];
+};
+
+const statistics =
+  normalizeArray(
+    data?.statistics
+  );
+
+const players =
+  normalizeArray(
+    data?.players
+  );
 function renderMatchHeader(fixture) {
   const home = fixture?.home || {};
   const away = fixture?.away || {};
