@@ -3357,3 +3357,62 @@ body:not(.dark) footer {
       0 2px 8px rgba(15,23,42,.03);
   }
 }
+/* =========================================
+   BUTTONS — BETTER INTEGRATION
+   ========================================= */
+
+body:not(.dark) nav button,
+body:not(.dark) nav a,
+body:not(.dark) .filter,
+body:not(.dark) .dates button {
+  background: rgba(255, 255, 255, .72) !important;
+  border: 1px solid #e2e8ec !important;
+  color: #52636e !important;
+  box-shadow: 0 1px 4px rgba(15, 23, 42, .025);
+}
+
+body:not(.dark) nav button:hover,
+body:not(.dark) nav a:hover,
+body:not(.dark) .filter:hover,
+body:not(.dark) .dates button:hover {
+  background: #ffffff !important;
+  border-color: #cfd9df !important;
+}
+
+body:not(.dark) nav button.active,
+body:not(.dark) .filter.active,
+body:not(.dark) .dates button.active {
+  background: #1d2b35 !important;
+  border-color: #1d2b35 !important;
+  color: #ffffff !important;
+  box-shadow: 0 3px 10px rgba(15, 23, 42, .10);
+}
+
+/* Theme button */
+body:not(.dark) #theme {
+  background: #ffffff !important;
+  border: 1px solid #e1e7eb !important;
+  box-shadow: 0 1px 5px rgba(15, 23, 42, .04);
+}
+
+body:not(.dark) #theme:hover {
+  background: #f3f6f8 !important;
+}
+
+/* Dark mode */
+.dark nav button,
+.dark nav a,
+.dark .filter,
+.dark .dates button {
+  background: #1b252d !important;
+  border-color: #2d3a43 !important;
+  color: #aebac2 !important;
+}
+
+.dark nav button.active,
+.dark .filter.active,
+.dark .dates button.active {
+  background: #edf2f5 !important;
+  border-color: #edf2f5 !important;
+  color: #151d24 !important;
+}
