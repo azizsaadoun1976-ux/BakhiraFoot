@@ -338,6 +338,7 @@ function teamHTML(name, logo) {
    MATCH CARD
 ========================================================= */
 
+```js
 function createMatchHTML(match, index) {
   const home = getHome(match);
   const away = getAway(match);
@@ -356,54 +357,133 @@ function createMatchHTML(match, index) {
     match?.date ||
     null;
 
-  const fixtureId =
-    getFixtureId(match);
+  const fixtureId = getFixtureId(match);
+
+  const statusUpper = String(getStatus(match)).toUpperCase();
+
+  const isLive =
+    ["1H", "2H", "LIVE", "ET", "P", "BT"].includes(statusUpper) ||
+    statusUpper.includes("LIVE");
+
+  const isFinished =
+    statusUpper === "FT" ||
+    statusUpper.includes("FINISHED");
+
+  let timeText = "";
+
+  if (isLive) {
+    timeText = getMinute(match)
+      ? `${getMinute(match)}'`
+      : "LIVE";
+  } else if (date) {
+    const d = new Date(date);
+
+    if (!Number.isNaN(d.getTime())) {
+      timeText = d.toLocaleTimeString("fr-FR", {
+        hour: "2-digit",
+        minute: "2-digit"
+      });
+    }
+  }
 
   return `
-    <div
-      class="match-card"
+    <article
+      class="match-card ${isLive ? "is-live" : ""} ${isFinished ? "is-finished" : ""}"
       data-match-index="${index}"
       data-fixture-id="${escapeHTML(fixtureId || "")}"
       onclick="openMatchDetails(${index})"
     >
 
-      <div class="flash-league">
-        <span>🏆 ${escapeHTML(league)}</span>
+      <div class="match-league">
+        <span class="match-league-icon">🏆</span>
+        <span>${escapeHTML(league)}</span>
       </div>
 
-      <div class="flash-match">
+      <div class="match-content">
 
-        <div class="flash-time">
-          <span>${escapeHTML(status)}</span>
+        <div class="match-status">
           ${
-            date
-              ? `<small>${escapeHTML(formatDate(date))}</small>`
+            isLive
+              ? `<span class="live-dot"></span><strong>LIVE</strong>`
+              : `<strong>${escapeHTML(timeText || status)}</strong>`
+          }
+
+          ${
+            isLive && getMinute(match)
+              ? `<small>${escapeHTML(getMinute(match))}'</small>`
               : ""
           }
         </div>
 
-        <div class="flash-teams">
+        <div class="match-teams">
 
-          <div class="flash-team">
-            ${teamHTML(home, homeLogo)}
+          <div class="match-team home-team">
+
+            <span class="team-name">
+              ${escapeHTML(home)}
+            </span>
+
+            ${
+              homeLogo
+                ? `
+                  <img
+                    class="match-team-logo"
+                    src="${escapeHTML(homeLogo)}"
+                    alt="${escapeHTML(home)}"
+                    loading="lazy"
+                  >
+                `
+                : `
+                  <span class="match-team-logo fallback-logo">⚽</span>
+                `
+            }
+
           </div>
 
-          <div class="flash-team">
-            ${teamHTML(away, awayLogo)}
+          <div class="match-score">
+
+            <span>${escapeHTML(homeScore)}</span>
+            <span class="score-separator">-</span>
+            <span>${escapeHTML(awayScore)}</span>
+
+          </div>
+
+          <div class="match-team away-team">
+
+            ${
+              awayLogo
+                ? `
+                  <img
+                    class="match-team-logo"
+                    src="${escapeHTML(awayLogo)}"
+                    alt="${escapeHTML(away)}"
+                    loading="lazy"
+                  >
+                `
+                : `
+                  <span class="match-team-logo fallback-logo">⚽</span>
+                `
+            }
+
+            <span class="team-name">
+              ${escapeHTML(away)}
+            </span>
+
           </div>
 
         </div>
 
-        <div class="flash-score">
-          <strong>${escapeHTML(homeScore)}</strong>
-          <strong>${escapeHTML(awayScore)}</strong>
+        <div class="match-status-right">
+          ${escapeHTML(status)}
         </div>
 
       </div>
 
-    </div>
+    </article>
   `;
 }
+```
+
 
 /* =========================================================
    LOAD LIVE
