@@ -13,26 +13,197 @@
 
   let requestId = 0;
 
-  let lastClickedFixtureId = null;
+  window.openMatchDetails = async function (index) {
 
-document.addEventListener(
-  "click",
-  (event) => {
+  /*
+   * Find the exact card that was clicked.
+   * We do NOT use currentMatches here.
+   */
 
-    const card =
-      event.target.closest(".match-card");
+  const cards =
+    document.querySelectorAll(
+      ".match-card"
+    );
 
-    if (!card) return;
+  const clickedCard =
+    cards[index];
 
-    const fixtureId =
-      card.dataset.fixtureId;
+  if (!clickedCard) {
+    originalOpenMatchDetails(index);
+    return;
+  }
 
-    if (fixtureId) {
-      lastClickedFixtureId = fixtureId;
+  const fixtureId =
+    clickedCard.dataset.fixtureId;
+
+  /*
+   * First let the ORIGINAL working
+   * Match Details modal open.
+   */
+
+  originalOpenMatchDetails(index);
+
+  /*
+   * If there is no fixture ID,
+   * leave the original modal untouched.
+   */
+
+  if (!fixtureId) {
+    return;
+  }
+
+  const content =
+    getContent();
+
+  if (!content) {
+    return;
+  }
+
+  const currentRequest =
+    ++requestId;
+
+  /*
+   * Add loading section
+   */
+
+  content.insertAdjacentHTML(
+    "beforeend",
+    `
+      <div
+        id="bfMatchCenterLoading"
+        class="bf-detail-section bf-mc-section"
+      >
+        <h3>⚡ Match Center</h3>
+
+        <p style="opacity:.7;margin:0">
+          Chargement des détails...
+        </p>
+      </div>
+    `
+  );
+
+  try {
+
+    const response =
+      await fetch(
+        `/api?fixture=${encodeURIComponent(
+          fixtureId
+        )}&details=all`,
+        {
+          cache: "no-store"
+        }
+      );
+
+    if (!response.ok) {
+      throw new Error(
+        `HTTP ${response.status}`
+      );
     }
-  },
-  true
-);
+
+    const data =
+      await response.json();
+
+    /*
+     * Ignore old request
+     */
+
+    if (
+      currentRequest !== requestId
+    ) {
+      return;
+    }
+
+    const loading =
+      document.getElementById(
+        "bfMatchCenterLoading"
+      );
+
+    if (loading) {
+      loading.remove();
+    }
+
+    const fixture =
+      data?.fixture || {};
+
+    const events =
+      Array.isArray(data?.events)
+        ? data.events
+        : [];
+
+    const lineups =
+      Array.isArray(data?.lineups)
+        ? data.lineups
+        : [];
+
+    const statistics =
+      Array.isArray(data?.statistics)
+        ? data.statistics
+        : [];
+
+    const players =
+      Array.isArray(data?.players)
+        ? data.players
+        : [];
+
+    content.insertAdjacentHTML(
+      "beforeend",
+      [
+        renderInfo(fixture),
+
+        section(
+          "⚡ Événements",
+          renderEvents(
+            events,
+            fixture
+          )
+        ),
+
+        section(
+          "👥 Compositions",
+          renderLineups(
+            lineups
+          )
+        ),
+
+        section(
+          "📊 Statistiques",
+          renderStats(
+            statistics
+          )
+        ),
+
+        section(
+          "⭐ Joueurs",
+          renderPlayers(
+            players
+          )
+        )
+      ].join("")
+    );
+
+  } catch (error) {
+
+    console.error(
+      "BF MATCH CENTER ERROR:",
+      error
+    );
+
+    const loading =
+      document.getElementById(
+        "bfMatchCenterLoading"
+      );
+
+    if (loading) {
+      loading.innerHTML = `
+        <h3>⚠️ Match Center</h3>
+
+        <p style="opacity:.7;margin:0">
+          تعذر تحميل التفاصيل الإضافية.
+        </p>
+      `;
+    }
+  }
+};
 
   function escapeHTML(value) {
     return String(value ?? "")
