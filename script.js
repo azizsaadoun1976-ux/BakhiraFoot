@@ -1306,10 +1306,6 @@ async function openMatchDetails(index) {
     console.log(
       "MATCH DETAILS:",
       data
-       console.log("MATCH DETAILS TYPE:", typeof data);
-console.log("MATCH DETAILS KEYS:", Object.keys(data || {}));
-console.log("MATCH DETAILS DATA:", data?.data);
-console.log("MATCH DETAILS RESPONSE:", data?.response);
     );
 
     // بعض APIs كترجع response
