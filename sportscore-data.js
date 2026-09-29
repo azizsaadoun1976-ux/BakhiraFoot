@@ -14,79 +14,79 @@
      GRANDES COMPÉTITIONS
      ========================================================= */
 
-  const competitions = [
+const competitions = [
 
-    {
-      name: "Premier League",
-      slug: "premier-league",
-      country: "Angleterre",
-      logo: "https://commons.wikimedia.org/wiki/Special:Redirect/file/Premier_League.svg"
-    },
+  {
+    name: "Premier League",
+    slug: "english-premier-league",
+    country: "Angleterre",
+    logo: "https://commons.wikimedia.org/wiki/Special:Redirect/file/Premier_League.svg"
+  },
 
-    {
-      name: "LaLiga",
-      slug: "la-liga",
-      country: "Espagne",
-      logo: "https://commons.wikimedia.org/wiki/Special:Redirect/file/LaLiga_logo_(2023).svg"
-    },
+  {
+    name: "LaLiga",
+    slug: "spanish-la-liga",
+    country: "Espagne",
+    logo: "https://commons.wikimedia.org/wiki/Special:Redirect/file/LaLiga_logo_(2023).svg"
+  },
 
-    {
-      name: "Serie A",
-      slug: "serie-a",
-      country: "Italie",
-      logo: "https://commons.wikimedia.org/wiki/Special:Redirect/file/Serie_A.svg"
-    },
+  {
+    name: "Serie A",
+    slug: "italian-serie-a",
+    country: "Italie",
+    logo: "https://commons.wikimedia.org/wiki/Special:Redirect/file/Serie_A.svg"
+  },
 
-    {
-      name: "Bundesliga",
-      slug: "bundesliga",
-      country: "Allemagne",
-      logo: "https://commons.wikimedia.org/wiki/Special:Redirect/file/Bundesliga_logo.svg"
-    },
+  {
+    name: "Bundesliga",
+    slug: "bundesliga",
+    country: "Allemagne",
+    logo: "https://commons.wikimedia.org/wiki/Special:Redirect/file/Bundesliga_logo.svg"
+  },
 
-    {
-      name: "Ligue 1",
-      slug: "ligue-1",
-      country: "France",
-      logo: "https://commons.wikimedia.org/wiki/Special:Redirect/file/Ligue1.svg"
-    },
+  {
+    name: "Ligue 1",
+    slug: "french-ligue-1",
+    country: "France",
+    logo: "https://commons.wikimedia.org/wiki/Special:Redirect/file/Ligue1.svg"
+  },
 
-    {
-      name: "Eredivisie",
-      slug: "eredivisie",
-      country: "Pays-Bas",
-      logo: "https://commons.wikimedia.org/wiki/Special:Redirect/file/Eredivisie_nieuw_logo_2017-.svg"
-    },
+  {
+    name: "Eredivisie",
+    slug: "netherlands-eredivisie",
+    country: "Pays-Bas",
+    logo: "https://commons.wikimedia.org/wiki/Special:Redirect/file/Eredivisie_nieuw_logo_2017-.svg"
+  },
 
-    {
-      name: "UEFA Champions League",
-      slug: "uefa-champions-league",
-      country: "Europe",
-      logo: "https://commons.wikimedia.org/wiki/Special:Redirect/file/UEFA_Champions_League_logo.svg"
-    },
+  {
+    name: "UEFA Champions League",
+    slug: "uefa-champions-league",
+    country: "Europe",
+    logo: "https://commons.wikimedia.org/wiki/Special:Redirect/file/UEFA_Champions_League_logo.svg"
+  },
 
-    {
-      name: "UEFA Europa League",
-      slug: "uefa-europa-league",
-      country: "Europe",
-      logo: "https://commons.wikimedia.org/wiki/Special:Redirect/file/UEFA_Europa_league_logo.svg"
-    },
+  {
+    name: "UEFA Europa League",
+    slug: "uefa-europa-league",
+    country: "Europe",
+    logo: "https://commons.wikimedia.org/wiki/Special:Redirect/file/UEFA_Europa_league_logo.svg"
+  },
 
-    {
-      name: "UEFA Conference League",
-      slug: "uefa-conference-league",
-      country: "Europe",
-      logo: "https://commons.wikimedia.org/wiki/Special:Redirect/file/UEFA_Conference_League_full_logo_(2024_version).svg"
-    },
+  {
+    name: "UEFA Conference League",
+    slug: "uefa-europa-conference-league",
+    country: "Europe",
+    logo: "https://commons.wikimedia.org/wiki/Special:Redirect/file/UEFA_Conference_League_full_logo_(2024_version).svg"
+  },
 
-    {
-      name: "Botola Pro",
-      slug: "the-botola-pro",
-      country: "Maroc",
-      logo: "https://seeklogo.com/images/B/botolapro-inwi-logo-CDFB034249-seeklogo.com.png"
-    }
+  {
+    name: "Botola Pro",
+    slug: "the-botola-pro",
+    country: "Maroc",
+    logo: "https://seeklogo.com/images/B/botolapro-inwi-logo-CDFB034249-seeklogo.com.png"
+  }
 
-  ];
+];
 
 
   /* =========================================================
