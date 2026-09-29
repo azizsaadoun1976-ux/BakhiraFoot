@@ -17,10 +17,11 @@ module.exports = async (req, res) => {
        HELPERS
     ===================================================== */
 
-    const today =
-      new Date()
+    function todayISO() {
+      return new Date()
         .toISOString()
         .split("T")[0];
+    }
 
     function sendJSON(
       status,
@@ -36,7 +37,7 @@ module.exports = async (req, res) => {
         .json(data);
     }
 
-    async function fetchSportScore(
+    async function sportScoreFetch(
       path
     ) {
       const separator =
@@ -49,6 +50,11 @@ module.exports = async (req, res) => {
         `${separator}src=${encodeURIComponent(
           SRC
         )}`;
+
+      console.log(
+        "SPORTSCORE:",
+        url
+      );
 
       const response =
         await fetch(url, {
@@ -65,7 +71,8 @@ module.exports = async (req, res) => {
       let data = {};
 
       try {
-        data = JSON.parse(text);
+        data =
+          JSON.parse(text);
       } catch {
         data = {
           raw: text
@@ -73,7 +80,6 @@ module.exports = async (req, res) => {
       }
 
       if (!response.ok) {
-
         const error =
           new Error(
             `SportScore HTTP ${response.status}`
@@ -91,52 +97,39 @@ module.exports = async (req, res) => {
       return data;
     }
 
-    function extractArray(
-      body,
-      keys = []
+    function extractMatches(
+      body
     ) {
-
-      if (Array.isArray(body)) {
-        return body;
-      }
-
-      for (
-        const key
-        of keys
+      if (
+        Array.isArray(body?.matches)
       ) {
-
-        if (
-          Array.isArray(
-            body?.[key]
-          )
-        ) {
-          return body[key];
-        }
-
+        return body.matches;
       }
 
       if (
-        Array.isArray(
-          body?.data
-        )
+        Array.isArray(body?.data)
       ) {
         return body.data;
+      }
+
+      if (
+        Array.isArray(body)
+      ) {
+        return body;
       }
 
       return [];
     }
 
-    function getValue(
+    function pick(
       obj,
       paths,
       fallback = null
     ) {
-
       for (
         const path
         of paths
       ) {
-
         const parts =
           path.split(".");
 
@@ -147,7 +140,6 @@ module.exports = async (req, res) => {
           const part
           of parts
         ) {
-
           if (
             value === null ||
             value === undefined
@@ -173,58 +165,84 @@ module.exports = async (req, res) => {
     }
 
     /* =====================================================
-       TEAM NORMALIZER
+       TEAM
     ===================================================== */
 
     function normalizeTeam(
-      team,
-      fallbackName
+      raw,
+      root,
+      side
     ) {
+      const source =
+        typeof raw === "object" &&
+        raw !== null
+          ? raw
+          : {};
 
-      if (
-        typeof team === "string"
-      ) {
-
-        return {
-          id: null,
-          name: team,
-          logo: ""
-        };
-
-      }
-
-      team =
-        team || {};
+      const prefix =
+        side === "home"
+          ? "home"
+          : "away";
 
       return {
 
         id:
-          getValue(
-            team,
+          pick(
+            source,
             [
               "id",
               "team_id"
             ]
+          ) ||
+          pick(
+            root,
+            [
+              `${prefix}_id`,
+              `${prefix}_team_id`,
+              `${prefix}_team.id`
+            ]
           ),
 
         name:
-          getValue(
-            team,
+          (
+            typeof raw === "string"
+              ? raw
+              : null
+          ) ||
+          pick(
+            source,
             [
               "name",
               "team",
               "title"
+            ]
+          ) ||
+          pick(
+            root,
+            [
+              prefix,
+              `${prefix}_name`,
+              `${prefix}_team.name`
             ],
-            fallbackName
+            side === "home"
+              ? "Domicile"
+              : "Extérieur"
           ),
 
         logo:
-          getValue(
-            team,
+          pick(
+            source,
             [
               "logo",
               "image",
               "team_logo"
+            ]
+          ) ||
+          pick(
+            root,
+            [
+              `${prefix}_logo`,
+              `${prefix}_team.logo`
             ],
             ""
           )
@@ -233,47 +251,80 @@ module.exports = async (req, res) => {
     }
 
     /* =====================================================
-       FIXTURE NORMALIZER
+       FIXTURE ADAPTER
     ===================================================== */
 
     function normalizeFixture(
       item
     ) {
-
       if (!item) {
         return null;
       }
 
+      const slug =
+        pick(
+          item,
+          [
+            "slug",
+            "match_slug"
+          ],
+          null
+        );
+
+      const upstreamId =
+        pick(
+          item,
+          [
+            "id",
+            "match_id",
+            "fixture_id"
+          ],
+          null
+        );
+
+      /*
+         IMPORTANT:
+         script.js current كيستعمل fixture.id
+         باش يفتح Match Details.
+
+         SportScore Match Details كتطلب slug.
+         لذلك fixture.id = slug.
+      */
+
+      const publicId =
+        slug ||
+        upstreamId;
+
       const home =
         normalizeTeam(
-          getValue(
+          pick(
             item,
             [
               "home_team",
               "homeTeam",
               "home"
-            ],
-            null
+            ]
           ),
-          "Domicile"
+          item,
+          "home"
         );
 
       const away =
         normalizeTeam(
-          getValue(
+          pick(
             item,
             [
               "away_team",
               "awayTeam",
               "away"
-            ],
-            null
+            ]
           ),
-          "Extérieur"
+          item,
+          "away"
         );
 
-      const scoreHome =
-        getValue(
+      const homeScore =
+        pick(
           item,
           [
             "home_score",
@@ -283,8 +334,8 @@ module.exports = async (req, res) => {
           null
         );
 
-      const scoreAway =
-        getValue(
+      const awayScore =
+        pick(
           item,
           [
             "away_score",
@@ -294,50 +345,21 @@ module.exports = async (req, res) => {
           null
         );
 
-      const slug =
-        getValue(
-          item,
-          [
-            "slug",
-            "match_slug"
-          ],
-          null
-        );
-
-      /*
-         مهم:
-         SportScore match detail كيستعمل slug.
-         لذلك إلا ما كانش numeric ID،
-         كنخليو fixture.id = slug
-         باش script.js الحالي يقدر يفتح Details.
-      */
-
-      const id =
-        getValue(
-          item,
-          [
-            "id",
-            "match_id",
-            "fixture_id"
-          ],
-          null
-        ) ||
-        slug;
-
       const rawStatus =
         String(
-          getValue(
+          pick(
             item,
             [
               "status",
-              "state"
+              "state",
+              "status_text"
             ],
             ""
           )
         ).toLowerCase();
 
       let shortStatus =
-        getValue(
+        pick(
           item,
           [
             "status_code",
@@ -356,6 +378,7 @@ module.exports = async (req, res) => {
           shortStatus =
             "LIVE";
         }
+
         else if (
           rawStatus.includes("finish") ||
           rawStatus === "ft" ||
@@ -364,92 +387,123 @@ module.exports = async (req, res) => {
           shortStatus =
             "FT";
         }
+
         else if (
           rawStatus.includes("postpon")
         ) {
           shortStatus =
             "PST";
         }
+
         else if (
           rawStatus.includes("cancel")
         ) {
           shortStatus =
             "CANC";
         }
+
         else if (
           rawStatus.includes("half")
         ) {
           shortStatus =
             "HT";
         }
+
         else {
           shortStatus =
             "NS";
         }
-
       }
 
-      const matchDate =
-        getValue(
+      const competition =
+        pick(
           item,
           [
-            "time",
-            "date",
-            "start_time",
-            "kickoff"
+            "competition",
+            "league"
           ],
           null
         );
 
-      const league =
-        getValue(
-          item,
-          [
-            "competition",
-            "competition.name",
-            "league",
-            "league.name"
-          ],
-          "Football"
-        );
-
       const leagueName =
-        typeof league === "string"
-          ? league
+        typeof competition === "string"
+          ? competition
           : (
-              league?.name ||
+              pick(
+                competition,
+                [
+                  "name",
+                  "title"
+                ],
+                null
+              ) ||
               "Football"
             );
+
+      const leagueId =
+        pick(
+          item,
+          [
+            "competition_id",
+            "competition.id",
+            "league.id"
+          ]
+        );
+
+      const leagueLogo =
+        pick(
+          item,
+          [
+            "competition_logo",
+            "competition.logo",
+            "league.logo"
+          ],
+          ""
+        );
+
+      const leagueCountry =
+        pick(
+          item,
+          [
+            "country",
+            "competition.country",
+            "league.country"
+          ]
+        );
 
       return {
 
         fixture: {
 
-          id,
+          /*
+             slug هو ID المستعمل داخلياً
+             مع endpoint /match/
+          */
+          id:
+            publicId,
 
-          slug,
+          slug:
+            slug,
+
+          /*
+             numeric/native ID محفوظ هنا
+          */
+          upstreamId:
+            upstreamId,
 
           date:
-            matchDate,
+            pick(
+              item,
+              [
+                "time",
+                "date",
+                "start_time",
+                "kickoff"
+              ]
+            ),
 
           timezone:
             "UTC",
-
-          venue:
-            getValue(
-              item,
-              [
-                "venue"
-              ]
-            ),
-
-          referee:
-            getValue(
-              item,
-              [
-                "referee"
-              ]
-            ),
 
           status: {
 
@@ -457,7 +511,7 @@ module.exports = async (req, res) => {
               shortStatus,
 
             long:
-              getValue(
+              pick(
                 item,
                 [
                   "status_text",
@@ -468,7 +522,7 @@ module.exports = async (req, res) => {
               ),
 
             elapsed:
-              getValue(
+              pick(
                 item,
                 [
                   "minute",
@@ -478,76 +532,72 @@ module.exports = async (req, res) => {
                 null
               )
 
-          }
+          },
+
+          venue:
+            pick(
+              item,
+              [
+                "venue"
+              ]
+            ),
+
+          referee:
+            pick(
+              item,
+              [
+                "referee"
+              ]
+            )
 
         },
 
         league: {
 
           id:
-            getValue(
-              item,
-              [
-                "competition_id",
-                "competition.id",
-                "league.id"
-              ]
-            ),
+            leagueId,
 
           name:
             leagueName,
 
           country:
-            getValue(
-              item,
-              [
-                "country",
-                "competition.country",
-                "league.country"
-              ]
-            ),
+            leagueCountry,
 
           logo:
-            getValue(
-              item,
-              [
-                "competition_logo",
-                "competition.logo",
-                "league.logo"
-              ],
-              ""
-            )
+            leagueLogo
 
         },
 
         teams: {
 
-          home,
+          home:
+            home,
 
-          away
+          away:
+            away
 
         },
 
         goals: {
 
           home:
-            scoreHome,
+            homeScore,
 
           away:
-            scoreAway
+            awayScore
 
         },
 
         score: {
 
           home:
-            scoreHome,
+            homeScore,
 
           away:
-            scoreAway,
+            awayScore,
 
           halftime:
-            getValue(
+            pick(
               item,
               [
                 "score.halftime"
@@ -559,14 +609,17 @@ module.exports = async (req, res) => {
             ),
 
           fulltime:
-            getValue(
+            pick(
               item,
               [
                 "score.fulltime"
               ],
               {
-                home: scoreHome,
-                away: scoreAway
+                home:
+                  homeScore,
+
+                away:
+                  awayScore
               }
             )
 
@@ -585,25 +638,23 @@ module.exports = async (req, res) => {
     ) {
 
       const matchDate =
-        date || today;
+        date ||
+        todayISO();
 
-      const data =
-        await fetchSportScore(
+      const body =
+        await sportScoreFetch(
           `/fixtures/?sport=football&date=${encodeURIComponent(
             matchDate
           )}&limit=200`
         );
 
-      const rawMatches =
-        extractArray(
-          data,
-          [
-            "matches"
-          ]
+      const raw =
+        extractMatches(
+          body
         );
 
       const matches =
-        rawMatches
+        raw
           .map(
             normalizeFixture
           )
@@ -612,12 +663,13 @@ module.exports = async (req, res) => {
       return sendJSON(
         200,
         {
-          data: matches,
+          data:
+            matches,
+
           provider:
             "SportScore"
         }
       );
-
     }
 
     /* =====================================================
@@ -628,21 +680,18 @@ module.exports = async (req, res) => {
       live === "all"
     ) {
 
-      const data =
-        await fetchSportScore(
+      const body =
+        await sportScoreFetch(
           `/fixtures/?sport=football&status=live&limit=200`
         );
 
-      const rawMatches =
-        extractArray(
-          data,
-          [
-            "matches"
-          ]
+      const raw =
+        extractMatches(
+          body
         );
 
       const matches =
-        rawMatches
+        raw
           .map(
             normalizeFixture
           )
@@ -651,54 +700,59 @@ module.exports = async (req, res) => {
       return sendJSON(
         200,
         {
-          data: matches,
+          data:
+            matches,
+
           provider:
             "SportScore"
         }
       );
-
     }
 
     /* =====================================================
        MATCH DETAILS
     ===================================================== */
 
-    if (fixture) {
+    if (
+      fixture
+    ) {
 
       const slug =
         String(
           fixture
         ).trim();
 
-      const data =
-        await fetchSportScore(
+      const body =
+        await sportScoreFetch(
           `/match/?sport=football&slug=${encodeURIComponent(
             slug
           )}`
         );
 
       /*
-         SportScore detail envelope
+         SportScore documented match endpoint
+         كيرجع match detail envelope فيها
+         score + status + lineups + timeline.
       */
 
       const root =
-        data?.data ||
-        data?.match ||
-        data;
+        body?.data ||
+        body?.match ||
+        body;
 
       const match =
         root?.match ||
         root?.fixture ||
         root;
 
-      const adaptedMatch =
+      const normalized =
         normalizeFixture(
           match
         );
 
-      /* ================================================
+      /* ===================================================
          EVENTS / TIMELINE
-      ================================================ */
+      =================================================== */
 
       const rawEvents =
         root?.timeline ||
@@ -802,326 +856,100 @@ module.exports = async (req, res) => {
             )
           : [];
 
-      /* ================================================
+      /* ===================================================
          LINEUPS
-      ================================================ */
+      =================================================== */
 
-      const rawLineups =
+      const lineups =
         root?.lineups ||
         root?.lineup ||
         [];
 
-      const lineupArray =
-        Array.isArray(
-          rawLineups
-        )
-          ? rawLineups
-          : [];
-
-      const lineups =
-        lineupArray.map(
-          lineup => {
-
-            const team =
-              normalizeTeam(
-                lineup?.team ||
-                {
-                  id:
-                    lineup?.team_id,
-                  name:
-                    lineup?.team_name,
-                  logo:
-                    lineup?.team_logo
-                },
-                "Équipe"
-              );
-
-            const starters =
-              lineup?.startXI ||
-              lineup?.startingXI ||
-              lineup?.starting_xi ||
-              lineup?.starters ||
-              [];
-
-            const substitutes =
-              lineup?.substitutes ||
-              lineup?.bench ||
-              [];
-
-            function playerNormal(
-              item
-            ) {
-
-              const player =
-                item?.player ||
-                item ||
-                {};
-
-              return {
-
-                player: {
-
-                  id:
-                    player?.id ||
-                    item?.player_id ||
-                    null,
-
-                  name:
-                    player?.name ||
-                    item?.name ||
-                    "Joueur",
-
-                  number:
-                    player?.number ??
-                    item?.number ??
-                    item?.shirt_number ??
-                    null,
-
-                  pos:
-                    player?.pos ||
-                    player?.position ||
-                    item?.position ||
-                    item?.pos ||
-                    "",
-
-                  grid:
-                    player?.grid ||
-                    item?.grid ||
-                    "",
-
-                  photo:
-                    player?.photo ||
-                    item?.photo ||
-                    ""
-
-                },
-
-                rating:
-                  item?.rating ??
-                  item?.statistics?.rating ??
-                  null,
-
-                games: {
-
-                  rating:
-                    item?.rating ??
-                    item?.statistics?.rating ??
-                    null,
-
-                  minutes:
-                    item?.minutes ??
-                    item?.statistics?.minutes ??
-                    null,
-
-                  position:
-                    item?.position ??
-                    item?.statistics?.position ??
-                    player?.pos ??
-                    "",
-
-                  substitute:
-                    item?.substitute ??
-                    false,
-
-                  captain:
-                    item?.captain ??
-                    false
-
-                },
-
-                goals:
-                  item?.goals ||
-                  item?.statistics?.goals ||
-                  {},
-
-                cards:
-                  item?.cards ||
-                  item?.statistics?.cards ||
-                  {},
-
-                passes:
-                  item?.passes ||
-                  item?.statistics?.passes ||
-                  {},
-
-                shots:
-                  item?.shots ||
-                  item?.statistics?.shots ||
-                  {}
-
-              };
-
-            }
-
-            return {
-
-              team,
-
-              formation:
-                lineup?.formation ||
-                lineup?.tactics ||
-                "—",
-
-              coach:
-                lineup?.coach ||
-                lineup?.manager ||
-                null,
-
-              startXI:
-                starters.map(
-                  playerNormal
-                ),
-
-              substitutes:
-                substitutes.map(
-                  playerNormal
-                )
-
-            };
-
-          }
-        );
-
-      /* ================================================
-         PLAYER STATS
-      ================================================ */
-
-      let players =
-        Array.isArray(
-          root?.players
-        )
-          ? root.players
-          : [];
-
-      /*
-         إذا SportScore رجعاتش players بشكل
-         مستقل، كنصنعوهم من lineups.
-      */
-
-      if (
-        !players.length &&
-        lineups.length
-      ) {
-
-        players =
-          lineups.map(
-            lineup => {
-
-              return {
-
-                team:
-                  lineup.team,
-
-                players: [
-
-                  ...lineup.startXI,
-                  ...lineup.substitutes
-
-                ].map(
-                  item => {
-
-                    const p =
-                      item.player ||
-                      {};
-
-                    return {
-
-                      player: p,
-
-                      statistics: [
-
-                        {
-
-                          games:
-                            item.games ||
-                            {},
-
-                          goals:
-                            item.goals ||
-                            {},
-
-                          cards:
-                            item.cards ||
-                            {},
-
-                          passes:
-                            item.passes ||
-                            {},
-
-                          shots:
-                            item.shots ||
-                            {}
-
-                        }
-
-                      ]
-
-                    };
-
-                  }
-                )
-
-              };
-
-            }
-          );
-
-      }
-
-      /* ================================================
+      /* ===================================================
          STATISTICS
-      ================================================ */
+      =================================================== */
 
       const statistics =
         root?.statistics ||
         root?.stats ||
         [];
 
-      /* ================================================
-         FINAL RESPONSE
-      ================================================ */
+      /* ===================================================
+         PLAYERS
+      =================================================== */
+
+      const players =
+        root?.players ||
+        [];
 
       return sendJSON(
         200,
         {
 
+          /*
+             نفس structure اللي script.js
+             ديالك كيستنى
+          */
+
           fixture:
-            adaptedMatch?.fixture ||
+            normalized?.fixture ||
             {
-              id: slug,
-              slug
+              id:
+                slug,
+
+              slug:
+                slug
             },
 
           league:
-            adaptedMatch?.league ||
+            normalized?.league ||
             {},
 
           teams:
-            adaptedMatch?.teams ||
+            normalized?.teams ||
             {},
 
           goals:
-            adaptedMatch?.goals ||
+            normalized?.goals ||
             {},
 
           score:
-            adaptedMatch?.score ||
+            normalized?.score ||
             {},
 
-          events,
+          events:
+            Array.isArray(
+              events
+            )
+              ? events
+              : [],
 
-          lineups,
+          lineups:
+            Array.isArray(
+              lineups
+            )
+              ? lineups
+              : [],
 
-          statistics,
+          statistics:
+            Array.isArray(
+              statistics
+            )
+              ? statistics
+              : [],
 
-          players,
+          players:
+            Array.isArray(
+              players
+            )
+              ? players
+              : [],
 
           provider:
             "SportScore"
 
         }
       );
-
     }
 
     return sendJSON(
@@ -1147,9 +975,8 @@ module.exports = async (req, res) => {
           error?.message ||
           "SportScore request failed",
 
-        code:
-          error?.data?.code ||
-          null,
+        provider:
+          "SportScore",
 
         data: []
 
