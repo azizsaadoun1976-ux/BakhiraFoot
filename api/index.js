@@ -481,109 +481,656 @@ module.exports = async (req, res) => {
        MATCH DETAILS
     ===================================================== */
 
-    if (fixture) {
+/* =====================================================
+   MATCH DETAILS - SPORTSCORE
+===================================================== */
 
-      const slug =
-        String(
-          fixture
-        ).trim();
+if (fixture) {
 
-      const body =
-        await getJSON(
-          `${BASE}/match/?sport=football&slug=${encodeURIComponent(
-            slug
-          )}`
-        );
+  const slug =
+    String(fixture).trim();
 
-      const root =
-        body?.data ||
-        body?.match ||
-        body;
+  if (!slug) {
+    return sendJSON(
+      400,
+      {
+        error:
+          "Match slug manquant",
+        data: []
+      }
+    );
+  }
 
-      const match =
-        root?.match ||
-        root?.fixture ||
-        root;
+  console.log(
+    "MATCH DETAILS SLUG:",
+    slug
+  );
 
-      const normalized =
-        normalizeMatch(
-          match
-        );
+  const body =
+    await getJSON(
+      `${BASE}/match/?sport=football&slug=${encodeURIComponent(
+        slug
+      )}`
+    );
 
-      const events =
-        root?.timeline ||
-        root?.events ||
-        root?.incidents ||
-        [];
+  /*
+   * SportScore match endpoint can return
+   * the match object inside different envelopes.
+   */
 
-      const lineups =
-        root?.lineups ||
-        root?.lineup ||
-        [];
+  const root =
+    body?.data ||
+    body?.match ||
+    body;
 
-      const statistics =
-        root?.statistics ||
-        root?.stats ||
-        [];
+  const match =
+    root?.match ||
+    root?.fixture ||
+    root;
 
-      const players =
-        root?.players ||
-        [];
+  /* ===================================================
+     TEAM HELPERS
+  =================================================== */
 
-      return output(
-        200,
-        {
+  function getTeam(
+    side
+  ) {
 
-          fixture:
-            normalized?.fixture ||
-            {
-              id: slug,
-              slug: slug
-            },
+    const direct =
+      match?.[side];
 
-          league:
-            normalized?.league ||
-            {},
-
-          teams:
-            normalized?.teams ||
-            {},
-
-          goals:
-            normalized?.goals ||
-            {},
-
-          score:
-            normalized?.score ||
-            {},
-
-          events:
-            Array.isArray(events)
-              ? events
-              : [],
-
-          lineups:
-            Array.isArray(lineups)
-              ? lineups
-              : [],
-
-          statistics:
-            Array.isArray(statistics)
-              ? statistics
-              : [],
-
-          players:
-            Array.isArray(players)
-              ? players
-              : [],
-
-          provider:
-            "SportScore"
-
-        }
+    const team =
+      match?.[`${side}_team`] ||
+      match?.[`${side}Team`] ||
+      (
+        direct &&
+        typeof direct === "object"
+          ? direct
+          : null
       );
+
+    const name =
+      (
+        typeof direct === "string"
+          ? direct
+          : null
+      ) ||
+      team?.name ||
+      team?.title ||
+      match?.[`${side}_name`] ||
+      (
+        side === "home"
+          ? "Domicile"
+          : "Extérieur"
+      );
+
+    const logo =
+      match?.[`${side}_logo`] ||
+      team?.logo ||
+      team?.image ||
+      "";
+
+    const id =
+      match?.[`${side}_id`] ||
+      team?.id ||
+      null;
+
+    return {
+      id,
+      name,
+      logo
+    };
+  }
+
+  const home =
+    getTeam("home");
+
+  const away =
+    getTeam("away");
+
+  /* ===================================================
+     SCORE
+  =================================================== */
+
+  const homeScore =
+    match?.home_score ??
+    match?.score?.home ??
+    match?.homeScore ??
+    null;
+
+  const awayScore =
+    match?.away_score ??
+    match?.score?.away ??
+    match?.awayScore ??
+    null;
+
+  /* ===================================================
+     STATUS
+  =================================================== */
+
+  const rawStatus =
+    String(
+      match?.status ||
+      match?.state ||
+      match?.status_text ||
+      ""
+    ).toLowerCase();
+
+  let shortStatus =
+    match?.status_code ||
+    match?.short_status ||
+    "";
+
+  if (!shortStatus) {
+
+    if (
+      rawStatus.includes("live") ||
+      rawStatus.includes("in play") ||
+      rawStatus.includes("inplay")
+    ) {
+      shortStatus = "LIVE";
     }
 
+    else if (
+      rawStatus.includes("half")
+    ) {
+      shortStatus = "HT";
+    }
+
+    else if (
+      rawStatus.includes("finish") ||
+      rawStatus.includes("ended") ||
+      rawStatus === "ft"
+    ) {
+      shortStatus = "FT";
+    }
+
+    else if (
+      rawStatus.includes("postpon")
+    ) {
+      shortStatus = "PST";
+    }
+
+    else if (
+      rawStatus.includes("cancel")
+    ) {
+      shortStatus = "CANC";
+    }
+
+    else {
+      shortStatus = "NS";
+    }
+  }
+
+  /* ===================================================
+     COMPETITION
+  =================================================== */
+
+  const competition =
+    match?.competition ||
+    match?.league ||
+    {};
+
+  const leagueName =
+    typeof competition === "string"
+      ? competition
+      : (
+          competition?.name ||
+          competition?.title ||
+          "Football"
+        );
+
+  const leagueId =
+    competition?.id ||
+    match?.competition_id ||
+    match?.league_id ||
+    null;
+
+  const leagueCountry =
+    competition?.country ||
+    match?.country ||
+    "";
+
+  const leagueLogo =
+    competition?.logo ||
+    match?.competition_logo ||
+    match?.league_logo ||
+    "";
+
+  /* ===================================================
+     EVENTS / TIMELINE
+  =================================================== */
+
+  const rawEvents =
+    root?.timeline ||
+    root?.events ||
+    root?.incidents ||
+    [];
+
+  const events =
+    Array.isArray(rawEvents)
+      ? rawEvents.map(event => {
+
+          const team =
+            event?.team ||
+            {};
+
+          const player =
+            event?.player ||
+            {};
+
+          const assist =
+            event?.assist ||
+            {};
+
+          return {
+
+            time: {
+
+              elapsed:
+                event?.minute ??
+                event?.elapsed ??
+                event?.time?.elapsed ??
+                null,
+
+              extra:
+                event?.extra ??
+                event?.time?.extra ??
+                null
+
+            },
+
+            team: {
+
+              id:
+                team?.id ??
+                event?.team_id ??
+                null,
+
+              name:
+                team?.name ||
+                event?.team_name ||
+                ""
+
+            },
+
+            player: {
+
+              id:
+                player?.id ??
+                event?.player_id ??
+                null,
+
+              name:
+                player?.name ||
+                event?.player_name ||
+                ""
+
+            },
+
+            assist: {
+
+              id:
+                assist?.id ??
+                event?.assist_id ??
+                null,
+
+              name:
+                assist?.name ||
+                event?.assist_name ||
+                ""
+
+            },
+
+            type:
+              event?.type ||
+              event?.event_type ||
+              "Other",
+
+            detail:
+              event?.detail ||
+              event?.description ||
+              event?.text ||
+              event?.comments ||
+              ""
+
+          };
+
+        })
+      : [];
+
+  /* ===================================================
+     LINEUPS
+  =================================================== */
+
+  const rawLineups =
+    root?.lineups ||
+    root?.lineup ||
+    [];
+
+  const lineups =
+    Array.isArray(rawLineups)
+      ? rawLineups.map(lineup => {
+
+          const team =
+            lineup?.team ||
+            {};
+
+          const startXI =
+            lineup?.startXI ||
+            lineup?.startingXI ||
+            lineup?.starting_xi ||
+            lineup?.starters ||
+            [];
+
+          const substitutes =
+            lineup?.substitutes ||
+            lineup?.bench ||
+            [];
+
+          function normalizePlayer(
+            item
+          ) {
+
+            const p =
+              item?.player ||
+              item ||
+              {};
+
+            return {
+
+              player: {
+
+                id:
+                  p?.id ??
+                  item?.player_id ??
+                  null,
+
+                name:
+                  p?.name ||
+                  item?.name ||
+                  "Joueur",
+
+                number:
+                  p?.number ??
+                  item?.number ??
+                  item?.shirt_number ??
+                  null,
+
+                pos:
+                  p?.pos ||
+                  p?.position ||
+                  item?.position ||
+                  item?.pos ||
+                  "",
+
+                grid:
+                  p?.grid ||
+                  item?.grid ||
+                  "",
+
+                photo:
+                  p?.photo ||
+                  item?.photo ||
+                  ""
+
+              },
+
+              rating:
+                item?.rating ??
+                item?.statistics?.rating ??
+                null,
+
+              games: {
+
+                rating:
+                  item?.rating ??
+                  item?.statistics?.rating ??
+                  null,
+
+                minutes:
+                  item?.minutes ??
+                  item?.statistics?.minutes ??
+                  null,
+
+                position:
+                  item?.position ||
+                  item?.statistics?.position ||
+                  p?.pos ||
+                  "",
+
+                substitute:
+                  item?.substitute ??
+                  false,
+
+                captain:
+                  item?.captain ??
+                  false
+
+              },
+
+              goals:
+                item?.goals ||
+                item?.statistics?.goals ||
+                {},
+
+              cards:
+                item?.cards ||
+                item?.statistics?.cards ||
+                {},
+
+              passes:
+                item?.passes ||
+                item?.statistics?.passes ||
+                {},
+
+              shots:
+                item?.shots ||
+                item?.statistics?.shots ||
+                {}
+
+            };
+          }
+
+          return {
+
+            team: {
+
+              id:
+                team?.id ??
+                lineup?.team_id ??
+                null,
+
+              name:
+                team?.name ||
+                lineup?.team_name ||
+                "",
+
+              logo:
+                team?.logo ||
+                lineup?.team_logo ||
+                ""
+
+            },
+
+            formation:
+              lineup?.formation ||
+              lineup?.tactics ||
+              "—",
+
+            coach:
+              lineup?.coach ||
+              lineup?.manager ||
+              null,
+
+            startXI:
+              Array.isArray(startXI)
+                ? startXI.map(
+                    normalizePlayer
+                  )
+                : [],
+
+            substitutes:
+              Array.isArray(substitutes)
+                ? substitutes.map(
+                    normalizePlayer
+                  )
+                : []
+
+          };
+
+        })
+      : [];
+
+  /* ===================================================
+     STATISTICS
+  =================================================== */
+
+  const statistics =
+    root?.statistics ||
+    root?.stats ||
+    [];
+
+  /* ===================================================
+     PLAYER STATS
+  =================================================== */
+
+  const players =
+    Array.isArray(
+      root?.players
+    )
+      ? root.players
+      : [];
+
+  /* ===================================================
+     FINAL RESPONSE
+  =================================================== */
+
+  return sendJSON(
+    200,
+    {
+
+      fixture: {
+
+        id:
+          slug,
+
+        slug:
+          slug,
+
+        upstreamId:
+          match?.id ||
+          match?.match_id ||
+          null,
+
+        date:
+          match?.time ||
+          match?.date ||
+          match?.start_time ||
+          null,
+
+        timezone:
+          match?.timezone ||
+          "UTC",
+
+        venue:
+          match?.venue ||
+          null,
+
+        referee:
+          match?.referee ||
+          null,
+
+        status: {
+
+          short:
+            shortStatus,
+
+          long:
+            match?.status_text ||
+            match?.status ||
+            "Match",
+
+          elapsed:
+            match?.minute ??
+            match?.elapsed ??
+            null
+
+        }
+
+      },
+
+      league: {
+
+        id:
+          leagueId,
+
+        name:
+          leagueName,
+
+        country:
+          leagueCountry,
+
+        logo:
+          leagueLogo
+
+      },
+
+      teams: {
+
+        home,
+        away
+
+      },
+
+      goals: {
+
+        home:
+          homeScore,
+
+        away:
+          awayScore
+
+      },
+
+      score: {
+
+        home:
+          homeScore,
+
+        away:
+          awayScore,
+
+        halftime:
+          match?.score?.halftime ||
+          {
+            home: null,
+            away: null
+          },
+
+        fulltime:
+          match?.score?.fulltime ||
+          {
+            home: homeScore,
+            away: awayScore
+          }
+
+      },
+
+      events,
+
+      lineups,
+
+      statistics,
+
+      players,
+
+      provider:
+        "SportScore"
+
+    }
+  );
+}
     return output(
       400,
       {
