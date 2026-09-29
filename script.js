@@ -8208,15 +8208,18 @@ document.addEventListener(
       );
 
       const response =
-        await fetch(
-          `/api?fixture=${encodeURIComponent(
-            slug
-          )}`,
-          {
-            cache:
-              "no-store"
-          }
-        );
+  await fetch(
+    `https://sportscore.com/api/v1/match/?sport=football&slug=${encodeURIComponent(
+      slug
+    )}`,
+    {
+      method: "GET",
+      headers: {
+        Accept: "application/json"
+      },
+      cache: "no-store"
+    }
+  );
 
       const responseText =
         await response.text();
@@ -8254,15 +8257,86 @@ document.addEventListener(
         payload
       );
 
-      const details =
-        payload?.data?.fixture
-          ? payload.data
-          : (
-              payload?.data ||
-              payload?.match ||
-              payload
-            );
+      /* =======================================================
+   SPORTScore RAW MATCH DETAILS
+======================================================= */
 
+const root =
+  payload?.data &&
+  typeof payload.data === "object"
+    ? payload.data
+    : payload;
+
+const matchCore =
+  root?.match &&
+  typeof root.match === "object"
+    ? root.match
+    : (
+        root?.fixture &&
+        typeof root.fixture === "object"
+          ? root.fixture
+          : root
+      );
+
+/*
+   كنجمّعو envelope كامل مع match
+   باش ما يضيعوش lineups/events/players.
+*/
+const details = {
+
+  ...(root || {}),
+  ...(matchCore || {}),
+
+  fixture:
+    root?.fixture ||
+    matchCore?.fixture ||
+    {},
+
+  teams:
+    root?.teams ||
+    matchCore?.teams ||
+    {},
+
+  league:
+    root?.league ||
+    matchCore?.league ||
+    {},
+
+  goals:
+    root?.goals ||
+    matchCore?.goals ||
+    {},
+
+  events:
+    root?.events ||
+    root?.timeline ||
+    root?.incidents ||
+    matchCore?.events ||
+    matchCore?.timeline ||
+    matchCore?.incidents ||
+    [],
+
+  lineups:
+    root?.lineups ||
+    root?.lineup ||
+    root?.lineups_data ||
+    matchCore?.lineups ||
+    matchCore?.lineup ||
+    [],
+
+  statistics:
+    root?.statistics ||
+    root?.stats ||
+    matchCore?.statistics ||
+    matchCore?.stats ||
+    [],
+
+  players:
+    root?.players ||
+    matchCore?.players ||
+    []
+
+};
       const teams =
         details?.teams ||
         {};
@@ -8307,19 +8381,238 @@ document.addEventListener(
         details?.league?.name ||
         league;
 
-      const events =
-        BF2_array(
-          details?.events ||
-          details?.timeline ||
-          details?.incidents
-        );
+     const rawEvents =
+  Array.isArray(details?.events)
+    ? details.events
+    : (
+        Array.isArray(details?.timeline)
+          ? details.timeline
+          : (
+              Array.isArray(details?.incidents)
+                ? details.incidents
+                : []
+            )
+      );
 
-      const lineups =
-        BF2_array(
-          details?.lineups ||
-          details?.lineup
-        );
+const events =
+  rawEvents.map(
+    event => {
 
+      const team =
+        typeof event?.team === "string"
+          ? {
+              name: event.team
+            }
+          : (
+              event?.team || {}
+            );
+
+      const player =
+        typeof event?.player === "string"
+          ? {
+              name: event.player
+            }
+          : (
+              event?.player || {}
+            );
+
+      const assist =
+        typeof event?.assist === "string"
+          ? {
+              name: event.assist
+            }
+          : (
+              event?.assist || {}
+            );
+
+      return {
+
+        ...event,
+
+        team,
+
+        player: {
+
+          ...player,
+
+          name:
+            player?.name ||
+            event?.player_name ||
+            event?.playerName ||
+            event?.scorer ||
+            event?.scorer_name ||
+            ""
+
+        },
+
+        assist: {
+
+          ...assist,
+
+          name:
+            assist?.name ||
+            event?.assist_name ||
+            event?.assistName ||
+            ""
+
+        }
+
+      };
+
+    }
+  );
+/* =======================================================
+   LINEUPS NORMALIZER
+======================================================= */
+
+const rawLineups =
+  details?.lineups ||
+  details?.lineup ||
+  [];
+
+let lineups = [];
+
+if (Array.isArray(rawLineups)) {
+
+  lineups =
+    rawLineups;
+
+}
+
+else if (
+  rawLineups &&
+  typeof rawLineups === "object"
+) {
+
+  if (
+    rawLineups.home ||
+    rawLineups.away
+  ) {
+
+    lineups = [
+
+      {
+        ...(rawLineups.home || {}),
+        _side: "home"
+      },
+
+      {
+        ...(rawLineups.away || {}),
+        _side: "away"
+      }
+
+    ];
+
+  }
+
+  else {
+
+    lineups =
+      Object.values(
+        rawLineups
+      ).filter(
+        item =>
+          item &&
+          typeof item === "object"
+      );
+
+  }
+
+}
+
+/* =======================================================
+   PREPARE STARTING XI + BENCH
+======================================================= */
+
+lineups =
+  lineups.map(
+    (lineup, index) => {
+
+      let starters =
+        lineup?.startXI ||
+        lineup?.startingXI ||
+        lineup?.starting_xi ||
+        lineup?.starters ||
+        lineup?.starting ||
+        [];
+
+      let substitutes =
+        lineup?.substitutes ||
+        lineup?.bench ||
+        lineup?.subs ||
+        [];
+
+      /*
+         بعض responses كتحط جميع اللاعبين
+         داخل players.
+      */
+
+      if (
+        !Array.isArray(starters) &&
+        Array.isArray(lineup?.players)
+      ) {
+
+        starters =
+          lineup.players.filter(
+            player =>
+              !(
+                player?.substitute === true ||
+                player?.is_substitute === true ||
+                player?.bench === true
+              )
+          );
+
+        substitutes =
+          lineup.players.filter(
+            player =>
+              player?.substitute === true ||
+              player?.is_substitute === true ||
+              player?.bench === true
+          );
+
+      }
+
+      if (
+        !Array.isArray(starters)
+      ) {
+        starters = [];
+      }
+
+      if (
+        !Array.isArray(substitutes)
+      ) {
+        substitutes = [];
+      }
+
+      return {
+
+        ...lineup,
+
+        team:
+          lineup?.team ||
+          (
+            lineup?._side === "away"
+              ? teams?.away
+              : teams?.home
+          ) ||
+          {},
+
+        formation:
+          lineup?.formation ||
+          lineup?.tactics?.formation ||
+          lineup?.tactical_formation ||
+          "—",
+
+        startXI:
+          starters,
+
+        substitutes:
+          substitutes
+
+      };
+
+    }
+  );
       const statistics =
         BF2_array(
           details?.statistics ||
