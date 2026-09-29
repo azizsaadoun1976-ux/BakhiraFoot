@@ -5606,3 +5606,349 @@ body.dark #scoreList .match-card::after {
     font-size: 23px !important;
   }
 }
+/* =========================================
+   BAKHIRAFOOT - ULTRA MATCH CARD
+   ========================================= */
+
+.bf-ultra-match {
+  padding: 0 !important;
+  overflow: hidden !important;
+
+  border-radius: 20px !important;
+
+  background: #ffffff !important;
+
+  border: 1px solid rgba(16,35,48,.08) !important;
+
+  box-shadow:
+    0 8px 26px rgba(16,35,48,.065) !important;
+}
+
+body.dark .bf-ultra-match {
+  background: #13212b !important;
+
+  border-color:
+    rgba(255,255,255,.07) !important;
+
+  box-shadow:
+    0 9px 26px rgba(0,0,0,.22) !important;
+}
+
+
+/* COMPETITION */
+
+.bf-match-competition-bar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  gap: 12px;
+
+  padding: 11px 15px;
+
+  border-bottom:
+    1px solid rgba(16,35,48,.06);
+}
+
+body.dark .bf-match-competition-bar {
+  border-bottom-color:
+    rgba(255,255,255,.06);
+}
+
+.bf-competition-match-info {
+  display: flex;
+  align-items: center;
+
+  gap: 8px;
+
+  min-width: 0;
+}
+
+.bf-match-competition-logo {
+  width: 26px;
+  height: 26px;
+
+  object-fit: contain;
+
+  flex: 0 0 26px;
+}
+
+.bf-competition-match-info strong {
+  min-width: 0;
+
+  overflow: hidden;
+
+  white-space: nowrap;
+  text-overflow: ellipsis;
+
+  font-size: 12px;
+  font-weight: 900;
+}
+
+
+/* STATUS */
+
+.bf-match-state {
+  flex-shrink: 0;
+
+  padding: 5px 9px;
+
+  border-radius: 999px;
+
+  font-size: 9px;
+  font-weight: 950;
+
+  letter-spacing: .5px;
+}
+
+.bf-match-state.live {
+  background: rgba(229,57,53,.11);
+  color: #d93636;
+}
+
+.bf-match-state.halftime {
+  background: rgba(230,165,45,.12);
+  color: #a77409;
+}
+
+.bf-match-state.finished {
+  background: rgba(100,115,125,.10);
+  color: #65727c;
+}
+
+.bf-match-state.upcoming {
+  background: rgba(27,156,107,.10);
+  color: #13845e;
+}
+
+body.dark .bf-match-state.live {
+  color: #ff6b67;
+}
+
+body.dark .bf-match-state.halftime {
+  color: #e7b754;
+}
+
+body.dark .bf-match-state.finished {
+  color: #a4afb7;
+}
+
+body.dark .bf-match-state.upcoming {
+  color: #62d6a8;
+}
+
+
+/* TEAMS */
+
+.bf-match-teams {
+  display: grid;
+
+  grid-template-columns:
+    minmax(0,1fr)
+    90px
+    minmax(0,1fr);
+
+  align-items: center;
+
+  gap: 10px;
+
+  padding: 22px 18px 20px;
+}
+
+
+/* TEAM */
+
+.bf-match-team {
+  display: flex;
+
+  flex-direction: column;
+
+  align-items: center;
+
+  min-width: 0;
+
+  text-align: center;
+}
+
+.bf-ultra-team-logo,
+.bf-ultra-team-placeholder {
+  width: 54px;
+  height: 54px;
+
+  margin-bottom: 9px;
+}
+
+.bf-ultra-team-logo {
+  object-fit: contain;
+}
+
+.bf-ultra-team-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border-radius: 15px;
+
+  background:
+    rgba(16,35,48,.05);
+
+  font-size: 22px;
+}
+
+body.dark .bf-ultra-team-placeholder {
+  background:
+    rgba(255,255,255,.06);
+}
+
+.bf-ultra-team-name {
+  width: 100%;
+
+  overflow: hidden;
+
+  white-space: nowrap;
+
+  text-overflow: ellipsis;
+
+  font-size: 13px;
+  font-weight: 900;
+}
+
+
+/* SCORE كبير تحت الفريق */
+
+.bf-ultra-score {
+  margin-top: 7px;
+
+  font-size: 31px;
+
+  line-height: 1;
+
+  font-weight: 950;
+
+  letter-spacing: -1px;
+}
+
+
+/* CENTER */
+
+.bf-ultra-center {
+  display: flex;
+
+  flex-direction: column;
+
+  align-items: center;
+  justify-content: center;
+
+  text-align: center;
+
+  min-width: 0;
+}
+
+.bf-ultra-middle {
+  max-width: 90px;
+
+  overflow: hidden;
+
+  white-space: nowrap;
+
+  text-overflow: ellipsis;
+
+  font-size: 11px;
+
+  font-weight: 850;
+
+  opacity: .60;
+}
+
+.bf-ultra-center small {
+  margin-top: 5px;
+
+  font-size: 10px;
+
+  font-weight: 800;
+
+  opacity: .5;
+}
+
+
+/* LIVE DOT */
+
+.bf-live-dot-large {
+  width: 8px;
+  height: 8px;
+
+  margin-bottom: 7px;
+
+  border-radius: 50%;
+
+  background: #e53935;
+
+  animation:
+    bfUltraPulse 1.3s infinite;
+}
+
+@keyframes bfUltraPulse {
+
+  0%,
+  100% {
+    opacity: 1;
+    transform: scale(1);
+  }
+
+  50% {
+    opacity: .35;
+    transform: scale(.75);
+  }
+
+}
+
+
+/* MOBILE */
+
+@media (max-width: 600px) {
+
+  .bf-match-competition-bar {
+    padding: 10px 12px;
+  }
+
+  .bf-match-competition-logo {
+    width: 23px;
+    height: 23px;
+    flex-basis: 23px;
+  }
+
+  .bf-competition-match-info strong {
+    font-size: 11px;
+  }
+
+  .bf-match-teams {
+    grid-template-columns:
+      minmax(0,1fr)
+      68px
+      minmax(0,1fr);
+
+    padding:
+      18px 10px 17px;
+
+    gap: 5px;
+  }
+
+  .bf-ultra-team-logo,
+  .bf-ultra-team-placeholder {
+    width: 44px;
+    height: 44px;
+  }
+
+  .bf-ultra-team-name {
+    font-size: 11px;
+  }
+
+  .bf-ultra-score {
+    font-size: 26px;
+  }
+
+  .bf-ultra-middle {
+    font-size: 10px;
+  }
+
+}
