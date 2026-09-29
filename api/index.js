@@ -564,15 +564,13 @@ if (fixture) {
    */
 
   const root =
-    body?.data ||
-    body?.match ||
-    body;
+  body?.data ||
+  body;
 
-  const match =
-    root?.match ||
-    root?.fixture ||
-    root;
-
+const match =
+  root?.match ||
+  root?.fixture ||
+  root;
   /* ===================================================
      TEAM HELPERS
   =================================================== */
@@ -761,13 +759,26 @@ if (fixture) {
             {};
 
           const player =
-            event?.player ||
-            {};
+  typeof event?.player === "string"
+    ? {
+        name: event.player
+      }
+    : (
+        event?.player ||
+        event?.scorer ||
+        {}
+      );
 
-          const assist =
-            event?.assist ||
-            {};
-
+const assist =
+  typeof event?.assist === "string"
+    ? {
+        name: event.assist
+      }
+    : (
+        event?.assist ||
+        event?.assistant ||
+        {}
+      );
           return {
 
             time: {
@@ -793,8 +804,14 @@ if (fixture) {
                 null,
 
               name:
-                team?.name ||
-                event?.team_name ||
+  player?.name ||
+  player?.full_name ||
+  event?.player_name ||
+  event?.playerName ||
+  event?.scorer_name ||
+  event?.scorerName ||
+  team?.name ||
+  event?.team_name ||
                 ""
 
             },
@@ -849,9 +866,31 @@ if (fixture) {
   =================================================== */
 
   const rawLineups =
-    root?.lineups ||
-    root?.lineup ||
-    [];
+  root?.lineups ||
+  root?.lineup ||
+  match?.lineups ||
+  match?.lineup ||
+  [];
+  if (
+  rawLineups &&
+  !Array.isArray(rawLineups) &&
+  typeof rawLineups === "object"
+) {
+  if (rawLineups.home || rawLineups.away) {
+    rawLineups = [
+      {
+        ...(rawLineups.home || {}),
+        _side: "home"
+      },
+      {
+        ...(rawLineups.away || {}),
+        _side: "away"
+      }
+    ];
+  } else {
+    rawLineups = Object.values(rawLineups);
+  }
+}
 
   const lineups =
     Array.isArray(rawLineups)
