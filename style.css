@@ -4909,3 +4909,38 @@ body.dark .hero-actions .hero-more {
     right: 20px !important;
   }
 }
+.standings-title {
+  margin: 38px 0 22px;
+}
+
+.standings-title small {
+  display: block;
+  margin-bottom: 6px;
+  font-size: 11px;
+  font-weight: 900;
+  letter-spacing: 1px;
+  opacity: .6;
+}
+
+.standings-title h2 {
+  margin: 0 0 8px;
+  font-size: 28px;
+}
+
+.standings-title p {
+  margin: 0;
+  opacity: .65;
+}
+
+.real-standings {
+  display: grid;
+  gap: 24px;
+}
+
+.sportscore-standing {
+  width: 100%;
+}
+
+.sportscore-standing + .sportscore-standing {
+  margin-top: 0;
+}
