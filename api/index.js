@@ -1054,7 +1054,7 @@ if (fixture) {
   return output(
     200,
     {
-
+_raw: body,
       fixture: {
 
         id:
