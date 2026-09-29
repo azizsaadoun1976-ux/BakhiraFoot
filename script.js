@@ -7976,1065 +7976,294 @@ document.addEventListener(
      LOAD DETAILS
   ======================================================= */
 
-  async function BF2_open(
-    index,
-    card
-  ) {
+async function BF2_open(
+  index,
+  card
+) {
 
-    const match =
-      BF2_getMatch(
-        index,
-        card
-      );
+  const match =
+    BF2_getMatch(
+      index,
+      card
+    );
 
-    if (!match) {
+  if (!match) {
+    alert("المباراة غير متوفرة");
+    return;
+  }
 
-      alert(
-        "المباراة غير متوفرة"
-      );
+  const slug =
+    BF2_getSlug(
+      match,
+      card
+    );
 
-      return;
-    }
+  const modal =
+    BF2_createModal();
 
-    const slug =
-      BF2_getSlug(
-        match,
-        card
-      );
+  const content =
+    document.getElementById(
+      "bf2-content"
+    );
 
-    const modal =
-      BF2_createModal();
+  if (!content) {
+    return;
+  }
 
-    const content =
-      document.getElementById(
-        "bf2-content"
-      );
+  const home =
+    match?.teams?.home?.name ||
+    match?.home?.name ||
+    match?.home ||
+    "Domicile";
 
-    if (!content) {
-      return;
-    }
+  const away =
+    match?.teams?.away?.name ||
+    match?.away?.name ||
+    match?.away ||
+    "Extérieur";
 
-    const home =
-      match?.teams?.home?.name ||
-      match?.home?.name ||
-      match?.home ||
-      "Domicile";
+  const homeLogo =
+    match?.teams?.home?.logo ||
+    match?.home?.logo ||
+    "";
 
-    const away =
-      match?.teams?.away?.name ||
-      match?.away?.name ||
-      match?.away ||
-      "Extérieur";
+  const awayLogo =
+    match?.teams?.away?.logo ||
+    match?.away?.logo ||
+    "";
 
-    const homeLogo =
-      match?.teams?.home?.logo ||
-      match?.home?.logo ||
-      "";
+  const homeScore =
+    match?.goals?.home ??
+    match?.home_score ??
+    match?.score?.home ??
+    "-";
 
-    const awayLogo =
-      match?.teams?.away?.logo ||
-      match?.away?.logo ||
-      "";
+  const awayScore =
+    match?.goals?.away ??
+    match?.away_score ??
+    match?.score?.away ??
+    "-";
 
-    const homeScore =
-      match?.goals?.home ??
-      match?.score?.home ??
-      "-";
+  const league =
+    match?.league?.name ||
+    match?.competition?.name ||
+    match?.league ||
+    "Football";
 
-    const awayScore =
-      match?.goals?.away ??
-      match?.score?.away ??
-      "-";
+  modal.style.display =
+    "block";
 
-    const league =
-      match?.league?.name ||
-      match?.competition?.name ||
-      match?.league ||
-      "Football";
+  document.body.style.overflow =
+    "hidden";
+
+  if (!slug) {
 
     content.innerHTML = `
-
-      <div class="bf2-league">
-        🏆 ${BF2_escape(league)}
-      </div>
-
-      <div class="bf2-status-wrap">
-
-        <div class="bf2-status">
-          ${BF2_escape(
-            BF2_status(match)
-          )}
-        </div>
-
-      </div>
-
-      <div class="bf2-score-head">
-
-        <div class="bf2-team">
-
-          ${
-            homeLogo
-              ? `
-                <img
-                  src="${BF2_escape(
-                    homeLogo
-                  )}"
-                  alt="${BF2_escape(
-                    home
-                  )}"
-                >
-              `
-              : `
-                <div class="bf2-fallback-logo">
-                  ⚽
-                </div>
-              `
-          }
-
-          <div class="bf2-team-name">
-            ${BF2_escape(home)}
-          </div>
-
-        </div>
-
-        <div>
-
-          <div class="bf2-score">
-            ${BF2_escape(homeScore)}
-            -
-            ${BF2_escape(awayScore)}
-          </div>
-
-          ${
-            match?.fixture?.date
-              ? `
-                <div class="bf2-date">
-                  ${BF2_escape(
-                    new Date(
-                      match.fixture.date
-                    ).toLocaleString(
-                      "fr-FR",
-                      {
-                        day:"2-digit",
-                        month:"2-digit",
-                        year:"numeric",
-                        hour:"2-digit",
-                        minute:"2-digit"
-                      }
-                    )
-                  )}
-                </div>
-              `
-              : ""
-          }
-
-        </div>
-
-        <div class="bf2-team">
-
-          ${
-            awayLogo
-              ? `
-                <img
-                  src="${BF2_escape(
-                    awayLogo
-                  )}"
-                  alt="${BF2_escape(
-                    away
-                  )}"
-                >
-              `
-              : `
-                <div class="bf2-fallback-logo">
-                  ⚽
-                </div>
-              `
-          }
-
-          <div class="bf2-team-name">
-            ${BF2_escape(away)}
-          </div>
-
-        </div>
-
-      </div>
 
       <div class="bf2-section">
 
         <div class="bf2-title">
-          🧩 Match Center
+          ⚠️ Match Details
         </div>
 
         <div class="bf2-empty">
-          جاري تحميل التشكيلة والأحداث والإحصائيات...
+          Le slug de cette rencontre est introuvable.
         </div>
 
       </div>
 
     `;
 
-    modal.style.display =
-      "block";
-
-    document.body.style.overflow =
-      "hidden";
-
-    if (!slug) {
-
-      content.innerHTML += `
-
-        <div class="bf2-section">
-
-          <div class="bf2-empty">
-
-            ⚠️ هاد الماتش ما عندوش
-            <strong>slug</strong>
-            متوفر.
-
-          </div>
-
-        </div>
-
-      `;
-
-      return;
-    }
-
-    try {
-
-      console.log(
-        "BF2 DETAILS SLUG:",
-        slug
-      );
-
-      const response =
-  await fetch(
-    `https://sportscore.com/api/v1/match/?sport=football&slug=${encodeURIComponent(
-      slug
-    )}`,
-    {
-      method: "GET",
-      headers: {
-        Accept: "application/json"
-      },
-      cache: "no-store"
-    }
-  );
-
-      const responseText =
-        await response.text();
-
-      let payload = null;
-
-      try {
-
-        payload =
-          JSON.parse(
-            responseText
-          );
-
-      } catch {
-
-        throw new Error(
-          "API returned invalid JSON"
-        );
-
-      }
-
-      if (!response.ok) {
-
-        throw new Error(
-          `API HTTP ${response.status}: ${
-            payload?.error ||
-            "Unknown error"
-          }`
-        );
-
-      }
-
-      console.log(
-        "BF2 DETAILS:",
-        payload
-      );
-
-      /* =======================================================
-   SPORTScore RAW MATCH DETAILS
-======================================================= */
-
-const root =
-  payload?.data &&
-  typeof payload.data === "object"
-    ? payload.data
-    : payload;
-
-const matchCore =
-  root?.match &&
-  typeof root.match === "object"
-    ? root.match
-    : (
-        root?.fixture &&
-        typeof root.fixture === "object"
-          ? root.fixture
-          : root
-      );
-
-/*
-   كنجمّعو envelope كامل مع match
-   باش ما يضيعوش lineups/events/players.
-*/
-const details = {
-
-  ...(root || {}),
-  ...(matchCore || {}),
-
-  fixture:
-    root?.fixture ||
-    matchCore?.fixture ||
-    {},
-
-  teams:
-    root?.teams ||
-    matchCore?.teams ||
-    {},
-
-  league:
-    root?.league ||
-    matchCore?.league ||
-    {},
-
-  goals:
-    root?.goals ||
-    matchCore?.goals ||
-    {},
-
-  events:
-    root?.events ||
-    root?.timeline ||
-    root?.incidents ||
-    matchCore?.events ||
-    matchCore?.timeline ||
-    matchCore?.incidents ||
-    [],
-
-  lineups:
-    root?.lineups ||
-    root?.lineup ||
-    root?.lineups_data ||
-    matchCore?.lineups ||
-    matchCore?.lineup ||
-    [],
-
-  statistics:
-    root?.statistics ||
-    root?.stats ||
-    matchCore?.statistics ||
-    matchCore?.stats ||
-    [],
-
-  players:
-    root?.players ||
-    matchCore?.players ||
-    []
-
-};
-      const teams =
-        details?.teams ||
-        {};
-
-      const realHome =
-        teams?.home?.name ||
-        home;
-
-      const realAway =
-        teams?.away?.name ||
-        away;
-
-      const realHomeLogo =
-        teams?.home?.logo ||
-        homeLogo;
-
-      const realAwayLogo =
-        teams?.away?.logo ||
-        awayLogo;
-
-      const homeId =
-        teams?.home?.id ||
-        match?.teams?.home?.id ||
-        null;
-
-      const awayId =
-        teams?.away?.id ||
-        match?.teams?.away?.id ||
-        null;
-
-      const realHomeScore =
-        details?.goals?.home ??
-        details?.score?.home ??
-        homeScore;
-
-      const realAwayScore =
-        details?.goals?.away ??
-        details?.score?.away ??
-        awayScore;
-
-      const realLeague =
-        details?.league?.name ||
-        league;
-
-     const rawEvents =
-  Array.isArray(details?.events)
-    ? details.events
-    : (
-        Array.isArray(details?.timeline)
-          ? details.timeline
-          : (
-              Array.isArray(details?.incidents)
-                ? details.incidents
-                : []
-            )
-      );
-
-const events =
-  rawEvents.map(
-    event => {
-
-      const team =
-        typeof event?.team === "string"
-          ? {
-              name: event.team
-            }
-          : (
-              event?.team || {}
-            );
-
-      const player =
-        typeof event?.player === "string"
-          ? {
-              name: event.player
-            }
-          : (
-              event?.player || {}
-            );
-
-      const assist =
-        typeof event?.assist === "string"
-          ? {
-              name: event.assist
-            }
-          : (
-              event?.assist || {}
-            );
-
-      return {
-
-        ...event,
-
-        team,
-
-        player: {
-
-          ...player,
-
-          name:
-            player?.name ||
-            event?.player_name ||
-            event?.playerName ||
-            event?.scorer ||
-            event?.scorer_name ||
-            ""
-
-        },
-
-        assist: {
-
-          ...assist,
-
-          name:
-            assist?.name ||
-            event?.assist_name ||
-            event?.assistName ||
-            ""
-
-        }
-
-      };
-
-    }
-  );
-/* =======================================================
-   LINEUPS NORMALIZER
-======================================================= */
-
-const rawLineups =
-  details?.lineups ||
-  details?.lineup ||
-  [];
-
-let lineups = [];
-
-if (Array.isArray(rawLineups)) {
-
-  lineups =
-    rawLineups;
-
-}
-
-else if (
-  rawLineups &&
-  typeof rawLineups === "object"
-) {
-
-  if (
-    rawLineups.home ||
-    rawLineups.away
-  ) {
-
-    lineups = [
-
-      {
-        ...(rawLineups.home || {}),
-        _side: "home"
-      },
-
-      {
-        ...(rawLineups.away || {}),
-        _side: "away"
-      }
-
-    ];
-
+    return;
   }
 
-  else {
+  const safeSlug =
+    encodeURIComponent(
+      String(slug)
+    );
 
-    lineups =
-      Object.values(
-        rawLineups
-      ).filter(
-        item =>
-          item &&
-          typeof item === "object"
-      );
+  const matchEmbed =
+    `https://sportscore.com/embed/match/football/${safeSlug}/?theme=light`;
 
-  }
+  const lineupEmbed =
+    `https://sportscore.com/embed/lineups/football/${safeSlug}/?theme=light`;
 
-}
+  content.innerHTML = `
 
-/* =======================================================
-   PREPARE STARTING XI + BENCH
-======================================================= */
+    <div class="bf2-league">
+      🏆 ${BF2_escape(league)}
+    </div>
 
-lineups =
-  lineups.map(
-    (lineup, index) => {
-
-      let starters =
-        lineup?.startXI ||
-        lineup?.startingXI ||
-        lineup?.starting_xi ||
-        lineup?.starters ||
-        lineup?.starting ||
-        [];
-
-      let substitutes =
-        lineup?.substitutes ||
-        lineup?.bench ||
-        lineup?.subs ||
-        [];
-
-      /*
-         بعض responses كتحط جميع اللاعبين
-         داخل players.
-      */
-
-      if (
-        !Array.isArray(starters) &&
-        Array.isArray(lineup?.players)
-      ) {
-
-        starters =
-          lineup.players.filter(
-            player =>
-              !(
-                player?.substitute === true ||
-                player?.is_substitute === true ||
-                player?.bench === true
-              )
-          );
-
-        substitutes =
-          lineup.players.filter(
-            player =>
-              player?.substitute === true ||
-              player?.is_substitute === true ||
-              player?.bench === true
-          );
-
-      }
-
-      if (
-        !Array.isArray(starters)
-      ) {
-        starters = [];
-      }
-
-      if (
-        !Array.isArray(substitutes)
-      ) {
-        substitutes = [];
-      }
-
-      return {
-
-        ...lineup,
-
-        team:
-          lineup?.team ||
-          (
-            lineup?._side === "away"
-              ? teams?.away
-              : teams?.home
-          ) ||
-          {},
-
-        formation:
-          lineup?.formation ||
-          lineup?.tactics?.formation ||
-          lineup?.tactical_formation ||
-          "—",
-
-        startXI:
-          starters,
-
-        substitutes:
-          substitutes
-
-      };
-
-    }
-  );
-      const statistics =
-        BF2_array(
-          details?.statistics ||
-          details?.stats
-        );
-
-      const players =
-        BF2_array(
-          details?.players
-        );
-
-      const contributions =
-        BF2_buildContributions(
-          events
-        );
-
-      const playerStats =
-        BF2_buildPlayerStats(
-          players
-        );
-
-      function lineupFor(
-        teamId,
-        teamName,
-        fallback
-      ) {
-
-        const normalized =
-          BF2_norm(teamName);
-
-        return (
-          lineups.find(
-            lineup => {
-
-              const id =
-                lineup?.team?.id ||
-                lineup?.team_id ||
-                null;
-
-              const name =
-                BF2_norm(
-                  lineup?.team?.name ||
-                  lineup?.team_name ||
-                  ""
-                );
-
-              if (
-                teamId &&
-                id &&
-                String(teamId) ===
-                String(id)
-              ) {
-                return true;
-              }
-
-              return (
-                normalized &&
-                name ===
-                normalized
-              );
-
-            }
-          ) ||
-
-          lineups[
-            fallback
-          ] ||
-
-          null
-        );
-      }
-
-      const homeLineup =
-        lineupFor(
-          homeId,
-          realHome,
-          0
-        );
-
-      const awayLineup =
-        lineupFor(
-          awayId,
-          realAway,
-          1
-        );
-
-      content.innerHTML = `
-
-        <div class="bf2-league">
-          🏆 ${BF2_escape(
-            realLeague
-          )}
-        </div>
-
-        <div class="bf2-status-wrap">
-
-          <div class="bf2-status">
-            ${BF2_escape(
-              BF2_status(details)
-            )}
-          </div>
-
-        </div>
-
-        <div class="bf2-score-head">
-
-          <div class="bf2-team">
-
-            ${
-              realHomeLogo
-                ? `
-                  <img
-                    src="${BF2_escape(
-                      realHomeLogo
-                    )}"
-                    alt="${BF2_escape(
-                      realHome
-                    )}"
-                  >
-                `
-                : `
-                  <div class="bf2-fallback-logo">
-                    ⚽
-                  </div>
-                `
-            }
-
-            <div class="bf2-team-name">
-              ${BF2_escape(
-                realHome
-              )}
-            </div>
-
-          </div>
-
-          <div>
-
-            <div class="bf2-score">
-              ${BF2_escape(
-                realHomeScore
-              )}
-              -
-              ${BF2_escape(
-                realAwayScore
-              )}
-            </div>
-
-          </div>
-
-          <div class="bf2-team">
-
-            ${
-              realAwayLogo
-                ? `
-                  <img
-                    src="${BF2_escape(
-                      realAwayLogo
-                    )}"
-                    alt="${BF2_escape(
-                      realAway
-                    )}"
-                  >
-                `
-                : `
-                  <div class="bf2-fallback-logo">
-                    ⚽
-                  </div>
-                `
-            }
-
-            <div class="bf2-team-name">
-              ${BF2_escape(
-                realAway
-              )}
-            </div>
-
-          </div>
-
-        </div>
-
-        ${BF2_renderInfo(
-          details
+    <div class="bf2-status-wrap">
+      <div class="bf2-status">
+        ${BF2_escape(
+          BF2_status(match)
         )}
+      </div>
+    </div>
 
-        <div class="bf2-section">
+    <div class="bf2-score-head">
 
-          <div class="bf2-title">
-            🧩 Formations & Compositions
-          </div>
-
-          ${
-            homeLineup ||
-            awayLineup
-              ? `
-                <div class="bf2-formation-info">
-
-                  <div class="bf2-formation-team">
-
-                    ${BF2_escape(
-                      realHome
-                    )}
-
-                    <small>
-                      ${BF2_escape(
-                        homeLineup?.formation ||
-                        "—"
-                      )}
-                    </small>
-
-                  </div>
-
-                  <div class="bf2-vs">
-                    VS
-                  </div>
-
-                  <div class="bf2-formation-team">
-
-                    ${BF2_escape(
-                      realAway
-                    )}
-
-                    <small>
-                      ${BF2_escape(
-                        awayLineup?.formation ||
-                        "—"
-                      )}
-                    </small>
-
-                  </div>
-
-                </div>
-
-                <div class="bf2-pitches">
-
-                  ${BF2_renderPitch(
-                    homeLineup,
-                    realHome,
-                    "home",
-                    contributions,
-                    playerStats
-                  )}
-
-                  ${BF2_renderPitch(
-                    awayLineup,
-                    realAway,
-                    "away",
-                    contributions,
-                    playerStats
-                  )}
-
-                </div>
-              `
-              : `
-                <div class="bf2-empty">
-                  التشكيلات مازال ما متوفراش لهاد الماتش.
-                </div>
-              `
-          }
-
-        </div>
+      <div class="bf2-team">
 
         ${
-          homeLineup ||
-          awayLineup
+          homeLogo
             ? `
-              <div class="bf2-section">
-
-                <div class="bf2-title">
-                  ⭐ أداء اللاعبين
-                </div>
-
-                <div class="bf2-player-columns">
-
-                  ${BF2_renderPlayers(
-                    homeLineup,
-                    realHome,
-                    contributions,
-                    playerStats
-                  )}
-
-                  ${BF2_renderPlayers(
-                    awayLineup,
-                    realAway,
-                    contributions,
-                    playerStats
-                  )}
-
-                </div>
-
+              <img
+                src="${BF2_escape(homeLogo)}"
+                alt="${BF2_escape(home)}"
+              >
+            `
+            : `
+              <div class="bf2-fallback-logo">
+                ⚽
               </div>
             `
-            : ""
         }
 
-        ${BF2_renderEvents(
-          events,
-          homeId,
-          awayId,
-          realHome,
-          realAway
-        )}
-
-        ${BF2_renderStats(
-          statistics
-        )}
-
-      `;
-
-    }
-    catch (error) {
-
-      console.error(
-        "BF2 DETAILS ERROR:",
-        error
-      );
-
-      content.innerHTML = `
-
-        <div class="bf2-league">
-          🏆 ${BF2_escape(league)}
+        <div class="bf2-team-name">
+          ${BF2_escape(home)}
         </div>
 
-        <div class="bf2-status-wrap">
+      </div>
 
-          <div class="bf2-status">
-            ${BF2_escape(
-              BF2_status(match)
-            )}
-          </div>
+      <div>
 
+        <div class="bf2-score">
+          ${BF2_escape(homeScore)}
+          -
+          ${BF2_escape(awayScore)}
         </div>
 
-        <div class="bf2-score-head">
+      </div>
 
-          <div class="bf2-team">
+      <div class="bf2-team">
 
-            ${
-              homeLogo
-                ? `
-                  <img
-                    src="${BF2_escape(
-                      homeLogo
-                    )}"
-                  >
-                `
-                : `
-                  <div class="bf2-fallback-logo">
-                    ⚽
-                  </div>
-                `
-            }
+        ${
+          awayLogo
+            ? `
+              <img
+                src="${BF2_escape(awayLogo)}"
+                alt="${BF2_escape(away)}"
+              >
+            `
+            : `
+              <div class="bf2-fallback-logo">
+                ⚽
+              </div>
+            `
+        }
 
-            <div class="bf2-team-name">
-              ${BF2_escape(home)}
-            </div>
-
-          </div>
-
-          <div class="bf2-score">
-            ${BF2_escape(
-              homeScore
-            )}
-            -
-            ${BF2_escape(
-              awayScore
-            )}
-          </div>
-
-          <div class="bf2-team">
-
-            ${
-              awayLogo
-                ? `
-                  <img
-                    src="${BF2_escape(
-                      awayLogo
-                    )}"
-                  >
-                `
-                : `
-                  <div class="bf2-fallback-logo">
-                    ⚽
-                  </div>
-                `
-            }
-
-            <div class="bf2-team-name">
-              ${BF2_escape(away)}
-            </div>
-
-          </div>
-
+        <div class="bf2-team-name">
+          ${BF2_escape(away)}
         </div>
 
-        <div class="bf2-section">
+      </div>
 
-          <div class="bf2-title">
-            ⚠️ Match Details
-          </div>
+    </div>
 
-          <div class="bf2-empty">
 
-            ما قدرناش نحملو تفاصيل هاد الماتش.
+    <!-- =========================================
+         MATCH OVERVIEW
+    ========================================== -->
 
-            <br><br>
+    <div class="bf2-section">
 
-            <strong>
-              ${BF2_escape(
-                error.message
-              )}
-            </strong>
+      <div class="bf2-title">
+        ⚽ Match Center
+      </div>
 
-          </div>
+      <div
+        style="
+          width:100%;
+          border-radius:16px;
+          overflow:hidden;
+          background:#fff;
+          border:1px solid rgba(127,127,127,.15);
+        "
+      >
 
-        </div>
+        <iframe
+          src="${BF2_escape(matchEmbed)}"
+          title="SportScore Match"
+          loading="lazy"
+          style="
+            width:100%;
+            min-height:560px;
+            border:0;
+            display:block;
+          "
+          allow="fullscreen"
+        ></iframe>
 
-      `;
+      </div>
 
-    }
+    </div>
 
-  }
 
+    <!-- =========================================
+         LINEUPS
+    ========================================== -->
+
+    <div class="bf2-section">
+
+      <div class="bf2-title">
+        🧩 Formations & Compositions
+      </div>
+
+      <div
+        style="
+          width:100%;
+          border-radius:16px;
+          overflow:hidden;
+          background:#fff;
+          border:1px solid rgba(127,127,127,.15);
+        "
+      >
+
+        <iframe
+          src="${BF2_escape(lineupEmbed)}"
+          title="SportScore Match Lineups"
+          loading="lazy"
+          style="
+            width:100%;
+            min-height:850px;
+            border:0;
+            display:block;
+          "
+          allow="fullscreen"
+        ></iframe>
+
+      </div>
+
+    </div>
+
+
+    <!-- =========================================
+         SOURCE
+    ========================================== -->
+
+    <div
+      style="
+        margin-top:22px;
+        text-align:center;
+        font-size:11px;
+        opacity:.55;
+      "
+    >
+      Données fournies par
+      <a
+        href="https://sportscore.com/"
+        target="_blank"
+        rel="dofollow noopener"
+      >
+        SportScore
+      </a>
+    </div>
+
+  `;
+
+}
   /* =======================================================
      INTERCEPT MATCH CLICK
      أهم جزء فهاد النسخة
