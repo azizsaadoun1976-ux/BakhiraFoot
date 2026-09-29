@@ -1,35 +1,19 @@
 /* =========================================================
    BAKHIRAFOOT PRO
-   SPORTScore API
-   LIVE + DATE + MATCH DETAILS
+   SPORTSCORE = LIVE + DATE
+   SOFASCORE = MATCH DETAILS / LINEUPS / EVENTS / STATS
 ========================================================= */
 
 module.exports = async (req, res) => {
   try {
+    const { live, date, fixture } = req.query;
 
-    const {
-      live,
-      date,
-      fixture
-    } = req.query;
+    const SPORTSCORE = "https://sportscore.com/api/v1";
+    const SOFA = "https://api.sofascore.com/api/v1";
 
-    const BASE =
-      "https://sportscore.com/api/v1";
-
-    const WIDGET_BASE =
-      "https://sportscore.com/api/widget";
-
-    const today =
-      new Date()
-        .toISOString()
-        .split("T")[0];
-
-    /* =====================================================
-       RESPONSE
-    ===================================================== */
+    const today = new Date().toISOString().split("T")[0];
 
     function output(status, data) {
-
       res.setHeader(
         "Cache-Control",
         "s-maxage=30, stale-while-revalidate=60"
@@ -40,74 +24,43 @@ module.exports = async (req, res) => {
         "application/json; charset=utf-8"
       );
 
-      return res
-        .status(status)
-        .json(data);
-
+      return res.status(status).json(data);
     }
 
-    /*
-       Compatibility avec les anciennes parties
-       du fichier.
-    */
-    const sendJSON = output;
-
-    /* =====================================================
-       GET JSON
-    ===================================================== */
-
     async function getJSON(url) {
+      console.log("API REQUEST:", url);
 
-      console.log(
-        "SPORTSCORE REQUEST:",
-        url
-      );
+      const response = await fetch(url, {
+        method: "GET",
+        headers: {
+          Accept: "application/json",
+          "User-Agent":
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/154 Safari/537.36",
+          Referer: "https://www.sofascore.com/",
+          Origin: "https://www.sofascore.com"
+        },
+        cache: "no-store"
+      });
 
-      const response =
-        await fetch(
-          url,
-          {
-            method: "GET",
-            headers: {
-              Accept:
-                "application/json",
-              "User-Agent":
-                "BakhiraFoot/1.0 (+https://bakhira-foot.vercel.app/)"
-            },
-            cache: "no-store"
-          }
-        );
-
-      const text =
-        await response.text();
+      const text = await response.text();
 
       let data;
 
       try {
-
-        data =
-          JSON.parse(text);
-
+        data = JSON.parse(text);
       } catch {
-
         data = {
           raw: text
         };
-
       }
 
       if (!response.ok) {
+        const error = new Error(
+          `HTTP ${response.status} for ${url}`
+        );
 
-        const error =
-          new Error(
-            `SportScore HTTP ${response.status}`
-          );
-
-        error.status =
-          response.status;
-
-        error.data =
-          data;
+        error.status = response.status;
+        error.data = data;
 
         throw error;
       }
@@ -115,12 +68,13 @@ module.exports = async (req, res) => {
       return data;
     }
 
-    /* =====================================================
-       HELPERS
-    ===================================================== */
+    function arr(value) {
+      return Array.isArray(value)
+        ? value
+        : [];
+    }
 
-    function object(value) {
-
+    function obj(value) {
       return (
         value &&
         typeof value === "object" &&
@@ -128,20 +82,14 @@ module.exports = async (req, res) => {
       )
         ? value
         : {};
-
     }
 
     function text(value) {
-
-      if (
-        typeof value === "string"
-      ) {
+      if (typeof value === "string") {
         return value;
       }
 
-      if (
-        typeof value === "number"
-      ) {
+      if (typeof value === "number") {
         return String(value);
       }
 
@@ -149,26 +97,22 @@ module.exports = async (req, res) => {
         value &&
         typeof value === "object"
       ) {
-
         return (
           value.name ||
           value.full_name ||
           value.fullName ||
           value.title ||
-          value.label ||
           ""
         );
-
       }
 
       return "";
     }
 
     function idOf(value) {
-
       if (
-        typeof value === "number" ||
-        typeof value === "string"
+        typeof value === "string" ||
+        typeof value === "number"
       ) {
         return value;
       }
@@ -177,134 +121,18 @@ module.exports = async (req, res) => {
         value &&
         typeof value === "object"
       ) {
-
         return (
           value.id ||
           value.team_id ||
           value.player_id ||
           null
         );
-
       }
 
       return null;
     }
 
-    function array(value) {
-
-      return Array.isArray(value)
-        ? value
-        : [];
-
-    }
-
-    /* =====================================================
-       RECURSIVE ARRAY FINDER
-    ===================================================== */
-
-    function findArrays(
-      source,
-      wantedKeys,
-      results = [],
-      depth = 0
-    ) {
-
-      if (
-        !source ||
-        typeof source !== "object" ||
-        depth > 8
-      ) {
-        return results;
-      }
-
-      if (
-        Array.isArray(source)
-      ) {
-
-        source.forEach(
-          item =>
-            findArrays(
-              item,
-              wantedKeys,
-              results,
-              depth + 1
-            )
-        );
-
-        return results;
-      }
-
-      Object.keys(source)
-        .forEach(key => {
-
-          const value =
-            source[key];
-
-          if (
-            wantedKeys.includes(
-              String(key).toLowerCase()
-            ) &&
-            Array.isArray(value)
-          ) {
-
-            results.push(value);
-
-          }
-
-          if (
-            value &&
-            typeof value === "object"
-          ) {
-
-            findArrays(
-              value,
-              wantedKeys,
-              results,
-              depth + 1
-            );
-
-          }
-
-        });
-
-      return results;
-    }
-
-    function bestArray(
-      source,
-      keys
-    ) {
-
-      const arrays =
-        findArrays(
-          source,
-          keys.map(
-            key =>
-              key.toLowerCase()
-          )
-        );
-
-      if (!arrays.length) {
-        return [];
-      }
-
-      return arrays.reduce(
-        (best, current) =>
-          current.length >
-          best.length
-            ? current
-            : best,
-        []
-      );
-
-    }
-
-    /* =====================================================
-       SLUG
-    ===================================================== */
-
-    function makeSlug(value) {
-
+    function norm(value) {
       return String(value || "")
         .normalize("NFD")
         .replace(
@@ -313,25 +141,25 @@ module.exports = async (req, res) => {
         )
         .toLowerCase()
         .replace(
-          /&/g,
-          "and"
-        )
-        .replace(
           /[^a-z0-9]+/g,
-          "-"
+          " "
         )
-        .replace(
-          /^-+|-+$/g,
-          "");
+        .trim();
+    }
 
+    function slugPart(value) {
+      return norm(value)
+        .replace(
+          /\s+/g,
+          "-"
+        );
     }
 
     /* =====================================================
-       MATCH NORMALIZATION
+       SPORTScore MATCH NORMALIZER
     ===================================================== */
 
     function normalizeMatch(item) {
-
       if (!item) {
         return null;
       }
@@ -359,13 +187,11 @@ module.exports = async (req, res) => {
       const homeName =
         text(homeRaw) ||
         raw?.home_name ||
-        raw?.homeTeamName ||
         "Domicile";
 
       const awayName =
         text(awayRaw) ||
         raw?.away_name ||
-        raw?.awayTeamName ||
         "Extérieur";
 
       const homeLogo =
@@ -398,19 +224,16 @@ module.exports = async (req, res) => {
         (
           homeName &&
           awayName
-            ? `${makeSlug(homeName)}-vs-${makeSlug(awayName)}`
+            ? `${slugPart(
+                homeName
+              )}-vs-${slugPart(
+                awayName
+              )}`
             : null
         );
 
-      const id =
-        slug ||
-        raw?.id ||
-        raw?.match_id ||
-        item?.id ||
-        null;
-
       const score =
-        object(
+        obj(
           raw?.score
         );
 
@@ -443,51 +266,53 @@ module.exports = async (req, res) => {
       if (!statusShort) {
 
         if (
-          statusText.includes("live") ||
-          statusText.includes("in play") ||
-          statusText.includes("inplay")
+          statusText.includes(
+            "live"
+          ) ||
+          statusText.includes(
+            "in play"
+          ) ||
+          statusText.includes(
+            "inplay"
+          )
         ) {
-
-          statusShort =
-            "LIVE";
+          statusShort = "LIVE";
 
         } else if (
-          statusText.includes("finish") ||
-          statusText.includes("ended") ||
+          statusText.includes(
+            "finish"
+          ) ||
+          statusText.includes(
+            "ended"
+          ) ||
           statusText === "ft"
         ) {
-
-          statusShort =
-            "FT";
+          statusShort = "FT";
 
         } else if (
-          statusText.includes("half")
+          statusText.includes(
+            "half"
+          )
         ) {
-
-          statusShort =
-            "HT";
+          statusShort = "HT";
 
         } else if (
-          statusText.includes("postpon")
+          statusText.includes(
+            "postpon"
+          )
         ) {
-
-          statusShort =
-            "PST";
+          statusShort = "PST";
 
         } else if (
-          statusText.includes("cancel")
+          statusText.includes(
+            "cancel"
+          )
         ) {
-
-          statusShort =
-            "CANC";
+          statusShort = "CANC";
 
         } else {
-
-          statusShort =
-            "NS";
-
+          statusShort = "NS";
         }
-
       }
 
       const competition =
@@ -495,39 +320,21 @@ module.exports = async (req, res) => {
         raw?.league ||
         {};
 
-      const leagueName =
-        text(competition) ||
-        raw?.competition_name ||
-        raw?.league_name ||
-        "Football";
-
-      const leagueId =
-        idOf(competition) ||
-        raw?.competition_id ||
-        raw?.league_id ||
-        null;
-
-      const leagueLogo =
-        competition?.logo ||
-        competition?.image ||
-        raw?.competition_logo ||
-        raw?.league_logo ||
-        "";
-
-      const leagueCountry =
-        competition?.country ||
-        raw?.country ||
-        "";
-
       return {
 
-        id,
+        id:
+          slug ||
+          raw?.id ||
+          null,
 
         slug,
 
         fixture: {
 
-          id,
+          id:
+            slug ||
+            raw?.id ||
+            null,
 
           slug,
 
@@ -574,26 +381,30 @@ module.exports = async (req, res) => {
         league: {
 
           id:
-            leagueId,
-
-          name:
-            leagueName,
-
-          country:
-            leagueCountry,
-
-          logo:
-            leagueLogo,
-
-          round:
-            competition?.round ||
-            raw?.round ||
+            idOf(
+              competition
+            ) ||
+            raw?.competition_id ||
+            raw?.league_id ||
             null,
 
-          season:
-            competition?.season ||
-            raw?.season ||
-            null
+          name:
+            text(
+              competition
+            ) ||
+            raw?.competition_name ||
+            raw?.league_name ||
+            "Football",
+
+          country:
+            competition?.country ||
+            raw?.country ||
+            null,
+
+          logo:
+            competition?.logo ||
+            raw?.competition_logo ||
+            ""
 
         },
 
@@ -662,12 +473,7 @@ module.exports = async (req, res) => {
         }
 
       };
-
     }
-
-    /* =====================================================
-       MATCH LIST RESPONSE
-    ===================================================== */
 
     function getMatches(body) {
 
@@ -676,9 +482,7 @@ module.exports = async (req, res) => {
           body?.matches
         )
       ) {
-
         return body.matches;
-
       }
 
       if (
@@ -686,17 +490,7 @@ module.exports = async (req, res) => {
           body?.data
         )
       ) {
-
         return body.data;
-
-      }
-
-      if (
-        Array.isArray(body)
-      ) {
-
-        return body;
-
       }
 
       if (
@@ -704,13 +498,16 @@ module.exports = async (req, res) => {
           body?.fixtures
         )
       ) {
-
         return body.fixtures;
+      }
 
+      if (
+        Array.isArray(body)
+      ) {
+        return body;
       }
 
       return [];
-
     }
 
     /* =====================================================
@@ -732,20 +529,21 @@ module.exports = async (req, res) => {
 
         body =
           await getJSON(
-            `${BASE}/fixtures/?sport=football&date=${encodeURIComponent(
+            `${SPORTSCORE}/fixtures/?sport=football&date=${encodeURIComponent(
               matchDate
-            )}&limit=200&src=bakhira-foot.vercel.app`
+            )}&limit=200`
           );
 
       } catch (error) {
 
         if (
-          matchDate === today
+          matchDate ===
+          today
         ) {
 
           body =
             await getJSON(
-              `${BASE}/matches/?sport=football&limit=50&src=bakhira-foot.vercel.app`
+              `${SPORTSCORE}/matches/?sport=football&limit=50`
             );
 
         } else {
@@ -766,16 +564,13 @@ module.exports = async (req, res) => {
       return output(
         200,
         {
-
           data:
             matches,
 
           provider:
             "SportScore"
-
         }
       );
-
     }
 
     /* =====================================================
@@ -788,7 +583,7 @@ module.exports = async (req, res) => {
 
       const body =
         await getJSON(
-          `${BASE}/fixtures/?sport=football&status=live&limit=200&src=bakhira-foot.vercel.app`
+          `${SPORTSCORE}/fixtures/?sport=football&status=live&limit=200`
         );
 
       const matches =
@@ -801,16 +596,769 @@ module.exports = async (req, res) => {
       return output(
         200,
         {
-
           data:
             matches,
 
           provider:
             "SportScore"
+        }
+      );
+    }
+
+    /* =====================================================
+       FIND MATCH IN SOFASCORE BY TEAMS + DATE
+    ===================================================== */
+
+    async function findSofaEvent(
+      homeName,
+      awayName,
+      isoDate
+    ) {
+
+      const wantedHome =
+        norm(homeName);
+
+      const wantedAway =
+        norm(awayName);
+
+      const dates = [];
+
+      const baseDate =
+        isoDate
+          ? new Date(
+              `${isoDate}T12:00:00Z`
+            )
+          : new Date();
+
+      for (
+        let offset = -2;
+        offset <= 2;
+        offset++
+      ) {
+
+        const d =
+          new Date(
+            baseDate
+          );
+
+        d.setUTCDate(
+          d.getUTCDate() +
+          offset
+        );
+
+        dates.push(
+          d.toISOString()
+            .split("T")[0]
+        );
+      }
+
+      for (
+        const d of dates
+      ) {
+
+        try {
+
+          const body =
+            await getJSON(
+              `${SOFA}/sport/football/scheduled-events/${d}`
+            );
+
+          const events =
+            arr(
+              body?.events
+            );
+
+          const exact =
+            events.find(
+              event => {
+
+                const home =
+                  norm(
+                    event?.homeTeam?.name
+                  );
+
+                const away =
+                  norm(
+                    event?.awayTeam?.name
+                  );
+
+                return (
+                  home ===
+                    wantedHome &&
+                  away ===
+                    wantedAway
+                );
+
+              }
+            );
+
+          if (
+            exact
+          ) {
+            return exact;
+          }
+
+          const fuzzy =
+            events.find(
+              event => {
+
+                const home =
+                  norm(
+                    event?.homeTeam?.name
+                  );
+
+                const away =
+                  norm(
+                    event?.awayTeam?.name
+                  );
+
+                return (
+                  (
+                    home.includes(
+                      wantedHome
+                    ) ||
+                    wantedHome.includes(
+                      home
+                    )
+                  ) &&
+                  (
+                    away.includes(
+                      wantedAway
+                    ) ||
+                    wantedAway.includes(
+                      away
+                    )
+                  )
+                );
+
+              }
+            );
+
+          if (
+            fuzzy
+          ) {
+            return fuzzy;
+          }
+
+        } catch (
+          error
+        ) {
+
+          console.warn(
+            "SOFASCORE SCHEDULE ERROR:",
+            d,
+            error.message
+          );
+
+        }
+
+      }
+
+      return null;
+    }
+
+    /* =====================================================
+       PLAYER NORMALIZATION
+    ===================================================== */
+
+    function normalizeSofaPlayer(
+      row
+    ) {
+
+      const player =
+        row?.player ||
+        row ||
+        {};
+
+      const stat =
+        row?.statistics?.[0] ||
+        row?.statistics ||
+        {};
+
+      const games =
+        stat?.games ||
+        {};
+
+      return {
+
+        player: {
+
+          id:
+            player?.id ||
+            null,
+
+          name:
+            player?.name ||
+            player?.shortName ||
+            row?.playerName ||
+            "Joueur",
+
+          number:
+            row?.shirtNumber ??
+            row?.jerseyNumber ??
+            player?.shirtNumber ??
+            player?.jerseyNumber ??
+            null,
+
+          pos:
+            row?.position ||
+            player?.position ||
+            "",
+
+          grid:
+            row?.positionGrid ||
+            row?.grid ||
+            "",
+
+          photo:
+            player?.picture ||
+            player?.image ||
+            ""
+
+        },
+
+        rating:
+          row?.rating ??
+          stat?.rating ??
+          games?.rating ??
+          null,
+
+        games: {
+
+          rating:
+            row?.rating ??
+            stat?.rating ??
+            games?.rating ??
+            null,
+
+          minutes:
+            row?.minutesPlayed ??
+            row?.minutes ??
+            games?.minutes ??
+            null,
+
+          position:
+            row?.position ||
+            player?.position ||
+            "",
+
+          substitute:
+            row?.substitute === true ||
+            row?.starter === false,
+
+          captain:
+            row?.captain === true
+
+        },
+
+        goals: {
+
+          total:
+            row?.statistics?.[0]?.goals?.total ??
+            row?.goals?.total ??
+            0,
+
+          assists:
+            row?.statistics?.[0]?.goals?.assists ??
+            row?.goals?.assists ??
+            0
+
+        },
+
+        cards: {
+
+          yellow:
+            row?.statistics?.[0]?.cards?.yellow ??
+            row?.cards?.yellow ??
+            0,
+
+          red:
+            row?.statistics?.[0]?.cards?.red ??
+            row?.cards?.red ??
+            0
+
+        },
+
+        passes: {
+
+          key:
+            row?.statistics?.[0]?.passes?.key ??
+            row?.passes?.key ??
+            0
+
+        },
+
+        shots: {
+
+          total:
+            row?.statistics?.[0]?.shots?.total ??
+            row?.shots?.total ??
+            0,
+
+          on:
+            row?.statistics?.[0]?.shots?.on ??
+            row?.shots?.on ??
+            0
+
+        }
+
+      };
+    }
+
+    /* =====================================================
+       LINEUPS
+    ===================================================== */
+
+    function normalizeSofaLineup(
+      side,
+      team
+    ) {
+
+      if (
+        !side ||
+        typeof side !== "object"
+      ) {
+        return null;
+      }
+
+      let allPlayers =
+        arr(
+          side?.players
+        );
+
+      if (
+        !allPlayers.length
+      ) {
+
+        allPlayers = [
+
+          ...arr(
+            side?.startingLineup
+          ),
+
+          ...arr(
+            side?.substitutes
+          )
+
+        ];
+
+      }
+
+      const startXI =
+        allPlayers
+          .filter(
+            row => {
+
+              if (
+                row?.substitute ===
+                true
+              ) {
+                return false;
+              }
+
+              if (
+                row?.starter ===
+                false
+              ) {
+                return false;
+              }
+
+              return true;
+            }
+          )
+          .map(
+            normalizeSofaPlayer
+          );
+
+      const substitutes =
+        allPlayers
+          .filter(
+            row =>
+              row?.substitute ===
+                true ||
+              row?.starter ===
+                false
+          )
+          .map(
+            normalizeSofaPlayer
+          );
+
+      return {
+
+        team: {
+
+          id:
+            team?.id ||
+            side?.team?.id ||
+            null,
+
+          name:
+            team?.name ||
+            side?.team?.name ||
+            "",
+
+          logo:
+            team?.logo ||
+            team?.picture ||
+            side?.team?.logo ||
+            ""
+
+        },
+
+        formation:
+          side?.formation ||
+          side?.formationUsed ||
+          side?.tacticalFormation ||
+          "—",
+
+        coach:
+          side?.manager ||
+          side?.coach ||
+          null,
+
+        startXI,
+
+        substitutes
+
+      };
+    }
+
+    /* =====================================================
+       INCIDENTS
+    ===================================================== */
+
+    function normalizeIncidents(
+      body,
+      sofaEvent
+    ) {
+
+      const incidents =
+        arr(
+          body?.incidents
+        );
+
+      return incidents.map(
+        incident => {
+
+          const isHome =
+            incident?.isHome ===
+            true;
+
+          const player =
+            incident?.player ||
+            {};
+
+          const assist =
+            incident?.assist1 ||
+            incident?.assist ||
+            incident?.relatedPlayer ||
+            {};
+
+          let type =
+            incident?.incidentType ||
+            incident?.type ||
+            "Other";
+
+          let detail =
+            incident?.incidentClass ||
+            incident?.incidentClassName ||
+            incident?.reason ||
+            "";
+
+          let playerName =
+            player?.name ||
+            incident?.playerName ||
+            "";
+
+          if (
+            type ===
+            "substitution"
+          ) {
+
+            const playerIn =
+              incident?.playerIn?.name ||
+              incident?.playerInName ||
+              "";
+
+            const playerOut =
+              incident?.playerOut?.name ||
+              incident?.playerOutName ||
+              playerName ||
+              "";
+
+            playerName =
+              playerOut ||
+              playerIn ||
+              "Substitution";
+
+            detail =
+              playerIn
+                ? `Entrée : ${playerIn}`
+                : "Changement";
+
+          }
+
+          if (
+            type ===
+            "card"
+          ) {
+
+            if (
+              incident?.incidentClass ===
+              "red"
+            ) {
+
+              detail =
+                "red";
+
+            } else if (
+              incident?.incidentClass ===
+                "yellowRed" ||
+              incident?.incidentClass ===
+                "yellow-red"
+            ) {
+
+              detail =
+                "yellow-red";
+
+            } else {
+
+              detail =
+                "yellow";
+
+            }
+
+          }
+
+          return {
+
+            time: {
+
+              elapsed:
+                incident?.time ??
+                incident?.minute ??
+                null,
+
+              extra:
+                incident?.addedTime ??
+                null
+
+            },
+
+            team: {
+
+              id:
+                isHome
+                  ? sofaEvent?.homeTeam?.id ||
+                    null
+                  : sofaEvent?.awayTeam?.id ||
+                    null,
+
+              name:
+                isHome
+                  ? sofaEvent?.homeTeam?.name ||
+                    ""
+                  : sofaEvent?.awayTeam?.name ||
+                    ""
+
+            },
+
+            player: {
+
+              id:
+                player?.id ||
+                null,
+
+              name:
+                playerName
+
+            },
+
+            assist: {
+
+              id:
+                assist?.id ||
+                null,
+
+              name:
+                assist?.name ||
+                ""
+
+            },
+
+            type,
+
+            detail
+
+          };
 
         }
       );
 
+    }
+
+    /* =====================================================
+       STATISTICS
+    ===================================================== */
+
+    function normalizeStatistics(
+      body,
+      sofaEvent
+    ) {
+
+      const periods =
+        arr(
+          body?.statistics
+        );
+
+      const all =
+        periods.find(
+          block =>
+            String(
+              block?.period ||
+              ""
+            ).toUpperCase() ===
+            "ALL"
+        ) ||
+        periods[0] ||
+        {};
+
+      const homeStats =
+        [];
+
+      const awayStats =
+        [];
+
+      for (
+        const group of
+        arr(
+          all?.groups
+        )
+      ) {
+
+        for (
+          const item of
+          arr(
+            group?.statisticsItems
+          )
+        ) {
+
+          const name =
+            item?.name ||
+            item?.key ||
+            "Stat";
+
+          const homeValue =
+            item?.home ??
+            item?.homeValue ??
+            "-";
+
+          const awayValue =
+            item?.away ??
+            item?.awayValue ??
+            "-";
+
+          homeStats.push({
+
+            type:
+              name,
+
+            value:
+              homeValue
+
+          });
+
+          awayStats.push({
+
+            type:
+              name,
+
+            value:
+              awayValue
+
+          });
+
+        }
+
+      }
+
+      return [
+
+        {
+
+          team: {
+
+            id:
+              sofaEvent?.homeTeam?.id ||
+              null,
+
+            name:
+              sofaEvent?.homeTeam?.name ||
+              "Domicile"
+
+          },
+
+          statistics:
+            homeStats
+
+        },
+
+        {
+
+          team: {
+
+            id:
+              sofaEvent?.awayTeam?.id ||
+              null,
+
+            name:
+              sofaEvent?.awayTeam?.name ||
+              "Extérieur"
+
+          },
+
+          statistics:
+            awayStats
+
+        }
+
+      ];
+    }
+
+    /* =====================================================
+       PLAYER GROUPS
+    ===================================================== */
+
+    function buildPlayerGroups(
+      homeLineup,
+      awayLineup
+    ) {
+
+      return [
+        homeLineup,
+        awayLineup
+      ]
+        .filter(Boolean)
+        .map(
+          lineup => ({
+
+            team:
+              lineup.team,
+
+            players: [
+
+              ...arr(
+                lineup.startXI
+              ),
+
+              ...arr(
+                lineup.substitutes
+              )
+
+            ]
+
+          })
+        );
     }
 
     /* =====================================================
@@ -829,1123 +1377,492 @@ module.exports = async (req, res) => {
         return output(
           400,
           {
+
             error:
               "Match slug manquant",
+
             data: []
+
           }
         );
 
       }
 
       console.log(
-        "MATCH DETAILS SLUG:",
+        "DETAILS REQUESTED:",
         slug
       );
 
-      /* -------------------------------------------------
-         PRIMARY DETAIL ENDPOINT
-      ------------------------------------------------- */
+      /* -----------------------------------------------
+         SPORTScore basic data
+      ----------------------------------------------- */
 
-      let primary;
+      let sportBody;
 
       try {
 
-        primary =
+        sportBody =
           await getJSON(
-            `${BASE}/match/?sport=football&slug=${encodeURIComponent(
+            `${SPORTSCORE}/match/?sport=football&slug=${encodeURIComponent(
               slug
-            )}&src=bakhira-foot.vercel.app`
+            )}`
           );
 
-      } catch (firstError) {
+      } catch (
+        error
+      ) {
 
-        console.warn(
-          "V1 MATCH FAILED, TRYING WIDGET MATCH:",
-          firstError.message
-        );
-
-        primary =
+        sportBody =
           await getJSON(
-            `${WIDGET_BASE}/match/?sport=football&slug=${encodeURIComponent(
+            `https://sportscore.com/api/widget/match/?sport=football&slug=${encodeURIComponent(
               slug
-            )}&src=bakhira-foot.vercel.app`
+            )}`
           );
 
       }
+
+      const sportMatch =
+        sportBody?.match ||
+        sportBody?.data?.match ||
+        sportBody?.data ||
+        sportBody;
+
+      const basic =
+        normalizeMatch(
+          sportMatch
+        );
+
+      if (!basic) {
+
+        return output(
+          404,
+          {
+
+            error:
+              "Match introuvable",
+
+            data: []
+
+          }
+        );
+
+      }
+
+      /* -----------------------------------------------
+         Find same match in SofaScore
+      ----------------------------------------------- */
+
+      const sofaEvent =
+        await findSofaEvent(
+
+          basic?.teams?.home?.name ||
+          "",
+
+          basic?.teams?.away?.name ||
+          "",
+
+          basic?.fixture?.date
+            ? String(
+                basic.fixture.date
+              ).slice(
+                0,
+                10
+              )
+            : today
+
+        );
 
       /*
-         كنخليو response كامل متوفر
-         باش ما تضيع حتى معلومة.
+         SofaScore unavailable:
+         fallback to SportScore basic/event data.
       */
 
-      let detailSource =
-        primary;
-
-      /* -------------------------------------------------
-         ROOT
-      ------------------------------------------------- */
-
-      let root =
-        primary?.data ||
-        primary;
-
       if (
-        root?.match &&
-        typeof root.match === "object"
+        !sofaEvent?.id
       ) {
 
-        /*
-           مهم:
-           مناخدوش غير match.
-           كنخليو envelope كامل.
-        */
+        return output(
+          200,
+          {
 
-        root = {
-          ...root,
-          ...root.match
-        };
+            data: {
 
-      }
+              ...basic,
 
-      const rawMatch =
-        root?.match &&
-        typeof root.match === "object"
-          ? root.match
-          : root;
+              events:
+                arr(
+                  sportMatch?.events
+                ),
 
-      /* -------------------------------------------------
-         TEAMS
-      ------------------------------------------------- */
+              lineups:
+                [],
 
-      const normalized =
-        normalizeMatch(
-          rawMatch
+              statistics:
+                [],
+
+              players:
+                [],
+
+              detailStatus:
+                "SofaScore event not found"
+
+            },
+
+            provider:
+              "SportScore"
+
+          }
         );
 
-      const home =
-        normalized?.teams?.home ||
-        {
-          id: null,
-          name: "Domicile",
-          logo: ""
-        };
-
-      const away =
-        normalized?.teams?.away ||
-        {
-          id: null,
-          name: "Extérieur",
-          logo: ""
-        };
-
-      /* -------------------------------------------------
-         EVENTS
-      ------------------------------------------------- */
-
-      const eventsArrays =
-        [
-          ...findArrays(
-            detailSource,
-            [
-              "events",
-              "timeline",
-              "incidents"
-            ]
-          ),
-          ...findArrays(
-            root,
-            [
-              "events",
-              "timeline",
-              "incidents"
-            ]
-          )
-        ];
-
-      let rawEvents = [];
-
-      if (
-        eventsArrays.length
-      ) {
-
-        rawEvents =
-          eventsArrays.reduce(
-            (best, current) =>
-              current.length >
-              best.length
-                ? current
-                : best,
-            []
-          );
-
       }
+
+      const eventId =
+        sofaEvent.id;
+
+      console.log(
+        "SOFASCORE EVENT ID:",
+        eventId
+      );
+
+      /* -----------------------------------------------
+         Fetch all detailed data
+      ----------------------------------------------- */
+
+      const [
+        sofaEventBody,
+        lineupBody,
+        incidentBody,
+        statisticsBody
+      ] =
+        await Promise.all([
+
+          getJSON(
+            `${SOFA}/event/${eventId}`
+          ).catch(
+            () => ({})
+          ),
+
+          getJSON(
+            `${SOFA}/event/${eventId}/lineups`
+          ).catch(
+            () => ({})
+          ),
+
+          getJSON(
+            `${SOFA}/event/${eventId}/incidents`
+          ).catch(
+            () => ({})
+          ),
+
+          getJSON(
+            `${SOFA}/event/${eventId}/statistics`
+          ).catch(
+            () => ({})
+          )
+
+        ]);
+
+      const eventCore =
+        sofaEventBody?.event ||
+        sofaEvent;
+
+      /* -----------------------------------------------
+         REAL TEAMS
+      ----------------------------------------------- */
+
+      const homeTeam = {
+
+        id:
+          eventCore?.homeTeam?.id ||
+          sofaEvent?.homeTeam?.id ||
+          basic.teams.home.id ||
+          null,
+
+        name:
+          eventCore?.homeTeam?.name ||
+          sofaEvent?.homeTeam?.name ||
+          basic.teams.home.name,
+
+        logo:
+          eventCore?.homeTeam?.logo ||
+          eventCore?.homeTeam?.image ||
+          basic.teams.home.logo ||
+          ""
+
+      };
+
+      const awayTeam = {
+
+        id:
+          eventCore?.awayTeam?.id ||
+          sofaEvent?.awayTeam?.id ||
+          basic.teams.away.id ||
+          null,
+
+        name:
+          eventCore?.awayTeam?.name ||
+          sofaEvent?.awayTeam?.name ||
+          basic.teams.away.name,
+
+        logo:
+          eventCore?.awayTeam?.logo ||
+          eventCore?.awayTeam?.image ||
+          basic.teams.away.logo ||
+          ""
+
+      };
+
+      /* -----------------------------------------------
+         LINEUPS
+      ----------------------------------------------- */
+
+      const homeLineup =
+        normalizeSofaLineup(
+          lineupBody?.home,
+          homeTeam
+        );
+
+      const awayLineup =
+        normalizeSofaLineup(
+          lineupBody?.away,
+          awayTeam
+        );
+
+      const lineups = [
+
+        homeLineup,
+
+        awayLineup
+
+      ].filter(Boolean);
+
+      /* -----------------------------------------------
+         EVENTS
+      ----------------------------------------------- */
 
       const events =
-        rawEvents.map(
-          event => {
-
-            const team =
-              event?.team ||
-              event?.club ||
-              event?.participant ||
-              {};
-
-            const player =
-              event?.player ||
-              event?.scorer ||
-              event?.person ||
-              {};
-
-            const assist =
-              event?.assist ||
-              event?.assistant ||
-              {};
-
-            const teamId =
-              idOf(team) ||
-              event?.team_id ||
-              event?.teamId ||
-              null;
-
-            let teamName =
-              text(team) ||
-              event?.team_name ||
-              event?.teamName ||
-              "";
-
-            if (!teamName) {
-
-              if (
-                home.id &&
-                teamId &&
-                String(home.id) ===
-                String(teamId)
-              ) {
-
-                teamName =
-                  home.name;
-
-              }
-
-              if (
-                away.id &&
-                teamId &&
-                String(away.id) ===
-                String(teamId)
-              ) {
-
-                teamName =
-                  away.name;
-
-              }
-
-            }
-
-            const playerId =
-              idOf(player) ||
-              event?.player_id ||
-              event?.playerId ||
-              null;
-
-            const playerName =
-              text(player) ||
-              event?.player_name ||
-              event?.playerName ||
-              event?.scorer_name ||
-              event?.scorerName ||
-              "";
-
-            const assistId =
-              idOf(assist) ||
-              event?.assist_id ||
-              event?.assistId ||
-              null;
-
-            const assistName =
-              text(assist) ||
-              event?.assist_name ||
-              event?.assistName ||
-              "";
-
-            return {
-
-              time: {
-
-                elapsed:
-                  event?.time?.elapsed ??
-                  event?.elapsed ??
-                  event?.minute ??
-                  event?.time_minute ??
-                  null,
-
-                extra:
-                  event?.time?.extra ??
-                  event?.extra ??
-                  null
-
-              },
-
-              team: {
-
-                id:
-                  teamId,
-
-                name:
-                  teamName
-
-              },
-
-              player: {
-
-                id:
-                  playerId,
-
-                name:
-                  playerName
-
-              },
-
-              assist: {
-
-                id:
-                  assistId,
-
-                name:
-                  assistName
-
-              },
-
-              type:
-                event?.type ||
-                event?.event_type ||
-                event?.eventType ||
-                event?.category ||
-                "Other",
-
-              detail:
-                event?.detail ||
-                event?.description ||
-                event?.text ||
-                event?.comments ||
-                event?.subtype ||
-                ""
-
-            };
-
+        normalizeIncidents(
+          incidentBody,
+          {
+            ...sofaEvent,
+            ...eventCore
           }
         );
 
-      /* -------------------------------------------------
-         LINEUPS
-      ------------------------------------------------- */
-
-      const lineupArrays =
-        [
-          ...findArrays(
-            detailSource,
-            [
-              "lineups",
-              "lineup",
-              "formations",
-              "compositions"
-            ]
-          ),
-          ...findArrays(
-            root,
-            [
-              "lineups",
-              "lineup",
-              "formations",
-              "compositions"
-            ]
-          )
-        ];
-
-      let rawLineups =
-        lineupArrays.reduce(
-          (best, current) =>
-            current.length >
-            best.length
-              ? current
-              : best,
-          []
-        );
-
-      /*
-         بعض responses:
-         lineups: {
-           home: {...},
-           away: {...}
-         }
-         
-         فهاد الحالة findArrays ما كيلقاهاش
-         حيث ماشي Array، لذلك كنفتشو عليها.
-      */
-
-      if (
-        !rawLineups.length
-      ) {
-
-        const lineupObjects = [];
-
-        function searchLineupObject(
-          source,
-          depth = 0
-        ) {
-
-          if (
-            !source ||
-            typeof source !== "object" ||
-            depth > 8
-          ) {
-            return;
-          }
-
-          if (
-            !Array.isArray(source)
-          ) {
-
-            for (
-              const key of Object.keys(source)
-            ) {
-
-              const value =
-                source[key];
-
-              const keyLower =
-                key.toLowerCase();
-
-              if (
-                (
-                  keyLower ===
-                    "lineups" ||
-                  keyLower ===
-                    "lineup"
-                ) &&
-                value &&
-                typeof value === "object" &&
-                !Array.isArray(value)
-              ) {
-
-                if (
-                  value.home ||
-                  value.away
-                ) {
-
-                  if (
-                    value.home
-                  ) {
-
-                    lineupObjects.push(
-                      {
-                        ...object(
-                          value.home
-                        ),
-                        _side:
-                          "home"
-                      }
-                    );
-
-                  }
-
-                  if (
-                    value.away
-                  ) {
-
-                    lineupObjects.push(
-                      {
-                        ...object(
-                          value.away
-                        ),
-                        _side:
-                          "away"
-                      }
-                    );
-
-                  }
-
-                }
-
-              }
-
-              if (
-                value &&
-                typeof value === "object"
-              ) {
-
-                searchLineupObject(
-                  value,
-                  depth + 1
-                );
-
-              }
-
-            }
-
-          }
-
-        }
-
-        searchLineupObject(
-          detailSource
-        );
-
-        searchLineupObject(
-          root
-        );
-
-        rawLineups =
-          lineupObjects;
-
-      }
-
-      /* -------------------------------------------------
-         PLAYER NORMALIZER
-      ------------------------------------------------- */
-
-      function normalizePlayer(
-        item
-      ) {
-
-        const p =
-          item?.player &&
-          typeof item.player === "object"
-            ? item.player
-            : (
-                item?.person &&
-                typeof item.person === "object"
-                  ? item.person
-                  : item
-              );
-
-        const statistics =
-          item?.statistics?.[0] ||
-          item?.statistics ||
-          item?.stats ||
-          {};
-
-        const games =
-          statistics?.games ||
-          item?.games ||
-          {};
-
-        const goals =
-          statistics?.goals ||
-          item?.goals ||
-          {};
-
-        const cards =
-          statistics?.cards ||
-          item?.cards ||
-          {};
-
-        const passes =
-          statistics?.passes ||
-          item?.passes ||
-          {};
-
-        const firstName =
-          p?.first_name ||
-          p?.firstName ||
-          "";
-
-        const lastName =
-          p?.last_name ||
-          p?.lastName ||
-          "";
-
-        const playerName =
-          p?.name ||
-          p?.full_name ||
-          p?.fullName ||
-          item?.player_name ||
-          item?.playerName ||
-          item?.name ||
-          `${firstName} ${lastName}`.trim() ||
-          "Joueur";
-
-        return {
-
-          player: {
-
-            id:
-              p?.id ||
-              item?.player_id ||
-              item?.playerId ||
-              item?.id ||
-              null,
-
-            name:
-              playerName,
-
-            number:
-              p?.number ??
-              p?.jersey_number ??
-              item?.number ??
-              item?.shirt_number ??
-              item?.jersey_number ??
-              null,
-
-            pos:
-              p?.pos ||
-              p?.position ||
-              item?.position ||
-              item?.position_name ||
-              item?.pos ||
-              "",
-
-            grid:
-              p?.grid ||
-              item?.grid ||
-              item?.position_grid ||
-              "",
-
-            photo:
-              p?.photo ||
-              p?.image ||
-              item?.photo ||
-              item?.image ||
-              ""
-
-          },
-
-          rating:
-            item?.rating ??
-            item?.player_rating ??
-            statistics?.rating ??
-            games?.rating ??
-            p?.rating ??
-            null,
-
-          games: {
-
-            rating:
-              item?.rating ??
-              item?.player_rating ??
-              statistics?.rating ??
-              games?.rating ??
-              p?.rating ??
-              null,
-
-            minutes:
-              item?.minutes ??
-              statistics?.minutes ??
-              games?.minutes ??
-              null,
-
-            position:
-              item?.position ||
-              item?.position_name ||
-              games?.position ||
-              p?.pos ||
-              p?.position ||
-              "",
-
-            substitute:
-              item?.substitute === true ||
-              item?.is_substitute === true ||
-              item?.bench === true,
-
-            captain:
-              item?.captain === true ||
-              item?.is_captain === true
-
-          },
-
-          goals: {
-
-            total:
-              goals?.total ??
-              item?.goals_total ??
-              0,
-
-            assists:
-              goals?.assists ??
-              item?.assists ??
-              0
-
-          },
-
-          cards: {
-
-            yellow:
-              cards?.yellow ??
-              item?.yellow ??
-              0,
-
-            red:
-              cards?.red ??
-              item?.red ??
-              0
-
-          },
-
-          passes: {
-
-            key:
-              passes?.key ??
-              passes?.key_passes ??
-              item?.key_passes ??
-              0
-
-          },
-
-          shots: {
-
-            total:
-              shotsTotal(
-                statistics,
-                item
-              ),
-
-            on:
-              shotsOn(
-                statistics,
-                item
-              )
-
-          }
-
-        };
-
-      }
-
-      function shotsTotal(
-        statistics,
-        item
-      ) {
-
-        return (
-          statistics?.shots?.total ??
-          item?.shots?.total ??
-          item?.shots_total ??
-          0
-        );
-
-      }
-
-      function shotsOn(
-        statistics,
-        item
-      ) {
-
-        return (
-          statistics?.shots?.on ??
-          item?.shots?.on ??
-          item?.shots_on ??
-          0
-        );
-
-      }
-
-      /* -------------------------------------------------
-         LINEUP NORMALIZATION
-      ------------------------------------------------- */
-
-      const lineups =
-        rawLineups
-          .map(
-            (lineup, index) => {
-
-              const team =
-                lineup?.team ||
-                lineup?.club ||
-                lineup?.participant ||
-                {};
-
-              let teamId =
-                idOf(team) ||
-                lineup?.team_id ||
-                lineup?.teamId ||
-                null;
-
-              let teamName =
-                text(team) ||
-                lineup?.team_name ||
-                lineup?.teamName ||
-                "";
-
-              let teamLogo =
-                team?.logo ||
-                team?.image ||
-                lineup?.team_logo ||
-                "";
-
-              if (
-                lineup?._side ===
-                "home"
-              ) {
-
-                teamId =
-                  teamId ||
-                  home.id;
-
-                teamName =
-                  teamName ||
-                  home.name;
-
-                teamLogo =
-                  teamLogo ||
-                  home.logo;
-
-              }
-
-              if (
-                lineup?._side ===
-                "away"
-              ) {
-
-                teamId =
-                  teamId ||
-                  away.id;
-
-                teamName =
-                  teamName ||
-                  away.name;
-
-                teamLogo =
-                  teamLogo ||
-                  away.logo;
-
-              }
-
-              if (
-                !teamName &&
-                index === 0
-              ) {
-
-                teamId =
-                  teamId ||
-                  home.id;
-
-                teamName =
-                  home.name;
-
-                teamLogo =
-                  teamLogo ||
-                  home.logo;
-
-              }
-
-              if (
-                !teamName &&
-                index === 1
-              ) {
-
-                teamId =
-                  teamId ||
-                  away.id;
-
-                teamName =
-                  away.name;
-
-                teamLogo =
-                  teamLogo ||
-                  away.logo;
-
-              }
-
-              let starters =
-                lineup?.startXI ||
-                lineup?.startingXI ||
-                lineup?.starting_xi ||
-                lineup?.starters ||
-                lineup?.starting ||
-                null;
-
-              let substitutes =
-                lineup?.substitutes ||
-                lineup?.bench ||
-                lineup?.subs ||
-                [];
-
-              /*
-                 fallback players / roster
-              */
-
-              if (
-                !Array.isArray(starters)
-              ) {
-
-                const allPlayers =
-                  lineup?.players ||
-                  lineup?.roster ||
-                  lineup?.squad ||
-                  [];
-
-                if (
-                  Array.isArray(
-                    allPlayers
-                  )
-                ) {
-
-                  starters =
-                    allPlayers.filter(
-                      player =>
-                        !(
-                          player?.substitute === true ||
-                          player?.is_substitute === true ||
-                          player?.bench === true
-                        )
-                    );
-
-                  substitutes =
-                    allPlayers.filter(
-                      player =>
-                        player?.substitute === true ||
-                        player?.is_substitute === true ||
-                        player?.bench === true
-                    );
-
-                } else {
-
-                  starters =
-                    [];
-
-                }
-
-              }
-
-              if (
-                !Array.isArray(
-                  substitutes
-                )
-              ) {
-
-                substitutes =
-                  [];
-
-              }
-
-              return {
-
-                team: {
-
-                  id:
-                    teamId,
-
-                  name:
-                    teamName,
-
-                  logo:
-                    teamLogo
-
-                },
-
-                formation:
-                  lineup?.formation ||
-                  lineup?.tactics?.formation ||
-                  lineup?.tactical_formation ||
-                  "—",
-
-                coach:
-                  lineup?.coach ||
-                  lineup?.manager ||
-                  null,
-
-                startXI:
-                  starters.map(
-                    normalizePlayer
-                  ),
-
-                substitutes:
-                  substitutes.map(
-                    normalizePlayer
-                  )
-
-              };
-
-            }
-          )
-          .filter(
-            lineup =>
-              lineup.startXI.length ||
-              lineup.substitutes.length ||
-              lineup.formation !== "—"
-          );
-
-      /* -------------------------------------------------
-         PLAYER STATISTICS
-      ------------------------------------------------- */
-
-      const playerArrays =
-        [
-          ...findArrays(
-            detailSource,
-            [
-              "players",
-              "player_stats",
-              "playerstatistics"
-            ]
-          ),
-          ...findArrays(
-            root,
-            [
-              "players",
-              "player_stats",
-              "playerstatistics"
-            ]
-          )
-        ];
-
-      let players =
-        playerArrays.reduce(
-          (best, current) =>
-            current.length >
-            best.length
-              ? current
-              : best,
-          []
-        );
-
-      /*
-         إلا ماكانش players separate،
-         نجمعو starters + substitutes.
-      */
-
-      if (
-        !players.length &&
-        lineups.length
-      ) {
-
-        players =
-          lineups.map(
-            lineup => ({
-
-              team:
-                lineup.team,
-
-              players: [
-                ...lineup.startXI,
-                ...lineup.substitutes
-              ]
-
-            })
-          );
-
-      }
-
-      /* -------------------------------------------------
-         STATISTICS
-      ------------------------------------------------- */
-
-      const statisticsArrays =
-        [
-          ...findArrays(
-            detailSource,
-            [
-              "statistics",
-              "stats"
-            ]
-          ),
-          ...findArrays(
-            root,
-            [
-              "statistics",
-              "stats"
-            ]
-          )
-        ];
+      /* -----------------------------------------------
+         STATS
+      ----------------------------------------------- */
 
       const statistics =
-        statisticsArrays.reduce(
-          (best, current) =>
-            current.length >
-            best.length
-              ? current
-              : best,
-          []
+        normalizeStatistics(
+          statisticsBody,
+          {
+            ...sofaEvent,
+            ...eventCore
+          }
         );
 
-      /* -------------------------------------------------
-         FINAL DETAILS
-      ------------------------------------------------- */
+      /* -----------------------------------------------
+         PLAYERS
+      ----------------------------------------------- */
 
-      const normalizedDetails = {
+      const players =
+        buildPlayerGroups(
+          homeLineup,
+          awayLineup
+        );
+
+      /* -----------------------------------------------
+         SCORE
+      ----------------------------------------------- */
+
+      const homeScore =
+        eventCore?.homeScore?.current ??
+        eventCore?.homeScore?.display ??
+        basic.goals.home ??
+        null;
+
+      const awayScore =
+        eventCore?.awayScore?.current ??
+        eventCore?.awayScore?.display ??
+        basic.goals.away ??
+        null;
+
+      /* -----------------------------------------------
+         STATUS
+      ----------------------------------------------- */
+
+      let statusShort =
+        "NS";
+
+      if (
+        eventCore?.status?.type ===
+        "finished"
+      ) {
+
+        statusShort =
+          "FT";
+
+      } else if (
+        eventCore?.status?.type ===
+        "inprogress"
+      ) {
+
+        statusShort =
+          "LIVE";
+
+      } else if (
+        eventCore?.status?.type ===
+        "postponed"
+      ) {
+
+        statusShort =
+          "PST";
+
+      }
+
+      /* -----------------------------------------------
+         FINAL RESPONSE
+      ----------------------------------------------- */
+
+      const finalDetails = {
 
         fixture: {
 
           id:
-            normalized?.fixture?.id ||
             slug,
 
-          slug:
-
-            normalized?.fixture?.slug ||
-            slug,
+          slug,
 
           upstreamId:
-            normalized?.fixture?.upstreamId ||
-            rawMatch?.id ||
-            rawMatch?.match_id ||
-            null,
+            eventId,
 
           date:
-            normalized?.fixture?.date ||
-            rawMatch?.time ||
-            rawMatch?.date ||
-            null,
+            eventCore?.startTimestamp
+              ? new Date(
+                  eventCore.startTimestamp *
+                  1000
+                ).toISOString()
+              : basic.fixture.date ||
+                null,
 
           timezone:
-            rawMatch?.timezone ||
             "UTC",
 
-          status:
-            normalized?.fixture?.status ||
-            {
-              short: "MATCH",
-              long: "Match",
-              elapsed: null
-            },
+          status: {
+
+            short:
+              statusShort,
+
+            long:
+              eventCore?.status?.description ||
+              eventCore?.status?.type ||
+              basic.fixture.status.long ||
+              "Match",
+
+            elapsed:
+              eventCore?.status?.period1Elapsed ||
+              eventCore?.status?.period2Elapsed ||
+              null
+
+          },
 
           venue:
-            rawMatch?.venue ||
+            eventCore?.venue ||
+            basic.fixture.venue ||
             null,
 
           referee:
-            rawMatch?.referee ||
+            eventCore?.referee?.name ||
+            basic.fixture.referee ||
             null
 
         },
 
-        league:
-          normalized?.league ||
-          {
-            id: null,
-            name: "Football",
-            country: "",
-            logo: ""
-          },
+        league: {
 
-        teams: {
+          id:
+            eventCore?.tournament?.uniqueTournament?.id ||
+            eventCore?.tournament?.id ||
+            basic.league.id ||
+            null,
 
-          home,
+          name:
+            eventCore?.tournament?.uniqueTournament?.name ||
+            eventCore?.tournament?.name ||
+            basic.league.name,
 
-          away
+          country:
+            eventCore?.tournament?.category?.name ||
+            basic.league.country ||
+            "",
+
+          logo:
+            basic.league.logo ||
+            "",
+
+          round:
+            eventCore?.roundInfo?.name ||
+            eventCore?.roundInfo?.round ||
+            null,
+
+          season:
+            eventCore?.season?.name ||
+            null
 
         },
 
-        goals:
-          normalized?.goals ||
-          {
-            home: null,
-            away: null
+        teams: {
+
+          home:
+            homeTeam,
+
+          away:
+            awayTeam
+
+        },
+
+        goals: {
+
+          home:
+            homeScore,
+
+          away:
+            awayScore
+
+        },
+
+        score: {
+
+          home:
+            homeScore,
+
+          away:
+            awayScore,
+
+          halftime: {
+
+            home:
+              eventCore?.homeScore?.period1 ??
+              null,
+
+            away:
+              eventCore?.awayScore?.period1 ??
+              null
+
           },
 
-        score:
-          normalized?.score ||
-          {
-            home: null,
-            away: null,
-            halftime: {
-              home: null,
-              away: null
-            },
-            fulltime: {
-              home: null,
-              away: null
-            }
-          },
+          fulltime: {
+
+            home:
+              homeScore,
+
+            away:
+              awayScore
+
+          }
+
+        },
 
         events,
 
@@ -1955,17 +1872,14 @@ module.exports = async (req, res) => {
 
         players,
 
-        /*
-           raw response محفوظ،
-           باش أي field موجود فالمصدر
-           وما استعملناهش دابا ما يضيعش.
-        */
+        sofascore: {
 
-        raw:
-          detailSource,
+          eventId
+
+        },
 
         provider:
-          "SportScore"
+          "SportScore + SofaScore"
 
       };
 
@@ -1973,16 +1887,29 @@ module.exports = async (req, res) => {
         "DETAILS RESULT:",
         JSON.stringify(
           {
-            slug,
-            events:
-              events.length,
+
+            eventId,
+
             lineups:
               lineups.length,
-            players:
-              players.length,
+
+            homePlayers:
+              homeLineup?.startXI?.length ||
+              0,
+
+            awayPlayers:
+              awayLineup?.startXI?.length ||
+              0,
+
+            events:
+              events.length,
+
             statistics:
-              statistics.length
+              statistics?.[0]?.statistics?.length ||
+              0
+
           },
+
           null,
           2
         )
@@ -1991,50 +1918,44 @@ module.exports = async (req, res) => {
       return output(
         200,
         {
+
           data:
-            normalizedDetails,
+            finalDetails,
 
           provider:
-            "SportScore"
+            "SportScore + SofaScore"
+
         }
       );
-
     }
-
-    /* =====================================================
-       INVALID REQUEST
-    ===================================================== */
 
     return output(
       400,
       {
+
         error:
           "Invalid request",
 
-        provider:
-          "SportScore",
-
         data: []
+
       }
     );
 
   } catch (error) {
 
     console.error(
-      "SPORTSCORE ERROR:",
+      "BAKHIRAFOOT API ERROR:",
       error
     );
 
     return output(
-      error?.status || 500,
+      error?.status ||
+      500,
       {
 
         error:
           error?.message ||
-          "SportScore request failed",
-
-        provider:
-          "SportScore",
+          "API request failed",
 
         details:
           error?.data ||
@@ -2044,7 +1965,5 @@ module.exports = async (req, res) => {
 
       }
     );
-
   }
-
 };
