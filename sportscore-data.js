@@ -1180,84 +1180,26 @@
     assists
   } = result;
 
-  if (!standings.length) {
-    return `
-      <section class="ss-competition-card">
-
-        <button
-          type="button"
-          class="ss-competition-toggle"
-        >
-
-          <div class="ss-competition-brand">
-
-            <div class="ss-competition-logo-wrap">
-              <img
-                src="${escapeHTML(competition.logo)}"
-                alt="${escapeHTML(competition.name)}"
-                loading="lazy"
-              >
-            </div>
-
-            <div class="ss-competition-text">
-
-              <small>
-                ${escapeHTML(competition.country)}
-              </small>
-
-              <h2>
-                ${escapeHTML(competition.name)}
-              </h2>
-
-            </div>
-
-          </div>
-
-          <span class="ss-chevron">⌄</span>
-
-        </button>
-
-        <div class="ss-competition-body">
-
-          <div class="ss-no-data">
-            Classement indisponible actuellement.
-          </div>
-
-        </div>
-
-      </section>
-    `;
-  }
-
-
   const rows = standings
     .map(renderStandingRow)
     .join("");
 
-
   return `
-    <section class="ss-competition-card">
+    <details class="bf-competition">
 
-      <button
-        type="button"
-        class="ss-competition-toggle"
-        aria-expanded="false"
-      >
+      <summary class="bf-competition-summary">
 
-        <div class="ss-competition-brand">
+        <div class="bf-competition-brand">
 
-          <div class="ss-competition-logo-wrap">
-
+          <div class="bf-competition-logo">
             <img
               src="${escapeHTML(competition.logo)}"
               alt="${escapeHTML(competition.name)}"
               loading="lazy"
             >
-
           </div>
 
-
-          <div class="ss-competition-text">
+          <div class="bf-competition-info">
 
             <small>
               ${escapeHTML(competition.country)}
@@ -1275,30 +1217,17 @@
 
         </div>
 
+        <span class="bf-competition-arrow">›</span>
 
-        <div class="ss-competition-right">
+      </summary>
 
-          <span class="ss-season">
-            Saison actuelle
-          </span>
-
-          <span class="ss-chevron">
-            ⌄
-          </span>
-
-        </div>
-
-      </button>
-
-
-      <div class="ss-competition-body">
+      <div class="bf-competition-content">
 
         <div class="ss-table-scroll">
 
           <div class="ss-table">
 
             <div class="ss-standing-row ss-table-header">
-
               <span>#</span>
               <span>Équipe</span>
               <span>J</span>
@@ -1309,7 +1238,6 @@
               <span>BC</span>
               <span>Diff</span>
               <span>Pts</span>
-
             </div>
 
             ${rows}
@@ -1317,7 +1245,6 @@
           </div>
 
         </div>
-
 
         <div class="ss-players-grid">
 
@@ -1339,11 +1266,11 @@
 
       </div>
 
-    </section>
+    </details>
   `;
-} 
+}
 
-  async function loadAllStandings() {
+async function loadAllStandings() {
 
   function setupCompetitionToggles() {
 
