@@ -254,47 +254,41 @@ module.exports = async (req, res) => {
        FIXTURE ADAPTER
     ===================================================== */
 
-    function normalizeFixture(
-      item
-    ) {
-      if (!item) {
-        return null;
-      }
+const slug =
+  pick(
+    item,
+    [
+      "slug",
+      "match_slug",
+      "url_slug",
+      "match.slug",
+      "fixture.slug",
+      "data.slug"
+    ],
+    null
+  );
 
-      const slug =
-        pick(
-          item,
-          [
-            "slug",
-            "match_slug"
-          ],
-          null
-        );
+const upstreamId =
+  pick(
+    item,
+    [
+      "id",
+      "match_id",
+      "fixture_id",
+      "match.id",
+      "fixture.id"
+    ],
+    null
+  );
 
-      const upstreamId =
-        pick(
-          item,
-          [
-            "id",
-            "match_id",
-            "fixture_id"
-          ],
-          null
-        );
-
-      /*
-         IMPORTANT:
-         script.js current كيستعمل fixture.id
-         باش يفتح Match Details.
-
-         SportScore Match Details كتطلب slug.
-         لذلك fixture.id = slug.
-      */
-
-      const publicId =
-        slug ||
-        upstreamId;
-
+/*
+ * SportScore Match Details كيتطلب slug.
+ * لذلك كنستعملو slug كـ public fixture id.
+ */
+const publicId =
+  slug ||
+  upstreamId ||
+  null;
       const home =
         normalizeTeam(
           pick(
