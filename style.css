@@ -4288,3 +4288,59 @@ footer {
     padding: 23px 14px;
   }
 }
+/* =========================================
+   LOGO — BIG + CLICKABLE
+   ========================================= */
+
+.logo {
+  display: inline-flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+
+  width: 50px !important;
+  height: 50px !important;
+
+  flex-shrink: 0;
+
+  text-decoration: none !important;
+
+  cursor: pointer;
+
+  transition:
+    transform .16s ease,
+    opacity .16s ease;
+}
+
+.logo img {
+  width: 50px !important;
+  height: 50px !important;
+
+  display: block;
+
+  object-fit: contain;
+}
+
+.logo:hover {
+  transform: scale(1.05);
+  opacity: .94;
+}
+
+/* إلا كان الاسم BAKHIRAFOOT كيتزاد بـ ::after */
+.logo::after {
+  pointer-events: none;
+}
+
+/* Mobile */
+
+@media (max-width: 700px) {
+
+  .logo {
+    width: 42px !important;
+    height: 42px !important;
+  }
+
+  .logo img {
+    width: 42px !important;
+    height: 42px !important;
+  }
+}
