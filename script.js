@@ -6466,12 +6466,14 @@ document.addEventListener(
     const player =
       BF2_getPlayer(item);
 
-    return (
-      player?.number ??
-      item?.number ??
-      item?.shirt_number ??
-      "-"
-    );
+   return (
+  player?.number ??
+  item?.number ??
+  item?.shirt_number ??
+  item?.jersey_number ??
+  player?.jersey_number ??
+  "-"
+);
   }
 
   function BF2_getPosition(
@@ -8307,28 +8309,883 @@ document.addEventListener(
         details?.league?.name ||
         league;
 
-      const events =
-        BF2_array(
-          details?.events ||
-          details?.timeline ||
-          details?.incidents
+      /* =======================================================
+   ROBUST SPORTSCORE DATA READER
+======================================================= */
+
+const rawSource =
+  details?._raw ||
+  details ||
+  {};
+
+/* ---------- deep finder ---------- */
+
+function BF2_deepFind(
+  object,
+  wantedKeys,
+  depth = 0
+) {
+
+  if (
+    !object ||
+    typeof object !== "object" ||
+    depth > 7
+  ) {
+    return null;
+  }
+
+  if (
+    Array.isArray(object)
+  ) {
+
+    for (
+      const item of object
+    ) {
+
+      const found =
+        BF2_deepFind(
+          item,
+          wantedKeys,
+          depth + 1
         );
 
-      const lineups =
-        BF2_array(
-          details?.lineups ||
-          details?.lineup
-        );
+      if (found !== null) {
+        return found;
+      }
 
-      const statistics =
-        BF2_array(
-          details?.statistics ||
-          details?.stats
-        );
+    }
 
-      const players =
-        BF2_array(
-          details?.players
+    return null;
+  }
+
+  const keys =
+    Object.keys(object);
+
+  for (
+    const key of keys
+  ) {
+
+    const normalizedKey =
+      BF2_norm(key);
+
+    if (
+      wantedKeys.includes(
+        normalizedKey
+      )
+    ) {
+      return object[key];
+    }
+
+  }
+
+  for (
+    const key of keys
+  ) {
+
+    const found =
+      BF2_deepFind(
+        object[key],
+        wantedKeys,
+        depth + 1
+      );
+
+    if (found !== null) {
+      return found;
+    }
+
+  }
+
+  return null;
+}
+
+/* ---------- object helpers ---------- */
+
+function BF2_obj(value) {
+
+  return value &&
+    typeof value === "object" &&
+    !Array.isArray(value)
+      ? value
+      : {};
+}
+
+function BF2_text(value) {
+
+  if (
+    typeof value === "string"
+  ) {
+    return value.trim();
+  }
+
+  if (
+    value &&
+    typeof value === "object"
+  ) {
+    return (
+      value.name ||
+      value.full_name ||
+      value.fullName ||
+      value.title ||
+      value.label ||
+      ""
+    );
+  }
+
+  return "";
+}
+
+function BF2_id(value) {
+
+  if (
+    typeof value === "string" ||
+    typeof value === "number"
+  ) {
+    return value;
+  }
+
+  if (
+    value &&
+    typeof value === "object"
+  ) {
+    return (
+      value.id ||
+      value.team_id ||
+      value.player_id ||
+      value.participant_id ||
+      null
+    );
+  }
+
+  return null;
+}
+
+/* =======================================================
+   EVENTS
+======================================================= */
+
+function BF2_normalizeEvents(
+  source,
+  homeTeam,
+  awayTeam
+) {
+
+  let list =
+    BF2_deepFind(
+      source,
+      [
+        "events",
+        "timeline",
+        "incidents",
+        "match events"
+      ]
+    );
+
+  if (
+    !Array.isArray(list)
+  ) {
+    list = [];
+  }
+
+  return list.map(
+    event => {
+
+      const raw =
+        BF2_obj(event);
+
+      const teamRaw =
+        raw.team ||
+        raw.club ||
+        raw.participant ||
+        raw.side ||
+        {};
+
+      const playerRaw =
+        raw.player ||
+        raw.scorer ||
+        raw.person ||
+        {};
+
+      const assistRaw =
+        raw.assist ||
+        raw.assistant ||
+        raw.related_player ||
+        {};
+
+      const teamId =
+        BF2_id(teamRaw) ||
+        raw.team_id ||
+        raw.teamId ||
+        raw.participant_id ||
+        raw.participantId ||
+        null;
+
+      let teamName =
+        BF2_text(teamRaw) ||
+        raw.team_name ||
+        raw.teamName ||
+        raw.participant_name ||
+        "";
+
+      if (!teamName) {
+
+        if (
+          teamId &&
+          homeTeam?.id &&
+          String(teamId) ===
+          String(homeTeam.id)
+        ) {
+          teamName =
+            homeTeam.name;
+        }
+
+        else if (
+          teamId &&
+          awayTeam?.id &&
+          String(teamId) ===
+          String(awayTeam.id)
+        ) {
+          teamName =
+            awayTeam.name;
+        }
+
+      }
+
+      let playerName =
+        BF2_text(playerRaw) ||
+        raw.player_name ||
+        raw.playerName ||
+        raw.scorer_name ||
+        raw.scorerName ||
+        "";
+
+      /*
+         بعض الـresponses كيرجعو الاسم
+         فـfull_name / first_name / last_name
+      */
+
+      if (!playerName) {
+
+        const first =
+          raw.first_name ||
+          raw.firstName ||
+          "";
+
+        const last =
+          raw.last_name ||
+          raw.lastName ||
+          "";
+
+        playerName =
+          `${first} ${last}`.trim();
+
+      }
+
+      const playerId =
+        BF2_id(playerRaw) ||
+        raw.player_id ||
+        raw.playerId ||
+        null;
+
+      const assistName =
+        BF2_text(assistRaw) ||
+        raw.assist_name ||
+        raw.assistName ||
+        raw.related_player_name ||
+        raw.relatedPlayerName ||
+        "";
+
+      const assistId =
+        BF2_id(assistRaw) ||
+        raw.assist_id ||
+        raw.assistId ||
+        raw.related_player_id ||
+        null;
+
+      return {
+
+        time: {
+
+          elapsed:
+            raw.minute ??
+            raw.elapsed ??
+            raw.time?.elapsed ??
+            raw.time_minute ??
+            null,
+
+          extra:
+            raw.extra ??
+            raw.time?.extra ??
+            raw.minute_extra ??
+            null
+
+        },
+
+        team: {
+
+          id:
+            teamId,
+
+          name:
+            teamName
+
+        },
+
+        player: {
+
+          id:
+            playerId,
+
+          name:
+            playerName
+
+        },
+
+        assist: {
+
+          id:
+            assistId,
+
+          name:
+            assistName
+
+        },
+
+        type:
+          raw.type ||
+          raw.event_type ||
+          raw.eventType ||
+          raw.category ||
+          "",
+
+        detail:
+          raw.detail ||
+          raw.description ||
+          raw.text ||
+          raw.comments ||
+          raw.subtype ||
+          ""
+
+      };
+
+    }
+  );
+}
+
+/* =======================================================
+   LINEUPS
+======================================================= */
+
+function BF2_normalizeLineups(
+  source,
+  homeTeam,
+  awayTeam
+) {
+
+  let raw =
+    BF2_deepFind(
+      source,
+      [
+        "lineups",
+        "lineup",
+        "formations",
+        "compositions"
+      ]
+    );
+
+  let blocks = [];
+
+  if (
+    Array.isArray(raw)
+  ) {
+
+    blocks = raw;
+
+  }
+
+  else if (
+    raw &&
+    typeof raw === "object"
+  ) {
+
+    if (
+      raw.home ||
+      raw.away
+    ) {
+
+      blocks = [
+        {
+          ...BF2_obj(raw.home),
+          _side: "home"
+        },
+        {
+          ...BF2_obj(raw.away),
+          _side: "away"
+        }
+      ];
+
+    }
+
+    else {
+
+      blocks =
+        Object.entries(raw)
+          .filter(
+            ([, value]) =>
+              value &&
+              typeof value === "object"
+          )
+          .map(
+            ([key, value]) => ({
+              ...BF2_obj(value),
+              _side:
+                BF2_norm(key)
+              })
+          );
+
+    }
+
+  }
+
+  return blocks
+    .map(
+      (block, index) => {
+
+        const teamRaw =
+          block.team ||
+          block.club ||
+          block.participant ||
+          {};
+
+        let teamId =
+          BF2_id(teamRaw) ||
+          block.team_id ||
+          block.teamId ||
+          null;
+
+        let teamName =
+          BF2_text(teamRaw) ||
+          block.team_name ||
+          block.teamName ||
+          "";
+
+        let teamLogo =
+          teamRaw?.logo ||
+          teamRaw?.image ||
+          block.team_logo ||
+          "";
+
+        if (
+          block._side === "home"
+        ) {
+
+          teamId =
+            teamId ||
+            homeTeam?.id ||
+            null;
+
+          teamName =
+            teamName ||
+            homeTeam?.name ||
+            "";
+
+          teamLogo =
+            teamLogo ||
+            homeTeam?.logo ||
+            "";
+
+        }
+
+        if (
+          block._side === "away"
+        ) {
+
+          teamId =
+            teamId ||
+            awayTeam?.id ||
+            null;
+
+          teamName =
+            teamName ||
+            awayTeam?.name ||
+            "";
+
+          teamLogo =
+            teamLogo ||
+            awayTeam?.logo ||
+            "";
+
+        }
+
+        if (
+          !teamName &&
+          index === 0
+        ) {
+
+          teamId =
+            teamId ||
+            homeTeam?.id ||
+            null;
+
+          teamName =
+            homeTeam?.name ||
+            "";
+
+          teamLogo =
+            teamLogo ||
+            homeTeam?.logo ||
+            "";
+
+        }
+
+        if (
+          !teamName &&
+          index === 1
+        ) {
+
+          teamId =
+            teamId ||
+            awayTeam?.id ||
+            null;
+
+          teamName =
+            awayTeam?.name ||
+            "";
+
+          teamLogo =
+            teamLogo ||
+            awayTeam?.logo ||
+            "";
+
+        }
+
+        let starters =
+          block.startXI ||
+          block.startingXI ||
+          block.starting_xi ||
+          block.starters ||
+          block.starting ||
+          null;
+
+        let substitutes =
+          block.substitutes ||
+          block.bench ||
+          block.subs ||
+          null;
+
+        /*
+           إذا كانت SportScore كترجع
+           جميع اللاعبين داخل players
+        */
+
+        if (
+          !Array.isArray(starters)
+        ) {
+
+          const allPlayers =
+            block.players ||
+            block.roster ||
+            block.squad ||
+            [];
+
+          if (
+            Array.isArray(allPlayers)
+          ) {
+
+            starters =
+              allPlayers.filter(
+                player => {
+
+                  return !(
+                    player?.substitute === true ||
+                    player?.is_substitute === true ||
+                    player?.bench === true
+                  );
+
+                }
+              );
+
+            substitutes =
+              allPlayers.filter(
+                player => {
+
+                  return (
+                    player?.substitute === true ||
+                    player?.is_substitute === true ||
+                    player?.bench === true
+                  );
+
+                }
+              );
+
+          }
+
+        }
+
+        function normalizePlayer(
+          item
+        ) {
+
+          const player =
+            item?.player &&
+            typeof item.player === "object"
+              ? item.player
+              : item;
+
+          const first =
+            player?.first_name ||
+            player?.firstName ||
+            "";
+
+          const last =
+            player?.last_name ||
+            player?.lastName ||
+            "";
+
+          const name =
+            player?.name ||
+            player?.full_name ||
+            player?.fullName ||
+            item?.player_name ||
+            item?.name ||
+            `${first} ${last}`.trim() ||
+            "Joueur";
+
+          return {
+
+            player: {
+
+              id:
+                player?.id ??
+                item?.player_id ??
+                item?.id ??
+                null,
+
+              name,
+
+              number:
+                player?.number ??
+                item?.number ??
+                item?.shirt_number ??
+                item?.jersey_number ??
+                null,
+
+              pos:
+                player?.pos ??
+                player?.position ??
+                item?.position ??
+                item?.position_name ??
+                item?.pos ??
+                "",
+
+              grid:
+                player?.grid ??
+                item?.grid ??
+                item?.position_grid ??
+                "",
+
+              photo:
+                player?.photo ??
+                player?.image ??
+                item?.photo ??
+                item?.image ??
+                ""
+
+            },
+
+            rating:
+              item?.rating ??
+              item?.player_rating ??
+              item?.statistics?.rating ??
+              item?.statistics?.[0]?.games?.rating ??
+              item?.games?.rating ??
+              player?.rating ??
+              null,
+
+            games: {
+
+              rating:
+                item?.rating ??
+                item?.player_rating ??
+                item?.statistics?.rating ??
+                item?.statistics?.[0]?.games?.rating ??
+                item?.games?.rating ??
+                player?.rating ??
+                null,
+
+              minutes:
+                item?.minutes ??
+                item?.statistics?.minutes ??
+                item?.statistics?.[0]?.games?.minutes ??
+                item?.games?.minutes ??
+                null,
+
+              position:
+                item?.position ||
+                item?.position_name ||
+                player?.pos ||
+                player?.position ||
+                "",
+
+              substitute:
+                item?.substitute === true ||
+                item?.is_substitute === true,
+
+              captain:
+                item?.captain === true ||
+                item?.is_captain === true
+
+            },
+
+            goals:
+              item?.goals ||
+              item?.statistics?.goals ||
+              {},
+
+            cards:
+              item?.cards ||
+              item?.statistics?.cards ||
+              {},
+
+            passes:
+              item?.passes ||
+              item?.statistics?.passes ||
+              {},
+
+            shots:
+              item?.shots ||
+              item?.statistics?.shots ||
+              {}
+
+          };
+
+        }
+
+        const normalizedStarters =
+          Array.isArray(starters)
+            ? starters.map(
+                normalizePlayer
+              )
+            : [];
+
+        const normalizedSubs =
+          Array.isArray(substitutes)
+            ? substitutes.map(
+                normalizePlayer
+              )
+            : [];
+
+        return {
+
+          team: {
+
+            id:
+              teamId,
+
+            name:
+              teamName,
+
+            logo:
+              teamLogo
+
+          },
+
+          formation:
+            block.formation ||
+            block.tactics?.formation ||
+            block.tactical_formation ||
+            "—",
+
+          coach:
+            block.coach ||
+            block.manager ||
+            null,
+
+          startXI:
+            normalizedStarters,
+
+          substitutes:
+            normalizedSubs
+
+        };
+
+      }
+    )
+    .filter(
+      lineup =>
+        lineup.startXI.length > 0 ||
+        lineup.substitutes.length > 0 ||
+        lineup.formation !== "—"
+    );
+}
+
+/* =======================================================
+   BUILD THE REAL DATA
+======================================================= */
+
+const homeTeamForBF2 =
+  details?.teams?.home ||
+  match?.teams?.home ||
+  {};
+
+const awayTeamForBF2 =
+  details?.teams?.away ||
+  match?.teams?.away ||
+  {};
+
+const events =
+  BF2_normalizeEvents(
+    rawSource,
+    homeTeamForBF2,
+    awayTeamForBF2
+  );
+
+const lineups =
+  BF2_normalizeLineups(
+    rawSource,
+    homeTeamForBF2,
+    awayTeamForBF2
+  );
+
+const statistics =
+  BF2_deepFind(
+    rawSource,
+    [
+      "statistics",
+      "stats"
+    ]
+  ) || [];
+
+const rawPlayers =
+  BF2_deepFind(
+    rawSource,
+    [
+      "players",
+      "player_stats",
+      "playerstatistics"
+    ]
+  ) || [];
+
+/*
+   إلى ماكانش players منفصلين،
+   ناخدو اللاعبين من lineups باش ratings
+   تبقى خدامة.
+*/
+
+const players =
+  Array.isArray(rawPlayers)
+    ? rawPlayers
+    : lineups.map(
+        lineup => ({
+          team:
+            lineup.team,
+
+          players: [
+            ...lineup.startXI,
+            ...lineup.substitutes
+          ]
+
+        })
+      );
         );
 
       const contributions =
