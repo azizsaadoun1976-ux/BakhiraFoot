@@ -6110,7 +6110,109 @@ document.addEventListener(
         opacity: .6;
         border-top: 1px solid rgba(127,127,127,.12);
       }
+/* ========================================
+   PLAYER AVATAR ON PITCH
+======================================== */
 
+.bf2-player-avatar {
+  position: relative;
+  width: 42px;
+  height: 42px;
+  border-radius: 50%;
+  overflow: visible;
+  background: #ffffff;
+  border: 3px solid rgba(0,0,0,.22);
+  box-shadow: 0 5px 14px rgba(0,0,0,.32);
+}
+
+.bf2-player-photo {
+  width: 100%;
+  height: 100%;
+  display: block;
+  border-radius: 50%;
+  object-fit: cover;
+  background: #ffffff;
+}
+
+.bf2-player-number {
+  position: absolute;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  color: #111827;
+  font-weight: 950;
+  font-size: 12px;
+}
+
+.bf2-shirt-number {
+  position: absolute;
+  right: -5px;
+  bottom: -4px;
+  min-width: 17px;
+  height: 17px;
+  padding: 0 3px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border-radius: 50%;
+  background: #ffffff;
+  color: #111827;
+  border: 1px solid rgba(0,0,0,.22);
+  font-size: 8px;
+  font-weight: 950;
+  box-shadow: 0 2px 5px rgba(0,0,0,.22);
+}
+
+.bf2-player-name {
+  max-width: 90px;
+  margin-top: 4px;
+  padding: 3px 6px;
+  border-radius: 5px;
+  background: rgba(0,0,0,.72);
+  color: #ffffff;
+  font-size: 8px;
+  font-weight: 900;
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.bf2-player-actions-mini {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 2px;
+  margin-top: 2px;
+}
+
+.bf2-player-mini {
+  padding: 2px 4px;
+  border-radius: 5px;
+  background: rgba(255,255,255,.94);
+  color: #111827;
+  font-size: 8px;
+  font-weight: 950;
+}
+
+.bf2-player-mini.goal {
+  background: rgba(34,197,94,.95);
+}
+
+.bf2-player-mini.assist {
+  background: rgba(59,130,246,.95);
+}
+
+.bf2-player-mini.yellow {
+  background: rgba(250,204,21,.98);
+}
+
+.bf2-player-mini.red {
+  background: rgba(239,68,68,.98);
+  color: #ffffff;
+}
       /* PLAYERS */
 
       .bf2-player-columns {
@@ -6287,7 +6389,30 @@ document.addEventListener(
       }
 
       /* MOBILE */
+@media(max-width:600px) {
 
+  .bf2-player-avatar {
+    width: 34px;
+    height: 34px;
+  }
+
+  .bf2-player-name {
+    max-width: 68px;
+    font-size: 7px;
+  }
+
+  .bf2-shirt-number {
+    min-width: 14px;
+    height: 14px;
+    font-size: 7px;
+  }
+
+  .bf2-player-mini {
+    font-size: 7px;
+    padding: 1px 3px;
+  }
+
+}
       @media(max-width:850px) {
 
         .bf2-pitches,
@@ -6518,85 +6643,184 @@ document.addEventListener(
   }
 
   function BF2_positionPlayers(
-    players,
-    side
-  ) {
+  players,
+  side
+) {
 
-    const rows = {};
+  const rows = {};
 
-    players.forEach(
-      item => {
+  players.forEach(item => {
 
-        const grid =
-          String(
-            BF2_getGrid(item)
-          );
+    const rawGrid =
+      BF2_getGrid(item) ||
+      item?.positionGrid ||
+      item?.position_grid ||
+      "";
 
-        const match =
-          grid.match(
-            /(\d+)\s*:\s*(\d+)/
-          );
+    const match =
+      String(rawGrid).match(
+        /(\d+)\s*:\s*(\d+)/
+      );
 
-        let row =
-          match
-            ? Number(match[1])
-            : null;
+    let row =
+      match
+        ? Number(match[1])
+        : null;
 
-        let column =
-          match
-            ? Number(match[2])
-            : null;
+    let column =
+      match
+        ? Number(match[2])
+        : null;
 
-        if (!row) {
+    const position =
+      BF2_norm(
+        BF2_getPosition(item)
+      );
 
-          const pos =
-            BF2_norm(
-              BF2_getPosition(item)
+    if (!row) {
+
+      if (
+        position === "g" ||
+        position.includes("goalkeeper") ||
+        position.includes("gardien")
+      ) {
+        row = 1;
+      }
+
+      else if (
+        position === "d" ||
+        position.includes("defender") ||
+        position.includes("defense") ||
+        position.includes("back")
+      ) {
+        row = 2;
+      }
+
+      else if (
+        position === "m" ||
+        position.includes("midfielder") ||
+        position.includes("milieu")
+      ) {
+        row = 3;
+      }
+
+      else {
+        row = 4;
+      }
+    }
+
+    if (!rows[row]) {
+      rows[row] = [];
+    }
+
+    if (!column) {
+      column =
+        rows[row].length + 1;
+    }
+
+    rows[row].push({
+      item,
+      column
+    });
+
+  });
+
+  const rowNumbers =
+    Object.keys(rows)
+      .map(Number)
+      .sort(
+        (a, b) => a - b
+      );
+
+  const maxRow =
+    Math.max(
+      ...rowNumbers,
+      4
+    );
+
+  const result = [];
+
+  rowNumbers.forEach(row => {
+
+    const rowPlayers =
+      rows[row].sort(
+        (a, b) =>
+          a.column - b.column
+      );
+
+    const count =
+      rowPlayers.length;
+
+    rowPlayers.forEach(
+      (entry, index) => {
+
+        let x;
+
+        if (count === 1) {
+          x = 50;
+        } else {
+          x =
+            12 +
+            (
+              76 *
+              (
+                index /
+                (count - 1)
+              )
             );
-
-          if (
-            pos === "g" ||
-            pos.includes("goal")
-          ) {
-            row = 1;
-          }
-          else if (
-            pos === "d" ||
-            pos.includes("def")
-          ) {
-            row = 2;
-          }
-          else if (
-            pos === "m" ||
-            pos.includes("mid")
-          ) {
-            row = 3;
-          }
-          else {
-            row = 4;
-          }
-
         }
 
-        if (!rows[row]) {
-          rows[row] = [];
+        let y =
+          8 +
+          (
+            84 *
+            (
+              (row - 1) /
+              Math.max(
+                1,
+                maxRow - 1
+              )
+            )
+          );
+
+        if (side === "away") {
+          y =
+            100 - y;
         }
 
-        if (!column) {
-          column =
-            rows[row].length + 1;
-        }
+        result.push({
 
-        rows[row].push({
+          item:
+            entry.item,
 
-          item,
+          x:
+            Math.max(
+              6,
+              Math.min(
+                94,
+                x
+              )
+            ),
 
-          column
+          y:
+            Math.max(
+              5,
+              Math.min(
+                95,
+                y
+              )
+            )
 
         });
 
       }
     );
+
+  });
+
+  return result;
+}
+    
 
     const rowNumbers =
       Object.keys(rows)
@@ -6700,31 +6924,347 @@ document.addEventListener(
   ======================================================= */
 
   function BF2_renderPitch(
-    lineup,
-    teamName,
-    side,
-    contributions,
-    playerStats
-  ) {
+  lineup,
+  teamName,
+  side,
+  contributions,
+  playerStats
+) {
 
-    if (!lineup) {
+  if (!lineup) {
 
-      return `
+    return `
+      <div class="bf2-pitch-card">
 
-        <div class="bf2-pitch-card">
-
-          <div class="bf2-pitch-head">
-            ${BF2_escape(teamName)}
-          </div>
-
-          <div class="bf2-empty">
-            Formation non disponible.
-          </div>
-
+        <div class="bf2-pitch-head">
+          ${BF2_escape(teamName)}
         </div>
 
-      `;
-    }
+        <div class="bf2-empty">
+          Formation non disponible.
+        </div>
+
+      </div>
+    `;
+  }
+
+  const formation =
+    lineup?.formation ||
+    lineup?.tactics ||
+    "—";
+
+  const starters =
+    BF2_array(
+      lineup?.startXI ||
+      lineup?.startingXI ||
+      lineup?.starting_xi ||
+      lineup?.starters
+    );
+
+  const prepared =
+    starters.map(item => {
+
+      const player =
+        BF2_getPlayer(item);
+
+      const id =
+        player?.id ||
+        item?.player_id ||
+        item?.id ||
+        null;
+
+      const name =
+        BF2_getName(item);
+
+      const keyId =
+        id
+          ? `id:${id}`
+          : `name:${BF2_norm(name)}`;
+
+      const contribution =
+        contributions.get(
+          keyId
+        ) ||
+        {
+          goals: 0,
+          assists: 0,
+          yellow: 0,
+          red: 0
+        };
+
+      const stats =
+        playerStats.get(
+          keyId
+        ) ||
+        {};
+
+      const photo =
+        player?.photo ||
+        player?.picture ||
+        player?.image ||
+        item?.photo ||
+        item?.picture ||
+        item?.image ||
+        "";
+
+      return {
+
+        ...item,
+
+        _id:
+          id,
+
+        _name:
+          name,
+
+        _number:
+          BF2_getNumber(item),
+
+        _position:
+          BF2_getPosition(item),
+
+        _grid:
+          BF2_getGrid(item) ||
+          item?.positionGrid ||
+          item?.position_grid ||
+          "",
+
+        _photo:
+          photo,
+
+        _rating:
+          stats?.rating ??
+          BF2_getRating(item),
+
+        _goals:
+          BF2_num(
+            item?.goals?.total
+          ) ||
+          BF2_num(
+            contribution.goals
+          ),
+
+        _assists:
+          BF2_num(
+            item?.goals?.assists
+          ) ||
+          BF2_num(
+            contribution.assists
+          ),
+
+        _yellow:
+          BF2_num(
+            item?.cards?.yellow
+          ) ||
+          BF2_num(
+            contribution.yellow
+          ),
+
+        _red:
+          BF2_num(
+            item?.cards?.red
+          ) ||
+          BF2_num(
+            contribution.red
+          )
+
+      };
+
+    });
+
+  const positions =
+    BF2_positionPlayers(
+      prepared,
+      side
+    );
+
+  const html =
+    positions
+      .map(entry => {
+
+        const p =
+          entry.item;
+
+        const photo =
+          p._photo;
+
+        const number =
+          p._number ??
+          "?";
+
+        const rating =
+          p._rating;
+
+        const photoHTML =
+          photo
+            ? `
+              <img
+                class="bf2-player-photo"
+                src="${BF2_escape(photo)}"
+                alt="${BF2_escape(p._name)}"
+                loading="lazy"
+              >
+            `
+            : `
+              <span class="bf2-player-number">
+                ${BF2_escape(number)}
+              </span>
+            `;
+
+        let actions = "";
+
+        if (
+          p._goals > 0
+        ) {
+          actions += `
+            <span class="bf2-player-mini goal">
+              ⚽${p._goals}
+            </span>
+          `;
+        }
+
+        if (
+          p._assists > 0
+        ) {
+          actions += `
+            <span class="bf2-player-mini assist">
+              🅰️${p._assists}
+            </span>
+          `;
+        }
+
+        if (
+          p._yellow > 0
+        ) {
+          actions += `
+            <span class="bf2-player-mini yellow">
+              🟨
+            </span>
+          `;
+        }
+
+        if (
+          p._red > 0
+        ) {
+          actions += `
+            <span class="bf2-player-mini red">
+              🟥
+            </span>
+          `;
+        }
+
+        return `
+
+          <div
+            class="bf2-player"
+            style="
+              left:${entry.x}%;
+              top:${entry.y}%;
+            "
+            title="${BF2_escape(p._name)}"
+          >
+
+            <div class="bf2-player-avatar">
+
+              ${photoHTML}
+
+              <span class="bf2-shirt-number">
+                ${BF2_escape(number)}
+              </span>
+
+            </div>
+
+            <div class="bf2-player-name">
+              ${BF2_escape(p._name)}
+            </div>
+
+            ${
+              rating !== null &&
+              rating !== undefined &&
+              rating !== ""
+                ? `
+                  <div class="bf2-rating">
+                    ⭐ ${BF2_escape(
+                      Number(
+                        rating
+                      ).toFixed(1)
+                    )}
+                  </div>
+                `
+                : ""
+            }
+
+            ${
+              actions
+                ? `
+                  <div class="bf2-player-actions-mini">
+                    ${actions}
+                  </div>
+                `
+                : ""
+            }
+
+          </div>
+
+        `;
+
+      })
+      .join("");
+
+  const coach =
+    lineup?.coach?.name ||
+    lineup?.coach ||
+    lineup?.manager?.name ||
+    lineup?.manager ||
+    "";
+
+  return `
+
+    <div class="bf2-pitch-card">
+
+      <div class="bf2-pitch-head">
+
+        <span>
+          ${BF2_escape(teamName)}
+        </span>
+
+        <span class="bf2-formation-pill">
+          ${BF2_escape(formation)}
+        </span>
+
+      </div>
+
+      <div class="bf2-pitch">
+
+        <div class="bf2-mark bf2-border"></div>
+        <div class="bf2-mark bf2-half"></div>
+        <div class="bf2-mark bf2-circle"></div>
+        <div class="bf2-mark bf2-dot"></div>
+
+        <div class="bf2-mark bf2-box-top"></div>
+        <div class="bf2-mark bf2-box-bottom"></div>
+
+        <div class="bf2-mark bf2-goal-top"></div>
+        <div class="bf2-mark bf2-goal-bottom"></div>
+
+        ${html}
+
+      </div>
+
+      ${
+        coach
+          ? `
+            <div class="bf2-coach">
+              👔 ${BF2_escape(coach)}
+            </div>
+          `
+          : ""
+      }
+
+    </div>
+
+  `;
+}
 
     const formation =
       lineup?.formation ||
