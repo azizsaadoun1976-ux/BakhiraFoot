@@ -1405,6 +1405,14 @@ async function loadAllStandings() {
 
     style.textContent = `
 
+ body.dark .bf-competition-logo {
+  background: #ffffff !important;
+  border-color: rgba(255,255,255,.12) !important;
+}
+
+body.dark .bf-competition-logo img {
+  background: #ffffff !important;
+}
       /* HIDE OLD COMPETITION CARDS */
 
       .legacy-league-grid {
