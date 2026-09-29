@@ -1,31 +1,17 @@
-/* =========================================================
-   BAKHIRAFOOT PRO
-   SPORTScore API
-   Compatibility server for current script.js
-========================================================= */
-
 const express = require("express");
 
 const app = express();
 
 app.use(express.static("."));
 
-/* =========================================================
-   SPORTSCORE
-========================================================= */
-
 const SPORTSCORE_BASE =
   "https://sportscore.com/api/v1";
-
-const SPORTSCORE_SRC =
-  "bakhira-foot.vercel.app";
 
 /* =========================================================
    CACHE
 ========================================================= */
 
 const matchesCache = new Map();
-
 const detailsCache = new Map();
 
 let liveCache = {
@@ -33,7 +19,10 @@ let liveCache = {
   time: 0
 };
 
-const CACHE_TIME =
+const MATCH_CACHE_TIME =
+  60 * 1000;
+
+const LIVE_CACHE_TIME =
   60 * 1000;
 
 const DETAILS_CACHE_TIME =
@@ -54,7 +43,7 @@ function getCached(
   key,
   maxAge
 ) {
-  const item = cache.get(key);
+  const item = cache.get(String(key));
 
   if (!item) {
     return null;
@@ -69,52 +58,35 @@ function getCached(
   return item.data;
 }
 
-function saveCache(
+function setCached(
   cache,
   key,
   data
 ) {
-  cache.set(key, {
+  cache.set(String(key), {
     data,
     time: Date.now()
   });
 }
 
 /* =========================================================
-   SPORTSCORE REQUEST
+   SPORTSCORE FETCH
 ========================================================= */
 
 async function sportScoreFetch(
   path
 ) {
-
-  const separator =
-    path.includes("?")
-      ? "&"
-      : "?";
-
-  const url =
-    `${SPORTSCORE_BASE}${path}` +
-    `${separator}src=${encodeURIComponent(
-      SPORTSCORE_SRC
-    )}`;
-
-  console.log(
-    "SportScore:",
-    url
+  const response = await fetch(
+    `${SPORTSCORE_BASE}${path}`,
+    {
+      headers: {
+        Accept: "application/json"
+      },
+      cache: "no-store"
+    }
   );
 
-  const response =
-    await fetch(url, {
-      method: "GET",
-      headers: {
-        Accept:
-          "application/json"
-      }
-    });
-
   if (!response.ok) {
-
     const error =
       new Error(
         `SportScore HTTP ${response.status}`
@@ -126,18 +98,14 @@ async function sportScoreFetch(
     throw error;
   }
 
-  return response.json();
+  return await response.json();
 }
 
 /* =========================================================
-   FIND ARRAY IN RESPONSE
+   EXTRACT LIST
 ========================================================= */
 
-function findArray(data) {
-
-  if (Array.isArray(data)) {
-    return data;
-  }
+function extractMatches(data) {
 
   if (
     Array.isArray(data?.matches)
@@ -152,297 +120,215 @@ function findArray(data) {
   }
 
   if (
-    Array.isArray(data?.data?.matches)
+    Array.isArray(data)
   ) {
-    return data.data.matches;
-  }
-
-  if (
-    Array.isArray(data?.fixtures)
-  ) {
-    return data.fixtures;
+    return data;
   }
 
   return [];
 }
 
 /* =========================================================
-   STATUS
-========================================================= */
-
-function normalizeStatus(
-  match
-) {
-
-  const raw =
-    String(
-      match?.status ||
-      match?.state ||
-      ""
-    )
-      .toLowerCase()
-      .trim();
-
-  if (
-    raw === "live" ||
-    raw === "inplay" ||
-    raw === "in_play"
-  ) {
-    return "LIVE";
-  }
-
-  if (
-    raw === "finished" ||
-    raw === "ft" ||
-    raw === "ended"
-  ) {
-    return "FT";
-  }
-
-  if (
-    raw === "upcoming" ||
-    raw === "scheduled"
-  ) {
-    return "NS";
-  }
-
-  if (
-    raw === "postponed"
-  ) {
-    return "PST";
-  }
-
-  if (
-    raw === "cancelled" ||
-    raw === "canceled"
-  ) {
-    return "CANC";
-  }
-
-  return (
-    match?.status_code ||
-    match?.short_status ||
-    "NS"
-  );
-}
-
-function normalizeStatusLong(
-  match
-) {
-
-  return (
-    match?.status_text ||
-    match?.status_long ||
-    match?.status ||
-    "Match"
-  );
-}
-
-function getElapsed(
-  match
-) {
-
-  return (
-    match?.minute ??
-    match?.elapsed ??
-    match?.time?.elapsed ??
-    match?.status?.elapsed ??
-    null
-  );
-}
-
-/* =========================================================
-   TEAM
-========================================================= */
-
-function normalizeTeam(
-  source,
-  fallbackName
-) {
-
-  if (
-    typeof source === "string"
-  ) {
-    return {
-      id: null,
-      name: source,
-      logo: ""
-    };
-  }
-
-  source =
-    source || {};
-
-  return {
-
-    id:
-      source.id ??
-      source.team_id ??
-      null,
-
-    name:
-      source.name ||
-      source.team ||
-      fallbackName,
-
-    logo:
-      source.logo ||
-      source.image ||
-      source.team_logo ||
-      ""
-
-  };
-}
-
-/* =========================================================
    FIXTURE ADAPTER
 ========================================================= */
 
-function adaptFixture(
-  match
-) {
+function adaptFixture(match) {
 
   if (!match) {
     return null;
   }
 
-  const home =
-    normalizeTeam(
-      match.home_team ||
-      match.home,
-      "Domicile"
-    );
+  const homeName =
+    match?.home ||
+    match?.home_team?.name ||
+    match?.homeTeam?.name ||
+    "Domicile";
 
-  const away =
-    normalizeTeam(
-      match.away_team ||
-      match.away,
-      "Extérieur"
-    );
+  const awayName =
+    match?.away ||
+    match?.away_team?.name ||
+    match?.awayTeam?.name ||
+    "Extérieur";
+
+  const homeLogo =
+    match?.home_logo ||
+    match?.home_team?.logo ||
+    match?.homeTeam?.logo ||
+    "";
+
+  const awayLogo =
+    match?.away_logo ||
+    match?.away_team?.logo ||
+    match?.awayTeam?.logo ||
+    "";
+
+  const homeId =
+    match?.home_id ||
+    match?.home_team?.id ||
+    match?.homeTeam?.id ||
+    null;
+
+  const awayId =
+    match?.away_id ||
+    match?.away_team?.id ||
+    match?.awayTeam?.id ||
+    null;
 
   const homeScore =
-    match.home_score ??
-    match.score?.home ??
-    match.homeScore ??
+    match?.home_score ??
+    match?.score?.home ??
     null;
 
   const awayScore =
-    match.away_score ??
-    match.score?.away ??
-    match.awayScore ??
+    match?.away_score ??
+    match?.score?.away ??
     null;
 
-  const date =
-    match.time ||
-    match.date ||
-    match.start_time ||
-    match.kickoff ||
-    null;
+  const status =
+    String(
+      match?.status ||
+      ""
+    ).toLowerCase();
 
-  const slug =
-    match.slug ||
-    match.match_slug ||
-    match.url_slug ||
-    "";
+  let shortStatus = "NS";
 
-  const id =
-    match.id ??
-    match.match_id ??
-    match.fixture_id ??
-    null;
-
-  const leagueName =
-    typeof match.competition === "string"
-      ? match.competition
-      : (
-          match.competition?.name ||
-          match.league?.name ||
-          match.league ||
-          "Football"
-        );
-
-  const leagueId =
-    match.competition?.id ||
-    match.competition_id ||
-    match.league?.id ||
-    null;
-
-  const leagueCountry =
-    match.competition?.country ||
-    match.league?.country ||
-    null;
-
-  const statusShort =
-    normalizeStatus(
-      match
-    );
-
-  const elapsed =
-    getElapsed(
-      match
-    );
+  if (
+    status.includes("live") ||
+    status.includes("in play") ||
+    status.includes("inplay")
+  ) {
+    shortStatus = "LIVE";
+  }
+  else if (
+    status.includes("finish") ||
+    status === "ft" ||
+    status.includes("ended")
+  ) {
+    shortStatus = "FT";
+  }
+  else if (
+    status.includes("postpon")
+  ) {
+    shortStatus = "PST";
+  }
+  else if (
+    status.includes("cancel")
+  ) {
+    shortStatus = "CANC";
+  }
+  else if (
+    status.includes("half")
+  ) {
+    shortStatus = "HT";
+  }
 
   return {
 
     fixture: {
 
-      id,
+      id:
+        match?.id ||
+        match?.match_id ||
+        match?.fixture_id ||
+        null,
 
-      slug,
+      slug:
+        match?.slug ||
+        match?.match_slug ||
+        null,
 
-      date,
+      date:
+        match?.time ||
+        match?.date ||
+        null,
 
       timezone:
-        match.timezone ||
         "UTC",
-
-      referee:
-        match.referee ||
-        null,
-
-      venue:
-        match.venue ||
-        null,
 
       status: {
 
         short:
-          statusShort,
+          match?.status_code ||
+          shortStatus,
 
         long:
-          normalizeStatusLong(
-            match
-          ),
+          match?.status_text ||
+          match?.status ||
+          "Match",
 
-        elapsed
+        elapsed:
+          match?.minute ??
+          match?.elapsed ??
+          null
 
-      }
+      },
+
+      venue:
+        match?.venue ||
+        null,
+
+      referee:
+        match?.referee ||
+        null
 
     },
 
     league: {
 
       id:
-        leagueId,
+        match?.competition_id ||
+        match?.competition?.id ||
+        match?.league?.id ||
+        null,
 
       name:
-        leagueName,
+        match?.competition ||
+        match?.competition?.name ||
+        match?.league?.name ||
+        match?.league ||
+        "Football",
 
       country:
-        leagueCountry,
+        match?.country ||
+        match?.competition?.country ||
+        match?.league?.country ||
+        null,
 
       logo:
-        match.competition?.logo ||
-        match.league?.logo ||
+        match?.competition_logo ||
+        match?.competition?.logo ||
+        match?.league?.logo ||
         ""
 
     },
 
     teams: {
 
-      home,
+      home: {
 
-      away
+        id:
+          homeId,
+
+        name:
+          homeName,
+
+        logo:
+          homeLogo
+
+      },
+
+      away: {
+
+        id:
+          awayId,
+
+        name:
+          awayName,
+
+        logo:
+          awayLogo
+
+      }
 
     },
 
@@ -465,14 +351,14 @@ function adaptFixture(
         awayScore,
 
       halftime:
-        match.score?.halftime ||
+        match?.score?.halftime ||
         {
           home: null,
           away: null
         },
 
       fulltime:
-        match.score?.fulltime ||
+        match?.score?.fulltime ||
         {
           home: homeScore,
           away: awayScore
@@ -484,10 +370,10 @@ function adaptFixture(
 }
 
 /* =========================================================
-   DATE FIXTURES
+   MATCHES BY DATE
 ========================================================= */
 
-async function fetchMatchesByDate(
+async function getMatchesByDate(
   date
 ) {
 
@@ -495,7 +381,7 @@ async function fetchMatchesByDate(
     getCached(
       matchesCache,
       date,
-      CACHE_TIME
+      MATCH_CACHE_TIME
     );
 
   if (cached) {
@@ -509,7 +395,7 @@ async function fetchMatchesByDate(
 
   try {
 
-    const result =
+    const data =
       await sportScoreFetch(
         `/fixtures/?sport=football&date=${encodeURIComponent(
           date
@@ -517,16 +403,14 @@ async function fetchMatchesByDate(
       );
 
     const raw =
-      findArray(
-        result
-      );
+      extractMatches(data);
 
     const matches =
       raw
         .map(adaptFixture)
         .filter(Boolean);
 
-    saveCache(
+    setCached(
       matchesCache,
       date,
       matches
@@ -537,10 +421,13 @@ async function fetchMatchesByDate(
       cached: false
     };
 
-  } catch (error) {
+  }
+  catch (error) {
 
     const old =
-      matchesCache.get(date);
+      matchesCache.get(
+        String(date)
+      );
 
     if (old) {
 
@@ -560,13 +447,13 @@ async function fetchMatchesByDate(
    LIVE
 ========================================================= */
 
-async function fetchLive() {
+async function getLiveMatches() {
 
   if (
     liveCache.data.length &&
     Date.now() -
       liveCache.time <
-      CACHE_TIME
+      LIVE_CACHE_TIME
   ) {
 
     return {
@@ -578,15 +465,13 @@ async function fetchLive() {
 
   try {
 
-    const result =
+    const data =
       await sportScoreFetch(
         `/fixtures/?sport=football&status=live&limit=200`
       );
 
     const raw =
-      findArray(
-        result
-      );
+      extractMatches(data);
 
     const matches =
       raw
@@ -594,13 +479,8 @@ async function fetchLive() {
         .filter(Boolean);
 
     liveCache = {
-
-      data:
-        matches,
-
-      time:
-        Date.now()
-
+      data: matches,
+      time: Date.now()
     };
 
     return {
@@ -608,21 +488,17 @@ async function fetchLive() {
       cached: false
     };
 
-  } catch (error) {
+  }
+  catch (error) {
 
     if (
       liveCache.data.length
     ) {
 
       return {
-        data:
-          liveCache.data,
-
-        cached:
-          true,
-
-        stale:
-          true
+        data: liveCache.data,
+        cached: true,
+        stale: true
       };
 
     }
@@ -636,812 +512,70 @@ async function fetchLive() {
 ========================================================= */
 
 function findCachedMatch(
-  value
+  identifier
 ) {
 
   const wanted =
-    String(
-      value || ""
-    );
-
-  /* DATE CACHE */
+    String(identifier);
 
   for (
-    const item
+    const cacheEntry
     of matchesCache.values()
   ) {
 
-    const found =
-      item.data.find(
-        match => {
-
-          const id =
-            match?.fixture?.id;
-
-          const slug =
-            match?.fixture?.slug;
+    const match =
+      cacheEntry.data.find(
+        item => {
 
           return (
-            String(id) === wanted ||
-            String(slug) === wanted
+            String(
+              item?.fixture?.id
+            ) === wanted ||
+
+            String(
+              item?.fixture?.slug
+            ) === wanted
           );
 
         }
       );
 
-    if (found) {
-      return found;
+    if (match) {
+      return match;
     }
-
   }
 
-  /* LIVE CACHE */
-
-  const liveFound =
+  return (
     liveCache.data.find(
-      match => {
-
-        const id =
-          match?.fixture?.id;
-
-        const slug =
-          match?.fixture?.slug;
+      item => {
 
         return (
-          String(id) === wanted ||
-          String(slug) === wanted
+          String(
+            item?.fixture?.id
+          ) === wanted ||
+
+          String(
+            item?.fixture?.slug
+          ) === wanted
         );
 
       }
-    );
-
-  return liveFound || null;
-}
-
-/* =========================================================
-   LINEUP HELPERS
-========================================================= */
-
-function normalizeLineupPlayer(
-  item
-) {
-
-  const player =
-    item?.player ||
-    item ||
-    {};
-
-  return {
-
-    player: {
-
-      id:
-        player.id ||
-        item?.player_id ||
-        item?.id ||
-        null,
-
-      name:
-        player.name ||
-        item?.name ||
-        "Joueur",
-
-      number:
-        player.number ??
-        item?.number ??
-        item?.shirt_number ??
-        null,
-
-      pos:
-        player.pos ||
-        player.position ||
-        item?.position ||
-        item?.pos ||
-        "",
-
-      grid:
-        player.grid ||
-        item?.grid ||
-        "",
-
-      photo:
-        player.photo ||
-        item?.photo ||
-        ""
-
-    },
-
-    rating:
-      item?.rating ??
-      player?.rating ??
-      null,
-
-    statistics:
-      item?.statistics ||
-      null,
-
-    games:
-      item?.games ||
-      null,
-
-    goals:
-      item?.goals ||
-      null,
-
-    assists:
-      item?.assists ||
-      null,
-
-    cards:
-      item?.cards ||
-      null,
-
-    passes:
-      item?.passes ||
-      null,
-
-    minutes:
-      item?.minutes ||
-      null,
-
-    substitute:
-      item?.substitute ??
-      false,
-
-    captain:
-      item?.captain ??
-      false
-
-  };
-}
-
-function makeLineupBlock(
-  source,
-  fallbackTeam,
-  fallbackId
-) {
-
-  if (!source) {
-    return null;
-  }
-
-  const teamSource =
-    source.team ||
-    {};
-
-  const team = {
-
-    id:
-      teamSource.id ||
-      source.team_id ||
-      fallbackId ||
-      null,
-
-    name:
-      teamSource.name ||
-      source.team_name ||
-      fallbackTeam,
-
-    logo:
-      teamSource.logo ||
-      source.team_logo ||
-      ""
-
-  };
-
-  const starters =
-    source.startXI ||
-    source.startingXI ||
-    source.starting_xi ||
-    source.starters ||
-    source.players?.filter?.(
-      player =>
-        player?.starter === true ||
-        player?.starting === true
-    ) ||
-    [];
-
-  const substitutes =
-    source.substitutes ||
-    source.bench ||
-    source.players?.filter?.(
-      player =>
-        player?.substitute === true
-    ) ||
-    [];
-
-  return {
-
-    team,
-
-    formation:
-      source.formation ||
-      source.tactics ||
-      "—",
-
-    coach:
-      source.coach ||
-      source.manager ||
-      null,
-
-    startXI:
-      starters.map(
-        normalizeLineupPlayer
-      ),
-
-    substitutes:
-      substitutes.map(
-        normalizeLineupPlayer
-      )
-
-  };
-}
-
-/* =========================================================
-   ADAPT LINEUPS
-========================================================= */
-
-function adaptLineups(
-  detail,
-  baseMatch
-) {
-
-  let raw =
-    detail?.lineups ||
-    detail?.lineup ||
-    detail?.formations ||
-    null;
-
-  if (
-    Array.isArray(raw)
-  ) {
-
-    return raw
-      .map(
-        item =>
-          makeLineupBlock(
-            item,
-            item?.team?.name ||
-              "",
-            item?.team?.id ||
-              null
-          )
-      )
-      .filter(Boolean);
-
-  }
-
-  if (
-    raw &&
-    typeof raw === "object"
-  ) {
-
-    const result = [];
-
-    const home =
-      raw.home ||
-      raw.home_team ||
-      null;
-
-    const away =
-      raw.away ||
-      raw.away_team ||
-      null;
-
-    if (home) {
-
-      const block =
-        makeLineupBlock(
-          home,
-          baseMatch?.teams?.home?.name ||
-            "Domicile",
-          baseMatch?.teams?.home?.id ||
-            null
-        );
-
-      if (block) {
-        result.push(block);
-      }
-
-    }
-
-    if (away) {
-
-      const block =
-        makeLineupBlock(
-          away,
-          baseMatch?.teams?.away?.name ||
-            "Extérieur",
-          baseMatch?.teams?.away?.id ||
-            null
-        );
-
-      if (block) {
-        result.push(block);
-      }
-
-    }
-
-    return result;
-  }
-
-  return [];
-}
-
-/* =========================================================
-   EVENTS
-========================================================= */
-
-function normalizeEvent(
-  event
-) {
-
-  const team =
-    event?.team ||
-    {};
-
-  const player =
-    event?.player ||
-    {};
-
-  const assist =
-    event?.assist ||
-    {};
-
-  const rawType =
-    String(
-      event?.type ||
-      event?.kind ||
-      event?.event_type ||
-      ""
-    ).toLowerCase();
-
-  let type =
-    event?.type ||
-    "Other";
-
-  if (
-    rawType.includes("goal")
-  ) {
-    type = "Goal";
-  }
-
-  if (
-    rawType.includes("card")
-  ) {
-    type = "Card";
-  }
-
-  if (
-    rawType.includes("subst")
-  ) {
-    type = "subst";
-  }
-
-  if (
-    rawType.includes("var")
-  ) {
-    type = "VAR";
-  }
-
-  return {
-
-    time: {
-
-      elapsed:
-        event?.minute ??
-        event?.elapsed ??
-        event?.time?.elapsed ??
-        null,
-
-      extra:
-        event?.extra ??
-        event?.time?.extra ??
-        null
-
-    },
-
-    team: {
-
-      id:
-        team.id ||
-        event?.team_id ||
-        null,
-
-      name:
-        team.name ||
-        event?.team_name ||
-        ""
-
-    },
-
-    player: {
-
-      id:
-        player.id ||
-        event?.player_id ||
-        null,
-
-      name:
-        player.name ||
-        event?.player_name ||
-        ""
-
-    },
-
-    assist: {
-
-      id:
-        assist.id ||
-        event?.assist_id ||
-        null,
-
-      name:
-        assist.name ||
-        event?.assist_name ||
-        ""
-
-    },
-
-    type,
-
-    detail:
-      event?.detail ||
-      event?.description ||
-      event?.text ||
-      event?.comments ||
-      ""
-
-  };
-}
-
-/* =========================================================
-   PLAYER DATA FROM LINEUPS
-========================================================= */
-
-function makePlayersFromLineups(
-  lineups
-) {
-
-  const result = [];
-
-  lineups.forEach(
-    lineup => {
-
-      const team =
-        lineup?.team ||
-        {};
-
-      const allPlayers = [
-
-        ...(
-          Array.isArray(
-            lineup?.startXI
-          )
-            ? lineup.startXI
-            : []
-        ),
-
-        ...(
-          Array.isArray(
-            lineup?.substitutes
-          )
-            ? lineup.substitutes
-            : []
-        )
-
-      ];
-
-      if (
-        !allPlayers.length
-      ) {
-        return;
-      }
-
-      const players =
-        allPlayers.map(
-          item => {
-
-            const normalized =
-              normalizeLineupPlayer(
-                item
-              );
-
-            const p =
-              normalized.player;
-
-            const stats =
-              normalized.statistics ||
-              {};
-
-            return {
-
-              player: p,
-
-              statistics: [
-
-                {
-
-                  games: {
-
-                    rating:
-                      normalized.rating ??
-                      stats?.rating ??
-                      stats?.games?.rating ??
-                      null,
-
-                    minutes:
-                      normalized.minutes ??
-                      stats?.minutes ??
-                      stats?.games?.minutes ??
-                      null,
-
-                    position:
-                      p.pos ||
-                      stats?.position ||
-                      "",
-
-                    substitute:
-                      normalized.substitute,
-
-                    captain:
-                      normalized.captain
-
-                  },
-
-                  goals:
-                    normalized.goals ||
-                    stats?.goals ||
-                    {},
-
-                  cards:
-                    normalized.cards ||
-                    stats?.cards ||
-                    {},
-
-                  passes:
-                    normalized.passes ||
-                    stats?.passes ||
-                    {}
-
-                }
-
-              ]
-
-            };
-
-          }
-        );
-
-      result.push({
-
-        team: {
-
-          id:
-            team.id ||
-            null,
-
-          name:
-            team.name ||
-            "",
-
-          logo:
-            team.logo ||
-            ""
-
-        },
-
-        players
-
-      });
-
-    }
+    ) || null
   );
-
-  return result;
 }
 
 /* =========================================================
-   STATISTICS
+   DETAILS
 ========================================================= */
 
-function normalizeStatistics(
-  detail
-) {
-
-  const stats =
-    detail?.statistics ||
-    detail?.stats ||
-    [];
-
-  if (
-    Array.isArray(stats)
-  ) {
-    return stats;
-  }
-
-  if (
-    stats &&
-    typeof stats === "object"
-  ) {
-
-    const home =
-      stats.home ||
-      stats.home_team ||
-      null;
-
-    const away =
-      stats.away ||
-      stats.away_team ||
-      null;
-
-    const result = [];
-
-    if (home) {
-
-      result.push({
-
-        team: {
-
-          id:
-            home?.team?.id ||
-            null,
-
-          name:
-            home?.team?.name ||
-            detail?.match?.home ||
-            "Domicile"
-
-        },
-
-        statistics:
-          Array.isArray(
-            home.statistics
-          )
-            ? home.statistics
-            : Object.entries(
-                home
-              ).map(
-                ([type, value]) => ({
-                  type,
-                  value
-                })
-              )
-
-      });
-
-    }
-
-    if (away) {
-
-      result.push({
-
-        team: {
-
-          id:
-            away?.team?.id ||
-            null,
-
-          name:
-            away?.team?.name ||
-            detail?.match?.away ||
-            "Extérieur"
-
-        },
-
-        statistics:
-          Array.isArray(
-            away.statistics
-          )
-            ? away.statistics
-            : Object.entries(
-                away
-              ).map(
-                ([type, value]) => ({
-                  type,
-                  value
-                })
-              )
-
-      });
-
-    }
-
-    return result;
-  }
-
-  return [];
-}
-
-/* =========================================================
-   DETAIL ADAPTER
-========================================================= */
-
-function adaptMatchDetails(
-  result,
-  baseMatch
-) {
-
-  const root =
-    result?.data ||
-    result?.match ||
-    result ||
-    {};
-
-  const match =
-    root?.match ||
-    root?.fixture ||
-    root?.data ||
-    root;
-
-  const adaptedBase =
-    adaptFixture(
-      match
-    ) ||
-    baseMatch;
-
-  const lineups =
-    adaptLineups(
-      root,
-      adaptedBase
-    );
-
-  const rawTimeline =
-    root?.timeline ||
-    root?.events ||
-    root?.incidents ||
-    [];
-
-  const events =
-    Array.isArray(
-      rawTimeline
-    )
-      ? rawTimeline.map(
-          normalizeEvent
-        )
-      : [];
-
-  const statistics =
-    normalizeStatistics(
-      root
-    );
-
-  const players =
-    Array.isArray(
-      root?.players
-    )
-      ? root.players
-      : makePlayersFromLineups(
-          lineups
-        );
-
-  return {
-
-    ...adaptedBase,
-
-    events,
-
-    lineups,
-
-    statistics,
-
-    players
-
-  };
-}
-
-/* =========================================================
-   MATCH DETAILS
-========================================================= */
-
-async function fetchMatchDetails(
+async function getMatchDetails(
   identifier
 ) {
 
   const cached =
     getCached(
       detailsCache,
-      String(identifier),
+      identifier,
       DETAILS_CACHE_TIME
     );
 
@@ -1454,63 +588,64 @@ async function fetchMatchDetails(
 
   }
 
-  let baseMatch =
+  const baseMatch =
     findCachedMatch(
       identifier
     );
 
-  let slug =
+  const slug =
     baseMatch?.fixture?.slug ||
-    null;
+    identifier;
 
-  /*
-     إلى دخل slug مباشرة
-  */
-
-  if (
-    !slug &&
-    /[a-z-]/i.test(
-      String(identifier)
-    )
-  ) {
-    slug =
-      String(identifier);
-  }
-
-  if (!slug) {
-
-    throw new Error(
-      "Match slug introuvable"
-    );
-
-  }
-
-  const result =
+  const data =
     await sportScoreFetch(
       `/match/?sport=football&slug=${encodeURIComponent(
         slug
       )}`
     );
 
-  const details =
-    adaptMatchDetails(
-      result,
-      baseMatch
-    );
-
-  saveCache(
-    detailsCache,
-    String(identifier),
-    details
-  );
-
   /*
-     نخليو كذلك cache بالـslug
+     SportScore match endpoint
+     كيقدر يرجع envelope فيه data
+     أو match مباشرة.
   */
 
-  saveCache(
+  const detail =
+    data?.match ||
+    data?.data ||
+    data;
+
+  const adapted =
+    adaptFixture(
+      detail
+    ) || baseMatch;
+
+  const details = {
+
+    ...adapted,
+
+    events:
+      detail?.timeline ||
+      detail?.events ||
+      [],
+
+    lineups:
+      detail?.lineups ||
+      [],
+
+    statistics:
+      detail?.statistics ||
+      [],
+
+    players:
+      detail?.players ||
+      []
+
+  };
+
+  setCached(
     detailsCache,
-    slug,
+    identifier,
     details
   );
 
@@ -1521,7 +656,7 @@ async function fetchMatchDetails(
 }
 
 /* =========================================================
-   MAIN API
+   MAIN /api
 ========================================================= */
 
 app.get(
@@ -1530,20 +665,17 @@ app.get(
 
     try {
 
-      /* ===================================
-         LIVE
-      =================================== */
+      /* LIVE */
 
       if (
         req.query.live === "all"
       ) {
 
         const result =
-          await fetchLive();
+          await getLiveMatches();
 
         return res.json({
-          data:
-            result.data,
+          data: result.data,
           cached:
             result.cached || false,
           stale:
@@ -1552,56 +684,46 @@ app.get(
 
       }
 
-      /* ===================================
-         DETAILS
-      =================================== */
+      /* DETAILS */
 
       if (
         req.query.fixture
       ) {
 
-        const identifier =
-          String(
-            req.query.fixture
-          ).trim();
-
         const result =
-          await fetchMatchDetails(
-            identifier
+          await getMatchDetails(
+            req.query.fixture
           );
 
         return res.json({
-          data:
-            result.data,
+          data: result.data,
           cached:
             result.cached || false
         });
 
       }
 
-      /* ===================================
-         DATE
-      =================================== */
+      /* DATE */
 
       const date =
         req.query.date ||
         todayISO();
 
       const result =
-        await fetchMatchesByDate(
+        await getMatchesByDate(
           date
         );
 
       return res.json({
-        data:
-          result.data,
+        data: result.data,
         cached:
           result.cached || false,
         stale:
           result.stale || false
       });
 
-    } catch (error) {
+    }
+    catch (error) {
 
       console.error(
         "SPORTSCORE ERROR:",
@@ -1609,14 +731,11 @@ app.get(
       );
 
       return res.status(
-        error?.status === 404
-          ? 404
-          : 500
+        error.status || 500
       ).json({
 
         error:
-          error.message ||
-          "SportScore error",
+          error.message,
 
         data: []
 
@@ -1628,7 +747,7 @@ app.get(
 );
 
 /* =========================================================
-   OLD ROUTES — COMPATIBILITY
+   COMPATIBILITY ROUTES
 ========================================================= */
 
 app.get(
@@ -1642,25 +761,23 @@ app.get(
         todayISO();
 
       const result =
-        await fetchMatchesByDate(
+        await getMatchesByDate(
           date
         );
 
       res.json({
-        data:
-          result.data,
+        data: result.data,
         cached:
           result.cached || false,
         stale:
           result.stale || false
       });
 
-    } catch (error) {
+    }
+    catch (error) {
 
       res.status(
-        error?.status === 429
-          ? 429
-          : 500
+        error.status || 500
       ).json({
 
         error:
@@ -1682,20 +799,22 @@ app.get(
     try {
 
       const result =
-        await fetchLive();
+        await getLiveMatches();
 
       res.json({
-        data:
-          result.data,
+        data: result.data,
         cached:
           result.cached || false,
         stale:
           result.stale || false
       });
 
-    } catch (error) {
+    }
+    catch (error) {
 
-      res.status(500).json({
+      res.status(
+        error.status || 500
+      ).json({
 
         error:
           error.message,
@@ -1710,7 +829,7 @@ app.get(
 );
 
 /* =========================================================
-   TEST SERVER
+   TEST
 ========================================================= */
 
 app.get(
@@ -1725,19 +844,19 @@ app.get(
       service:
         "BakhiraFoot",
 
-      api:
+      provider:
         "SportScore",
 
       routes: {
 
-        matches:
+        date:
           "/api?date=YYYY-MM-DD",
 
         live:
           "/api?live=all",
 
         details:
-          "/api?fixture=MATCH_ID_OR_SLUG"
+          "/api?fixture=SLUG"
 
       }
 
@@ -1774,9 +893,12 @@ app.get(
 
       });
 
-    } catch (error) {
+    }
+    catch (error) {
 
-      res.status(500).json({
+      res.status(
+        error.status || 500
+      ).json({
 
         status:
           "error",
