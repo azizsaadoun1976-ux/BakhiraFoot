@@ -605,13 +605,7 @@ function createMatchHTML(match, index) {
       data-fixture-id="${escapeHTML(fixtureId || "")}"
       onclick="openMatchDetails(${index})"
     >
-<div
-  class="match-card"
-  data-match-index="${index}"
-  data-fixture-id="${escapeHTML(fixtureId || "")}"
-  data-match-slug="${escapeHTML(matchSlug || "")}"
-  onclick="openMatchDetails(${index})"
->
+
       <div class="flash-league">
         <span>🏆 ${escapeHTML(league)}</span>
       </div>
@@ -650,8 +644,6 @@ function createMatchHTML(match, index) {
     </div>
   `;
 }
-
-
 
 /* =========================================================
    LOAD LIVE
