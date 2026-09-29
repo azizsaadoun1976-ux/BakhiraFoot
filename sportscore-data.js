@@ -1,41 +1,97 @@
-/* =====================================================
-   BAKHIRAFOOT - SPORT SCORE REAL DATA
-   Matchs du jour + Classements
-   ===================================================== */
+/* =========================================================
+   BAKHIRAFOOT
+   SPORT SCORE - MATCHS + CLASSEMENTS + BUTEURS + PASSEURS
+   ========================================================= */
 
 (() => {
   "use strict";
 
   const API = "https://sportscore.com/api";
+
   const SRC = "bakhira-foot.vercel.app";
 
+  /* =========================================================
+     GRANDES COMPÉTITIONS
+     ========================================================= */
+
   const competitions = [
+
     {
       name: "Premier League",
       slug: "premier-league",
-      icon: "🏴"
+      country: "Angleterre",
+      logo: "https://commons.wikimedia.org/wiki/Special:Redirect/file/Premier_League.svg"
     },
+
     {
-      name: "La Liga",
+      name: "LaLiga",
       slug: "la-liga",
-      icon: "🇪🇸"
+      country: "Espagne",
+      logo: "https://commons.wikimedia.org/wiki/Special:Redirect/file/LaLiga_logo_(2023).svg"
     },
+
+    {
+      name: "Serie A",
+      slug: "serie-a",
+      country: "Italie",
+      logo: "https://commons.wikimedia.org/wiki/Special:Redirect/file/Serie_A.svg"
+    },
+
+    {
+      name: "Bundesliga",
+      slug: "bundesliga",
+      country: "Allemagne",
+      logo: "https://commons.wikimedia.org/wiki/Special:Redirect/file/Bundesliga_logo.svg"
+    },
+
     {
       name: "Ligue 1",
       slug: "ligue-1",
-      icon: "🇫🇷"
+      country: "France",
+      logo: "https://commons.wikimedia.org/wiki/Special:Redirect/file/Ligue1.svg"
     },
+
+    {
+      name: "Eredivisie",
+      slug: "eredivisie",
+      country: "Pays-Bas",
+      logo: "https://commons.wikimedia.org/wiki/Special:Redirect/file/Eredivisie_nieuw_logo_2017-.svg"
+    },
+
+    {
+      name: "UEFA Champions League",
+      slug: "uefa-champions-league",
+      country: "Europe",
+      logo: "https://commons.wikimedia.org/wiki/Special:Redirect/file/UEFA_Champions_League_logo.svg"
+    },
+
+    {
+      name: "UEFA Europa League",
+      slug: "uefa-europa-league",
+      country: "Europe",
+      logo: "https://commons.wikimedia.org/wiki/Special:Redirect/file/UEFA_Europa_league_logo.svg"
+    },
+
+    {
+      name: "UEFA Conference League",
+      slug: "uefa-conference-league",
+      country: "Europe",
+      logo: "https://commons.wikimedia.org/wiki/Special:Redirect/file/UEFA_Conference_League_full_logo_(2024_version).svg"
+    },
+
     {
       name: "Botola Pro",
       slug: "the-botola-pro",
-      icon: "🇲🇦"
-    },
-    {
-      name: "Champions League",
-      slug: "uefa-champions-league",
-      icon: "🏆"
+      country: "Maroc",
+      logo: "https://seeklogo.com/images/B/botolapro-inwi-logo-CDFB034249-seeklogo.com.png"
     }
+
   ];
+
+
+  /* =========================================================
+     HELPERS
+     ========================================================= */
 
   function escapeHTML(value) {
     return String(value ?? "")
@@ -46,26 +102,9 @@
       .replace(/'/g, "&#039;");
   }
 
-  function getTodayUTC() {
-    return new Date().toISOString().slice(0, 10);
-  }
-
-  function formatTime(value) {
-    if (!value) return "--:--";
-
-    const d = new Date(value);
-
-    if (Number.isNaN(d.getTime())) {
-      return "--:--";
-    }
-
-    return new Intl.DateTimeFormat("fr-FR", {
-      hour: "2-digit",
-      minute: "2-digit"
-    }).format(d);
-  }
 
   async function fetchJSON(url) {
+
     const response = await fetch(url, {
       method: "GET",
       headers: {
@@ -80,65 +119,107 @@
     return response.json();
   }
 
-  /* =====================================================
-     MATCHS DU JOUR
-     ===================================================== */
 
-  function isLive(status = "", statusText = "") {
-    const s = `${status} ${statusText}`.toLowerCase();
+  function todayUTC() {
+    return new Date()
+      .toISOString()
+      .slice(0, 10);
+  }
+
+
+  function formatTime(value) {
+
+    if (!value) {
+      return "--:--";
+    }
+
+    const date = new Date(value);
+
+    if (Number.isNaN(date.getTime())) {
+      return "--:--";
+    }
+
+    return new Intl.DateTimeFormat("fr-FR", {
+      hour: "2-digit",
+      minute: "2-digit"
+    }).format(date);
+  }
+
+
+  function isLive(status, text) {
+
+    const value =
+      `${status || ""} ${text || ""}`
+        .toLowerCase();
 
     return (
-      s.includes("live") ||
-      s.includes("playing") ||
-      s.includes("1h") ||
-      s.includes("2h") ||
-      s.includes("half")
+      value.includes("live") ||
+      value.includes("playing") ||
+      value === "1h" ||
+      value === "2h" ||
+      value.includes("half")
     );
   }
 
-  function renderMatch(match) {
-    const home = escapeHTML(match.home || "Équipe locale");
-    const away = escapeHTML(match.away || "Équipe visiteuse");
 
-    const homeLogo = match.home_logo || "";
-    const awayLogo = match.away_logo || "";
+  /* =========================================================
+     MATCHS DU JOUR
+     ========================================================= */
+
+  function renderMatch(match) {
+
+    const home =
+      match.home ||
+      "Équipe locale";
+
+    const away =
+      match.away ||
+      "Équipe visiteuse";
+
+    const homeLogo =
+      match.home_logo ||
+      "";
+
+    const awayLogo =
+      match.away_logo ||
+      "";
 
     const homeScore =
-      match.home_score === null ||
-      match.home_score === undefined
-        ? "-"
-        : match.home_score;
+      match.home_score ??
+      "-";
 
     const awayScore =
-      match.away_score === null ||
-      match.away_score === undefined
-        ? "-"
-        : match.away_score;
+      match.away_score ??
+      "-";
 
-    const live = isLive(
-      match.status,
-      match.status_text
-    );
+    const live =
+      isLive(
+        match.status,
+        match.status_text
+      );
 
     return `
       <article
         class="match-card sportscore-match"
-        data-sportscore-slug="${escapeHTML(match.slug || "")}"
       >
 
         <div class="match-league">
-          ${escapeHTML(match.competition || "Football")}
+          ${escapeHTML(
+            match.competition ||
+            "Football"
+          )}
         </div>
 
         <div class="match-main">
 
           <div class="team">
+
             ${
               homeLogo
                 ? `
                   <img
                     src="${escapeHTML(homeLogo)}"
-                    alt="${home}"
+                    alt="${escapeHTML(home)}"
                     loading="lazy"
                   >
                 `
@@ -150,9 +231,11 @@
             }
 
             <strong>
-              ${home}
+              ${escapeHTML(home)}
             </strong>
+
           </div>
+
 
           <div class="match-center">
 
@@ -177,18 +260,22 @@
             </div>
 
             <small>
-              ${escapeHTML(match.status_text || "")}
+              ${escapeHTML(
+                match.status_text || ""
+              )}
             </small>
 
           </div>
 
+
           <div class="team">
+
             ${
               awayLogo
                 ? `
                   <img
                     src="${escapeHTML(awayLogo)}"
-                    alt="${away}"
+                    alt="${escapeHTML(away)}"
                     loading="lazy"
                   >
                 `
@@ -200,8 +287,9 @@
             }
 
             <strong>
-              ${away}
+              ${escapeHTML(away)}
             </strong>
+
           </div>
 
         </div>
@@ -210,112 +298,132 @@
     `;
   }
 
+
   async function loadTodayMatches() {
+
     const homeContainer =
       document.getElementById("homeMatches");
 
-    const scoresContainer =
+    const scoreContainer =
       document.getElementById("scoreList");
 
-    if (!homeContainer && !scoresContainer) {
+
+    if (!homeContainer && !scoreContainer) {
       return;
     }
 
-    if (homeContainer) {
-      homeContainer.innerHTML = `
-        <div class="sportscore-loading">
-          ⚽ Chargement des matchs du jour...
-        </div>
-      `;
-    }
-
-    if (scoresContainer) {
-      scoresContainer.innerHTML = `
-        <div class="sportscore-loading">
-          ⚽ Chargement des matchs...
-        </div>
-      `;
-    }
 
     try {
-      const date = getTodayUTC();
 
-      const data = await fetchJSON(
-        `${API}/v1/fixtures/?sport=football&date=${date}&limit=200&src=${SRC}`
-      );
+      const date =
+        todayUTC();
 
-      const matches = Array.isArray(data?.matches)
-        ? data.matches
-        : [];
+      const data =
+        await fetchJSON(
+          `${API}/v1/fixtures/?sport=football&date=${date}&limit=200&src=${SRC}`
+        );
+
+
+      const matches =
+        Array.isArray(data?.matches)
+          ? data.matches
+          : [];
+
 
       if (!matches.length) {
+
         const empty = `
-          <div class="sportscore-empty">
-            Aucun match trouvé pour aujourd'hui.
+          <div class="ss-empty">
+            Aucun match trouvé aujourd'hui.
           </div>
         `;
 
-        if (homeContainer) homeContainer.innerHTML = empty;
-        if (scoresContainer) scoresContainer.innerHTML = empty;
+        if (homeContainer) {
+          homeContainer.innerHTML = empty;
+        }
+
+        if (scoreContainer) {
+          scoreContainer.innerHTML = empty;
+        }
 
         return;
       }
 
-      /* HOME : seulement les premiers matchs */
+
       if (homeContainer) {
-        homeContainer.innerHTML = matches
-          .slice(0, 12)
-          .map(renderMatch)
-          .join("");
+
+        homeContainer.innerHTML =
+          matches
+            .slice(0, 12)
+            .map(renderMatch)
+            .join("");
+
       }
 
-      /* SCORES : tous les matchs récupérés */
-      if (scoresContainer) {
-        scoresContainer.innerHTML = `
-          <div class="sportscore-day-title">
-            <strong>${matches.length}</strong>
+
+      if (scoreContainer) {
+
+        scoreContainer.innerHTML = `
+
+          <div class="ss-day-count">
+
+            <strong>
+              ${matches.length}
+            </strong>
+
             matchs aujourd'hui
+
           </div>
 
           ${matches
             .map(renderMatch)
             .join("")}
+
         `;
+
       }
 
     } catch (error) {
+
       console.error(
         "SportScore fixtures:",
         error
       );
 
       const errorHTML = `
-        <div class="sportscore-error">
+        <div class="ss-error">
           Impossible de charger les matchs actuellement.
         </div>
       `;
 
       if (homeContainer) {
-        homeContainer.innerHTML = errorHTML;
+        homeContainer.innerHTML =
+          errorHTML;
       }
 
-      if (scoresContainer) {
-        scoresContainer.innerHTML = errorHTML;
+      if (scoreContainer) {
+        scoreContainer.innerHTML =
+          errorHTML;
       }
     }
   }
 
-  /* =====================================================
-     EXTRACTION CLASSEMENT
-     ===================================================== */
 
-  function findStandingRows(node) {
-    if (!node) return [];
+  /* =========================================================
+     EXTRACTION DES CLASSEMENTS
+     ========================================================= */
+
+  function findRows(node) {
+
+    if (!node) {
+      return [];
+    }
+
 
     if (Array.isArray(node)) {
 
-      const looksLikeStandings = node.some((item) => {
-        return (
+      const looksLikeTable =
+        node.some(item =>
           item &&
           typeof item === "object" &&
           (
@@ -325,72 +433,111 @@
             "pts" in item
           )
         );
-      });
 
-      if (looksLikeStandings) {
+
+      if (looksLikeTable) {
         return node;
       }
 
-      for (const item of node) {
-        const found = findStandingRows(item);
 
-        if (found.length) {
-          return found;
+      for (const item of node) {
+
+        const result =
+          findRows(item);
+
+        if (result.length) {
+          return result;
         }
+
       }
 
       return [];
     }
 
-    if (typeof node === "object") {
 
-      const preferredKeys = [
+    if (
+      typeof node === "object"
+    ) {
+
+      const keys = [
         "standings",
         "table",
         "rows",
-        "teams",
         "entries",
+        "teams",
         "data",
         "groups"
       ];
 
-      for (const key of preferredKeys) {
-        if (node[key]) {
-          const found = findStandingRows(node[key]);
 
-          if (found.length) {
-            return found;
+      for (const key of keys) {
+
+        if (
+          node[key] !== undefined
+        ) {
+
+          const result =
+            findRows(
+              node[key]
+            );
+
+          if (result.length) {
+            return result;
           }
+
         }
+
       }
 
-      for (const value of Object.values(node)) {
-        const found = findStandingRows(value);
 
-        if (found.length) {
-          return found;
+      for (
+        const value of Object.values(node)
+      ) {
+
+        const result =
+          findRows(value);
+
+        if (result.length) {
+          return result;
         }
+
       }
+
     }
+
 
     return [];
   }
 
-  function getTeamName(row) {
-    if (!row) return "Équipe";
 
-    if (typeof row.team === "string") {
+  function teamName(row) {
+
+    if (!row) {
+      return "Équipe";
+    }
+
+
+    if (
+      typeof row.team === "string"
+    ) {
       return row.team;
     }
 
-    if (row.team && typeof row.team === "object") {
+
+    if (
+      row.team &&
+      typeof row.team === "object"
+    ) {
+
       return (
         row.team.name ||
         row.team.team_name ||
         row.team.title ||
         "Équipe"
       );
+
     }
+
 
     return (
       row.team_name ||
@@ -401,87 +548,210 @@
     );
   }
 
-  function getValue(row, keys, fallback = 0) {
+
+  function teamLogo(row) {
+
+    if (!row) {
+      return "";
+    }
+
+
+    if (
+      typeof row.team === "object" &&
+      row.team
+    ) {
+
+      return (
+        row.team.logo ||
+        row.team.image ||
+        row.team.crest ||
+        ""
+      );
+
+    }
+
+
+    return (
+      row.team_logo ||
+      row.logo ||
+      row.crest ||
+      row.image ||
+      ""
+    );
+  }
+
+
+  function value(
+    row,
+    keys,
+    fallback = "-"
+  ) {
+
     for (const key of keys) {
+
       if (
         row &&
         row[key] !== undefined &&
         row[key] !== null
       ) {
+
         return row[key];
+
       }
+
     }
 
     return fallback;
   }
 
-  function renderStandingRow(row, index) {
-    const position = getValue(
-      row,
-      ["position", "rank", "place"],
-      index + 1
-    );
 
-    const teamName = getTeamName(row);
+  /* =========================================================
+     LIGNE DU CLASSEMENT
+     ========================================================= */
 
-    const played = getValue(
-      row,
-      ["played", "matches", "p", "games"],
-      "-"
-    );
+  function renderStandingRow(
+    row,
+    index
+  ) {
 
-    const wins = getValue(
-      row,
-      ["wins", "won", "w"],
-      "-"
-    );
+    const position =
+      value(
+        row,
+        [
+          "position",
+          "rank",
+          "place"
+        ],
+        index + 1
+      );
 
-    const draws = getValue(
-      row,
-      ["draws", "drawn", "d"],
-      "-"
-    );
 
-    const losses = getValue(
-      row,
-      ["losses", "lost", "l"],
-      "-"
-    );
+    const name =
+      teamName(row);
 
-    const gf = getValue(
-      row,
-      ["goals_for", "gf", "goals"],
-      "-"
-    );
 
-    const ga = getValue(
-      row,
-      ["goals_against", "ga"],
-      "-"
-    );
+    const logo =
+      teamLogo(row);
 
-    const gd = getValue(
-      row,
-      ["goal_difference", "gd"],
-      "-"
-    );
 
-    const points = getValue(
-      row,
-      ["points", "pts"],
-      "-"
-    );
+    const played =
+      value(
+        row,
+        [
+          "played",
+          "matches",
+          "p",
+          "games"
+        ]
+      );
+
+
+    const wins =
+      value(
+        row,
+        [
+          "wins",
+          "won",
+          "w"
+        ]
+      );
+
+
+    const draws =
+      value(
+        row,
+        [
+          "draws",
+          "drawn",
+          "d"
+        ]
+      );
+
+
+    const losses =
+      value(
+        row,
+        [
+          "losses",
+          "lost",
+          "l"
+        ]
+      );
+
+
+    const gf =
+      value(
+        row,
+        [
+          "goals_for",
+          "gf"
+        ]
+      );
+
+
+    const ga =
+      value(
+        row,
+        [
+          "goals_against",
+          "ga"
+        ]
+      );
+
+
+    const gd =
+      value(
+        row,
+        [
+          "goal_difference",
+          "gd"
+        ]
+      );
+
+
+    const points =
+      value(
+        row,
+        [
+          "points",
+          "pts"
+        ]
+      );
+
 
     return `
-      <div class="sportscore-table-row">
 
-        <span class="ss-pos">
+      <div class="ss-standing-row">
+
+        <span class="ss-position">
           ${escapeHTML(position)}
         </span>
 
-        <strong class="ss-team">
-          ${escapeHTML(teamName)}
-        </strong>
+
+        <div class="ss-club">
+
+          ${
+            logo
+              ? `
+                <img
+                  src="${escapeHTML(logo)}"
+                  alt=""
+                  loading="lazy"
+                >
+              `
+              : `
+                <div class="ss-club-fallback">
+                  ⚽
+                </div>
+              `
+          }
+
+          <strong>
+            ${escapeHTML(name)}
+          </strong>
+
+        </div>
+
 
         <span>
           ${escapeHTML(played)}
@@ -516,214 +786,1213 @@
         </strong>
 
       </div>
+
     `;
   }
 
-  /* =====================================================
-     CLASSEMENTS
-     ===================================================== */
 
-  async function loadStandings() {
+  /* =========================================================
+     TOP BUTEURS / PASSEURS
+     ========================================================= */
+
+  function findPlayers(node) {
+
+    if (!node) {
+      return [];
+    }
+
+
+    if (Array.isArray(node)) {
+
+      const players =
+        node.filter(item =>
+          item &&
+          typeof item === "object" &&
+          (
+            "player" in item ||
+            "player_name" in item ||
+            "goals" in item ||
+            "assists" in item ||
+            "value" in item
+          )
+        );
+
+
+      if (players.length) {
+        return players;
+      }
+
+
+      for (
+        const item of node
+      ) {
+
+        const result =
+          findPlayers(item);
+
+        if (result.length) {
+          return result;
+        }
+
+      }
+
+      return [];
+    }
+
+
+    if (
+      typeof node === "object"
+    ) {
+
+      const keys = [
+        "topscorers",
+        "players",
+        "scorers",
+        "assists",
+        "data"
+      ];
+
+
+      for (const key of keys) {
+
+        if (
+          node[key] !== undefined
+        ) {
+
+          const result =
+            findPlayers(
+              node[key]
+            );
+
+          if (result.length) {
+            return result;
+          }
+
+        }
+
+      }
+
+
+      for (
+        const value of Object.values(node)
+      ) {
+
+        const result =
+          findPlayers(value);
+
+        if (result.length) {
+          return result;
+        }
+
+      }
+
+    }
+
+
+    return [];
+  }
+
+
+  function playerName(row) {
+
+    if (!row) {
+      return "Joueur";
+    }
+
+
+    if (
+      row.player &&
+      typeof row.player === "object"
+    ) {
+
+      return (
+        row.player.name ||
+        row.player.player_name ||
+        row.player.full_name ||
+        "Joueur"
+      );
+
+    }
+
+
+    return (
+      row.player_name ||
+      row.name ||
+      row.player ||
+      "Joueur"
+    );
+  }
+
+
+  function playerPhoto(row) {
+
+    if (!row) {
+      return "";
+    }
+
+
+    if (
+      row.player &&
+      typeof row.player === "object"
+    ) {
+
+      return (
+        row.player.photo ||
+        row.player.image ||
+        ""
+      );
+
+    }
+
+
+    return (
+      row.photo ||
+      row.image ||
+      ""
+    );
+  }
+
+
+  function statValue(
+    row,
+    stat
+  ) {
+
+    if (stat === "goals") {
+
+      return value(
+        row,
+        [
+          "goals",
+          "goal",
+          "total",
+          "value"
+        ],
+        0
+      );
+
+    }
+
+
+    return value(
+      row,
+      [
+        "assists",
+        "assist",
+        "total",
+        "value"
+      ],
+      0
+    );
+  }
+
+
+  function renderPlayers(
+    players,
+    stat,
+    title,
+    icon
+  ) {
+
+    const rows =
+      players
+        .slice(0, 5)
+        .map(
+          (player, index) => {
+
+            const name =
+              playerName(player);
+
+            const photo =
+              playerPhoto(player);
+
+            const total =
+              statValue(
+                player,
+                stat
+              );
+
+
+            return `
+
+              <div class="ss-player-row">
+
+                <span class="ss-player-rank">
+                  ${index + 1}
+                </span>
+
+
+                <div class="ss-player">
+
+                  ${
+                    photo
+                      ? `
+                        <img
+                          src="${escapeHTML(photo)}"
+                          alt=""
+                          loading="lazy"
+                        >
+                      `
+                      : `
+                        <div class="ss-player-fallback">
+                          👤
+                        </div>
+                      `
+                  }
+
+                  <strong>
+                    ${escapeHTML(name)}
+                  </strong>
+
+                </div>
+
+
+                <strong class="ss-player-value">
+                  ${escapeHTML(total)}
+                </strong>
+
+              </div>
+
+            `;
+
+          }
+        )
+        .join("");
+
+
+    return `
+
+      <div class="ss-player-card">
+
+        <div class="ss-player-card-head">
+
+          <div>
+            <span class="ss-stat-icon">
+              ${icon}
+            </span>
+
+            <strong>
+              ${escapeHTML(title)}
+            </strong>
+          </div>
+
+          <span>
+            Top 5
+          </span>
+
+        </div>
+
+
+        ${
+          rows ||
+          `
+            <div class="ss-no-player-data">
+              Données indisponibles.
+            </div>
+          `
+        }
+
+      </div>
+
+    `;
+  }
+
+
+  /* =========================================================
+     UNE COMPÉTITION
+     ========================================================= */
+
+  async function loadCompetition(
+    competition
+  ) {
+
+    const [
+      standingsData,
+      goalsData,
+      assistsData
+    ] =
+      await Promise.allSettled([
+
+        fetchJSON(
+          `${API}/v1/standings/?sport=football&slug=${encodeURIComponent(competition.slug)}&src=${SRC}`
+        ),
+
+        fetchJSON(
+          `${API}/v1/topscorers/?sport=football&slug=${encodeURIComponent(competition.slug)}&limit=5&stat=goals&src=${SRC}`
+        ),
+
+        fetchJSON(
+          `${API}/v1/topscorers/?sport=football&slug=${encodeURIComponent(competition.slug)}&limit=5&stat=assists&src=${SRC}`
+        )
+
+      ]);
+
+
+    const standings =
+      standingsData.status === "fulfilled"
+        ? findRows(
+            standingsData.value
+          )
+        : [];
+
+
+    const goals =
+      goalsData.status === "fulfilled"
+        ? findPlayers(
+            goalsData.value
+          )
+        : [];
+
+
+    const assists =
+      assistsData.status === "fulfilled"
+        ? findPlayers(
+            assistsData.value
+          )
+        : [];
+
+
+    return {
+
+      competition,
+
+      standings,
+
+      goals,
+
+      assists
+
+    };
+
+  }
+
+
+  /* =========================================================
+     AFFICHER TOUTES LES COMPÉTITIONS
+     ========================================================= */
+
+  function renderCompetition(
+    result
+  ) {
+
+    const {
+      competition,
+      standings,
+      goals,
+      assists
+    } = result;
+
+
+    if (!standings.length) {
+
+      return `
+
+        <section class="ss-competition-card">
+
+          <div class="ss-competition-head">
+
+            <div class="ss-competition-brand">
+
+              <div class="ss-competition-logo-wrap">
+
+                <img
+                  src="${escapeHTML(competition.logo)}"
+                  alt="${escapeHTML(competition.name)}"
+                  loading="lazy"
+                >
+
+              </div>
+
+              <div>
+
+                <small>
+                  ${escapeHTML(competition.country)}
+                </small>
+
+                <h2>
+                  ${escapeHTML(competition.name)}
+                </h2>
+
+              </div>
+
+            </div>
+
+          </div>
+
+
+          <div class="ss-no-data">
+            Classement indisponible actuellement.
+          </div>
+
+        </section>
+
+      `;
+
+    }
+
+
+    const rows =
+      standings
+        .map(
+          renderStandingRow
+        )
+        .join("");
+
+
+    return `
+
+      <section class="ss-competition-card">
+
+        <div class="ss-competition-head">
+
+          <div class="ss-competition-brand">
+
+            <div class="ss-competition-logo-wrap">
+
+              <img
+                src="${escapeHTML(competition.logo)}"
+                alt="${escapeHTML(competition.name)}"
+                loading="lazy"
+              >
+
+            </div>
+
+
+            <div>
+
+              <small>
+                ${escapeHTML(competition.country)}
+              </small>
+
+              <h2>
+                ${escapeHTML(competition.name)}
+              </h2>
+
+              <span>
+                ${standings.length} équipes
+              </span>
+
+            </div>
+
+          </div>
+
+
+          <div class="ss-season">
+            Saison actuelle
+          </div>
+
+        </div>
+
+
+        <div class="ss-table-scroll">
+
+          <div class="ss-table">
+
+            <div class="ss-standing-row ss-table-header">
+
+              <span>#</span>
+
+              <span>Équipe</span>
+
+              <span>J</span>
+
+              <span>G</span>
+
+              <span>N</span>
+
+              <span>P</span>
+
+              <span>BP</span>
+
+              <span>BC</span>
+
+              <span>Diff</span>
+
+              <span>Pts</span>
+
+            </div>
+
+
+            ${rows}
+
+          </div>
+
+        </div>
+
+
+        <div class="ss-players-grid">
+
+          ${renderPlayers(
+            goals,
+            "goals",
+            "Meilleurs buteurs",
+            "⚽"
+          )}
+
+          ${renderPlayers(
+            assists,
+            "assists",
+            "Meilleurs passeurs",
+            "🎯"
+          )}
+
+        </div>
+
+      </section>
+
+    `;
+
+  }
+
+
+  async function loadAllStandings() {
+
     const container =
-      document.getElementById("realStandings");
+      document.getElementById(
+        "realStandings"
+      );
+
 
     if (!container) {
       return;
     }
 
+
     container.innerHTML = `
-      <div class="sportscore-loading">
-        🏆 Chargement des classements...
+
+      <div class="ss-loading-main">
+
+        <div class="ss-loader-ball">
+          ⚽
+        </div>
+
+        <strong>
+          Chargement des classements...
+        </strong>
+
+        <span>
+          Données réelles SportScore
+        </span>
+
       </div>
+
     `;
 
-    try {
-      const results =
-        await Promise.all(
-          competitions.map(async (competition) => {
 
-            try {
-              const data = await fetchJSON(
-                `${API}/v1/standings/?sport=football&slug=${encodeURIComponent(competition.slug)}&src=${SRC}`
-              );
-
-              return {
-                competition,
-                data
-              };
-
-            } catch (error) {
-              console.warn(
-                `Classement indisponible: ${competition.name}`,
-                error
-              );
-
-              return {
-                competition,
-                data: null
-              };
-            }
-          })
-        );
-
-      const html = results
-        .map(({ competition, data }) => {
-
-          if (!data) {
-            return "";
-          }
-
-          const rows = findStandingRows(data);
-
-          if (!rows.length) {
-            return "";
-          }
-
-          return `
-            <section class="sportscore-standing">
-
-              <div class="ss-standing-head">
-
-                <div>
-                  <span class="ss-icon">
-                    ${competition.icon}
-                  </span>
-
-                  <strong>
-                    ${escapeHTML(competition.name)}
-                  </strong>
-                </div>
-
-                <span class="ss-live-label">
-                  Saison actuelle
-                </span>
-
-              </div>
-
-              <div class="ss-table-wrap">
-
-                <div class="sportscore-table">
-
-                  <div class="sportscore-table-row ss-header">
-
-                    <span>#</span>
-                    <span>Équipe</span>
-                    <span>J</span>
-                    <span>G</span>
-                    <span>N</span>
-                    <span>P</span>
-                    <span>BP</span>
-                    <span>BC</span>
-                    <span>Diff</span>
-                    <span>Pts</span>
-
-                  </div>
-
-                  ${rows
-                    .slice(0, 10)
-                    .map(renderStandingRow)
-                    .join("")}
-
-                </div>
-
-              </div>
-
-            </section>
-          `;
-        })
-        .join("");
-
-      if (!html.trim()) {
-        container.innerHTML = `
-          <div class="sportscore-empty">
-            Aucun classement disponible actuellement.
-          </div>
-        `;
-
-        return;
-      }
-
-      container.innerHTML = html;
-
-    } catch (error) {
-      console.error(
-        "SportScore standings:",
-        error
+    const results =
+      await Promise.all(
+        competitions.map(
+          loadCompetition
+        )
       );
 
-      container.innerHTML = `
-        <div class="sportscore-error">
-          Impossible de charger les classements.
-        </div>
-      `;
-    }
+
+    container.innerHTML =
+      results
+        .map(
+          renderCompetition
+        )
+        .join("");
+
   }
 
-  /* =====================================================
+
+  /* =========================================================
      STYLES
-     ===================================================== */
+     ========================================================= */
 
   function addStyles() {
 
     if (
       document.getElementById(
-        "sportscore-data-styles"
+        "sportscore-final-styles"
       )
     ) {
       return;
     }
 
+
     const style =
       document.createElement("style");
 
+
     style.id =
-      "sportscore-data-styles";
+      "sportscore-final-styles";
+
 
     style.textContent = `
 
-      .sportscore-loading,
-      .sportscore-empty,
-      .sportscore-error {
+      /* HIDE OLD COMPETITION CARDS */
+
+      .legacy-league-grid {
+        display: none !important;
+      }
+
+
+      /* PAGE HEADER */
+
+      .competitions-page-head {
+        margin-bottom: 30px;
+      }
+
+      .competitions-page-head small {
+        display: block;
+        margin-bottom: 7px;
+        font-size: 11px;
+        font-weight: 900;
+        letter-spacing: 1.4px;
+        opacity: .58;
+      }
+
+      .competitions-page-head h1 {
+        margin: 0;
+        font-size: clamp(30px, 5vw, 46px);
+        line-height: 1.08;
+        letter-spacing: -1.3px;
+      }
+
+      .competitions-page-head p {
+        margin: 12px 0 0;
+        color: #6f7e89;
+        line-height: 1.6;
+      }
+
+
+      body.dark .competitions-page-head p {
+        color: #9baab4;
+      }
+
+
+      /* MAIN CONTAINER */
+
+      .real-standings {
+        display: grid;
+        gap: 28px;
+      }
+
+
+      /* COMPETITION CARD */
+
+      .ss-competition-card {
+        overflow: hidden;
+        border-radius: 24px;
+        background: #ffffff;
+        border: 1px solid rgba(16, 35, 48, .08);
+        box-shadow:
+          0 12px 34px rgba(16, 35, 48, .07);
+      }
+
+
+      body.dark .ss-competition-card {
+        background: #13212b;
+        border-color: rgba(255,255,255,.07);
+        box-shadow:
+          0 15px 35px rgba(0,0,0,.23);
+      }
+
+
+      /* COMPETITION HEADER */
+
+      .ss-competition-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 20px;
+        padding: 20px 22px;
+        border-bottom: 1px solid rgba(16,35,48,.07);
+      }
+
+
+      body.dark .ss-competition-head {
+        border-bottom-color:
+          rgba(255,255,255,.07);
+      }
+
+
+      .ss-competition-brand {
+        display: flex;
+        align-items: center;
+        gap: 15px;
+        min-width: 0;
+      }
+
+
+      .ss-competition-logo-wrap {
+        width: 58px;
+        height: 58px;
+        flex: 0 0 58px;
+
+        display: flex;
+        align-items: center;
+        justify-content: center;
+
+        border-radius: 16px;
+
+        background: #f5f8fa;
+        border: 1px solid rgba(16,35,48,.07);
+      }
+
+
+      body.dark .ss-competition-logo-wrap {
+        background: #0d1922;
+        border-color:
+          rgba(255,255,255,.07);
+      }
+
+
+      .ss-competition-logo-wrap img {
+        width: 44px;
+        height: 44px;
+        object-fit: contain;
+      }
+
+
+      .ss-competition-brand small {
+        display: block;
+        margin-bottom: 3px;
+        font-size: 10px;
+        font-weight: 900;
+        text-transform: uppercase;
+        letter-spacing: .8px;
+        opacity: .5;
+      }
+
+
+      .ss-competition-brand h2 {
+        margin: 0;
+        font-size: 20px;
+      }
+
+
+      .ss-competition-brand span {
+        display: block;
+        margin-top: 4px;
+        font-size: 12px;
+        opacity: .55;
+      }
+
+
+      .ss-season {
+        padding: 8px 11px;
+        border-radius: 999px;
+        white-space: nowrap;
+
+        font-size: 10px;
+        font-weight: 900;
+
+        background: rgba(21,156,104,.09);
+        color: #138359;
+      }
+
+
+      body.dark .ss-season {
+        color: #67d7aa;
+        background: rgba(48,190,139,.10);
+      }
+
+
+      /* TABLE */
+
+      .ss-table-scroll {
         width: 100%;
+        overflow-x: auto;
+      }
+
+
+      .ss-table {
+        min-width: 850px;
+      }
+
+
+      .ss-standing-row {
+        display: grid;
+
+        grid-template-columns:
+          42px
+          minmax(240px, 1fr)
+          repeat(7, 43px)
+          55px;
+
+        align-items: center;
+
+        gap: 8px;
+
+        padding: 10px 18px;
+
+        min-height: 49px;
+
+        border-bottom:
+          1px solid rgba(16,35,48,.055);
+      }
+
+
+      body.dark .ss-standing-row {
+        border-bottom-color:
+          rgba(255,255,255,.055);
+      }
+
+
+      .ss-standing-row:last-child {
+        border-bottom: 0;
+      }
+
+
+      .ss-table-header {
+        min-height: 40px;
+
+        background:
+          rgba(20,40,50,.035);
+
+        font-size: 10px;
+        font-weight: 900;
+
+        color: #73818b;
+      }
+
+
+      body.dark .ss-table-header {
+        background:
+          rgba(255,255,255,.035);
+
+        color: #91a0aa;
+      }
+
+
+      .ss-position {
+        font-weight: 900;
+        font-size: 13px;
+      }
+
+
+      .ss-club {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        min-width: 0;
+      }
+
+
+      .ss-club img,
+      .ss-club-fallback {
+        width: 31px;
+        height: 31px;
+        flex: 0 0 31px;
+      }
+
+
+      .ss-club img {
+        object-fit: contain;
+      }
+
+
+      .ss-club-fallback {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+
+        border-radius: 50%;
+
+        background:
+          rgba(20,40,50,.06);
+
+        font-size: 16px;
+      }
+
+
+      body.dark .ss-club-fallback {
+        background:
+          rgba(255,255,255,.06);
+      }
+
+
+      .ss-club strong {
+        overflow: hidden;
+        white-space: nowrap;
+        text-overflow: ellipsis;
+      }
+
+
+      .ss-points {
+        font-size: 14px;
+      }
+
+
+      /* PLAYER SECTION */
+
+      .ss-players-grid {
+        display: grid;
+        grid-template-columns:
+          repeat(2, minmax(0, 1fr));
+
+        gap: 18px;
+
+        padding: 20px;
+
+        background:
+          rgba(20,40,50,.025);
+      }
+
+
+      body.dark .ss-players-grid {
+        background:
+          rgba(255,255,255,.025);
+      }
+
+
+      .ss-player-card {
+        padding: 17px;
+
+        border-radius: 18px;
+
+        background: #ffffff;
+
+        border: 1px solid
+          rgba(16,35,48,.07);
+      }
+
+
+      body.dark .ss-player-card {
+        background: #0e1b24;
+
+        border-color:
+          rgba(255,255,255,.07);
+      }
+
+
+      .ss-player-card-head {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+
+        gap: 12px;
+
+        padding-bottom: 10px;
+        margin-bottom: 3px;
+      }
+
+
+      .ss-player-card-head > div {
+        display: flex;
+        align-items: center;
+        gap: 7px;
+      }
+
+
+      .ss-stat-icon {
+        font-size: 16px;
+      }
+
+
+      .ss-player-card-head > span {
+        font-size: 10px;
+        font-weight: 900;
+        opacity: .5;
+      }
+
+
+      .ss-player-row {
+        display: grid;
+
+        grid-template-columns:
+          25px
+          minmax(0,1fr)
+          35px;
+
+        align-items: center;
+
+        gap: 8px;
+
+        min-height: 47px;
+
+        border-top:
+          1px solid rgba(16,35,48,.06);
+      }
+
+
+      body.dark .ss-player-row {
+        border-top-color:
+          rgba(255,255,255,.06);
+      }
+
+
+      .ss-player-rank {
+        font-size: 11px;
+        font-weight: 900;
+        opacity: .48;
+      }
+
+
+      .ss-player {
+        display: flex;
+        align-items: center;
+        gap: 9px;
+        min-width: 0;
+      }
+
+
+      .ss-player img,
+      .ss-player-fallback {
+        width: 30px;
+        height: 30px;
+        flex: 0 0 30px;
+
+        border-radius: 50%;
+
+        object-fit: cover;
+      }
+
+
+      .ss-player-fallback {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+
+        background:
+          rgba(20,40,50,.06);
+
+        font-size: 15px;
+      }
+
+
+      body.dark .ss-player-fallback {
+        background:
+          rgba(255,255,255,.06);
+      }
+
+
+      .ss-player strong {
+        overflow: hidden;
+        white-space: nowrap;
+        text-overflow: ellipsis;
+      }
+
+
+      .ss-player-value {
+        text-align: right;
+        font-size: 14px;
+      }
+
+
+      /* LOADING */
+
+      .ss-loading-main {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+
+        min-height: 220px;
+
+        padding: 25px;
+
+        border-radius: 24px;
+
+        background: #ffffff;
+
+        border: 1px solid
+          rgba(16,35,48,.08);
+
+        gap: 8px;
+      }
+
+
+      body.dark .ss-loading-main {
+        background: #13212b;
+        border-color:
+          rgba(255,255,255,.07);
+      }
+
+
+      .ss-loader-ball {
+        font-size: 40px;
+        animation:
+          ssBall 1.3s ease-in-out infinite;
+      }
+
+
+      @keyframes ssBall {
+        0%,100% {
+          transform:
+            translateY(0)
+            rotate(0deg);
+        }
+
+        50% {
+          transform:
+            translateY(-10px)
+            rotate(12deg);
+        }
+      }
+
+
+      .ss-loading-main span {
+        font-size: 12px;
+        opacity: .55;
+      }
+
+
+      /* EMPTY / ERROR */
+
+      .ss-empty,
+      .ss-error,
+      .ss-no-data,
+      .ss-no-player-data {
         padding: 22px;
         text-align: center;
+
+        color: #6f7e89;
+
+        background:
+          rgba(255,255,255,.65);
+
+        border:
+          1px solid rgba(16,35,48,.07);
+
         border-radius: 16px;
-        box-sizing: border-box;
-        background: rgba(255,255,255,.60);
-        border: 1px solid rgba(20,40,50,.08);
-        color: #6b7983;
       }
 
-      body.dark .sportscore-loading,
-      body.dark .sportscore-empty,
-      body.dark .sportscore-error {
-        background: rgba(255,255,255,.04);
-        border-color: rgba(255,255,255,.07);
-        color: #9eabb4;
+
+      body.dark .ss-empty,
+      body.dark .ss-error,
+      body.dark .ss-no-data,
+      body.dark .ss-no-player-data {
+        color: #99a8b2;
+        background:
+          rgba(255,255,255,.035);
+
+        border-color:
+          rgba(255,255,255,.07);
       }
 
-      .sportscore-day-title {
+
+      .ss-error {
+        color: #c94b4b;
+      }
+
+
+      .ss-day-count {
         margin-bottom: 14px;
-        font-size: 14px;
+        font-size: 13px;
         opacity: .7;
       }
 
-      .sportscore-match {
-        cursor: default;
-      }
 
       .sportscore-live {
         display: inline-flex;
         align-items: center;
         justify-content: center;
+
         padding: 4px 8px;
+
         border-radius: 999px;
+
         background: #e53935;
-        color: #fff;
+        color: #ffffff;
+
         font-size: 10px;
         font-weight: 900;
-        letter-spacing: .5px;
       }
+
 
       .sportscore-time {
         font-size: 12px;
@@ -731,164 +2000,134 @@
         opacity: .7;
       }
 
+
       .team-logo-fallback {
         width: 34px;
         height: 34px;
+
         display: flex;
         align-items: center;
         justify-content: center;
+
         border-radius: 50%;
-        background: rgba(20,40,50,.06);
-        font-size: 18px;
+
+        background:
+          rgba(20,40,50,.06);
+
+        font-size: 17px;
       }
 
-      .sportscore-standing {
-        margin-bottom: 20px;
-        overflow: hidden;
-        border-radius: 20px;
-        background: #fff;
-        border: 1px solid rgba(20,40,50,.08);
-        box-shadow: 0 8px 25px rgba(20,40,50,.06);
-      }
 
-      body.dark .sportscore-standing {
-        background: #14212b;
-        border-color: rgba(255,255,255,.07);
-        box-shadow: 0 8px 25px rgba(0,0,0,.18);
-      }
+      /* MOBILE */
 
-      .ss-standing-head {
-        display: flex;
-        align-items: center;
-        justify-content: space-between;
-        gap: 12px;
-        padding: 18px 20px;
-        border-bottom: 1px solid rgba(20,40,50,.07);
-      }
+      @media (max-width: 800px) {
 
-      body.dark .ss-standing-head {
-        border-bottom-color: rgba(255,255,255,.07);
-      }
-
-      .ss-icon {
-        margin-right: 7px;
-      }
-
-      .ss-live-label {
-        font-size: 11px;
-        font-weight: 800;
-        opacity: .55;
-      }
-
-      .ss-table-wrap {
-        width: 100%;
-        overflow-x: auto;
-      }
-
-      .sportscore-table {
-        min-width: 720px;
-      }
-
-      .sportscore-table-row {
-        display: grid;
-        grid-template-columns:
-          34px
-          minmax(180px, 1fr)
-          repeat(7, 42px)
-          48px;
-
-        align-items: center;
-        gap: 7px;
-        padding: 9px 14px;
-      }
-
-      .sportscore-table-row:nth-child(even) {
-        background: rgba(20,40,50,.025);
-      }
-
-      body.dark .sportscore-table-row:nth-child(even) {
-        background: rgba(255,255,255,.025);
-      }
-
-      .sportscore-table-row.ss-header {
-        min-height: 34px;
-        background: rgba(20,40,50,.045);
-        font-size: 10px;
-        font-weight: 900;
-        opacity: .65;
-      }
-
-      body.dark .sportscore-table-row.ss-header {
-        background: rgba(255,255,255,.035);
-      }
-
-      .ss-team {
-        min-width: 0;
-        overflow: hidden;
-        white-space: nowrap;
-        text-overflow: ellipsis;
-      }
-
-      .ss-pos {
-        font-weight: 900;
-      }
-
-      .ss-points {
-        font-weight: 950;
-      }
-
-      @media (max-width: 700px) {
-
-        .ss-standing-head {
-          padding: 15px;
+        .ss-competition-head {
+          align-items: flex-start;
+          padding: 16px;
         }
 
-        .sportscore-table-row {
-          padding: 8px 12px;
+
+        .ss-season {
+          display: none;
         }
 
-        .sportscore-standing {
-          border-radius: 16px;
+
+        .ss-competition-logo-wrap {
+          width: 50px;
+          height: 50px;
+          flex-basis: 50px;
+        }
+
+
+        .ss-competition-logo-wrap img {
+          width: 37px;
+          height: 37px;
+        }
+
+
+        .ss-competition-brand h2 {
+          font-size: 17px;
+        }
+
+
+        .ss-players-grid {
+          grid-template-columns: 1fr;
+          padding: 14px;
+        }
+
+
+        .ss-competition-card {
+          border-radius: 19px;
+        }
+
+      }
+
+
+      @media (max-width: 500px) {
+
+        .competitions-page-head h1 {
+          font-size: 30px;
+        }
+
+
+        .ss-standing-row {
+          padding-left: 12px;
+          padding-right: 12px;
         }
 
       }
 
     `;
 
+
     document.head.appendChild(style);
   }
 
-  /* =====================================================
-     INITIALISATION
-     ===================================================== */
 
-  async function initSportScore() {
+  /* =========================================================
+     START
+     ========================================================= */
+
+  async function init() {
 
     addStyles();
 
+
     await Promise.all([
       loadTodayMatches(),
-      loadStandings()
+      loadAllStandings()
     ]);
 
+
     console.log(
-      "✅ BakhiraFoot: SportScore data loaded"
+      "✅ BakhiraFoot : SportScore real data ready"
     );
+
   }
 
-  if (document.readyState === "loading") {
+
+  if (
+    document.readyState === "loading"
+  ) {
+
     document.addEventListener(
       "DOMContentLoaded",
-      initSportScore,
+      init,
       { once: true }
     );
+
   } else {
-    initSportScore();
+
+    init();
+
   }
 
-  /* تحديث كل 60 ثانية */
-  setInterval(() => {
-    loadTodayMatches();
-  }, 60000);
+
+  /* تحديث Matchs فقط كل دقيقة */
+  setInterval(
+    loadTodayMatches,
+    60000
+  );
 
 })();
