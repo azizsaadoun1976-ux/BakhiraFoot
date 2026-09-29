@@ -382,27 +382,26 @@
   id="leagues"
   class="page">
 
-  <small>
-    COMPÉTITIONS
-  </small>
+  <div class="competitions-page-head">
+    <small>COMPÉTITIONS</small>
 
-  <h1>
-    Compétitions de football
-  </h1>
+    <h1>
+      Classements des grandes compétitions
+    </h1>
 
-  <div
-    id="leagueGrid"
-    class="cards">
-  </div>
-
-  <div class="standings-title">
-    <small>CLASSEMENTS</small>
-    <h2>Classements des principales compétitions</h2>
     <p>
-      Retrouvez le classement réel de chaque compétition.
+      Classements, buteurs et passeurs décisifs en temps réel.
     </p>
   </div>
 
+  <!-- Anciennes cartes masquées -->
+  <div
+    id="leagueGrid"
+    class="cards legacy-league-grid"
+    aria-hidden="true">
+  </div>
+
+  <!-- Nouveaux classements -->
   <div
     id="realStandings"
     class="real-standings">
