@@ -166,7 +166,7 @@ const competitions = [
      MATCHS DU JOUR
      ========================================================= */
 
-  function renderMatch(match) {
+function renderMatch(match) {
 
   const home =
     match.home ||
@@ -190,56 +190,121 @@ const competitions = [
   const awayScore =
     match.away_score ?? "-";
 
-  const live =
-    isLive(
-      match.status,
-      match.status_text
-    );
-
-  const statusText =
-    match.status_text ||
-    (live ? "En direct" : "");
 
   const competition =
     match.competition ||
     match.league ||
     "Football";
 
+
+  /* Logo de la compétition */
+  const competitionData =
+    competitions.find((item) =>
+      item.name.toLowerCase() ===
+      String(competition).toLowerCase()
+    );
+
+  const competitionLogo =
+    match.competition_logo ||
+    match.league_logo ||
+    competitionData?.logo ||
+    "";
+
+
+  /* Status propre */
+  const rawStatus =
+    `${match.status || ""} ${match.status_text || ""}`
+      .toLowerCase();
+
+
+  let statusLabel = "AVENIR";
+  let statusClass = "upcoming";
+  let middleText = formatTime(match.time);
+
+
+  if (
+    rawStatus.includes("live") ||
+    rawStatus.includes("playing") ||
+    rawStatus.includes("1h") ||
+    rawStatus.includes("2h") ||
+    rawStatus.includes("half")
+  ) {
+
+    statusLabel = "LIVE";
+    statusClass = "live";
+
+    middleText =
+      match.status_text ||
+      "En direct";
+
+  }
+
+
+  else if (
+    rawStatus.includes("halftime") ||
+    rawStatus.includes("mi-temps")
+  ) {
+
+    statusLabel = "MI-TEMPS";
+    statusClass = "halftime";
+
+    middleText = "Mi-temps";
+
+  }
+
+
+  else if (
+    rawStatus.includes("finished") ||
+    rawStatus.includes("complete") ||
+    rawStatus.includes("termine") ||
+    rawStatus.includes("ended")
+  ) {
+
+    statusLabel = "TERMINÉ";
+    statusClass = "finished";
+
+    middleText = "Terminé";
+
+  }
+
+
   return `
-    <article
-      class="match-card bf-pro-match-card"
-    >
+    <article class="match-card bf-ultra-match">
 
       <!-- COMPETITION -->
-      <div class="bf-match-top">
+      <div class="bf-match-competition-bar">
 
-        <div class="bf-match-competition">
-          <span class="bf-match-ball">⚽</span>
+        <div class="bf-competition-match-info">
+
+          ${
+            competitionLogo
+              ? `
+                <img
+                  src="${escapeHTML(competitionLogo)}"
+                  alt=""
+                  class="bf-match-competition-logo"
+                  loading="lazy"
+                >
+              `
+              : ""
+          }
+
           <strong>
             ${escapeHTML(competition)}
           </strong>
+
         </div>
 
-        ${
-          live
-            ? `
-              <span class="bf-match-live">
-                <span class="bf-live-dot"></span>
-                LIVE
-              </span>
-            `
-            : `
-              <span class="bf-match-time">
-                ${formatTime(match.time)}
-              </span>
-            `
-        }
+        <span class="bf-match-state ${statusClass}">
+          ${statusLabel}
+        </span>
 
       </div>
 
 
       <!-- MATCH -->
-      <div class="bf-match-body">
+      <div class="bf-match-teams">
+
 
         <!-- HOME -->
         <div class="bf-match-team">
@@ -248,44 +313,55 @@ const competitions = [
             homeLogo
               ? `
                 <img
-                  class="bf-team-logo"
                   src="${escapeHTML(homeLogo)}"
                   alt="${escapeHTML(home)}"
+                  class="bf-ultra-team-logo"
                   loading="lazy"
                 >
               `
               : `
-                <div class="bf-team-placeholder">
+                <div class="bf-ultra-team-placeholder">
                   ⚽
                 </div>
               `
           }
 
-          <strong class="bf-team-name">
+          <strong class="bf-ultra-team-name">
             ${escapeHTML(home)}
           </strong>
+
+          <div class="bf-ultra-score">
+            ${escapeHTML(homeScore)}
+          </div>
 
         </div>
 
 
-        <!-- SCORE -->
-        <div class="bf-match-score">
+        <!-- CENTER -->
+        <div class="bf-ultra-center">
 
-          <div class="bf-score-numbers">
-            <span>
-              ${escapeHTML(homeScore)}
-            </span>
+          ${
+            statusClass === "live"
+              ? `
+                <span class="bf-live-dot-large"></span>
+              `
+              : ""
+          }
 
-            <b>:</b>
+          <span class="bf-ultra-middle">
+            ${escapeHTML(middleText)}
+          </span>
 
-            <span>
-              ${escapeHTML(awayScore)}
-            </span>
-          </div>
-
-          <div class="bf-match-status">
-            ${escapeHTML(statusText)}
-          </div>
+          ${
+            statusClass === "live" &&
+            match.elapsed
+              ? `
+                <small>
+                  ${escapeHTML(match.elapsed)}'
+                </small>
+              `
+              : ""
+          }
 
         </div>
 
@@ -297,26 +373,34 @@ const competitions = [
             awayLogo
               ? `
                 <img
-                  class="bf-team-logo"
                   src="${escapeHTML(awayLogo)}"
                   alt="${escapeHTML(away)}"
+                  class="bf-ultra-team-logo"
                   loading="lazy"
                 >
               `
               : `
-                <div class="bf-team-placeholder">
+                <div class="bf-ultra-team-placeholder">
                   ⚽
                 </div>
               `
           }
 
-          <strong class="bf-team-name">
+          <strong class="bf-ultra-team-name">
             ${escapeHTML(away)}
           </strong>
+
+          <div class="bf-ultra-score">
+            ${escapeHTML(awayScore)}
+          </div>
 
         </div>
 
       </div>
+
+    </article>
+  `;
+}
 
 
       <!-- BOTTOM -->
