@@ -161,11 +161,9 @@ function getLeague(match) {
 function getFixtureId(match) {
   return (
     match?.fixture?.slug ||
-    match?.fixture?.id ||
     match?.slug ||
+    match?.fixture?.id ||
     match?.id ||
-    match?.match_slug ||
-    match?.match_id ||
     null
   );
 }
