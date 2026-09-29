@@ -491,7 +491,7 @@ if (fixture) {
     String(fixture).trim();
 
   if (!slug) {
-    return sendJSON(
+    return output(
       400,
       {
         error:
@@ -1006,7 +1006,7 @@ if (fixture) {
      FINAL RESPONSE
   =================================================== */
 
-  return sendJSON(
+  return output(
     200,
     {
 
