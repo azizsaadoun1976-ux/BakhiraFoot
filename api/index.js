@@ -3,33 +3,21 @@ module.exports = async (req, res) => {
     const {
       live,
       date,
-      fixture,
-      details
+      fixture
     } = req.query;
 
-    const SPORTSCORE_BASE =
+    const BASE =
       "https://sportscore.com/api/v1";
 
-    const SRC =
-      "bakhira-foot.vercel.app";
-
-    /* =====================================================
-       HELPERS
-    ===================================================== */
-
-    function todayISO() {
-      return new Date()
+    const today =
+      new Date()
         .toISOString()
         .split("T")[0];
-    }
 
-    function sendJSON(
-      status,
-      data
-    ) {
+    function output(status, data) {
       res.setHeader(
         "Cache-Control",
-        "s-maxage=60, stale-while-revalidate=120"
+        "s-maxage=30, stale-while-revalidate=60"
       );
 
       return res
@@ -37,27 +25,16 @@ module.exports = async (req, res) => {
         .json(data);
     }
 
-    async function sportScoreFetch(
-      path
-    ) {
-      const separator =
-        path.includes("?")
-          ? "&"
-          : "?";
-
-      const url =
-        `${SPORTSCORE_BASE}${path}` +
-        `${separator}src=${encodeURIComponent(
-          SRC
-        )}`;
+    async function getJSON(url) {
 
       console.log(
-        "SPORTSCORE:",
+        "SPORTSCORE REQUEST:",
         url
       );
 
       const response =
         await fetch(url, {
+          method: "GET",
           headers: {
             Accept:
               "application/json"
@@ -68,7 +45,7 @@ module.exports = async (req, res) => {
       const text =
         await response.text();
 
-      let data = {};
+      let data;
 
       try {
         data =
@@ -97,407 +74,174 @@ module.exports = async (req, res) => {
       return data;
     }
 
-    function extractMatches(
-      body
-    ) {
-      if (
-        Array.isArray(body?.matches)
-      ) {
-        return body.matches;
-      }
-
-      if (
-        Array.isArray(body?.data)
-      ) {
-        return body.data;
-      }
-
-      if (
-        Array.isArray(body)
-      ) {
-        return body;
-      }
-
-      return [];
-    }
-
-    function pick(
-      obj,
-      paths,
-      fallback = null
-    ) {
-      for (
-        const path
-        of paths
-      ) {
-        const parts =
-          path.split(".");
-
-        let value =
-          obj;
-
-        for (
-          const part
-          of parts
-        ) {
-          if (
-            value === null ||
-            value === undefined
-          ) {
-            value =
-              undefined;
-            break;
-          }
-
-          value =
-            value[part];
-        }
-
-        if (
-          value !== undefined &&
-          value !== null
-        ) {
-          return value;
-        }
-      }
-
-      return fallback;
-    }
-
     /* =====================================================
-       TEAM
+       NORMALIZE MATCH
     ===================================================== */
 
-    function normalizeTeam(
-      raw,
-      root,
-      side
-    ) {
-      const source =
-        typeof raw === "object" &&
-        raw !== null
-          ? raw
-          : {};
+    function normalizeMatch(item) {
 
-      const prefix =
-        side === "home"
-          ? "home"
-          : "away";
+      if (!item) {
+        return null;
+      }
 
-      return {
+      const slug =
+        item.slug ||
+        item.match_slug ||
+        null;
 
-        id:
-          pick(
-            source,
-            [
-              "id",
-              "team_id"
-            ]
-          ) ||
-          pick(
-            root,
-            [
-              `${prefix}_id`,
-              `${prefix}_team_id`,
-              `${prefix}_team.id`
-            ]
-          ),
+      const id =
+        slug ||
+        item.id ||
+        item.match_id ||
+        item.fixture_id ||
+        null;
 
-        name:
-          (
-            typeof raw === "string"
-              ? raw
-              : null
-          ) ||
-          pick(
-            source,
-            [
-              "name",
-              "team",
-              "title"
-            ]
-          ) ||
-          pick(
-            root,
-            [
-              prefix,
-              `${prefix}_name`,
-              `${prefix}_team.name`
-            ],
-            side === "home"
-              ? "Domicile"
-              : "Extérieur"
-          ),
+      const homeName =
+        item.home ||
+        item.home_team?.name ||
+        item.homeTeam?.name ||
+        "Domicile";
 
-        logo:
-          pick(
-            source,
-            [
-              "logo",
-              "image",
-              "team_logo"
-            ]
-          ) ||
-          pick(
-            root,
-            [
-              `${prefix}_logo`,
-              `${prefix}_team.logo`
-            ],
-            ""
-          )
+      const awayName =
+        item.away ||
+        item.away_team?.name ||
+        item.awayTeam?.name ||
+        "Extérieur";
 
-      };
-    }
+      const homeLogo =
+        item.home_logo ||
+        item.home_team?.logo ||
+        item.homeTeam?.logo ||
+        "";
 
-    /* =====================================================
-       FIXTURE ADAPTER
-    ===================================================== */
+      const awayLogo =
+        item.away_logo ||
+        item.away_team?.logo ||
+        item.awayTeam?.logo ||
+        "";
 
-const slug =
-  pick(
-    item,
-    [
-      "slug",
-      "match_slug",
-      "url_slug",
-      "match.slug",
-      "fixture.slug",
-      "data.slug"
-    ],
-    null
-  );
+      const homeId =
+        item.home_id ||
+        item.home_team?.id ||
+        item.homeTeam?.id ||
+        null;
 
-const upstreamId =
-  pick(
-    item,
-    [
-      "id",
-      "match_id",
-      "fixture_id",
-      "match.id",
-      "fixture.id"
-    ],
-    null
-  );
-
-/*
- * SportScore Match Details كيتطلب slug.
- * لذلك كنستعملو slug كـ public fixture id.
- */
-const publicId =
-  slug ||
-  upstreamId ||
-  null;
-      const home =
-        normalizeTeam(
-          pick(
-            item,
-            [
-              "home_team",
-              "homeTeam",
-              "home"
-            ]
-          ),
-          item,
-          "home"
-        );
-
-      const away =
-        normalizeTeam(
-          pick(
-            item,
-            [
-              "away_team",
-              "awayTeam",
-              "away"
-            ]
-          ),
-          item,
-          "away"
-        );
+      const awayId =
+        item.away_id ||
+        item.away_team?.id ||
+        item.awayTeam?.id ||
+        null;
 
       const homeScore =
-        pick(
-          item,
-          [
-            "home_score",
-            "score.home",
-            "homeScore"
-          ],
-          null
-        );
+        item.home_score ??
+        item.score?.home ??
+        item.homeScore ??
+        null;
 
       const awayScore =
-        pick(
-          item,
-          [
-            "away_score",
-            "score.away",
-            "awayScore"
-          ],
-          null
-        );
+        item.away_score ??
+        item.score?.away ??
+        item.awayScore ??
+        null;
+
+      const competition =
+        item.competition ||
+        item.league ||
+        {};
+
+      const competitionName =
+        typeof competition === "string"
+          ? competition
+          : (
+              competition.name ||
+              item.competition_name ||
+              item.league?.name ||
+              "Football"
+            );
+
+      let shortStatus =
+        item.status_code ||
+        item.short_status ||
+        "";
 
       const rawStatus =
         String(
-          pick(
-            item,
-            [
-              "status",
-              "state",
-              "status_text"
-            ],
-            ""
-          )
+          item.status ||
+          ""
         ).toLowerCase();
-
-      let shortStatus =
-        pick(
-          item,
-          [
-            "status_code",
-            "short_status"
-          ],
-          null
-        );
 
       if (!shortStatus) {
 
         if (
-          rawStatus.includes("live") ||
+          rawStatus === "live" ||
           rawStatus.includes("in play") ||
           rawStatus.includes("inplay")
         ) {
-          shortStatus =
-            "LIVE";
+          shortStatus = "LIVE";
         }
 
         else if (
-          rawStatus.includes("finish") ||
+          rawStatus === "finished" ||
           rawStatus === "ft" ||
           rawStatus.includes("ended")
         ) {
-          shortStatus =
-            "FT";
+          shortStatus = "FT";
         }
 
         else if (
-          rawStatus.includes("postpon")
+          rawStatus === "postponed"
         ) {
-          shortStatus =
-            "PST";
+          shortStatus = "PST";
         }
 
         else if (
-          rawStatus.includes("cancel")
+          rawStatus === "cancelled" ||
+          rawStatus === "canceled"
         ) {
-          shortStatus =
-            "CANC";
+          shortStatus = "CANC";
         }
 
         else if (
           rawStatus.includes("half")
         ) {
-          shortStatus =
-            "HT";
+          shortStatus = "HT";
         }
 
         else {
-          shortStatus =
-            "NS";
+          shortStatus = "NS";
         }
       }
 
-      const competition =
-        pick(
-          item,
-          [
-            "competition",
-            "league"
-          ],
-          null
-        );
-
-      const leagueName =
-        typeof competition === "string"
-          ? competition
-          : (
-              pick(
-                competition,
-                [
-                  "name",
-                  "title"
-                ],
-                null
-              ) ||
-              "Football"
-            );
-
-      const leagueId =
-        pick(
-          item,
-          [
-            "competition_id",
-            "competition.id",
-            "league.id"
-          ]
-        );
-
-      const leagueLogo =
-        pick(
-          item,
-          [
-            "competition_logo",
-            "competition.logo",
-            "league.logo"
-          ],
-          ""
-        );
-
-      const leagueCountry =
-        pick(
-          item,
-          [
-            "country",
-            "competition.country",
-            "league.country"
-          ]
-        );
-
       return {
+
+        id: id,
+
+        slug: slug,
 
         fixture: {
 
           /*
-             slug هو ID المستعمل داخلياً
-             مع endpoint /match/
+             مهم بزاف:
+             script.js يستعمل fixture.id
+             وDetails كيتطلب slug.
           */
-          id:
-            publicId,
 
-          slug:
-            slug,
+          id: id,
 
-          /*
-             numeric/native ID محفوظ هنا
-          */
+          slug: slug,
+
           upstreamId:
-            upstreamId,
+            item.id ||
+            item.match_id ||
+            item.fixture_id ||
+            null,
 
           date:
-            pick(
-              item,
-              [
-                "time",
-                "date",
-                "start_time",
-                "kickoff"
-              ]
-            ),
-
-          timezone:
-            "UTC",
+            item.time ||
+            item.date ||
+            item.start_time ||
+            item.kickoff ||
+            null,
 
           status: {
 
@@ -505,70 +249,79 @@ const publicId =
               shortStatus,
 
             long:
-              pick(
-                item,
-                [
-                  "status_text",
-                  "status_long",
-                  "status"
-                ],
-                "Match"
-              ),
+              item.status_text ||
+              item.status ||
+              "Match",
 
             elapsed:
-              pick(
-                item,
-                [
-                  "minute",
-                  "elapsed",
-                  "time.elapsed"
-                ],
-                null
-              )
+              item.minute ??
+              item.elapsed ??
+              null
 
           },
 
           venue:
-            pick(
-              item,
-              [
-                "venue"
-              ]
-            ),
+            item.venue ||
+            null,
 
           referee:
-            pick(
-              item,
-              [
-                "referee"
-              ]
-            )
+            item.referee ||
+            null
 
         },
 
         league: {
 
           id:
-            leagueId,
+            item.competition_id ||
+            competition.id ||
+            item.league?.id ||
+            null,
 
           name:
-            leagueName,
+            competitionName,
 
           country:
-            leagueCountry,
+            item.country ||
+            competition.country ||
+            item.league?.country ||
+            null,
 
           logo:
-            leagueLogo
+            item.competition_logo ||
+            competition.logo ||
+            item.league?.logo ||
+            ""
 
         },
 
         teams: {
 
-          home:
-            home,
+          home: {
 
-          away:
-            away
+            id:
+              homeId,
+
+            name:
+              homeName,
+
+            logo:
+              homeLogo
+
+          },
+
+          away: {
+
+            id:
+              awayId,
+
+            name:
+              awayName,
+
+            logo:
+              awayLogo
+
+          }
 
         },
 
@@ -591,31 +344,18 @@ const publicId =
             awayScore,
 
           halftime:
-            pick(
-              item,
-              [
-                "score.halftime"
-              ],
-              {
-                home: null,
-                away: null
-              }
-            ),
+            item.score?.halftime ||
+            {
+              home: null,
+              away: null
+            },
 
           fulltime:
-            pick(
-              item,
-              [
-                "score.fulltime"
-              ],
-              {
-                home:
-                  homeScore,
-
-                away:
-                  awayScore
-              }
-            )
+            item.score?.fulltime ||
+            {
+              home: homeScore,
+              away: awayScore
+            }
 
         }
 
@@ -623,7 +363,34 @@ const publicId =
     }
 
     /* =====================================================
-       FIXTURES BY DATE
+       GET MATCH ARRAY
+    ===================================================== */
+
+    function getMatches(body) {
+
+      if (
+        Array.isArray(body?.matches)
+      ) {
+        return body.matches;
+      }
+
+      if (
+        Array.isArray(body?.data)
+      ) {
+        return body.data;
+      }
+
+      if (
+        Array.isArray(body)
+      ) {
+        return body;
+      }
+
+      return [];
+    }
+
+    /* =====================================================
+       DATE MATCHES
     ===================================================== */
 
     if (
@@ -632,36 +399,53 @@ const publicId =
     ) {
 
       const matchDate =
-        date ||
-        todayISO();
+        date || today;
 
-      const body =
-        await sportScoreFetch(
-          `/fixtures/?sport=football&date=${encodeURIComponent(
-            matchDate
-          )}&limit=200`
-        );
+      let body;
 
-      const raw =
-        extractMatches(
-          body
-        );
+      try {
+
+        body =
+          await getJSON(
+            `${BASE}/fixtures/?sport=football&date=${encodeURIComponent(
+              matchDate
+            )}&limit=200`
+          );
+
+      } catch (firstError) {
+
+        /*
+           Fallback غير لليوم الحالي.
+           /matches/ هو alias رسمي للماتشات الحالية.
+        */
+
+        if (
+          matchDate === today
+        ) {
+
+          body =
+            await getJSON(
+              `${BASE}/matches/?sport=football&limit=50`
+            );
+
+        } else {
+
+          throw firstError;
+
+        }
+
+      }
 
       const matches =
-        raw
-          .map(
-            normalizeFixture
-          )
+        getMatches(body)
+          .map(normalizeMatch)
           .filter(Boolean);
 
-      return sendJSON(
+      return output(
         200,
         {
-          data:
-            matches,
-
-          provider:
-            "SportScore"
+          data: matches,
+          provider: "SportScore"
         }
       );
     }
@@ -675,30 +459,20 @@ const publicId =
     ) {
 
       const body =
-        await sportScoreFetch(
-          `/fixtures/?sport=football&status=live&limit=200`
-        );
-
-      const raw =
-        extractMatches(
-          body
+        await getJSON(
+          `${BASE}/fixtures/?sport=football&status=live&limit=200`
         );
 
       const matches =
-        raw
-          .map(
-            normalizeFixture
-          )
+        getMatches(body)
+          .map(normalizeMatch)
           .filter(Boolean);
 
-      return sendJSON(
+      return output(
         200,
         {
-          data:
-            matches,
-
-          provider:
-            "SportScore"
+          data: matches,
+          provider: "SportScore"
         }
       );
     }
@@ -707,9 +481,7 @@ const publicId =
        MATCH DETAILS
     ===================================================== */
 
-    if (
-      fixture
-    ) {
+    if (fixture) {
 
       const slug =
         String(
@@ -717,17 +489,11 @@ const publicId =
         ).trim();
 
       const body =
-        await sportScoreFetch(
-          `/match/?sport=football&slug=${encodeURIComponent(
+        await getJSON(
+          `${BASE}/match/?sport=football&slug=${encodeURIComponent(
             slug
           )}`
         );
-
-      /*
-         SportScore documented match endpoint
-         كيرجع match detail envelope فيها
-         score + status + lineups + timeline.
-      */
 
       const root =
         body?.data ||
@@ -740,159 +506,39 @@ const publicId =
         root;
 
       const normalized =
-        normalizeFixture(
+        normalizeMatch(
           match
         );
 
-      /* ===================================================
-         EVENTS / TIMELINE
-      =================================================== */
-
-      const rawEvents =
+      const events =
         root?.timeline ||
         root?.events ||
         root?.incidents ||
         [];
-
-      const events =
-        Array.isArray(
-          rawEvents
-        )
-          ? rawEvents.map(
-              event => {
-
-                const team =
-                  event?.team ||
-                  {};
-
-                const player =
-                  event?.player ||
-                  {};
-
-                const assist =
-                  event?.assist ||
-                  {};
-
-                return {
-
-                  time: {
-
-                    elapsed:
-                      event?.minute ??
-                      event?.elapsed ??
-                      event?.time?.elapsed ??
-                      null,
-
-                    extra:
-                      event?.extra ??
-                      event?.time?.extra ??
-                      null
-
-                  },
-
-                  team: {
-
-                    id:
-                      team?.id ??
-                      event?.team_id ??
-                      null,
-
-                    name:
-                      team?.name ??
-                      event?.team_name ??
-                      ""
-
-                  },
-
-                  player: {
-
-                    id:
-                      player?.id ??
-                      event?.player_id ??
-                      null,
-
-                    name:
-                      player?.name ??
-                      event?.player_name ??
-                      ""
-
-                  },
-
-                  assist: {
-
-                    id:
-                      assist?.id ??
-                      event?.assist_id ??
-                      null,
-
-                    name:
-                      assist?.name ??
-                      event?.assist_name ??
-                      ""
-
-                  },
-
-                  type:
-                    event?.type ||
-                    event?.event_type ||
-                    "Other",
-
-                  detail:
-                    event?.detail ||
-                    event?.description ||
-                    event?.text ||
-                    event?.comments ||
-                    ""
-
-                };
-
-              }
-            )
-          : [];
-
-      /* ===================================================
-         LINEUPS
-      =================================================== */
 
       const lineups =
         root?.lineups ||
         root?.lineup ||
         [];
 
-      /* ===================================================
-         STATISTICS
-      =================================================== */
-
       const statistics =
         root?.statistics ||
         root?.stats ||
         [];
 
-      /* ===================================================
-         PLAYERS
-      =================================================== */
-
       const players =
         root?.players ||
         [];
 
-      return sendJSON(
+      return output(
         200,
         {
-
-          /*
-             نفس structure اللي script.js
-             ديالك كيستنى
-          */
 
           fixture:
             normalized?.fixture ||
             {
-              id:
-                slug,
-
-              slug:
-                slug
+              id: slug,
+              slug: slug
             },
 
           league:
@@ -912,30 +558,22 @@ const publicId =
             {},
 
           events:
-            Array.isArray(
-              events
-            )
+            Array.isArray(events)
               ? events
               : [],
 
           lineups:
-            Array.isArray(
-              lineups
-            )
+            Array.isArray(lineups)
               ? lineups
               : [],
 
           statistics:
-            Array.isArray(
-              statistics
-            )
+            Array.isArray(statistics)
               ? statistics
               : [],
 
           players:
-            Array.isArray(
-              players
-            )
+            Array.isArray(players)
               ? players
               : [],
 
@@ -946,7 +584,7 @@ const publicId =
       );
     }
 
-    return sendJSON(
+    return output(
       400,
       {
         error:
@@ -957,11 +595,11 @@ const publicId =
   } catch (error) {
 
     console.error(
-      "SPORTSCORE API ERROR:",
+      "SPORTSCORE ERROR:",
       error
     );
 
-    return sendJSON(
+    return output(
       error?.status || 500,
       {
 
@@ -971,6 +609,10 @@ const publicId =
 
         provider:
           "SportScore",
+
+        details:
+          error?.data ||
+          null,
 
         data: []
 
