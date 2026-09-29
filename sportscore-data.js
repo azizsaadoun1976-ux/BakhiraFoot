@@ -1171,94 +1171,35 @@
      AFFICHER TOUTES LES COMPÉTITIONS
      ========================================================= */
 
-  function renderCompetition(
-    result
-  ) {
+ function renderCompetition(result) {
 
-    const {
-      competition,
-      standings,
-      goals,
-      assists
-    } = result;
+  const {
+    competition,
+    standings,
+    goals,
+    assists
+  } = result;
 
-
-    if (!standings.length) {
-
-      return `
-
-        <section class="ss-competition-card">
-
-          <div class="ss-competition-head">
-
-            <div class="ss-competition-brand">
-
-              <div class="ss-competition-logo-wrap">
-
-                <img
-                  src="${escapeHTML(competition.logo)}"
-                  alt="${escapeHTML(competition.name)}"
-                  loading="lazy"
-                >
-
-              </div>
-
-              <div>
-
-                <small>
-                  ${escapeHTML(competition.country)}
-                </small>
-
-                <h2>
-                  ${escapeHTML(competition.name)}
-                </h2>
-
-              </div>
-
-            </div>
-
-          </div>
-
-
-          <div class="ss-no-data">
-            Classement indisponible actuellement.
-          </div>
-
-        </section>
-
-      `;
-
-    }
-
-
-    const rows =
-      standings
-        .map(
-          renderStandingRow
-        )
-        .join("");
-
-
+  if (!standings.length) {
     return `
-
       <section class="ss-competition-card">
 
-        <div class="ss-competition-head">
+        <button
+          type="button"
+          class="ss-competition-toggle"
+        >
 
           <div class="ss-competition-brand">
 
             <div class="ss-competition-logo-wrap">
-
               <img
                 src="${escapeHTML(competition.logo)}"
                 alt="${escapeHTML(competition.name)}"
                 loading="lazy"
               >
-
             </div>
 
-
-            <div>
+            <div class="ss-competition-text">
 
               <small>
                 ${escapeHTML(competition.country)}
@@ -1268,21 +1209,89 @@
                 ${escapeHTML(competition.name)}
               </h2>
 
-              <span>
-                ${standings.length} équipes
-              </span>
-
             </div>
 
           </div>
 
+          <span class="ss-chevron">⌄</span>
 
-          <div class="ss-season">
-            Saison actuelle
+        </button>
+
+        <div class="ss-competition-body">
+
+          <div class="ss-no-data">
+            Classement indisponible actuellement.
           </div>
 
         </div>
 
+      </section>
+    `;
+  }
+
+
+  const rows = standings
+    .map(renderStandingRow)
+    .join("");
+
+
+  return `
+    <section class="ss-competition-card">
+
+      <button
+        type="button"
+        class="ss-competition-toggle"
+        aria-expanded="false"
+      >
+
+        <div class="ss-competition-brand">
+
+          <div class="ss-competition-logo-wrap">
+
+            <img
+              src="${escapeHTML(competition.logo)}"
+              alt="${escapeHTML(competition.name)}"
+              loading="lazy"
+            >
+
+          </div>
+
+
+          <div class="ss-competition-text">
+
+            <small>
+              ${escapeHTML(competition.country)}
+            </small>
+
+            <h2>
+              ${escapeHTML(competition.name)}
+            </h2>
+
+            <span>
+              ${standings.length} équipes
+            </span>
+
+          </div>
+
+        </div>
+
+
+        <div class="ss-competition-right">
+
+          <span class="ss-season">
+            Saison actuelle
+          </span>
+
+          <span class="ss-chevron">
+            ⌄
+          </span>
+
+        </div>
+
+      </button>
+
+
+      <div class="ss-competition-body">
 
         <div class="ss-table-scroll">
 
@@ -1291,27 +1300,17 @@
             <div class="ss-standing-row ss-table-header">
 
               <span>#</span>
-
               <span>Équipe</span>
-
               <span>J</span>
-
               <span>G</span>
-
               <span>N</span>
-
               <span>P</span>
-
               <span>BP</span>
-
               <span>BC</span>
-
               <span>Diff</span>
-
               <span>Pts</span>
 
             </div>
-
 
             ${rows}
 
@@ -1338,15 +1337,72 @@
 
         </div>
 
-      </section>
+      </div>
 
-    `;
-
-  }
-
+    </section>
+  `;
+} 
 
   async function loadAllStandings() {
 
+  function setupCompetitionToggles() {
+
+  const container =
+    document.getElementById("realStandings");
+
+  if (!container) return;
+
+  container
+    .querySelectorAll(".ss-competition-toggle")
+    .forEach((button) => {
+
+      button.addEventListener("click", () => {
+
+        const card =
+          button.closest(".ss-competition-card");
+
+        if (!card) return;
+
+        const isOpen =
+          card.classList.contains("is-open");
+
+        /* نسدو جميع البطولات */
+        container
+          .querySelectorAll(".ss-competition-card")
+          .forEach((otherCard) => {
+
+            otherCard.classList.remove("is-open");
+
+            const otherButton =
+              otherCard.querySelector(
+                ".ss-competition-toggle"
+              );
+
+            if (otherButton) {
+              otherButton.setAttribute(
+                "aria-expanded",
+                "false"
+              );
+            }
+
+          });
+
+        /* إلا كانت مسدودة نفتحها */
+        if (!isOpen) {
+
+          card.classList.add("is-open");
+
+          button.setAttribute(
+            "aria-expanded",
+            "true"
+          );
+
+        }
+
+      });
+
+    });
+}   
     const container =
       document.getElementById(
         "realStandings"
