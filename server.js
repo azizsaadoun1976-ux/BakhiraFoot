@@ -1,31 +1,24 @@
 /* =========================================================
    BAKHIRAFOOT PRO
-   KICKOFFAPI V2 -> BAKHIRAFOOT COMPATIBILITY SERVER
+   SPORTScore API
+   Compatibility server for current script.js
 ========================================================= */
 
 const express = require("express");
-const dotenv = require("dotenv");
-
-dotenv.config();
 
 const app = express();
 
 app.use(express.static("."));
 
 /* =========================================================
-   KICKOFF API
+   SPORTSCORE
 ========================================================= */
 
-const KICKOFF_BASE =
-  "https://api.kickoffapi.com/api/v2";
+const SPORTSCORE_BASE =
+  "https://sportscore.com/api/v1";
 
-const KICKOFF_API_KEY =
-  process.env.KICKOFF_API_KEY;
-
-const headers = {
-  "x-api-key": KICKOFF_API_KEY,
-  "Accept": "application/json"
-};
+const SPORTSCORE_SRC =
+  "bakhira-foot.vercel.app";
 
 /* =========================================================
    CACHE
@@ -40,14 +33,11 @@ let liveCache = {
   time: 0
 };
 
-const MATCH_CACHE_TIME =
-  5 * 60 * 1000;
-
-const LIVE_CACHE_TIME =
+const CACHE_TIME =
   60 * 1000;
 
 const DETAILS_CACHE_TIME =
-  5 * 60 * 1000;
+  60 * 1000;
 
 /* =========================================================
    HELPERS
@@ -59,7 +49,11 @@ function todayISO() {
     .split("T")[0];
 }
 
-function getCache(cache, key, maxAge) {
+function getCached(
+  cache,
+  key,
+  maxAge
+) {
   const item = cache.get(key);
 
   if (!item) {
@@ -75,7 +69,11 @@ function getCache(cache, key, maxAge) {
   return item.data;
 }
 
-function setCache(cache, key, data) {
+function saveCache(
+  cache,
+  key,
+  data
+) {
   cache.set(key, {
     data,
     time: Date.now()
@@ -83,247 +81,410 @@ function setCache(cache, key, data) {
 }
 
 /* =========================================================
-   KICKOFF REQUEST
+   SPORTSCORE REQUEST
 ========================================================= */
 
-async function kickoffFetch(path) {
+async function sportScoreFetch(
+  path
+) {
 
-  if (!KICKOFF_API_KEY) {
+  const separator =
+    path.includes("?")
+      ? "&"
+      : "?";
 
-    throw new Error(
-      "KICKOFF_API_KEY manquante dans .env"
-    );
-  }
+  const url =
+    `${SPORTSCORE_BASE}${path}` +
+    `${separator}src=${encodeURIComponent(
+      SPORTSCORE_SRC
+    )}`;
 
-  const response = await fetch(
-    `${KICKOFF_BASE}${path}`,
-    {
-      method: "GET",
-      headers
-    }
+  console.log(
+    "SportScore:",
+    url
   );
 
-  const remaining =
-    response.headers.get(
-      "X-RateLimit-Remaining"
-    );
-
-  const reset =
-    response.headers.get(
-      "X-RateLimit-Reset"
-    );
+  const response =
+    await fetch(url, {
+      method: "GET",
+      headers: {
+        Accept:
+          "application/json"
+      }
+    });
 
   if (!response.ok) {
 
     const error =
       new Error(
-        `KickoffAPI HTTP ${response.status}`
+        `SportScore HTTP ${response.status}`
       );
 
     error.status =
       response.status;
 
-    error.remaining =
-      remaining;
-
-    error.reset =
-      reset;
-
     throw error;
   }
 
-  const data =
-    await response.json();
+  return response.json();
+}
+
+/* =========================================================
+   FIND ARRAY IN RESPONSE
+========================================================= */
+
+function findArray(data) {
+
+  if (Array.isArray(data)) {
+    return data;
+  }
+
+  if (
+    Array.isArray(data?.matches)
+  ) {
+    return data.matches;
+  }
+
+  if (
+    Array.isArray(data?.data)
+  ) {
+    return data.data;
+  }
+
+  if (
+    Array.isArray(data?.data?.matches)
+  ) {
+    return data.data.matches;
+  }
+
+  if (
+    Array.isArray(data?.fixtures)
+  ) {
+    return data.fixtures;
+  }
+
+  return [];
+}
+
+/* =========================================================
+   STATUS
+========================================================= */
+
+function normalizeStatus(
+  match
+) {
+
+  const raw =
+    String(
+      match?.status ||
+      match?.state ||
+      ""
+    )
+      .toLowerCase()
+      .trim();
+
+  if (
+    raw === "live" ||
+    raw === "inplay" ||
+    raw === "in_play"
+  ) {
+    return "LIVE";
+  }
+
+  if (
+    raw === "finished" ||
+    raw === "ft" ||
+    raw === "ended"
+  ) {
+    return "FT";
+  }
+
+  if (
+    raw === "upcoming" ||
+    raw === "scheduled"
+  ) {
+    return "NS";
+  }
+
+  if (
+    raw === "postponed"
+  ) {
+    return "PST";
+  }
+
+  if (
+    raw === "cancelled" ||
+    raw === "canceled"
+  ) {
+    return "CANC";
+  }
+
+  return (
+    match?.status_code ||
+    match?.short_status ||
+    "NS"
+  );
+}
+
+function normalizeStatusLong(
+  match
+) {
+
+  return (
+    match?.status_text ||
+    match?.status_long ||
+    match?.status ||
+    "Match"
+  );
+}
+
+function getElapsed(
+  match
+) {
+
+  return (
+    match?.minute ??
+    match?.elapsed ??
+    match?.time?.elapsed ??
+    match?.status?.elapsed ??
+    null
+  );
+}
+
+/* =========================================================
+   TEAM
+========================================================= */
+
+function normalizeTeam(
+  source,
+  fallbackName
+) {
+
+  if (
+    typeof source === "string"
+  ) {
+    return {
+      id: null,
+      name: source,
+      logo: ""
+    };
+  }
+
+  source =
+    source || {};
 
   return {
-    data,
-    remaining,
-    reset
+
+    id:
+      source.id ??
+      source.team_id ??
+      null,
+
+    name:
+      source.name ||
+      source.team ||
+      fallbackName,
+
+    logo:
+      source.logo ||
+      source.image ||
+      source.team_logo ||
+      ""
+
   };
 }
 
 /* =========================================================
-   V2 FIXTURE -> LEGACY SHAPE
-   باش script.js الحالي يبقى خدام
+   FIXTURE ADAPTER
 ========================================================= */
 
-function adaptFixture(fixture) {
+function adaptFixture(
+  match
+) {
 
-  if (!fixture) {
+  if (!match) {
     return null;
   }
+
+  const home =
+    normalizeTeam(
+      match.home_team ||
+      match.home,
+      "Domicile"
+    );
+
+  const away =
+    normalizeTeam(
+      match.away_team ||
+      match.away,
+      "Extérieur"
+    );
+
+  const homeScore =
+    match.home_score ??
+    match.score?.home ??
+    match.homeScore ??
+    null;
+
+  const awayScore =
+    match.away_score ??
+    match.score?.away ??
+    match.awayScore ??
+    null;
+
+  const date =
+    match.time ||
+    match.date ||
+    match.start_time ||
+    match.kickoff ||
+    null;
+
+  const slug =
+    match.slug ||
+    match.match_slug ||
+    match.url_slug ||
+    "";
+
+  const id =
+    match.id ??
+    match.match_id ??
+    match.fixture_id ??
+    null;
+
+  const leagueName =
+    typeof match.competition === "string"
+      ? match.competition
+      : (
+          match.competition?.name ||
+          match.league?.name ||
+          match.league ||
+          "Football"
+        );
+
+  const leagueId =
+    match.competition?.id ||
+    match.competition_id ||
+    match.league?.id ||
+    null;
+
+  const leagueCountry =
+    match.competition?.country ||
+    match.league?.country ||
+    null;
+
+  const statusShort =
+    normalizeStatus(
+      match
+    );
+
+  const elapsed =
+    getElapsed(
+      match
+    );
 
   return {
 
     fixture: {
 
-      id:
-        fixture.id ||
-        null,
+      id,
 
-      date:
-        fixture.date ||
-        null,
+      slug,
+
+      date,
 
       timezone:
-        fixture.timezone ||
-        null,
+        match.timezone ||
+        "UTC",
 
       referee:
-        fixture.referee ||
+        match.referee ||
         null,
 
       venue:
-        fixture.venue ||
+        match.venue ||
         null,
 
-      status:
-        fixture.status ||
-        {
-          short: "NS",
-          long: "Not Started",
-          elapsed: null
-        }
+      status: {
+
+        short:
+          statusShort,
+
+        long:
+          normalizeStatusLong(
+            match
+          ),
+
+        elapsed
+
+      }
 
     },
 
     league: {
 
       id:
-        fixture?.league?.id ||
-        null,
+        leagueId,
 
       name:
-        fixture?.league?.name ||
-        "Football",
+        leagueName,
 
       country:
-        fixture?.league?.country ||
-        null,
+        leagueCountry,
 
       logo:
-        fixture?.league?.logo ||
-        null,
-
-      season:
-        fixture?.league?.season ||
-        null,
-
-      round:
-        fixture?.league?.round ||
-        null
+        match.competition?.logo ||
+        match.league?.logo ||
+        ""
 
     },
 
     teams: {
 
-      home: {
+      home,
 
-        id:
-          fixture?.home?.id ||
-          null,
-
-        name:
-          fixture?.home?.name ||
-          "Domicile",
-
-        logo:
-          fixture?.home?.logo ||
-          ""
-
-      },
-
-      away: {
-
-        id:
-          fixture?.away?.id ||
-          null,
-
-        name:
-          fixture?.away?.name ||
-          "Extérieur",
-
-        logo:
-          fixture?.away?.logo ||
-          ""
-
-      }
+      away
 
     },
 
     goals: {
 
       home:
-        fixture?.score?.home ??
-        null,
+        homeScore,
 
       away:
-        fixture?.score?.away ??
-        null
+        awayScore
 
     },
 
     score: {
 
       home:
-        fixture?.score?.home ??
-        null,
+        homeScore,
 
       away:
-        fixture?.score?.away ??
-        null,
+        awayScore,
 
       halftime:
-        fixture?.score?.halftime ||
+        match.score?.halftime ||
         {
           home: null,
           away: null
         },
 
       fulltime:
-        fixture?.score?.fulltime ||
+        match.score?.fulltime ||
         {
-          home:
-            fixture?.score?.home ??
-            null,
-
-          away:
-            fixture?.score?.away ??
-            null
+          home: homeScore,
+          away: awayScore
         }
 
-    },
-
-    content:
-      fixture?.content ||
-      null
+    }
 
   };
 }
 
 /* =========================================================
-   EXTRACT DATA
-========================================================= */
-
-function extractData(result) {
-
-  if (!result) {
-    return null;
-  }
-
-  if (
-    Array.isArray(
-      result.data
-    )
-  ) {
-    return result.data;
-  }
-
-  return result.data ?? null;
-}
-
-/* =========================================================
-   GET MATCHES BY DATE
+   DATE FIXTURES
 ========================================================= */
 
 async function fetchMatchesByDate(
@@ -331,10 +492,10 @@ async function fetchMatchesByDate(
 ) {
 
   const cached =
-    getCache(
+    getCached(
       matchesCache,
       date,
-      MATCH_CACHE_TIME
+      CACHE_TIME
     );
 
   if (cached) {
@@ -349,23 +510,23 @@ async function fetchMatchesByDate(
   try {
 
     const result =
-      await kickoffFetch(
-        `/fixtures?date=${encodeURIComponent(
+      await sportScoreFetch(
+        `/fixtures/?sport=football&date=${encodeURIComponent(
           date
-        )}&limit=100`
+        )}&limit=200`
       );
 
     const raw =
-      extractData(
-        result.data
-      ) || [];
+      findArray(
+        result
+      );
 
     const matches =
       raw
         .map(adaptFixture)
         .filter(Boolean);
 
-    setCache(
+    saveCache(
       matchesCache,
       date,
       matches
@@ -373,37 +534,22 @@ async function fetchMatchesByDate(
 
     return {
       data: matches,
-      cached: false,
-      remaining:
-        result.remaining,
-      reset:
-        result.reset
+      cached: false
     };
 
   } catch (error) {
 
-    /*
-       إلا الـAPI سالات quota ولكن
-       عندنا cache قديم، نستعملوه.
-    */
-
-    const stale =
+    const old =
       matchesCache.get(date);
 
-    if (stale) {
-
-      console.warn(
-        "Using stale date cache:",
-        date
-      );
+    if (old) {
 
       return {
-        data: stale.data,
+        data: old.data,
         cached: true,
-        stale: true,
-        error:
-          error.message
+        stale: true
       };
+
     }
 
     throw error;
@@ -417,10 +563,10 @@ async function fetchMatchesByDate(
 async function fetchLive() {
 
   if (
-    liveCache.time &&
+    liveCache.data.length &&
     Date.now() -
       liveCache.time <
-      LIVE_CACHE_TIME
+      CACHE_TIME
   ) {
 
     return {
@@ -432,19 +578,15 @@ async function fetchLive() {
 
   try {
 
-    /*
-       KickoffAPI v2 كتدعم live=all.
-    */
-
     const result =
-      await kickoffFetch(
-        `/fixtures?live=all&limit=100`
+      await sportScoreFetch(
+        `/fixtures/?sport=football&status=live&limit=200`
       );
 
     const raw =
-      extractData(
-        result.data
-      ) || [];
+      findArray(
+        result
+      );
 
     const matches =
       raw
@@ -452,36 +594,35 @@ async function fetchLive() {
         .filter(Boolean);
 
     liveCache = {
-      data: matches,
-      time: Date.now()
+
+      data:
+        matches,
+
+      time:
+        Date.now()
+
     };
 
     return {
       data: matches,
-      cached: false,
-      remaining:
-        result.remaining,
-      reset:
-        result.reset
+      cached: false
     };
 
   } catch (error) {
-
-    /*
-       نخليو آخر LIVE متوفر بدل
-       ما نخليو الموقع خاوي.
-    */
 
     if (
       liveCache.data.length
     ) {
 
       return {
-        data: liveCache.data,
-        cached: true,
-        stale: true,
-        error:
-          error.message
+        data:
+          liveCache.data,
+
+        cached:
+          true,
+
+        stale:
+          true
       };
 
     }
@@ -491,161 +632,802 @@ async function fetchLive() {
 }
 
 /* =========================================================
-   NORMALIZE PLAYER STATS
+   FIND MATCH IN CACHE
 ========================================================= */
 
-function normalizePlayerStats(
-  playerData
+function findCachedMatch(
+  value
 ) {
 
-  if (
-    !Array.isArray(playerData)
+  const wanted =
+    String(
+      value || ""
+    );
+
+  /* DATE CACHE */
+
+  for (
+    const item
+    of matchesCache.values()
   ) {
-    return [
-      {
-        players: []
-      }
-    ];
-  }
 
-  const players =
-    playerData.map(row => {
+    const found =
+      item.data.find(
+        match => {
 
-      const player =
-        row?.player ||
-        {};
+          const id =
+            match?.fixture?.id;
 
-      const statistics = {
+          const slug =
+            match?.fixture?.slug;
 
-        games: {
-
-          rating:
-            row?.rating ??
-            row?.statistics?.rating ??
-            null,
-
-          minutes:
-            row?.minutes ??
-            row?.statistics?.minutes ??
-            null,
-
-          position:
-            row?.position ??
-            row?.statistics?.position ??
-            null,
-
-          substitute:
-            row?.substitute ??
-            row?.statistics?.substitute ??
-            false,
-
-          captain:
-            row?.captain ??
-            row?.statistics?.captain ??
-            false
-
-        },
-
-        goals: {
-
-          total:
-            row?.goals ??
-            row?.statistics?.goals ??
-            null,
-
-          assists:
-            row?.assists ??
-            row?.statistics?.assists ??
-            null
-
-        },
-
-        cards: {
-
-          yellow:
-            row?.yellow ??
-            row?.statistics?.yellow ??
-            0,
-
-          red:
-            row?.red ??
-            row?.statistics?.red ??
-            0
-
-        },
-
-        shots: {
-
-          total:
-            row?.shots?.total ??
-            row?.shotsTotal ??
-            row?.statistics?.shots?.total ??
-            0,
-
-          on:
-            row?.shots?.on ??
-            row?.shotsOn ??
-            row?.statistics?.shots?.on ??
-            0
-
-        },
-
-        passes: {
-
-          key:
-            row?.passes?.key ??
-            row?.keyPasses ??
-            row?.statistics?.passes?.key ??
-            0
+          return (
+            String(id) === wanted ||
+            String(slug) === wanted
+          );
 
         }
+      );
 
-      };
+    if (found) {
+      return found;
+    }
 
-      return {
+  }
 
-        player: {
+  /* LIVE CACHE */
+
+  const liveFound =
+    liveCache.data.find(
+      match => {
+
+        const id =
+          match?.fixture?.id;
+
+        const slug =
+          match?.fixture?.slug;
+
+        return (
+          String(id) === wanted ||
+          String(slug) === wanted
+        );
+
+      }
+    );
+
+  return liveFound || null;
+}
+
+/* =========================================================
+   LINEUP HELPERS
+========================================================= */
+
+function normalizeLineupPlayer(
+  item
+) {
+
+  const player =
+    item?.player ||
+    item ||
+    {};
+
+  return {
+
+    player: {
+
+      id:
+        player.id ||
+        item?.player_id ||
+        item?.id ||
+        null,
+
+      name:
+        player.name ||
+        item?.name ||
+        "Joueur",
+
+      number:
+        player.number ??
+        item?.number ??
+        item?.shirt_number ??
+        null,
+
+      pos:
+        player.pos ||
+        player.position ||
+        item?.position ||
+        item?.pos ||
+        "",
+
+      grid:
+        player.grid ||
+        item?.grid ||
+        "",
+
+      photo:
+        player.photo ||
+        item?.photo ||
+        ""
+
+    },
+
+    rating:
+      item?.rating ??
+      player?.rating ??
+      null,
+
+    statistics:
+      item?.statistics ||
+      null,
+
+    games:
+      item?.games ||
+      null,
+
+    goals:
+      item?.goals ||
+      null,
+
+    assists:
+      item?.assists ||
+      null,
+
+    cards:
+      item?.cards ||
+      null,
+
+    passes:
+      item?.passes ||
+      null,
+
+    minutes:
+      item?.minutes ||
+      null,
+
+    substitute:
+      item?.substitute ??
+      false,
+
+    captain:
+      item?.captain ??
+      false
+
+  };
+}
+
+function makeLineupBlock(
+  source,
+  fallbackTeam,
+  fallbackId
+) {
+
+  if (!source) {
+    return null;
+  }
+
+  const teamSource =
+    source.team ||
+    {};
+
+  const team = {
+
+    id:
+      teamSource.id ||
+      source.team_id ||
+      fallbackId ||
+      null,
+
+    name:
+      teamSource.name ||
+      source.team_name ||
+      fallbackTeam,
+
+    logo:
+      teamSource.logo ||
+      source.team_logo ||
+      ""
+
+  };
+
+  const starters =
+    source.startXI ||
+    source.startingXI ||
+    source.starting_xi ||
+    source.starters ||
+    source.players?.filter?.(
+      player =>
+        player?.starter === true ||
+        player?.starting === true
+    ) ||
+    [];
+
+  const substitutes =
+    source.substitutes ||
+    source.bench ||
+    source.players?.filter?.(
+      player =>
+        player?.substitute === true
+    ) ||
+    [];
+
+  return {
+
+    team,
+
+    formation:
+      source.formation ||
+      source.tactics ||
+      "—",
+
+    coach:
+      source.coach ||
+      source.manager ||
+      null,
+
+    startXI:
+      starters.map(
+        normalizeLineupPlayer
+      ),
+
+    substitutes:
+      substitutes.map(
+        normalizeLineupPlayer
+      )
+
+  };
+}
+
+/* =========================================================
+   ADAPT LINEUPS
+========================================================= */
+
+function adaptLineups(
+  detail,
+  baseMatch
+) {
+
+  let raw =
+    detail?.lineups ||
+    detail?.lineup ||
+    detail?.formations ||
+    null;
+
+  if (
+    Array.isArray(raw)
+  ) {
+
+    return raw
+      .map(
+        item =>
+          makeLineupBlock(
+            item,
+            item?.team?.name ||
+              "",
+            item?.team?.id ||
+              null
+          )
+      )
+      .filter(Boolean);
+
+  }
+
+  if (
+    raw &&
+    typeof raw === "object"
+  ) {
+
+    const result = [];
+
+    const home =
+      raw.home ||
+      raw.home_team ||
+      null;
+
+    const away =
+      raw.away ||
+      raw.away_team ||
+      null;
+
+    if (home) {
+
+      const block =
+        makeLineupBlock(
+          home,
+          baseMatch?.teams?.home?.name ||
+            "Domicile",
+          baseMatch?.teams?.home?.id ||
+            null
+        );
+
+      if (block) {
+        result.push(block);
+      }
+
+    }
+
+    if (away) {
+
+      const block =
+        makeLineupBlock(
+          away,
+          baseMatch?.teams?.away?.name ||
+            "Extérieur",
+          baseMatch?.teams?.away?.id ||
+            null
+        );
+
+      if (block) {
+        result.push(block);
+      }
+
+    }
+
+    return result;
+  }
+
+  return [];
+}
+
+/* =========================================================
+   EVENTS
+========================================================= */
+
+function normalizeEvent(
+  event
+) {
+
+  const team =
+    event?.team ||
+    {};
+
+  const player =
+    event?.player ||
+    {};
+
+  const assist =
+    event?.assist ||
+    {};
+
+  const rawType =
+    String(
+      event?.type ||
+      event?.kind ||
+      event?.event_type ||
+      ""
+    ).toLowerCase();
+
+  let type =
+    event?.type ||
+    "Other";
+
+  if (
+    rawType.includes("goal")
+  ) {
+    type = "Goal";
+  }
+
+  if (
+    rawType.includes("card")
+  ) {
+    type = "Card";
+  }
+
+  if (
+    rawType.includes("subst")
+  ) {
+    type = "subst";
+  }
+
+  if (
+    rawType.includes("var")
+  ) {
+    type = "VAR";
+  }
+
+  return {
+
+    time: {
+
+      elapsed:
+        event?.minute ??
+        event?.elapsed ??
+        event?.time?.elapsed ??
+        null,
+
+      extra:
+        event?.extra ??
+        event?.time?.extra ??
+        null
+
+    },
+
+    team: {
+
+      id:
+        team.id ||
+        event?.team_id ||
+        null,
+
+      name:
+        team.name ||
+        event?.team_name ||
+        ""
+
+    },
+
+    player: {
+
+      id:
+        player.id ||
+        event?.player_id ||
+        null,
+
+      name:
+        player.name ||
+        event?.player_name ||
+        ""
+
+    },
+
+    assist: {
+
+      id:
+        assist.id ||
+        event?.assist_id ||
+        null,
+
+      name:
+        assist.name ||
+        event?.assist_name ||
+        ""
+
+    },
+
+    type,
+
+    detail:
+      event?.detail ||
+      event?.description ||
+      event?.text ||
+      event?.comments ||
+      ""
+
+  };
+}
+
+/* =========================================================
+   PLAYER DATA FROM LINEUPS
+========================================================= */
+
+function makePlayersFromLineups(
+  lineups
+) {
+
+  const result = [];
+
+  lineups.forEach(
+    lineup => {
+
+      const team =
+        lineup?.team ||
+        {};
+
+      const allPlayers = [
+
+        ...(
+          Array.isArray(
+            lineup?.startXI
+          )
+            ? lineup.startXI
+            : []
+        ),
+
+        ...(
+          Array.isArray(
+            lineup?.substitutes
+          )
+            ? lineup.substitutes
+            : []
+        )
+
+      ];
+
+      if (
+        !allPlayers.length
+      ) {
+        return;
+      }
+
+      const players =
+        allPlayers.map(
+          item => {
+
+            const normalized =
+              normalizeLineupPlayer(
+                item
+              );
+
+            const p =
+              normalized.player;
+
+            const stats =
+              normalized.statistics ||
+              {};
+
+            return {
+
+              player: p,
+
+              statistics: [
+
+                {
+
+                  games: {
+
+                    rating:
+                      normalized.rating ??
+                      stats?.rating ??
+                      stats?.games?.rating ??
+                      null,
+
+                    minutes:
+                      normalized.minutes ??
+                      stats?.minutes ??
+                      stats?.games?.minutes ??
+                      null,
+
+                    position:
+                      p.pos ||
+                      stats?.position ||
+                      "",
+
+                    substitute:
+                      normalized.substitute,
+
+                    captain:
+                      normalized.captain
+
+                  },
+
+                  goals:
+                    normalized.goals ||
+                    stats?.goals ||
+                    {},
+
+                  cards:
+                    normalized.cards ||
+                    stats?.cards ||
+                    {},
+
+                  passes:
+                    normalized.passes ||
+                    stats?.passes ||
+                    {}
+
+                }
+
+              ]
+
+            };
+
+          }
+        );
+
+      result.push({
+
+        team: {
 
           id:
-            player?.id ??
-            row?.id ??
+            team.id ||
             null,
 
           name:
-            player?.name ??
-            row?.name ??
-            "Joueur",
+            team.name ||
+            "",
 
-          number:
-            player?.number ??
-            row?.number ??
-            null,
-
-          pos:
-            player?.pos ??
-            row?.position ??
-            null,
-
-          photo:
-            player?.photo ??
-            row?.photo ??
+          logo:
+            team.logo ||
             ""
 
         },
 
-        statistics: [
-          statistics
-        ]
+        players
 
-      };
+      });
 
-    });
-
-  return [
-    {
-      players
     }
-  ];
+  );
+
+  return result;
+}
+
+/* =========================================================
+   STATISTICS
+========================================================= */
+
+function normalizeStatistics(
+  detail
+) {
+
+  const stats =
+    detail?.statistics ||
+    detail?.stats ||
+    [];
+
+  if (
+    Array.isArray(stats)
+  ) {
+    return stats;
+  }
+
+  if (
+    stats &&
+    typeof stats === "object"
+  ) {
+
+    const home =
+      stats.home ||
+      stats.home_team ||
+      null;
+
+    const away =
+      stats.away ||
+      stats.away_team ||
+      null;
+
+    const result = [];
+
+    if (home) {
+
+      result.push({
+
+        team: {
+
+          id:
+            home?.team?.id ||
+            null,
+
+          name:
+            home?.team?.name ||
+            detail?.match?.home ||
+            "Domicile"
+
+        },
+
+        statistics:
+          Array.isArray(
+            home.statistics
+          )
+            ? home.statistics
+            : Object.entries(
+                home
+              ).map(
+                ([type, value]) => ({
+                  type,
+                  value
+                })
+              )
+
+      });
+
+    }
+
+    if (away) {
+
+      result.push({
+
+        team: {
+
+          id:
+            away?.team?.id ||
+            null,
+
+          name:
+            away?.team?.name ||
+            detail?.match?.away ||
+            "Extérieur"
+
+        },
+
+        statistics:
+          Array.isArray(
+            away.statistics
+          )
+            ? away.statistics
+            : Object.entries(
+                away
+              ).map(
+                ([type, value]) => ({
+                  type,
+                  value
+                })
+              )
+
+      });
+
+    }
+
+    return result;
+  }
+
+  return [];
+}
+
+/* =========================================================
+   DETAIL ADAPTER
+========================================================= */
+
+function adaptMatchDetails(
+  result,
+  baseMatch
+) {
+
+  const root =
+    result?.data ||
+    result?.match ||
+    result ||
+    {};
+
+  const match =
+    root?.match ||
+    root?.fixture ||
+    root?.data ||
+    root;
+
+  const adaptedBase =
+    adaptFixture(
+      match
+    ) ||
+    baseMatch;
+
+  const lineups =
+    adaptLineups(
+      root,
+      adaptedBase
+    );
+
+  const rawTimeline =
+    root?.timeline ||
+    root?.events ||
+    root?.incidents ||
+    [];
+
+  const events =
+    Array.isArray(
+      rawTimeline
+    )
+      ? rawTimeline.map(
+          normalizeEvent
+        )
+      : [];
+
+  const statistics =
+    normalizeStatistics(
+      root
+    );
+
+  const players =
+    Array.isArray(
+      root?.players
+    )
+      ? root.players
+      : makePlayersFromLineups(
+          lineups
+        );
+
+  return {
+
+    ...adaptedBase,
+
+    events,
+
+    lineups,
+
+    statistics,
+
+    players
+
+  };
 }
 
 /* =========================================================
@@ -653,13 +1435,13 @@ function normalizePlayerStats(
 ========================================================= */
 
 async function fetchMatchDetails(
-  fixtureId
+  identifier
 ) {
 
   const cached =
-    getCache(
+    getCached(
       detailsCache,
-      fixtureId,
+      String(identifier),
       DETAILS_CACHE_TIME
     );
 
@@ -672,191 +1454,65 @@ async function fetchMatchDetails(
 
   }
 
+  let baseMatch =
+    findCachedMatch(
+      identifier
+    );
+
+  let slug =
+    baseMatch?.fixture?.slug ||
+    null;
+
   /*
-     On récupère:
-     1. fixture
-     2. events
-     3. lineups
-     4. statistics
-     5. player stats
+     إلى دخل slug مباشرة
   */
-
-  const results =
-    await Promise.allSettled([
-
-      kickoffFetch(
-        `/fixtures/${encodeURIComponent(
-          fixtureId
-        )}`
-      ),
-
-      kickoffFetch(
-        `/fixtures/${encodeURIComponent(
-          fixtureId
-        )}/events`
-      ),
-
-      kickoffFetch(
-        `/fixtures/${encodeURIComponent(
-          fixtureId
-        )}/lineups`
-      ),
-
-      kickoffFetch(
-        `/fixtures/${encodeURIComponent(
-          fixtureId
-        )}/statistics`
-      ),
-
-      kickoffFetch(
-        `/fixtures/${encodeURIComponent(
-          fixtureId
-        )}/players`
-      )
-
-    ]);
-
-  const fixtureResult =
-    results[0];
-
-  const eventsResult =
-    results[1];
-
-  const lineupsResult =
-    results[2];
-
-  const statisticsResult =
-    results[3];
-
-  const playersResult =
-    results[4];
-
-  let fixture = null;
 
   if (
-    fixtureResult.status === "fulfilled"
+    !slug &&
+    /[a-z-]/i.test(
+      String(identifier)
+    )
   ) {
-
-    const value =
-      fixtureResult.value?.data;
-
-    const raw =
-      value?.data ||
-      null;
-
-    fixture =
-      adaptFixture(raw);
-
+    slug =
+      String(identifier);
   }
 
-  /*
-     Si le endpoint principal est rate-limited,
-     on essaie de récupérer le match depuis
-     le cache des matchs.
-  */
+  if (!slug) {
 
-  if (!fixture) {
-
-    for (
-      const entry
-      of matchesCache.values()
-    ) {
-
-      const found =
-        entry.data.find(
-          match =>
-            String(
-              match?.fixture?.id
-            ) ===
-            String(fixtureId)
-        );
-
-      if (found) {
-        fixture = found;
-        break;
-      }
-
-    }
-
-  }
-
-  const events =
-    eventsResult.status ===
-    "fulfilled"
-      ? (
-          extractData(
-            eventsResult.value.data
-          ) || []
-        )
-      : [];
-
-  const lineups =
-    lineupsResult.status ===
-    "fulfilled"
-      ? (
-          extractData(
-            lineupsResult.value.data
-          ) || []
-        )
-      : [];
-
-  const statistics =
-    statisticsResult.status ===
-    "fulfilled"
-      ? (
-          extractData(
-            statisticsResult.value.data
-          ) || []
-        )
-      : [];
-
-  let players = [];
-
-  if (
-    playersResult.status ===
-    "fulfilled"
-  ) {
-
-    const playerRaw =
-      extractData(
-        playersResult.value.data
-      ) || [];
-
-    players =
-      normalizePlayerStats(
-        playerRaw
-      );
-
-  }
-
-  const details = {
-
-    ...fixture,
-
-    events,
-
-    lineups,
-
-    statistics,
-
-    players
-
-  };
-
-  /*
-     حتى إلا شي endpoint من التفاصيل
-     فشل، نخزنو اللي قدرنا نجيبو.
-  */
-
-  if (details.fixture) {
-
-    setCache(
-      detailsCache,
-      fixtureId,
-      details
+    throw new Error(
+      "Match slug introuvable"
     );
 
   }
+
+  const result =
+    await sportScoreFetch(
+      `/match/?sport=football&slug=${encodeURIComponent(
+        slug
+      )}`
+    );
+
+  const details =
+    adaptMatchDetails(
+      result,
+      baseMatch
+    );
+
+  saveCache(
+    detailsCache,
+    String(identifier),
+    details
+  );
+
+  /*
+     نخليو كذلك cache بالـslug
+  */
+
+  saveCache(
+    detailsCache,
+    slug,
+    details
+  );
 
   return {
     data: details,
@@ -865,11 +1521,7 @@ async function fetchMatchDetails(
 }
 
 /* =========================================================
-   MAIN API ROUTE
-   script.js كيستعمل:
-   /api?date=...
-   /api?live=all
-   /api?fixture=...
+   MAIN API
 ========================================================= */
 
 app.get(
@@ -878,9 +1530,9 @@ app.get(
 
     try {
 
-      /* ==========================
+      /* ===================================
          LIVE
-      ========================== */
+      =================================== */
 
       if (
         req.query.live === "all"
@@ -890,7 +1542,8 @@ app.get(
           await fetchLive();
 
         return res.json({
-          data: result.data,
+          data:
+            result.data,
           cached:
             result.cached || false,
           stale:
@@ -899,44 +1552,36 @@ app.get(
 
       }
 
-      /* ==========================
-         FIXTURE DETAILS
-      ========================== */
+      /* ===================================
+         DETAILS
+      =================================== */
 
       if (
         req.query.fixture
       ) {
 
-        const fixtureId =
+        const identifier =
           String(
             req.query.fixture
           ).trim();
 
-        if (!fixtureId) {
-
-          return res.status(400).json({
-            error:
-              "fixture ID manquant"
-          });
-
-        }
-
         const result =
           await fetchMatchDetails(
-            fixtureId
+            identifier
           );
 
         return res.json({
-          data: result.data,
+          data:
+            result.data,
           cached:
             result.cached || false
         });
 
       }
 
-      /* ==========================
+      /* ===================================
          DATE
-      ========================== */
+      =================================== */
 
       const date =
         req.query.date ||
@@ -948,7 +1593,8 @@ app.get(
         );
 
       return res.json({
-        data: result.data,
+        data:
+          result.data,
         cached:
           result.cached || false,
         stale:
@@ -958,32 +1604,21 @@ app.get(
     } catch (error) {
 
       console.error(
-        "API ERROR:",
+        "SPORTSCORE ERROR:",
         error
       );
 
-      const status =
-        error?.status === 429
-          ? 429
-          : 500;
-
       return res.status(
-        status
+        error?.status === 404
+          ? 404
+          : 500
       ).json({
 
         error:
           error.message ||
-          "API error",
+          "SportScore error",
 
-        data: [],
-
-        rateLimitRemaining:
-          error?.remaining ??
-          null,
-
-        rateLimitReset:
-          error?.reset ??
-          null
+        data: []
 
       });
 
@@ -993,8 +1628,7 @@ app.get(
 );
 
 /* =========================================================
-   COMPATIBILITY:
-   /api/matches?date=...
+   OLD ROUTES — COMPATIBILITY
 ========================================================= */
 
 app.get(
@@ -1013,7 +1647,8 @@ app.get(
         );
 
       res.json({
-        data: result.data,
+        data:
+          result.data,
         cached:
           result.cached || false,
         stale:
@@ -1021,11 +1656,6 @@ app.get(
       });
 
     } catch (error) {
-
-      console.error(
-        "MATCHES ERROR:",
-        error
-      );
 
       res.status(
         error?.status === 429
@@ -1044,11 +1674,6 @@ app.get(
 
   }
 );
-
-/* =========================================================
-   COMPATIBILITY:
-   /api/live
-========================================================= */
 
 app.get(
   "/api/live",
@@ -1060,7 +1685,8 @@ app.get(
         await fetchLive();
 
       res.json({
-        data: result.data,
+        data:
+          result.data,
         cached:
           result.cached || false,
         stale:
@@ -1069,16 +1695,7 @@ app.get(
 
     } catch (error) {
 
-      console.error(
-        "LIVE ERROR:",
-        error
-      );
-
-      res.status(
-        error?.status === 429
-          ? 429
-          : 500
-      ).json({
+      res.status(500).json({
 
         error:
           error.message,
@@ -1093,7 +1710,7 @@ app.get(
 );
 
 /* =========================================================
-   TEST
+   TEST SERVER
 ========================================================= */
 
 app.get(
@@ -1102,19 +1719,27 @@ app.get(
 
     res.json({
 
-      status: "ok",
+      status:
+        "ok",
 
       service:
         "BakhiraFoot",
 
       api:
-        "KickoffAPI v2",
+        "SportScore",
 
-      routes: [
-        "/api?date=YYYY-MM-DD",
-        "/api?live=all",
-        "/api?fixture=FX_ID"
-      ]
+      routes: {
+
+        matches:
+          "/api?date=YYYY-MM-DD",
+
+        live:
+          "/api?live=all",
+
+        details:
+          "/api?fixture=MATCH_ID_OR_SLUG"
+
+      }
 
     });
 
@@ -1122,7 +1747,7 @@ app.get(
 );
 
 /* =========================================================
-   TEST KICKOFF API
+   TEST SPORTSCORE
 ========================================================= */
 
 app.get(
@@ -1132,47 +1757,32 @@ app.get(
     try {
 
       const result =
-        await kickoffFetch(
-          "/fixtures?date=" +
-          todayISO() +
-          "&limit=5"
+        await sportScoreFetch(
+          `/fixtures/?sport=football&date=${todayISO()}&limit=5`
         );
 
       res.json({
 
-        status: "ok",
+        status:
+          "ok",
 
-        remaining:
-          result.remaining,
-
-        reset:
-          result.reset,
+        provider:
+          "SportScore",
 
         data:
-          result.data
+          result
 
       });
 
     } catch (error) {
 
-      res.status(
-        error?.status === 429
-          ? 429
-          : 500
-      ).json({
+      res.status(500).json({
 
-        status: "error",
+        status:
+          "error",
 
         error:
-          error.message,
-
-        remaining:
-          error?.remaining ??
-          null,
-
-        reset:
-          error?.reset ??
-          null
+          error.message
 
       });
 
@@ -1182,7 +1792,7 @@ app.get(
 );
 
 /* =========================================================
-   START / VERCEL
+   VERCEL
 ========================================================= */
 
 module.exports = app;
