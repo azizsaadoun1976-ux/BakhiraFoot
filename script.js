@@ -164,11 +164,10 @@ function getFixtureId(match) {
     match?.slug ||
     match?.fixture?.id ||
     match?.id ||
-    match?.match_slug ||
-    match?.match_id ||
     null
   );
 }
+
 /* =========================================================
    MATCH IMPORTANCE
 ========================================================= */
@@ -599,19 +598,11 @@ function createMatchHTML(match, index) {
 
   const fixtureId = getFixtureId(match);
 
-  const matchSlug =
-    match?.fixture?.slug ||
-    match?.slug ||
-    match?.match_slug ||
-    fixtureId ||
-    "";
-
   return `
     <div
       class="match-card"
       data-match-index="${index}"
       data-fixture-id="${escapeHTML(fixtureId || "")}"
-      data-match-slug="${escapeHTML(matchSlug || "")}"
       onclick="openMatchDetails(${index})"
     >
 
@@ -4045,51 +4036,15 @@ async function openMatchDetails(index) {
     currentMatches[index];
 
   if (!match) {
-    toast("تفاصيل الماتش غير متوفرة");
-    return;
-  }
-
-  /*
-   * SportScore needs the MATCH SLUG.
-   * كنحاولو ناخدوه من جميع الأماكن الممكنة.
-   */
-
-  const fixtureId =
-    match?.fixture?.slug ||
-    match?.slug ||
-    match?.match_slug ||
-    match?.fixture?.id ||
-    match?.id ||
-    match?.match_id ||
-    null;
-
-  console.log(
-    "BAKHIRAFOOT MATCH CLICK:",
-    {
-      index,
-      fixtureId,
-      match
-    }
-  );
-
-  if (!fixtureId) {
-    toast("Slug ديال الماتش غير متوفر");
-    console.error(
-      "NO MATCH SLUG:",
-      match
+    toast(
+      "تفاصيل الماتش غير متوفرة"
     );
     return;
   }
 
-  createMatchModal();
+  const fixtureId =
+    getFixtureId(match);
 
-  const content =
-    $("matchDetailsContent");
-
-  if (!content) return;
-
-  currentOpenedFixture =
-    String(fixtureId);
   currentOpenedFixture =
     fixtureId;
 
