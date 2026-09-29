@@ -84,17 +84,62 @@ module.exports = async (req, res) => {
         return null;
       }
 
-      const slug =
-        item.slug ||
-        item.match_slug ||
-        null;
+     function makeSlug(value) {
+  return String(value || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/&/g, " and ")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "");
+}
 
-      const id =
-        slug ||
-        item.id ||
-        item.match_id ||
-        item.fixture_id ||
-        null;
+const rawHome =
+  item.home ||
+  item.home_team?.name ||
+  item.homeTeam?.name ||
+  item.fixture?.home?.name ||
+  item.match?.home ||
+  item.match?.home_team?.name ||
+  "";
+
+const rawAway =
+  item.away ||
+  item.away_team?.name ||
+  item.awayTeam?.name ||
+  item.fixture?.away?.name ||
+  item.match?.away ||
+  item.match?.away_team?.name ||
+  "";
+
+const sportScoreSlug =
+  item.slug ||
+  item.match_slug ||
+  item.fixture?.slug ||
+  item.fixture?.match_slug ||
+  item.match?.slug ||
+  null;
+
+const generatedSlug =
+  sportScoreSlug ||
+  (
+    rawHome &&
+    rawAway
+      ? `${makeSlug(rawHome)}-vs-${makeSlug(rawAway)}`
+      : null
+  );
+
+const slug =
+  generatedSlug;
+
+const id =
+  slug ||
+  item.id ||
+  item.match_id ||
+  item.fixture_id ||
+  item.match?.id ||
+  item.fixture?.id ||
+  null;
 
       const homeName =
         item.home ||
