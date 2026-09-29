@@ -1,0 +1,713 @@
+```html
+<!doctype html>
+<html lang="fr">
+
+<head>
+
+  <meta charset="UTF-8">
+
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1"
+  >
+
+  <title>Politique de confidentialité – BakhiraFoot</title>
+
+  <meta
+    name="description"
+    content="Découvrez la politique de confidentialité de BakhiraFoot et les informations relatives aux cookies et à la protection des visiteurs."
+  >
+
+  <meta
+    name="robots"
+    content="index, follow"
+  >
+
+  <link
+    rel="canonical"
+    href="https://bakhira-foot.vercel.app/privacy.html"
+  >
+
+  <link
+    rel="icon"
+    href="/favicon.svg"
+    type="image/svg+xml"
+  >
+
+  <link
+    rel="stylesheet"
+    href="style.css"
+  >
+
+  <style>
+
+    /* =========================================
+       PRIVACY PAGE
+       ========================================= */
+
+    .privacy-page {
+      width: min(900px, calc(100% - 40px));
+      margin: 0 auto;
+      padding: 34px 0 55px;
+    }
+
+    .privacy-hero {
+      padding: 32px;
+      margin-bottom: 16px;
+
+      border: 1px solid #e1e8ec;
+      border-radius: 20px;
+
+      background:
+        radial-gradient(
+          circle at 90% 10%,
+          rgba(32, 212, 134, .08),
+          transparent 32%
+        ),
+        linear-gradient(
+          145deg,
+          #ffffff,
+          #f7fafb
+        );
+
+      box-shadow:
+        0 10px 30px rgba(15, 23, 42, .05);
+    }
+
+    .privacy-eyebrow {
+      display: inline-flex;
+      align-items: center;
+      gap: 7px;
+
+      margin-bottom: 12px;
+      padding: 6px 9px;
+
+      border-radius: 7px;
+
+      background: #eef8f4;
+      color: #087f51;
+
+      font-size: 10px;
+      font-weight: 850;
+      letter-spacing: .04em;
+    }
+
+    .privacy-hero h1 {
+      margin: 0 0 10px;
+
+      color: #15232d;
+
+      font-size: clamp(29px, 4vw, 44px);
+      line-height: 1.08;
+      letter-spacing: -.04em;
+
+      font-weight: 900;
+    }
+
+    .privacy-hero p {
+      max-width: 700px;
+
+      margin: 0;
+
+      color: #687984;
+
+      font-size: 13px;
+      line-height: 1.7;
+    }
+
+    .privacy-card {
+      padding: 24px;
+
+      border: 1px solid #e1e8ec;
+      border-radius: 14px;
+
+      background: #ffffff;
+
+      box-shadow:
+        0 5px 20px rgba(15, 23, 42, .04);
+    }
+
+    .privacy-section {
+      padding: 0 0 20px;
+      margin-bottom: 20px;
+
+      border-bottom: 1px solid #edf1f3;
+    }
+
+    .privacy-section:last-child {
+      padding-bottom: 0;
+      margin-bottom: 0;
+      border-bottom: 0;
+    }
+
+    .privacy-section h2 {
+      margin: 0 0 9px;
+
+      color: #1b2a34;
+
+      font-size: 17px;
+      font-weight: 850;
+    }
+
+    .privacy-section p {
+      margin: 0 0 9px;
+
+      color: #687984;
+
+      font-size: 13px;
+      line-height: 1.75;
+    }
+
+    .privacy-section p:last-child {
+      margin-bottom: 0;
+    }
+
+    .privacy-section ul {
+      margin: 8px 0 0;
+      padding-left: 20px;
+
+      color: #687984;
+
+      font-size: 13px;
+      line-height: 1.75;
+    }
+
+    .privacy-section li {
+      margin-bottom: 5px;
+    }
+
+    .privacy-email {
+      color: #087f51;
+      font-weight: 800;
+      text-decoration: none;
+    }
+
+    .privacy-email:hover {
+      text-decoration: underline;
+      text-underline-offset: 3px;
+    }
+
+    .privacy-back {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 7px;
+
+      margin-top: 18px;
+
+      min-height: 42px;
+      padding: 0 15px;
+
+      border-radius: 9px;
+
+      background: #172730;
+      color: #ffffff;
+
+      text-decoration: none;
+
+      font-size: 12px;
+      font-weight: 800;
+    }
+
+    /* =========================================
+       FOOTER
+       ========================================= */
+
+    .privacy-footer {
+      padding: 28px 20px;
+
+      border-top: 1px solid #e1e8ec;
+
+      background: #eef3f5;
+
+      text-align: center;
+    }
+
+    .privacy-footer-copy {
+      margin-bottom: 10px;
+
+      color: #64747f;
+
+      font-size: 11px;
+    }
+
+    .privacy-footer-links {
+      display: flex;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 8px 18px;
+    }
+
+    .privacy-footer-links a {
+      color: #53636e;
+
+      text-decoration: none;
+
+      font-size: 11px;
+      font-weight: 700;
+    }
+
+    /* =========================================
+       DARK MODE
+       ========================================= */
+
+    .dark .privacy-hero {
+      border-color: #29343d;
+
+      background:
+        radial-gradient(
+          circle at 90% 10%,
+          rgba(32, 212, 134, .06),
+          transparent 32%
+        ),
+        linear-gradient(
+          145deg,
+          #151d24,
+          #10171c
+        );
+
+      box-shadow:
+        0 10px 30px rgba(0, 0, 0, .16);
+    }
+
+    .dark .privacy-eyebrow {
+      background: #173229;
+      color: #68dda5;
+    }
+
+    .dark .privacy-hero h1 {
+      color: #edf2f5;
+    }
+
+    .dark .privacy-hero p {
+      color: #96a4ad;
+    }
+
+    .dark .privacy-card {
+      background: #151d24;
+      border-color: #29343d;
+
+      box-shadow:
+        0 8px 25px rgba(0, 0, 0, .15);
+    }
+
+    .dark .privacy-section {
+      border-color: #29343d;
+    }
+
+    .dark .privacy-section h2 {
+      color: #edf2f5;
+    }
+
+    .dark .privacy-section p,
+    .dark .privacy-section ul {
+      color: #96a4ad;
+    }
+
+    .dark .privacy-email {
+      color: #68dda5;
+    }
+
+    .dark .privacy-back {
+      background: #edf2f5;
+      color: #151d24;
+    }
+
+    .dark .privacy-footer {
+      background: #11181e;
+      border-color: #29343d;
+    }
+
+    .dark .privacy-footer-copy,
+    .dark .privacy-footer-links a {
+      color: #95a3ac;
+    }
+
+    .dark .privacy-footer-links a:hover {
+      color: #edf2f5;
+    }
+
+    /* =========================================
+       MOBILE
+       ========================================= */
+
+    @media (max-width: 700px) {
+
+      .privacy-page {
+        width: min(
+          100% - 20px,
+          900px
+        );
+
+        padding:
+          18px 0 35px;
+      }
+
+      .privacy-hero {
+        padding: 21px 16px;
+        border-radius: 15px;
+      }
+
+      .privacy-hero h1 {
+        font-size: 28px;
+      }
+
+      .privacy-hero p {
+        font-size: 12px;
+      }
+
+      .privacy-card {
+        padding: 16px;
+        border-radius: 11px;
+      }
+
+      .privacy-section h2 {
+        font-size: 16px;
+      }
+
+      .privacy-section p,
+      .privacy-section ul {
+        font-size: 12px;
+        line-height: 1.7;
+      }
+
+      .privacy-back {
+        width: 100%;
+      }
+
+      .privacy-footer {
+        padding:
+          22px 12px;
+      }
+    }
+
+  </style>
+
+</head>
+
+<body>
+
+  <header>
+
+    <div class="logo">
+
+      <a
+        href="index.html"
+        aria-label="Retour à l'accueil BakhiraFoot"
+      >
+
+        <img
+          src="logo.svg"
+          alt="BakhiraFoot - Football"
+        >
+
+      </a>
+
+    </div>
+
+    <nav>
+
+      <a
+        href="index.html"
+        style="
+          color:#aeb9c1;
+          text-decoration:none;
+          padding:22px 12px;
+          font-weight:800;
+        "
+      >
+        Accueil
+      </a>
+
+      <a
+        href="articles.html"
+        style="
+          color:#aeb9c1;
+          text-decoration:none;
+          padding:22px 12px;
+          font-weight:800;
+        "
+      >
+        Articles
+      </a>
+
+      <a
+        href="about.html"
+        style="
+          color:#aeb9c1;
+          text-decoration:none;
+          padding:22px 12px;
+          font-weight:800;
+        "
+      >
+        À propos
+      </a>
+
+      <a
+        href="contact.html"
+        style="
+          color:#aeb9c1;
+          text-decoration:none;
+          padding:22px 12px;
+          font-weight:800;
+        "
+      >
+        Contact
+      </a>
+
+    </nav>
+
+  </header>
+
+
+  <main>
+
+    <div class="privacy-page">
+
+      <section class="privacy-hero">
+
+        <div class="privacy-eyebrow">
+          🔒 BAKHIRAFOOT
+        </div>
+
+        <h1>
+          Politique de confidentialité
+        </h1>
+
+        <p>
+          Cette page explique de manière simple comment
+          BakhiraFoot traite les informations liées à
+          l'utilisation du site et aux préférences des visiteurs.
+        </p>
+
+      </section>
+
+
+      <article class="privacy-card">
+
+
+        <section class="privacy-section">
+
+          <h2>
+            1. Informations générales
+          </h2>
+
+          <p>
+            BakhiraFoot est une plateforme consacrée au football,
+            notamment aux scores, matchs, compétitions, équipes
+            et contenus éditoriaux.
+          </p>
+
+          <p>
+            Nous accordons de l'importance à la protection de
+            la vie privée des visiteurs et cherchons à limiter
+            la collecte d'informations au nécessaire.
+          </p>
+
+        </section>
+
+
+        <section class="privacy-section">
+
+          <h2>
+            2. Cookies
+          </h2>
+
+          <p>
+            BakhiraFoot peut utiliser des cookies et des
+            technologies similaires pour le fonctionnement
+            du site et pour mémoriser certaines préférences.
+          </p>
+
+          <p>
+            Le site peut notamment enregistrer votre choix
+            concernant les préférences de cookies ainsi que
+            certains réglages locaux du site.
+          </p>
+
+          <p>
+            Vous pouvez gérer vos préférences à partir du
+            bandeau de cookies lorsqu'il est présenté.
+          </p>
+
+        </section>
+
+
+        <section class="privacy-section">
+
+          <h2>
+            3. Services tiers
+          </h2>
+
+          <p>
+            Certaines fonctionnalités ou certains services
+            intégrés au site peuvent être fournis par des
+            prestataires tiers.
+          </p>
+
+          <p>
+            Ces services peuvent appliquer leurs propres
+            politiques de confidentialité et leurs propres
+            règles concernant les cookies ou technologies
+            similaires.
+          </p>
+
+          <p>
+            Les préférences disponibles sur BakhiraFoot
+            peuvent permettre au visiteur de contrôler
+            certains cookies optionnels.
+          </p>
+
+        </section>
+
+
+        <section class="privacy-section">
+
+          <h2>
+            4. Utilisation du site
+          </h2>
+
+          <p>
+            Les visiteurs peuvent consulter librement les
+            différentes pages de BakhiraFoot, notamment les
+            résultats, les articles, les pages d'information
+            et les contenus football.
+          </p>
+
+          <p>
+            Les informations affichées sur le site sont
+            destinées à fournir une expérience pratique
+            et informative aux passionnés de football.
+          </p>
+
+        </section>
+
+
+        <section class="privacy-section">
+
+          <h2>
+            5. Liens externes
+          </h2>
+
+          <p>
+            Le site peut contenir des liens vers des pages
+            ou services externes. BakhiraFoot ne contrôle
+            pas les politiques de confidentialité de ces
+            services externes.
+          </p>
+
+        </section>
+
+
+        <section class="privacy-section">
+
+          <h2>
+            6. Sécurité
+          </h2>
+
+          <p>
+            Nous cherchons à maintenir des mesures raisonnables
+            pour protéger le site et limiter les risques liés
+            à son utilisation.
+          </p>
+
+        </section>
+
+
+        <section class="privacy-section">
+
+          <h2>
+            7. Modifications
+          </h2>
+
+          <p>
+            Cette politique peut être mise à jour lorsque
+            le fonctionnement du site ou ses services évoluent.
+            La version publiée sur cette page est la version
+            applicable affichée sur le site.
+          </p>
+
+        </section>
+
+
+        <section class="privacy-section">
+
+          <h2>
+            8. Contact
+          </h2>
+
+          <p>
+            Pour toute question concernant cette politique
+            de confidentialité, vous pouvez nous contacter
+            à l'adresse suivante :
+          </p>
+
+          <p>
+            <a
+              class="privacy-email"
+              href="mailto:saadamerican86@gmail.com"
+            >
+              saadamerican86@gmail.com
+            </a>
+          </p>
+
+        </section>
+
+
+        <a
+          class="privacy-back"
+          href="index.html"
+        >
+          ← Retour à BakhiraFoot
+        </a>
+
+      </article>
+
+    </div>
+
+  </main>
+
+
+  <footer class="privacy-footer">
+
+    <div class="privacy-footer-copy">
+      © 2026 BakhiraFoot — Made By Saâd Bouajaji
+    </div>
+
+    <div class="privacy-footer-links">
+
+      <a href="index.html">
+        Accueil
+      </a>
+
+      <a href="articles.html">
+        Articles
+      </a>
+
+      <a href="about.html">
+        À propos
+      </a>
+
+      <a href="contact.html">
+        Contact
+      </a>
+
+      <a href="privacy.html">
+        Confidentialité
+      </a>
+
+      <a href="terms.html">
+        Conditions
+      </a>
+
+    </div>
+
+  </footer>
+
+
+  <script src="theme-auto.js"></script>
+
+</body>
+
+</html>
+```
