@@ -5322,3 +5322,287 @@ body.dark .bf-match-bottom {
   }
 
 }
+/* =========================================
+   BAKHIRAFOOT - MATCH CARD OVERRIDE
+   ========================================= */
+
+#homeMatches .match-card,
+#scoreList .match-card {
+  display: grid !important;
+  grid-template-columns: 1fr auto 1fr !important;
+  grid-template-rows: auto 1fr auto !important;
+
+  gap: 0 !important;
+
+  min-height: 150px !important;
+
+  padding: 0 !important;
+  margin-bottom: 12px !important;
+
+  overflow: hidden !important;
+
+  border-radius: 18px !important;
+
+  background: #ffffff !important;
+
+  border: 1px solid rgba(16,35,48,.08) !important;
+
+  box-shadow:
+    0 7px 20px rgba(16,35,48,.06) !important;
+}
+
+
+/* DARK MODE */
+
+body.dark #homeMatches .match-card,
+body.dark #scoreList .match-card {
+  background: #13212b !important;
+
+  border-color:
+    rgba(255,255,255,.07) !important;
+
+  box-shadow:
+    0 8px 24px rgba(0,0,0,.20) !important;
+}
+
+
+/* LEAGUE HEADER */
+
+#homeMatches .match-league,
+#scoreList .match-league {
+  grid-column: 1 / -1 !important;
+
+  padding: 10px 14px !important;
+
+  margin: 0 !important;
+
+  border-bottom:
+    1px solid rgba(16,35,48,.06) !important;
+
+  font-size: 11px !important;
+
+  font-weight: 900 !important;
+}
+
+body.dark #homeMatches .match-league,
+body.dark #scoreList .match-league {
+  border-bottom-color:
+    rgba(255,255,255,.06) !important;
+}
+
+
+/* MAIN MATCH AREA */
+
+#homeMatches .match-main,
+#scoreList .match-main {
+  grid-column: 1 / -1 !important;
+
+  display: grid !important;
+
+  grid-template-columns:
+    minmax(0,1fr)
+    100px
+    minmax(0,1fr) !important;
+
+  align-items: center !important;
+
+  gap: 12px !important;
+
+  padding: 18px 18px 14px !important;
+}
+
+
+/* TEAM */
+
+#homeMatches .team,
+#scoreList .team {
+  display: flex !important;
+
+  flex-direction: column !important;
+
+  align-items: center !important;
+
+  justify-content: center !important;
+
+  gap: 8px !important;
+
+  min-width: 0 !important;
+
+  text-align: center !important;
+}
+
+#homeMatches .team img,
+#scoreList .team img {
+  width: 46px !important;
+  height: 46px !important;
+
+  object-fit: contain !important;
+}
+
+#homeMatches .team strong,
+#scoreList .team strong {
+  display: block !important;
+
+  width: 100% !important;
+
+  overflow: hidden !important;
+
+  white-space: nowrap !important;
+
+  text-overflow: ellipsis !important;
+
+  font-size: 13px !important;
+
+  font-weight: 850 !important;
+}
+
+
+/* CENTER */
+
+#homeMatches .match-center,
+#scoreList .match-center {
+  display: flex !important;
+
+  flex-direction: column !important;
+
+  align-items: center !important;
+
+  justify-content: center !important;
+
+  text-align: center !important;
+}
+
+
+/* SCORE */
+
+#homeMatches .score,
+#scoreList .score {
+  display: flex !important;
+
+  align-items: center !important;
+
+  justify-content: center !important;
+
+  gap: 7px !important;
+
+  margin: 4px 0 !important;
+
+  font-size: 28px !important;
+
+  line-height: 1 !important;
+
+  font-weight: 950 !important;
+}
+
+#homeMatches .score span,
+#scoreList .score span {
+  opacity: .35 !important;
+
+  font-size: 18px !important;
+}
+
+
+/* TIME / STATUS */
+
+#homeMatches .match-center small,
+#scoreList .match-center small {
+  margin-top: 5px !important;
+
+  font-size: 10px !important;
+
+  opacity: .55 !important;
+}
+
+
+/* LIVE */
+
+#homeMatches .sportscore-live,
+#scoreList .sportscore-live,
+#homeMatches .live-badge,
+#scoreList .live-badge {
+  display: inline-flex !important;
+
+  align-items: center !important;
+
+  justify-content: center !important;
+
+  padding: 4px 8px !important;
+
+  border-radius: 999px !important;
+
+  background: #e53935 !important;
+
+  color: white !important;
+
+  font-size: 9px !important;
+
+  font-weight: 950 !important;
+
+  letter-spacing: .5px !important;
+}
+
+
+/* BOTTOM */
+
+#homeMatches .match-card::after,
+#scoreList .match-card::after {
+  content: "BakhiraFoot" !important;
+
+  grid-column: 1 / -1 !important;
+
+  padding: 8px 14px !important;
+
+  border-top:
+    1px solid rgba(16,35,48,.05) !important;
+
+  text-align: right !important;
+
+  font-size: 9px !important;
+
+  opacity: .40 !important;
+}
+
+body.dark #homeMatches .match-card::after,
+body.dark #scoreList .match-card::after {
+  border-top-color:
+    rgba(255,255,255,.05) !important;
+}
+
+
+/* MOBILE */
+
+@media (max-width: 600px) {
+
+  #homeMatches .match-card,
+  #scoreList .match-card {
+    min-height: 135px !important;
+  }
+
+  #homeMatches .match-main,
+  #scoreList .match-main {
+    grid-template-columns:
+      minmax(0,1fr)
+      78px
+      minmax(0,1fr) !important;
+
+    padding: 15px 11px 12px !important;
+
+    gap: 6px !important;
+  }
+
+  #homeMatches .team img,
+  #scoreList .team img {
+    width: 40px !important;
+    height: 40px !important;
+  }
+
+  #homeMatches .team strong,
+  #scoreList .team strong {
+    font-size: 11px !important;
+  }
+
+  #homeMatches .score,
+  #scoreList .score {
+    font-size: 23px !important;
+  }
+}
