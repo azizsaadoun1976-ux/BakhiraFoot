@@ -4537,19 +4537,15 @@ footer {
   }
 }
 /* =========================================
-   BAKHIRAFOOT — ACCUEIL HERO PREMIUM V2
+   BAKHIRAFOOT — REAL HOME HERO
    ========================================= */
 
-#home .title {
+/* الهيرو الحقيقي: أي div داخل #home فيه H1 */
+#home > div:has(h1) {
   position: relative;
-  isolation: isolate;
   overflow: hidden;
 
-  min-height: 250px;
-
-  display: flex;
-  align-items: center;
-
+  margin-bottom: 24px;
   padding: 34px !important;
 
   border: 1px solid #dfe7eb !important;
@@ -4557,37 +4553,30 @@ footer {
 
   background:
     radial-gradient(
-      circle at 88% 18%,
+      circle at 92% 18%,
       rgba(32, 212, 134, .10),
       transparent 28%
-    ),
-    radial-gradient(
-      circle at 10% 100%,
-      rgba(90, 110, 125, .06),
-      transparent 30%
     ),
     linear-gradient(
       145deg,
       #ffffff,
-      #f5f8f9
+      #f4f8fa
     ) !important;
 
   box-shadow:
-    0 14px 38px rgba(15, 23, 42, .06) !important;
+    0 14px 38px rgba(15, 23, 42, .07) !important;
 }
 
-#home .title::before {
+/* decorative circles */
+#home > div:has(h1)::before {
   content: "⚽";
 
   position: absolute;
-
   right: 55px;
   top: 28px;
 
-  z-index: -1;
-
-  width: 130px;
-  height: 130px;
+  width: 115px;
+  height: 115px;
 
   display: flex;
   align-items: center;
@@ -4595,16 +4584,15 @@ footer {
 
   border-radius: 50%;
 
+  border: 1px solid rgba(100,120,135,.10);
+
   background: rgba(255,255,255,.55);
 
-  border: 1px solid rgba(100,120,135,.09);
-
-  font-size: 58px;
-
-  opacity: .55;
+  font-size: 48px;
+  opacity: .5;
 }
 
-#home .title::after {
+#home > div:has(h1)::after {
   content: "";
 
   position: absolute;
@@ -4612,23 +4600,44 @@ footer {
   right: -65px;
   bottom: -75px;
 
-  width: 210px;
-  height: 210px;
+  width: 200px;
+  height: 200px;
 
   border-radius: 50%;
 
   border: 1px solid rgba(100,120,135,.10);
 }
 
-#home .title > div {
+/* small eyebrow */
+#home > div:has(h1) small {
+  position: relative;
+  z-index: 2;
+
+  display: inline-flex;
+  align-items: center;
+
+  padding: 6px 9px;
+
+  border-radius: 7px;
+
+  background: #edf8f3 !important;
+  color: #087f51 !important;
+
+  font-size: 9px !important;
+  font-weight: 850 !important;
+  letter-spacing: .06em;
+}
+
+/* title */
+#home > div:has(h1) h1 {
   position: relative;
   z-index: 2;
 
   max-width: 760px;
-}
 
-#home .title h1 {
-  margin: 7px 0 14px !important;
+  margin: 9px 0 14px !important;
+
+  color: #14212b !important;
 
   font-size: clamp(
     34px,
@@ -4636,29 +4645,121 @@ footer {
     56px
   ) !important;
 
-  line-height: 1.02 !important;
+  line-height: 1.03 !important;
 
   letter-spacing: -.05em !important;
 
   font-weight: 900 !important;
-
-  color: #14212b !important;
 }
 
-#home .title h1 span {
+#home > div:has(h1) h1 span {
   color: #536b79 !important;
 }
 
-#home .title p {
-  max-width: 650px;
+/* description */
+#home > div:has(h1) p {
+  position: relative;
+  z-index: 2;
 
-  margin: 0;
+  max-width: 670px;
+
+  color: #687984 !important;
 
   font-size: 14px !important;
 
   line-height: 1.7 !important;
+}
 
-  color: #6d7d87 !important;
+/* hero buttons */
+#home > div:has(h1) button,
+#home > div:has(h1) a {
+  position: relative;
+  z-index: 3;
+}
+
+/* DARK MODE */
+.dark #home > div:has(h1) {
+  border-color: #29343d !important;
+
+  background:
+    radial-gradient(
+      circle at 92% 18%,
+      rgba(32, 212, 134, .07),
+      transparent 28%
+    ),
+    linear-gradient(
+      145deg,
+      #151d24,
+      #10171c
+    ) !important;
+
+  box-shadow:
+    0 14px 38px rgba(0,0,0,.18) !important;
+}
+
+.dark #home > div:has(h1)::before {
+  background: rgba(255,255,255,.025);
+  border-color: rgba(255,255,255,.06);
+}
+
+.dark #home > div:has(h1)::after {
+  border-color: rgba(255,255,255,.06);
+}
+
+.dark #home > div:has(h1) h1 {
+  color: #f1f5f7 !important;
+}
+
+.dark #home > div:has(h1) h1 span {
+  color: #b8c5cc !important;
+}
+
+.dark #home > div:has(h1) p {
+  color: #96a4ad !important;
+}
+
+.dark #home > div:has(h1) small {
+  background: #173229 !important;
+  color: #68dda5 !important;
+}
+
+/* MOBILE */
+@media (max-width: 700px) {
+
+  #home > div:has(h1) {
+    padding: 22px 15px !important;
+    border-radius: 16px !important;
+  }
+
+  #home > div:has(h1)::before {
+    right: -5px;
+    top: 18px;
+
+    width: 85px;
+    height: 85px;
+
+    font-size: 34px;
+
+    opacity: .32;
+  }
+
+  #home > div:has(h1)::after {
+    right: -70px;
+    bottom: -80px;
+
+    width: 165px;
+    height: 165px;
+  }
+
+  #home > div:has(h1) h1 {
+    font-size: 30px !important;
+    line-height: 1.08 !important;
+  }
+
+  #home > div:has(h1) p {
+    font-size: 12px !important;
+    line-height: 1.6 !important;
+  }
 }
 
 /* Petit label au-dessus du titre */
