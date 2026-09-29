@@ -5491,3 +5491,3958 @@ document.addEventListener(
 
   }
 );
+/* =========================================================
+   BAKHIRAFOOT PRO
+   PROFESSIONAL MATCH CENTER
+   ADD THIS BLOCK AT THE VERY END OF script.js
+
+   IMPORTANT:
+   - Don't delete the existing code.
+   - Don't change LIVE.
+   - Don't change navigation.
+   - This module only replaces Match Details click.
+========================================================= */
+
+(function () {
+
+  "use strict";
+
+  /* =======================================================
+     GLOBAL
+  ======================================================= */
+
+  let bfProfessionalModal = null;
+  let bfProfessionalStyle = null;
+
+  /* =======================================================
+     HELPERS
+  ======================================================= */
+
+  function bfSafe(value) {
+    return String(value ?? "");
+  }
+
+  function bfEscape(value) {
+    return bfSafe(value)
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#039;");
+  }
+
+  function bfNormalize(value) {
+    return bfSafe(value)
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .toLowerCase()
+      .trim();
+  }
+
+  function bfNumber(value) {
+    const n = Number(value);
+    return Number.isFinite(n) ? n : 0;
+  }
+
+  function bfPick(obj, paths, fallback = null) {
+
+    for (const path of paths) {
+
+      const parts =
+        String(path).split(".");
+
+      let value = obj;
+
+      for (const part of parts) {
+
+        if (
+          value === null ||
+          value === undefined
+        ) {
+          value = undefined;
+          break;
+        }
+
+        value = value[part];
+      }
+
+      if (
+        value !== undefined &&
+        value !== null
+      ) {
+        return value;
+      }
+    }
+
+    return fallback;
+  }
+
+  /* =======================================================
+     IDENTIFIER
+     Important: SportScore uses slug for match details.
+  ======================================================= */
+
+  function getProfessionalMatchIdentifier(
+    match,
+    index
+  ) {
+
+    const direct =
+      match?.fixture?.slug ||
+      match?.slug ||
+      match?.match_slug ||
+      match?.fixture?.id ||
+      match?.id ||
+      match?.match_id ||
+      null;
+
+    if (direct) {
+      return String(direct);
+    }
+
+    /*
+       Fallback:
+       read the identifier from the card itself.
+    */
+
+    const card =
+      document.querySelector(
+        `.match-card[data-match-index="${index}"]`
+      );
+
+    if (card) {
+
+      const fromSlug =
+        card.dataset.matchSlug ||
+        card.dataset.slug ||
+        null;
+
+      if (fromSlug) {
+        return String(fromSlug);
+      }
+
+      const fromId =
+        card.dataset.fixtureId ||
+        null;
+
+      if (fromId) {
+        return String(fromId);
+      }
+    }
+
+    return null;
+  }
+
+  /* =======================================================
+     OPEN PROFESSIONAL MODAL
+  ======================================================= */
+
+  function ensureProfessionalModal() {
+
+    if (document.getElementById(
+      "bfProfessionalMatchModal"
+    )) {
+
+      bfProfessionalModal =
+        document.getElementById(
+          "bfProfessionalMatchModal"
+        );
+
+      return;
+    }
+
+    bfProfessionalModal =
+      document.createElement("div");
+
+    bfProfessionalModal.id =
+      "bfProfessionalMatchModal";
+
+    bfProfessionalModal.innerHTML = `
+
+      <div class="bf-pro-overlay"
+           onclick="window.bfCloseProfessionalMatch(event)">
+
+        <div class="bf-pro-modal"
+             onclick="event.stopPropagation()">
+
+          <button
+            class="bf-pro-close"
+            onclick="window.bfCloseProfessionalMatch()"
+            aria-label="Fermer"
+          >
+            ✕
+          </button>
+
+          <div id="bfProfessionalContent"></div>
+
+        </div>
+
+      </div>
+
+    `;
+
+    document.body.appendChild(
+      bfProfessionalModal
+    );
+
+    installProfessionalStyles();
+  }
+
+  /* =======================================================
+     STYLES
+  ======================================================= */
+
+  function installProfessionalStyles() {
+
+    if (
+      document.getElementById(
+        "bfProfessionalMatchStyle"
+      )
+    ) {
+      return;
+    }
+
+    bfProfessionalStyle =
+      document.createElement("style");
+
+    bfProfessionalStyle.id =
+      "bfProfessionalMatchStyle";
+
+    bfProfessionalStyle.textContent = `
+
+      /* ==============================================
+         MODAL
+      ============================================== */
+
+      #bfProfessionalMatchModal {
+        position: fixed;
+        inset: 0;
+        z-index: 100000;
+        display: none;
+      }
+
+      .bf-pro-overlay {
+        position: fixed;
+        inset: 0;
+        background: rgba(0,0,0,.78);
+        backdrop-filter: blur(7px);
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        padding: 18px;
+        overflow-y: auto;
+      }
+
+      .bf-pro-modal {
+        width: min(1180px, 100%);
+        max-height: 95vh;
+        overflow-y: auto;
+        position: relative;
+        padding: 28px;
+        border-radius: 25px;
+        background: var(--card, #ffffff);
+        color: var(--text, #111827);
+        box-shadow:
+          0 30px 100px rgba(0,0,0,.48);
+      }
+
+      .bf-pro-close {
+        position: absolute;
+        top: 13px;
+        right: 13px;
+        width: 40px;
+        height: 40px;
+        border: none;
+        border-radius: 50%;
+        background: rgba(127,127,127,.13);
+        color: inherit;
+        cursor: pointer;
+        font-size: 18px;
+        font-weight: 900;
+        z-index: 20;
+      }
+
+      .bf-pro-close:hover {
+        transform: scale(1.06);
+      }
+
+      /* ==============================================
+         HEADER
+      ============================================== */
+
+      .bf-pro-league {
+        text-align: center;
+        font-size: 13px;
+        font-weight: 800;
+        opacity: .62;
+        margin-bottom: 6px;
+      }
+
+      .bf-pro-round {
+        text-align: center;
+        font-size: 11px;
+        opacity: .42;
+        margin-bottom: 13px;
+      }
+
+      .bf-pro-status-wrap {
+        text-align: center;
+        margin-bottom: 20px;
+      }
+
+      .bf-pro-status {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        padding: 7px 14px;
+        border-radius: 999px;
+        font-size: 12px;
+        font-weight: 900;
+        background: rgba(220,38,38,.10);
+      }
+
+      .bf-pro-score-header {
+        display: grid;
+        grid-template-columns: 1fr auto 1fr;
+        gap: 25px;
+        align-items: center;
+        text-align: center;
+      }
+
+      .bf-pro-team {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        gap: 9px;
+        font-weight: 900;
+        min-width: 0;
+      }
+
+      .bf-pro-team img {
+        width: 78px;
+        height: 78px;
+        object-fit: contain;
+      }
+
+      .bf-pro-team-fallback {
+        width: 78px;
+        height: 78px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 42px;
+      }
+
+      .bf-pro-team-name {
+        line-height: 1.25;
+      }
+
+      .bf-pro-score {
+        font-size: 40px;
+        line-height: 1;
+        font-weight: 950;
+        letter-spacing: 2px;
+      }
+
+      .bf-pro-date {
+        margin-top: 9px;
+        font-size: 11px;
+        opacity: .55;
+      }
+
+      .bf-pro-venue {
+        margin-top: 7px;
+        font-size: 11px;
+        opacity: .48;
+      }
+
+      /* ==============================================
+         SECTION
+      ============================================== */
+
+      .bf-pro-section {
+        margin-top: 27px;
+        padding-top: 21px;
+        border-top: 1px solid rgba(127,127,127,.17);
+      }
+
+      .bf-pro-section-title {
+        display: flex;
+        align-items: center;
+        gap: 9px;
+        margin-bottom: 15px;
+        font-size: 18px;
+        font-weight: 950;
+      }
+
+      .bf-pro-subtitle {
+        font-size: 12px;
+        opacity: .53;
+        margin-top: -7px;
+        margin-bottom: 15px;
+      }
+
+      /* ==============================================
+         FORMATION SUMMARY
+      ============================================== */
+
+      .bf-pro-formation-summary {
+        display: grid;
+        grid-template-columns: 1fr auto 1fr;
+        gap: 15px;
+        align-items: center;
+        margin-bottom: 16px;
+      }
+
+      .bf-pro-formation-team {
+        text-align: center;
+        font-weight: 900;
+      }
+
+      .bf-pro-formation-team small {
+        display: block;
+        margin-top: 5px;
+        font-size: 13px;
+        opacity: .55;
+      }
+
+      .bf-pro-formation-vs {
+        font-size: 12px;
+        font-weight: 900;
+        opacity: .38;
+      }
+
+      /* ==============================================
+         PITCH
+      ============================================== */
+
+      .bf-pro-pitches {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 18px;
+      }
+
+      .bf-pro-pitch-card {
+        overflow: hidden;
+        border-radius: 20px;
+        border: 1px solid rgba(127,127,127,.15);
+        background: rgba(127,127,127,.055);
+      }
+
+      .bf-pro-pitch-head {
+        min-height: 52px;
+        padding: 12px 14px;
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        gap: 9px;
+        font-weight: 900;
+      }
+
+      .bf-pro-formation-pill {
+        padding: 5px 9px;
+        border-radius: 999px;
+        background: rgba(127,127,127,.12);
+        font-size: 11px;
+        font-weight: 950;
+        white-space: nowrap;
+      }
+
+      .bf-pro-pitch {
+        position: relative;
+        width: 100%;
+        aspect-ratio: .67;
+        overflow: hidden;
+        background:
+          repeating-linear-gradient(
+            90deg,
+            #2d7f43 0%,
+            #2d7f43 10%,
+            #347f46 10%,
+            #347f46 20%
+          );
+      }
+
+      .bf-pro-pitch-mark {
+        position: absolute;
+        pointer-events: none;
+      }
+
+      .bf-pro-pitch-border {
+        inset: 0;
+        border: 2px solid rgba(255,255,255,.88);
+      }
+
+      .bf-pro-half-line {
+        left: 0;
+        right: 0;
+        top: 50%;
+        height: 2px;
+        background: rgba(255,255,255,.88);
+      }
+
+      .bf-pro-center-circle {
+        left: 50%;
+        top: 50%;
+        width: 18%;
+        aspect-ratio: 1;
+        transform: translate(-50%,-50%);
+        border: 2px solid rgba(255,255,255,.88);
+        border-radius: 50%;
+      }
+
+      .bf-pro-center-dot {
+        left: 50%;
+        top: 50%;
+        width: 6px;
+        height: 6px;
+        transform: translate(-50%,-50%);
+        border-radius: 50%;
+        background: #fff;
+      }
+
+      .bf-pro-box-top {
+        left: 24%;
+        top: 0;
+        width: 52%;
+        height: 17%;
+        border: 2px solid rgba(255,255,255,.88);
+        border-top: none;
+      }
+
+      .bf-pro-box-bottom {
+        left: 24%;
+        bottom: 0;
+        width: 52%;
+        height: 17%;
+        border: 2px solid rgba(255,255,255,.88);
+        border-bottom: none;
+      }
+
+      .bf-pro-goal-top {
+        left: 39%;
+        top: 0;
+        width: 22%;
+        height: 6%;
+        border: 2px solid rgba(255,255,255,.88);
+        border-top: none;
+      }
+
+      .bf-pro-goal-bottom {
+        left: 39%;
+        bottom: 0;
+        width: 22%;
+        height: 6%;
+        border: 2px solid rgba(255,255,255,.88);
+        border-bottom: none;
+      }
+
+      .bf-pro-player {
+        position: absolute;
+        transform: translate(-50%,-50%);
+        width: 82px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        z-index: 5;
+        pointer-events: none;
+      }
+
+      .bf-pro-shirt {
+        width: 36px;
+        height: 36px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: #fff;
+        color: #111827;
+        border: 3px solid rgba(0,0,0,.20);
+        box-shadow: 0 4px 12px rgba(0,0,0,.34);
+        font-size: 12px;
+        font-weight: 950;
+      }
+
+      .bf-pro-player-name {
+        max-width: 80px;
+        margin-top: 4px;
+        padding: 3px 6px;
+        border-radius: 6px;
+        background: rgba(0,0,0,.68);
+        color: #fff;
+        font-size: 9px;
+        font-weight: 800;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      .bf-pro-player-rating {
+        margin-top: 2px;
+        padding: 2px 5px;
+        border-radius: 5px;
+        background: rgba(255,255,255,.93);
+        color: #111827;
+        font-size: 9px;
+        font-weight: 900;
+      }
+
+      .bf-pro-coach {
+        padding: 10px 13px;
+        border-top: 1px solid rgba(127,127,127,.13);
+        font-size: 11px;
+        opacity: .6;
+      }
+
+      /* ==============================================
+         PLAYERS
+      ============================================== */
+
+      .bf-pro-player-columns {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 18px;
+      }
+
+      .bf-pro-team-title {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 10px;
+        margin-bottom: 10px;
+        padding-bottom: 9px;
+        border-bottom: 1px solid rgba(127,127,127,.14);
+        font-weight: 950;
+      }
+
+      .bf-pro-player-list {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+
+      .bf-pro-player-row {
+        display: grid;
+        grid-template-columns: 40px 1fr auto;
+        gap: 9px;
+        align-items: center;
+        padding: 9px;
+        border-radius: 12px;
+        background: rgba(127,127,127,.065);
+      }
+
+      .bf-pro-number {
+        width: 33px;
+        height: 33px;
+        border-radius: 50%;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        background: rgba(127,127,127,.12);
+        font-size: 11px;
+        font-weight: 950;
+      }
+
+      .bf-pro-player-main {
+        min-width: 0;
+      }
+
+      .bf-pro-player-name {
+        font-size: 12px;
+        font-weight: 900;
+        white-space: nowrap;
+        overflow: hidden;
+        text-overflow: ellipsis;
+      }
+
+      .bf-pro-player-position {
+        margin-top: 3px;
+        font-size: 9px;
+        opacity: .52;
+      }
+
+      .bf-pro-badges {
+        display: flex;
+        align-items: center;
+        flex-wrap: wrap;
+        justify-content: flex-end;
+        gap: 4px;
+      }
+
+      .bf-pro-badge {
+        min-width: 26px;
+        padding: 4px 5px;
+        border-radius: 6px;
+        font-size: 9px;
+        font-weight: 900;
+        text-align: center;
+        background: rgba(127,127,127,.11);
+      }
+
+      .bf-pro-rating-badge {
+        background: rgba(245,158,11,.16);
+      }
+
+      .bf-pro-goal-badge {
+        background: rgba(34,197,94,.16);
+      }
+
+      .bf-pro-assist-badge {
+        background: rgba(59,130,246,.16);
+      }
+
+      .bf-pro-yellow-badge {
+        background: rgba(250,204,21,.22);
+      }
+
+      .bf-pro-red-badge {
+        background: rgba(239,68,68,.18);
+      }
+
+      .bf-pro-keypass-badge {
+        background: rgba(168,85,247,.16);
+      }
+
+      /* ==============================================
+         BENCH
+      ============================================== */
+
+      .bf-pro-bench-columns {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 18px;
+      }
+
+      .bf-pro-bench-list {
+        display: flex;
+        flex-direction: column;
+        gap: 6px;
+      }
+
+      .bf-pro-bench-player {
+        display: grid;
+        grid-template-columns: 33px 1fr auto;
+        align-items: center;
+        gap: 8px;
+        padding: 8px 10px;
+        border-radius: 10px;
+        background: rgba(127,127,127,.055);
+      }
+
+      .bf-pro-bench-number {
+        font-size: 10px;
+        font-weight: 950;
+        opacity: .62;
+      }
+
+      .bf-pro-bench-name {
+        font-size: 11px;
+        font-weight: 800;
+      }
+
+      .bf-pro-bench-rating {
+        font-size: 9px;
+        font-weight: 900;
+        opacity: .66;
+      }
+
+      /* ==============================================
+         EVENTS
+      ============================================== */
+
+      .bf-pro-events {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+
+      .bf-pro-event {
+        display: grid;
+        grid-template-columns: 50px 32px 1fr;
+        gap: 9px;
+        align-items: center;
+        padding: 10px 12px;
+        border-radius: 11px;
+        background: rgba(127,127,127,.07);
+      }
+
+      .bf-pro-event.home {
+        border-left: 3px solid rgba(59,130,246,.55);
+      }
+
+      .bf-pro-event.away {
+        border-left: 3px solid rgba(239,68,68,.55);
+      }
+
+      .bf-pro-event-minute {
+        font-size: 11px;
+        font-weight: 950;
+      }
+
+      .bf-pro-event-icon {
+        text-align: center;
+        font-size: 18px;
+      }
+
+      .bf-pro-event-player {
+        font-size: 12px;
+        font-weight: 900;
+      }
+
+      .bf-pro-event-detail {
+        margin-top: 2px;
+        font-size: 10px;
+        opacity: .56;
+      }
+
+      .bf-pro-event-assist {
+        margin-top: 3px;
+        font-size: 10px;
+        opacity: .70;
+      }
+
+      .bf-pro-event-team {
+        margin-top: 2px;
+        font-size: 9px;
+        opacity: .43;
+      }
+
+      /* ==============================================
+         STATS
+      ============================================== */
+
+      .bf-pro-stats {
+        display: flex;
+        flex-direction: column;
+        gap: 8px;
+      }
+
+      .bf-pro-stat-row {
+        display: grid;
+        grid-template-columns: 1fr 115px 1fr;
+        gap: 8px;
+        align-items: center;
+      }
+
+      .bf-pro-stat-home {
+        text-align: right;
+        font-size: 11px;
+        font-weight: 900;
+      }
+
+      .bf-pro-stat-name {
+        text-align: center;
+        font-size: 10px;
+        opacity: .58;
+      }
+
+      .bf-pro-stat-away {
+        font-size: 11px;
+        font-weight: 900;
+      }
+
+      /* ==============================================
+         INFO
+      ============================================== */
+
+      .bf-pro-info-grid {
+        display: grid;
+        grid-template-columns: repeat(2,1fr);
+        gap: 9px;
+      }
+
+      .bf-pro-info-box {
+        padding: 11px;
+        border-radius: 11px;
+        background: rgba(127,127,127,.07);
+        font-size: 11px;
+      }
+
+      .bf-pro-info-box strong {
+        display: block;
+        margin-bottom: 4px;
+      }
+
+      /* ==============================================
+         EMPTY
+      ============================================== */
+
+      .bf-pro-empty {
+        padding: 15px;
+        border-radius: 11px;
+        background: rgba(127,127,127,.065);
+        font-size: 12px;
+        opacity: .62;
+      }
+
+      /* ==============================================
+         MOBILE
+      ============================================== */
+
+      @media(max-width:850px) {
+
+        .bf-pro-pitches {
+          grid-template-columns: 1fr;
+        }
+
+        .bf-pro-player-columns,
+        .bf-pro-bench-columns {
+          grid-template-columns: 1fr;
+        }
+
+      }
+
+      @media(max-width:600px) {
+
+        .bf-pro-modal {
+          padding: 21px 12px;
+          border-radius: 18px;
+        }
+
+        .bf-pro-score-header {
+          gap: 8px;
+        }
+
+        .bf-pro-team img,
+        .bf-pro-team-fallback {
+          width: 57px;
+          height: 57px;
+        }
+
+        .bf-pro-score {
+          font-size: 28px;
+        }
+
+        .bf-pro-team-name {
+          font-size: 11px;
+        }
+
+        .bf-pro-formation-summary {
+          grid-template-columns: 1fr;
+        }
+
+        .bf-pro-formation-vs {
+          display: none;
+        }
+
+        .bf-pro-player-row {
+          grid-template-columns: 36px 1fr;
+        }
+
+        .bf-pro-badges {
+          grid-column: 2;
+          justify-content: flex-start;
+        }
+
+        .bf-pro-event {
+          grid-template-columns: 42px 28px 1fr;
+        }
+
+        .bf-pro-stat-row {
+          grid-template-columns: 1fr 78px 1fr;
+        }
+
+        .bf-pro-info-grid {
+          grid-template-columns: 1fr;
+        }
+
+        .bf-pro-player {
+          width: 67px;
+        }
+
+        .bf-pro-shirt {
+          width: 31px;
+          height: 31px;
+          font-size: 10px;
+        }
+
+        .bf-pro-player-name {
+          max-width: 66px;
+          font-size: 8px;
+        }
+
+        .bf-pro-player-rating {
+          font-size: 8px;
+        }
+
+      }
+
+    `;
+
+    document.head.appendChild(
+      bfProfessionalStyle
+    );
+  }
+
+  /* =======================================================
+     STATUS
+  ======================================================= */
+
+  function professionalStatus(
+    match
+  ) {
+
+    const short =
+      bfNormalize(
+        match?.fixture?.status?.short ||
+        match?.status?.short ||
+        match?.status ||
+        ""
+      );
+
+    const minute =
+      match?.fixture?.status?.elapsed ??
+      match?.status?.elapsed ??
+      match?.minute ??
+      null;
+
+    if (
+      [
+        "live",
+        "1h",
+        "2h",
+        "et",
+        "p",
+        "bt"
+      ].includes(short)
+    ) {
+      return minute !== null
+        ? `🔴 LIVE ${minute}'`
+        : "🔴 LIVE";
+    }
+
+    if (
+      short === "ht" ||
+      short.includes("half")
+    ) {
+      return "⏸ MI-TEMPS";
+    }
+
+    if (
+      short === "ft" ||
+      short.includes("finish") ||
+      short.includes("ended")
+    ) {
+      return "✅ TERMINÉ";
+    }
+
+    if (
+      short === "ns" ||
+      short.includes("upcoming")
+    ) {
+      return "🕒 À VENIR";
+    }
+
+    return (
+      match?.fixture?.status?.long ||
+      match?.status_text ||
+      match?.status ||
+      "MATCH"
+    );
+  }
+
+  /* =======================================================
+     TEAM
+  ======================================================= */
+
+  function professionalTeam(
+    name,
+    logo
+  ) {
+
+    return `
+
+      <div class="bf-pro-team">
+
+        ${
+          logo
+            ? `
+              <img
+                src="${bfEscape(logo)}"
+                alt="${bfEscape(name)}"
+              >
+            `
+            : `
+              <div class="bf-pro-team-fallback">
+                ⚽
+              </div>
+            `
+        }
+
+        <div class="bf-pro-team-name">
+          ${bfEscape(name)}
+        </div>
+
+      </div>
+
+    `;
+  }
+
+  /* =======================================================
+     LINEUP HELPERS
+  ======================================================= */
+
+  function normalizeLineups(
+    lineups
+  ) {
+
+    if (
+      Array.isArray(lineups)
+    ) {
+      return lineups;
+    }
+
+    if (
+      Array.isArray(
+        lineups?.data
+      )
+    ) {
+      return lineups.data;
+    }
+
+    if (
+      Array.isArray(
+        lineups?.response
+      )
+    ) {
+      return lineups.response;
+    }
+
+    return [];
+  }
+
+  function getLineup(
+    lineups,
+    teamId,
+    teamName,
+    fallbackIndex
+  ) {
+
+    const list =
+      normalizeLineups(
+        lineups
+      );
+
+    const normalized =
+      bfNormalize(
+        teamName
+      );
+
+    const found =
+      list.find(
+        lineup => {
+
+          const id =
+            lineup?.team?.id ||
+            lineup?.team_id ||
+            null;
+
+          const name =
+            bfNormalize(
+              lineup?.team?.name ||
+              lineup?.team_name ||
+              ""
+            );
+
+          if (
+            teamId &&
+            id &&
+            String(teamId) ===
+            String(id)
+          ) {
+            return true;
+          }
+
+          return (
+            normalized &&
+            name === normalized
+          );
+        }
+      );
+
+    if (found) {
+      return found;
+    }
+
+    return (
+      list[fallbackIndex] ||
+      null
+    );
+  }
+
+  function getLineupPlayers(
+    lineup,
+    type
+  ) {
+
+    if (!lineup) {
+      return [];
+    }
+
+    if (
+      type === "starters"
+    ) {
+
+      return (
+        lineup.startXI ||
+        lineup.startingXI ||
+        lineup.starting_xi ||
+        lineup.starters ||
+        []
+      );
+    }
+
+    return (
+      lineup.substitutes ||
+      lineup.bench ||
+      []
+    );
+  }
+
+  function playerObject(
+    item
+  ) {
+
+    return (
+      item?.player ||
+      item ||
+      {}
+    );
+  }
+
+  function playerName(
+    item
+  ) {
+
+    const p =
+      playerObject(item);
+
+    return (
+      p?.name ||
+      item?.name ||
+      "Joueur"
+    );
+  }
+
+  function playerId(
+    item
+  ) {
+
+    const p =
+      playerObject(item);
+
+    return (
+      p?.id ||
+      item?.player_id ||
+      item?.id ||
+      null
+    );
+  }
+
+  function playerNumber(
+    item
+  ) {
+
+    const p =
+      playerObject(item);
+
+    return (
+      p?.number ??
+      item?.number ??
+      item?.shirt_number ??
+      "-"
+    );
+  }
+
+  function playerPosition(
+    item
+  ) {
+
+    const p =
+      playerObject(item);
+
+    return (
+      p?.pos ||
+      p?.position ||
+      item?.position ||
+      item?.pos ||
+      ""
+    );
+  }
+
+  function playerGrid(
+    item
+  ) {
+
+    const p =
+      playerObject(item);
+
+    return (
+      p?.grid ||
+      item?.grid ||
+      ""
+    );
+  }
+
+  function playerRating(
+    item
+  ) {
+
+    return (
+      item?.rating ??
+      item?.statistics?.rating ??
+      item?.games?.rating ??
+      playerObject(item)?.rating ??
+      null
+    );
+  }
+
+  function playerMinutes(
+    item
+  ) {
+
+    return (
+      item?.minutes ??
+      item?.games?.minutes ??
+      item?.statistics?.minutes ??
+      null
+    );
+  }
+
+  /* =======================================================
+     EVENTS
+  ======================================================= */
+
+  function normalizeEvents(
+    events
+  ) {
+
+    if (
+      Array.isArray(events)
+    ) {
+      return events;
+    }
+
+    if (
+      Array.isArray(
+        events?.data
+      )
+    ) {
+      return events.data;
+    }
+
+    if (
+      Array.isArray(
+        events?.timeline
+      )
+    ) {
+      return events.timeline;
+    }
+
+    return [];
+  }
+
+  function eventMinute(
+    event
+  ) {
+
+    const minute =
+      event?.time?.elapsed ??
+      event?.minute ??
+      event?.elapsed ??
+      null;
+
+    const extra =
+      event?.time?.extra ??
+      event?.extra ??
+      null;
+
+    if (
+      minute === null ||
+      minute === undefined
+    ) {
+      return "";
+    }
+
+    if (
+      extra !== null &&
+      extra !== undefined &&
+      Number(extra) > 0
+    ) {
+      return `${minute}+${extra}'`;
+    }
+
+    return `${minute}'`;
+  }
+
+  function eventType(
+    event
+  ) {
+
+    return bfNormalize(
+      event?.type ||
+      event?.event_type ||
+      event?.kind ||
+      ""
+    );
+  }
+
+  function eventDetail(
+    event
+  ) {
+
+    return bfNormalize(
+      event?.detail ||
+      event?.description ||
+      event?.text ||
+      event?.comments ||
+      ""
+    );
+  }
+
+  function eventIcon(
+    event
+  ) {
+
+    const type =
+      eventType(event);
+
+    const detail =
+      eventDetail(event);
+
+    if (
+      type.includes("goal")
+    ) {
+      return "⚽";
+    }
+
+    if (
+      type.includes("card")
+    ) {
+
+      if (
+        detail.includes("red") ||
+        detail.includes("second yellow") ||
+        detail.includes("yellow-red")
+      ) {
+        return "🟥";
+      }
+
+      return "🟨";
+    }
+
+    if (
+      type.includes("subst")
+    ) {
+      return "🔄";
+    }
+
+    if (
+      type.includes("var")
+    ) {
+      return "🎥";
+    }
+
+    return "📌";
+  }
+
+  /* =======================================================
+     PLAYER CONTRIBUTIONS FROM TIMELINE
+  ======================================================= */
+
+  function buildContributions(
+    events
+  ) {
+
+    const map =
+      new Map();
+
+    function ensure(
+      id,
+      name
+    ) {
+
+      const key =
+        id
+          ? `id:${id}`
+          : `name:${bfNormalize(name)}`;
+
+      if (
+        !map.has(key)
+      ) {
+
+        map.set(
+          key,
+          {
+            goals: 0,
+            assists: 0,
+            yellow: 0,
+            red: 0
+          }
+        );
+
+      }
+
+      return map.get(key);
+    }
+
+    events.forEach(
+      event => {
+
+        const type =
+          eventType(event);
+
+        const detail =
+          eventDetail(event);
+
+        const p =
+          event?.player ||
+          {};
+
+        const a =
+          event?.assist ||
+          {};
+
+        const pid =
+          p?.id ||
+          event?.player_id ||
+          null;
+
+        const pname =
+          p?.name ||
+          event?.player_name ||
+          "";
+
+        const aid =
+          a?.id ||
+          event?.assist_id ||
+          null;
+
+        const aname =
+          a?.name ||
+          event?.assist_name ||
+          "";
+
+        if (
+          pid ||
+          pname
+        ) {
+
+          const item =
+            ensure(
+              pid,
+              pname
+            );
+
+          if (
+            type.includes("goal") &&
+            !detail.includes("missed")
+          ) {
+            item.goals++;
+          }
+
+          if (
+            type.includes("card")
+          ) {
+
+            if (
+              detail.includes("red") ||
+              detail.includes("second yellow") ||
+              detail.includes("yellow-red")
+            ) {
+              item.red++;
+            }
+            else if (
+              detail.includes("yellow")
+            ) {
+              item.yellow++;
+            }
+
+          }
+
+        }
+
+        /*
+           Assist is attached to the goal event.
+        */
+
+        if (
+          (
+            aid ||
+            aname
+          ) &&
+          type.includes("goal")
+        ) {
+
+          const item =
+            ensure(
+              aid,
+              aname
+            );
+
+          item.assists++;
+
+        }
+
+      }
+    );
+
+    return map;
+  }
+
+  function contributionFor(
+    item,
+    contributions
+  ) {
+
+    const id =
+      playerId(item);
+
+    const name =
+      playerName(item);
+
+    if (
+      id &&
+      contributions.has(
+        `id:${id}`
+      )
+    ) {
+      return contributions.get(
+        `id:${id}`
+      );
+    }
+
+    const key =
+      `name:${bfNormalize(name)}`;
+
+    if (
+      contributions.has(key)
+    ) {
+      return contributions.get(
+        key
+      );
+    }
+
+    return {
+      goals: 0,
+      assists: 0,
+      yellow: 0,
+      red: 0
+    };
+  }
+
+  /* =======================================================
+     PLAYER STATS MAP
+  ======================================================= */
+
+  function buildPlayerStats(
+    players
+  ) {
+
+    const map =
+      new Map();
+
+    let groups = [];
+
+    if (
+      Array.isArray(players)
+    ) {
+      groups = players;
+    }
+    else if (
+      Array.isArray(
+        players?.data
+      )
+    ) {
+      groups = players.data;
+    }
+
+    groups.forEach(
+      group => {
+
+        const list =
+          group?.players ||
+          [];
+
+        if (
+          !Array.isArray(list)
+        ) {
+          return;
+        }
+
+        list.forEach(
+          row => {
+
+            const p =
+              row?.player ||
+              row ||
+              {};
+
+            const id =
+              p?.id ||
+              null;
+
+            const name =
+              p?.name ||
+              "";
+
+            const stats =
+              row?.statistics?.[0] ||
+              row?.statistics ||
+              {};
+
+            const item = {
+              rating:
+                row?.rating ??
+                stats?.games?.rating ??
+                stats?.rating ??
+                null,
+
+              minutes:
+                row?.minutes ??
+                stats?.games?.minutes ??
+                stats?.minutes ??
+                null,
+
+              keyPasses:
+                row?.passes?.key ??
+                stats?.passes?.key ??
+                0
+            };
+
+            if (id) {
+              map.set(
+                `id:${id}`,
+                item
+              );
+            }
+
+            if (name) {
+              map.set(
+                `name:${bfNormalize(name)}`,
+                item
+              );
+            }
+
+          }
+        );
+
+      }
+    );
+
+    return map;
+  }
+
+  function statsForPlayer(
+    item,
+    playerStats
+  ) {
+
+    const id =
+      playerId(item);
+
+    const name =
+      playerName(item);
+
+    if (
+      id &&
+      playerStats.has(
+        `id:${id}`
+      )
+    ) {
+      return playerStats.get(
+        `id:${id}`
+      );
+    }
+
+    if (
+      playerStats.has(
+        `name:${bfNormalize(name)}`
+      )
+    ) {
+      return playerStats.get(
+        `name:${bfNormalize(name)}`
+      );
+    }
+
+    return {
+      rating:
+        playerRating(item),
+
+      minutes:
+        playerMinutes(item),
+
+      keyPasses:
+        item?.passes?.key ||
+        item?.statistics?.passes?.key ||
+        0
+    };
+  }
+
+  /* =======================================================
+     PLAYER DATA
+  ======================================================= */
+
+  function buildPlayerData(
+    item,
+    contributions,
+    playerStats
+  ) {
+
+    const contribution =
+      contributionFor(
+        item,
+        contributions
+      );
+
+    const stats =
+      statsForPlayer(
+        item,
+        playerStats
+      );
+
+    return {
+
+      name:
+        playerName(item),
+
+      id:
+        playerId(item),
+
+      number:
+        playerNumber(item),
+
+      position:
+        playerPosition(item),
+
+      grid:
+        playerGrid(item),
+
+      rating:
+        stats?.rating ??
+        null,
+
+      minutes:
+        stats?.minutes ??
+        null,
+
+      keyPasses:
+        bfNumber(
+          stats?.keyPasses
+        ),
+
+      goals:
+        bfNumber(
+          item?.goals?.total
+        ) ||
+        contribution.goals,
+
+      assists:
+        bfNumber(
+          item?.goals?.assists
+        ) ||
+        contribution.assists,
+
+      yellow:
+        bfNumber(
+          item?.cards?.yellow
+        ) ||
+        contribution.yellow,
+
+      red:
+        bfNumber(
+          item?.cards?.red
+        ) ||
+        contribution.red
+
+    };
+  }
+
+  /* =======================================================
+     PLAYER BADGES
+  ======================================================= */
+
+  function playerBadges(
+    data
+  ) {
+
+    let html = "";
+
+    if (
+      data.rating !== null &&
+      data.rating !== undefined
+    ) {
+
+      const rating =
+        Number(
+          data.rating
+        );
+
+      html += `
+        <span class="bf-pro-badge bf-pro-rating-badge">
+          ⭐ ${Number.isFinite(rating)
+            ? rating.toFixed(1)
+            : bfEscape(data.rating)}
+        </span>
+      `;
+
+    }
+
+    if (data.goals > 0) {
+
+      html += `
+        <span class="bf-pro-badge bf-pro-goal-badge">
+          ⚽ ${data.goals}
+        </span>
+      `;
+
+    }
+
+    if (data.assists > 0) {
+
+      html += `
+        <span class="bf-pro-badge bf-pro-assist-badge">
+          🅰️ ${data.assists}
+        </span>
+      `;
+
+    }
+
+    if (data.yellow > 0) {
+
+      html += `
+        <span class="bf-pro-badge bf-pro-yellow-badge">
+          🟨
+        </span>
+      `;
+
+    }
+
+    if (data.red > 0) {
+
+      html += `
+        <span class="bf-pro-badge bf-pro-red-badge">
+          🟥
+        </span>
+      `;
+
+    }
+
+    if (data.keyPasses > 0) {
+
+      html += `
+        <span class="bf-pro-badge bf-pro-keypass-badge">
+          🎯 ${data.keyPasses}
+        </span>
+      `;
+
+    }
+
+    return html;
+  }
+
+  /* =======================================================
+     PITCH COORDINATES
+  ======================================================= */
+
+  function calculatePitchPositions(
+    players,
+    side
+  ) {
+
+    const rows = {};
+
+    players.forEach(
+      item => {
+
+        const grid =
+          String(
+            item?.grid ||
+            ""
+          );
+
+        const match =
+          grid.match(
+            /(\d+)\s*:\s*(\d+)/
+          );
+
+        let row =
+          match
+            ? Number(match[1])
+            : null;
+
+        let col =
+          match
+            ? Number(match[2])
+            : null;
+
+        /*
+           Fallback by position.
+        */
+
+        if (!row) {
+
+          const position =
+            bfNormalize(
+              item.position
+            );
+
+          if (
+            position === "g" ||
+            position.includes("goal")
+          ) {
+            row = 1;
+          }
+          else if (
+            position === "d" ||
+            position.includes("def")
+          ) {
+            row = 2;
+          }
+          else if (
+            position === "m" ||
+            position.includes("mid")
+          ) {
+            row = 3;
+          }
+          else {
+            row = 4;
+          }
+
+        }
+
+        if (!col) {
+          col =
+            (rows[row]?.length || 0) + 1;
+        }
+
+        if (!rows[row]) {
+          rows[row] = [];
+        }
+
+        rows[row].push({
+          item,
+          col
+        });
+
+      }
+    );
+
+    const rowNumbers =
+      Object.keys(rows)
+        .map(Number)
+        .sort((a, b) => a - b);
+
+    const maxRow =
+      Math.max(
+        ...rowNumbers,
+        4
+      );
+
+    const output = [];
+
+    rowNumbers.forEach(
+      row => {
+
+        const list =
+          rows[row]
+            .sort(
+              (a, b) =>
+                a.col - b.col
+            );
+
+        const count =
+          list.length;
+
+        list.forEach(
+          (entry, index) => {
+
+            let x;
+
+            if (
+              count === 1
+            ) {
+              x = 50;
+            }
+            else {
+              x =
+                16 +
+                (
+                  68 *
+                  (
+                    index /
+                    (count - 1)
+                  )
+                );
+            }
+
+            let y =
+              9 +
+              (
+                80 *
+                (
+                  (row - 1) /
+                  Math.max(
+                    1,
+                    maxRow - 1
+                  )
+                )
+              );
+
+            if (
+              side === "away"
+            ) {
+              y =
+                100 - y;
+            }
+
+            output.push({
+
+              item:
+                entry.item,
+
+              x:
+                Math.max(
+                  6,
+                  Math.min(
+                    94,
+                    x
+                  )
+                ),
+
+              y:
+                Math.max(
+                  6,
+                  Math.min(
+                    94,
+                    y
+                  )
+                )
+
+            });
+
+          }
+        );
+
+      }
+    );
+
+    return output;
+  }
+
+  /* =======================================================
+     PITCH HTML
+  ======================================================= */
+
+  function renderPitch(
+    lineup,
+    teamName,
+    side,
+    contributions,
+    playerStats
+  ) {
+
+    if (!lineup) {
+
+      return `
+        <div class="bf-pro-pitch-card">
+
+          <div class="bf-pro-pitch-head">
+            ${bfEscape(teamName)}
+          </div>
+
+          <div class="bf-pro-empty">
+            Formation indisponible.
+          </div>
+
+        </div>
+      `;
+
+    }
+
+    const formation =
+      lineup?.formation ||
+      lineup?.tactics ||
+      "—";
+
+    const rawPlayers =
+      getLineupPlayers(
+        lineup,
+        "starters"
+      );
+
+    const players =
+      rawPlayers.map(
+        item =>
+          buildPlayerData(
+            item,
+            contributions,
+            playerStats
+          )
+      );
+
+    const positions =
+      calculatePitchPositions(
+        players,
+        side
+      );
+
+    const playerHTML =
+      positions
+        .map(
+          entry => {
+
+            const player =
+              entry.item;
+
+            const ratingHTML =
+              player.rating !== null &&
+              player.rating !== undefined
+                ? `
+                  <div class="bf-pro-player-rating">
+                    ⭐ ${bfEscape(
+                      Number(
+                        player.rating
+                      ).toFixed(1)
+                    )}
+                  </div>
+                `
+                : "";
+
+            return `
+
+              <div
+                class="bf-pro-player"
+                style="
+                  left:${entry.x}%;
+                  top:${entry.y}%;
+                "
+              >
+
+                <div class="bf-pro-shirt">
+                  ${bfEscape(
+                    player.number
+                  )}
+                </div>
+
+                <div class="bf-pro-player-name">
+                  ${bfEscape(
+                    player.name
+                  )}
+                </div>
+
+                ${ratingHTML}
+
+              </div>
+
+            `;
+
+          }
+        )
+        .join("");
+
+    const coach =
+      lineup?.coach?.name ||
+      lineup?.coach ||
+      lineup?.manager?.name ||
+      lineup?.manager ||
+      "";
+
+    return `
+
+      <div class="bf-pro-pitch-card">
+
+        <div class="bf-pro-pitch-head">
+
+          <span>
+            ${bfEscape(teamName)}
+          </span>
+
+          <span class="bf-pro-formation-pill">
+            ${bfEscape(formation)}
+          </span>
+
+        </div>
+
+        <div class="bf-pro-pitch">
+
+          <div class="bf-pro-pitch-mark bf-pro-pitch-border"></div>
+          <div class="bf-pro-pitch-mark bf-pro-half-line"></div>
+          <div class="bf-pro-pitch-mark bf-pro-center-circle"></div>
+          <div class="bf-pro-pitch-mark bf-pro-center-dot"></div>
+          <div class="bf-pro-pitch-mark bf-pro-box-top"></div>
+          <div class="bf-pro-pitch-mark bf-pro-box-bottom"></div>
+          <div class="bf-pro-pitch-mark bf-pro-goal-top"></div>
+          <div class="bf-pro-pitch-mark bf-pro-goal-bottom"></div>
+
+          ${playerHTML}
+
+        </div>
+
+        ${
+          coach
+            ? `
+              <div class="bf-pro-coach">
+                👔 ${bfEscape(coach)}
+              </div>
+            `
+            : ""
+        }
+
+      </div>
+
+    `;
+  }
+
+  /* =======================================================
+     FORMATIONS
+  ======================================================= */
+
+  function renderFormations(
+    homeLineup,
+    awayLineup,
+    homeName,
+    awayName,
+    contributions,
+    playerStats
+  ) {
+
+    const homeFormation =
+      homeLineup?.formation ||
+      "—";
+
+    const awayFormation =
+      awayLineup?.formation ||
+      "—";
+
+    return `
+
+      <div class="bf-pro-section">
+
+        <div class="bf-pro-section-title">
+          🧩 Formations & Compositions
+        </div>
+
+        <div class="bf-pro-formation-summary">
+
+          <div class="bf-pro-formation-team">
+            ${bfEscape(homeName)}
+
+            <small>
+              ${bfEscape(
+                homeFormation
+              )}
+            </small>
+          </div>
+
+          <div class="bf-pro-formation-vs">
+            VS
+          </div>
+
+          <div class="bf-pro-formation-team">
+            ${bfEscape(awayName)}
+
+            <small>
+              ${bfEscape(
+                awayFormation
+              )}
+            </small>
+          </div>
+
+        </div>
+
+        <div class="bf-pro-pitches">
+
+          ${renderPitch(
+            homeLineup,
+            homeName,
+            "home",
+            contributions,
+            playerStats
+          )}
+
+          ${renderPitch(
+            awayLineup,
+            awayName,
+            "away",
+            contributions,
+            playerStats
+          )}
+
+        </div>
+
+      </div>
+
+    `;
+  }
+
+  /* =======================================================
+     PLAYER LIST
+  ======================================================= */
+
+  function renderPlayerList(
+    lineup,
+    teamName,
+    contributions,
+    playerStats
+  ) {
+
+    if (!lineup) {
+
+      return `
+        <div>
+
+          <div class="bf-pro-team-title">
+            ${bfEscape(teamName)}
+          </div>
+
+          <div class="bf-pro-empty">
+            Composition indisponible.
+          </div>
+
+        </div>
+      `;
+
+    }
+
+    const list =
+      getLineupPlayers(
+        lineup,
+        "starters"
+      );
+
+    if (!list.length) {
+
+      return `
+        <div>
+
+          <div class="bf-pro-team-title">
+            ${bfEscape(teamName)}
+          </div>
+
+          <div class="bf-pro-empty">
+            Aucun joueur disponible.
+          </div>
+
+        </div>
+      `;
+
+    }
+
+    return `
+
+      <div>
+
+        <div class="bf-pro-team-title">
+
+          <span>
+            ${bfEscape(teamName)}
+          </span>
+
+          <span>
+            ${list.length}
+          </span>
+
+        </div>
+
+        <div class="bf-pro-player-list">
+
+          ${
+            list
+              .map(
+                item => {
+
+                  const data =
+                    buildPlayerData(
+                      item,
+                      contributions,
+                      playerStats
+                    );
+
+                  return `
+
+                    <div class="bf-pro-player-row">
+
+                      <div class="bf-pro-number">
+                        ${bfEscape(
+                          data.number
+                        )}
+                      </div>
+
+                      <div class="bf-pro-player-main">
+
+                        <div class="bf-pro-player-name">
+                          ${bfEscape(
+                            data.name
+                          )}
+                        </div>
+
+                        <div class="bf-pro-player-position">
+
+                          ${bfEscape(
+                            data.position
+                          )}
+
+                          ${
+                            data.minutes !== null &&
+                            data.minutes !== undefined
+                              ? ` · ${bfEscape(
+                                  data.minutes
+                                )} min`
+                              : ""
+                          }
+
+                        </div>
+
+                      </div>
+
+                      <div class="bf-pro-badges">
+                        ${playerBadges(
+                          data
+                        )}
+                      </div>
+
+                    </div>
+
+                  `;
+
+                }
+              )
+              .join("")
+          }
+
+        </div>
+
+      </div>
+
+    `;
+  }
+
+  /* =======================================================
+     PLAYERS SECTION
+  ======================================================= */
+
+  function renderPlayers(
+    homeLineup,
+    awayLineup,
+    homeName,
+    awayName,
+    contributions,
+    playerStats
+  ) {
+
+    return `
+
+      <div class="bf-pro-section">
+
+        <div class="bf-pro-section-title">
+          ⭐ Performance des joueurs
+        </div>
+
+        <div class="bf-pro-subtitle">
+          Numéro · nom · position · rating · buts · assists · cartes · passes clés
+        </div>
+
+        <div class="bf-pro-player-columns">
+
+          ${renderPlayerList(
+            homeLineup,
+            homeName,
+            contributions,
+            playerStats
+          )}
+
+          ${renderPlayerList(
+            awayLineup,
+            awayName,
+            contributions,
+            playerStats
+          )}
+
+        </div>
+
+      </div>
+
+    `;
+  }
+
+  /* =======================================================
+     BENCH
+  ======================================================= */
+
+  function renderBench(
+    lineup,
+    teamName,
+    playerStats
+  ) {
+
+    const list =
+      getLineupPlayers(
+        lineup,
+        "bench"
+      );
+
+    if (!lineup) {
+
+      return `
+        <div>
+          <div class="bf-pro-team-title">
+            ${bfEscape(teamName)}
+          </div>
+
+          <div class="bf-pro-empty">
+            Banc indisponible.
+          </div>
+        </div>
+      `;
+    }
+
+    return `
+
+      <div>
+
+        <div class="bf-pro-team-title">
+          ${bfEscape(teamName)}
+        </div>
+
+        ${
+          list.length
+            ? `
+              <div class="bf-pro-bench-list">
+
+                ${
+                  list
+                    .map(
+                      item => {
+
+                        const stats =
+                          statsForPlayer(
+                            item,
+                            playerStats
+                          );
+
+                        return `
+
+                          <div class="bf-pro-bench-player">
+
+                            <span class="bf-pro-bench-number">
+                              ${bfEscape(
+                                playerNumber(item)
+                              )}
+                            </span>
+
+                            <span class="bf-pro-bench-name">
+                              ${bfEscape(
+                                playerName(item)
+                              )}
+                            </span>
+
+                            <span class="bf-pro-bench-rating">
+
+                              ${
+                                stats?.rating !== null &&
+                                stats?.rating !== undefined
+                                  ? `⭐ ${bfEscape(
+                                      Number(
+                                        stats.rating
+                                      ).toFixed(1)
+                                    )}`
+                                  : ""
+                              }
+
+                            </span>
+
+                          </div>
+
+                        `;
+
+                      }
+                    )
+                    .join("")
+                }
+
+              </div>
+            `
+            : `
+              <div class="bf-pro-empty">
+                Aucun remplaçant disponible.
+              </div>
+            `
+        }
+
+      </div>
+
+    `;
+  }
+
+  function renderBenches(
+    homeLineup,
+    awayLineup,
+    homeName,
+    awayName,
+    playerStats
+  ) {
+
+    return `
+
+      <div class="bf-pro-section">
+
+        <div class="bf-pro-section-title">
+          🔄 Bancs
+        </div>
+
+        <div class="bf-pro-bench-columns">
+
+          ${renderBench(
+            homeLineup,
+            homeName,
+            playerStats
+          )}
+
+          ${renderBench(
+            awayLineup,
+            awayName,
+            playerStats
+          )}
+
+        </div>
+
+      </div>
+
+    `;
+  }
+
+  /* =======================================================
+     EVENTS
+  ======================================================= */
+
+  function renderEvents(
+    events,
+    homeId,
+    awayId,
+    homeName,
+    awayName
+  ) {
+
+    const list =
+      normalizeEvents(
+        events
+      );
+
+    if (!list.length) {
+
+      return `
+
+        <div class="bf-pro-section">
+
+          <div class="bf-pro-section-title">
+            ⚡ Événements
+          </div>
+
+          <div class="bf-pro-empty">
+            Aucun événement disponible.
+          </div>
+
+        </div>
+
+      `;
+
+    }
+
+    const sorted =
+      [...list].sort(
+        (a, b) => {
+
+          const ma =
+            Number(
+              a?.time?.elapsed ??
+              a?.minute ??
+              999
+            );
+
+          const mb =
+            Number(
+              b?.time?.elapsed ??
+              b?.minute ??
+              999
+            );
+
+          return ma - mb;
+
+        }
+      );
+
+    const html =
+      sorted
+        .map(
+          event => {
+
+            const team =
+              event?.team ||
+              {};
+
+            const player =
+              event?.player ||
+              {};
+
+            const assist =
+              event?.assist ||
+              {};
+
+            const teamId =
+              team?.id ||
+              event?.team_id ||
+              null;
+
+            let side =
+              "home";
+
+            let teamName =
+              team?.name ||
+              event?.team_name ||
+              "";
+
+            if (
+              awayId &&
+              teamId &&
+              String(awayId) ===
+              String(teamId)
+            ) {
+
+              side =
+                "away";
+
+              if (!teamName) {
+                teamName =
+                  awayName;
+              }
+
+            }
+
+            else if (
+              homeId &&
+              teamId &&
+              String(homeId) ===
+              String(teamId)
+            ) {
+
+              side =
+                "home";
+
+              if (!teamName) {
+                teamName =
+                  homeName;
+              }
+
+            }
+
+            const playerText =
+              player?.name ||
+              event?.player_name ||
+              event?.description ||
+              event?.detail ||
+              "Événement";
+
+            const detail =
+              event?.detail ||
+              event?.description ||
+              "";
+
+            const assistName =
+              assist?.name ||
+              event?.assist_name ||
+              "";
+
+            return `
+
+              <div class="bf-pro-event ${side}">
+
+                <div class="bf-pro-event-minute">
+                  ${bfEscape(
+                    eventMinute(event)
+                  )}
+                </div>
+
+                <div class="bf-pro-event-icon">
+                  ${eventIcon(event)}
+                </div>
+
+                <div>
+
+                  <div class="bf-pro-event-player">
+                    ${bfEscape(
+                      playerText
+                    )}
+                  </div>
+
+                  ${
+                    detail
+                      ? `
+                        <div class="bf-pro-event-detail">
+                          ${bfEscape(
+                            detail
+                          )}
+                        </div>
+                      `
+                      : ""
+                  }
+
+                  ${
+                    assistName
+                      ? `
+                        <div class="bf-pro-event-assist">
+                          🅰️ Passe décisive :
+                          ${bfEscape(
+                            assistName
+                          )}
+                        </div>
+                      `
+                      : ""
+                  }
+
+                  ${
+                    teamName
+                      ? `
+                        <div class="bf-pro-event-team">
+                          ${bfEscape(
+                            teamName
+                          )}
+                        </div>
+                      `
+                      : ""
+                  }
+
+                </div>
+
+              </div>
+
+            `;
+
+          }
+        )
+        .join("");
+
+    return `
+
+      <div class="bf-pro-section">
+
+        <div class="bf-pro-section-title">
+          ⚡ Événements
+        </div>
+
+        <div class="bf-pro-events">
+          ${html}
+        </div>
+
+      </div>
+
+    `;
+  }
+
+  /* =======================================================
+     STATISTICS
+  ======================================================= */
+
+  function normalizeStatistics(
+    statistics
+  ) {
+
+    if (
+      Array.isArray(statistics)
+    ) {
+      return statistics;
+    }
+
+    if (
+      Array.isArray(
+        statistics?.data
+      )
+    ) {
+      return statistics.data;
+    }
+
+    return [];
+  }
+
+  function statisticsHTML(
+    statistics
+  ) {
+
+    const groups =
+      normalizeStatistics(
+        statistics
+      );
+
+    if (
+      groups.length < 1
+    ) {
+      return "";
+    }
+
+    const home =
+      groups[0] ||
+      {};
+
+    const away =
+      groups[1] ||
+      {};
+
+    const homeName =
+      home?.team?.name ||
+      "Domicile";
+
+    const awayName =
+      away?.team?.name ||
+      "Extérieur";
+
+    const homeStats =
+      Array.isArray(
+        home?.statistics
+      )
+        ? home.statistics
+        : [];
+
+    const awayStats =
+      Array.isArray(
+        away?.statistics
+      )
+        ? away.statistics
+        : [];
+
+    const awayMap =
+      new Map();
+
+    awayStats.forEach(
+      stat => {
+
+        const key =
+          bfNormalize(
+            stat?.type ||
+            stat?.name ||
+            ""
+          );
+
+        if (key) {
+          awayMap.set(
+            key,
+            stat?.value ??
+            "-"
+          );
+        }
+
+      }
+    );
+
+    const important = [];
+
+    homeStats.forEach(
+      stat => {
+
+        const name =
+          stat?.type ||
+          stat?.name ||
+          "";
+
+        const key =
+          bfNormalize(name);
+
+        if (!key) {
+          return;
+        }
+
+        if (
+          important.length >= 20
+        ) {
+          return;
+        }
+
+        important.push({
+
+          label:
+            name,
+
+          home:
+            stat?.value ??
+            "-",
+
+          away:
+            awayMap.get(key) ??
+            "-"
+
+        });
+
+      }
+    );
+
+    if (!important.length) {
+      return "";
+    }
+
+    return `
+
+      <div class="bf-pro-section">
+
+        <div class="bf-pro-section-title">
+          📊 Statistiques
+        </div>
+
+        <div
+          style="
+            display:grid;
+            grid-template-columns:1fr 40px 1fr;
+            gap:8px;
+            margin-bottom:13px;
+            font-size:11px;
+            font-weight:900;
+          "
+        >
+
+          <div style="text-align:right">
+            ${bfEscape(homeName)}
+          </div>
+
+          <div style="text-align:center;opacity:.4">
+            VS
+          </div>
+
+          <div>
+            ${bfEscape(awayName)}
+          </div>
+
+        </div>
+
+        <div class="bf-pro-stats">
+
+          ${
+            important
+              .map(
+                stat => `
+
+                  <div class="bf-pro-stat-row">
+
+                    <div class="bf-pro-stat-home">
+                      ${bfEscape(
+                        stat.home
+                      )}
+                    </div>
+
+                    <div class="bf-pro-stat-name">
+                      ${bfEscape(
+                        stat.label
+                      )}
+                    </div>
+
+                    <div class="bf-pro-stat-away">
+                      ${bfEscape(
+                        stat.away
+                      )}
+                    </div>
+
+                  </div>
+
+                `
+              )
+              .join("")
+          }
+
+        </div>
+
+      </div>
+
+    `;
+  }
+
+  /* =======================================================
+     INFO
+  ======================================================= */
+
+  function renderInfo(
+    details
+  ) {
+
+    const fixture =
+      details?.fixture ||
+      {};
+
+    const venue =
+      fixture?.venue;
+
+    const venueName =
+      typeof venue === "string"
+        ? venue
+        : venue?.name ||
+          details?.venue?.name ||
+          "";
+
+    const city =
+      venue?.city ||
+      details?.venue?.city ||
+      "";
+
+    const referee =
+      fixture?.referee ||
+      details?.referee ||
+      "";
+
+    const round =
+      details?.league?.round ||
+      "";
+
+    const season =
+      details?.league?.season ||
+      "";
+
+    if (
+      !venueName &&
+      !city &&
+      !referee &&
+      !round &&
+      !season
+    ) {
+      return "";
+    }
+
+    return `
+
+      <div class="bf-pro-section">
+
+        <div class="bf-pro-section-title">
+          📋 Informations
+        </div>
+
+        <div class="bf-pro-info-grid">
+
+          ${
+            venueName
+              ? `
+                <div class="bf-pro-info-box">
+
+                  <strong>
+                    🏟️ Stade
+                  </strong>
+
+                  ${bfEscape(
+                    venueName
+                  )}
+
+                  ${
+                    city
+                      ? ` · ${bfEscape(city)}`
+                      : ""
+                  }
+
+                </div>
+              `
+              : ""
+          }
+
+          ${
+            referee
+              ? `
+                <div class="bf-pro-info-box">
+
+                  <strong>
+                    👨‍⚖️ Arbitre
+                  </strong>
+
+                  ${bfEscape(
+                    referee
+                  )}
+
+                </div>
+              `
+              : ""
+          }
+
+          ${
+            round
+              ? `
+                <div class="bf-pro-info-box">
+
+                  <strong>
+                    🔢 Journée
+                  </strong>
+
+                  ${bfEscape(
+                    round
+                  )}
+
+                </div>
+              `
+              : ""
+          }
+
+          ${
+            season
+              ? `
+                <div class="bf-pro-info-box">
+
+                  <strong>
+                    📅 Saison
+                  </strong>
+
+                  ${bfEscape(
+                    season
+                  )}
+
+                </div>
+              `
+              : ""
+          }
+
+        </div>
+
+      </div>
+
+    `;
+  }
+
+  /* =======================================================
+     LOAD + RENDER
+  ======================================================= */
+
+  async function openProfessionalMatchDetails(
+    index
+  ) {
+
+    /*
+       IMPORTANT:
+       Read from the same currentMatches used
+       by your working script.js.
+    */
+
+    const match =
+      window.currentMatches?.[index] ||
+      (
+        typeof currentMatches !== "undefined"
+          ? currentMatches[index]
+          : null
+      );
+
+    if (!match) {
+
+      if (
+        typeof toast === "function"
+      ) {
+        toast(
+          "المباراة غير متوفرة"
+        );
+      }
+
+      return;
+    }
+
+    const identifier =
+      getProfessionalMatchIdentifier(
+        match,
+        index
+      );
+
+    console.log(
+      "BAKHIRAFOOT DETAILS IDENTIFIER:",
+      identifier
+    );
+
+    ensureProfessionalModal();
+
+    const modal =
+      document.getElementById(
+        "bfProfessionalMatchModal"
+      );
+
+    const content =
+      document.getElementById(
+        "bfProfessionalContent"
+      );
+
+    if (!modal || !content) {
+      return;
+    }
+
+    const basicHome =
+      match?.teams?.home?.name ||
+      match?.home?.name ||
+      match?.home ||
+      "Domicile";
+
+    const basicAway =
+      match?.teams?.away?.name ||
+      match?.away?.name ||
+      match?.away ||
+      "Extérieur";
+
+    const basicHomeLogo =
+      match?.teams?.home?.logo ||
+      match?.home?.logo ||
+      "";
+
+    const basicAwayLogo =
+      match?.teams?.away?.logo ||
+      match?.away?.logo ||
+      "";
+
+    const basicHomeScore =
+      match?.goals?.home ??
+      match?.score?.home ??
+      match?.homeScore ??
+      "-";
+
+    const basicAwayScore =
+      match?.goals?.away ??
+      match?.score?.away ??
+      match?.awayScore ??
+      "-";
+
+    const basicLeague =
+      match?.league?.name ||
+      match?.competition?.name ||
+      match?.league ||
+      "Football";
+
+    const basicDate =
+      match?.fixture?.date ||
+      match?.date ||
+      "";
+
+    content.innerHTML = `
+
+      <div class="bf-pro-league">
+        🏆 ${bfEscape(basicLeague)}
+      </div>
+
+      <div class="bf-pro-status-wrap">
+        <div class="bf-pro-status">
+          ${bfEscape(
+            professionalStatus(match)
+          )}
+        </div>
+      </div>
+
+      <div class="bf-pro-score-header">
+
+        ${professionalTeam(
+          basicHome,
+          basicHomeLogo
+        )}
+
+        <div>
+
+          <div class="bf-pro-score">
+            ${bfEscape(
+              basicHomeScore
+            )}
+            -
+            ${bfEscape(
+              basicAwayScore
+            )}
+          </div>
+
+          ${
+            basicDate
+              ? `
+                <div class="bf-pro-date">
+                  ${bfEscape(
+                    new Date(
+                      basicDate
+                    ).toLocaleString(
+                      "fr-FR",
+                      {
+                        day: "2-digit",
+                        month: "2-digit",
+                        year: "numeric",
+                        hour: "2-digit",
+                        minute: "2-digit"
+                      }
+                    )
+                  )}
+                </div>
+              `
+              : ""
+          }
+
+        </div>
+
+        ${professionalTeam(
+          basicAway,
+          basicAwayLogo
+        )}
+
+      </div>
+
+      <div class="bf-pro-section">
+
+        <div class="bf-pro-section-title">
+          ⏳ Match Center
+        </div>
+
+        <div class="bf-pro-empty">
+          جاري تحميل التشكيلة والأحداث والإحصائيات...
+        </div>
+
+      </div>
+
+    `;
+
+    modal.style.display =
+      "block";
+
+    document.body.style.overflow =
+      "hidden";
+
+    /*
+       No identifier = stop safely.
+    */
+
+    if (!identifier) {
+
+      content.innerHTML += `
+
+        <div class="bf-pro-section">
+
+          <div class="bf-pro-empty">
+            ⚠️ ما قدرناش نلقاو slug ديال هاد الماتش.
+          </div>
+
+        </div>
+
+      `;
+
+      return;
+    }
+
+    try {
+
+      /*
+         Same backend route already used
+         by your BakhiraFoot server.
+      */
+
+      const response =
+        await fetch(
+          `/api?fixture=${encodeURIComponent(
+            identifier
+          )}`,
+          {
+            cache: "no-store"
+          }
+        );
+
+      if (!response.ok) {
+
+        throw new Error(
+          `HTTP ${response.status}`
+        );
+
+      }
+
+      const payload =
+        await response.json();
+
+      console.log(
+        "BAKHIRAFOOT MATCH DETAILS RESPONSE:",
+        payload
+      );
+
+      /*
+         Our server returns the detail object
+         directly, but we support envelopes too.
+      */
+
+      const details =
+        payload?.data?.fixture ||
+        payload?.data?.teams
+          ? payload.data
+          : (
+              payload?.data ||
+              payload?.match ||
+              payload
+            );
+
+      if (!details) {
+        throw new Error(
+          "No match details"
+        );
+      }
+
+      const teams =
+        details?.teams ||
+        {};
+
+      const home =
+        teams?.home?.name ||
+        basicHome;
+
+      const away =
+        teams?.away?.name ||
+        basicAway;
+
+      const homeLogo =
+        teams?.home?.logo ||
+        basicHomeLogo;
+
+      const awayLogo =
+        teams?.away?.logo ||
+        basicAwayLogo;
+
+      const homeId =
+        teams?.home?.id ||
+        match?.teams?.home?.id ||
+        null;
+
+      const awayId =
+        teams?.away?.id ||
+        match?.teams?.away?.id ||
+        null;
+
+      const homeScore =
+        details?.goals?.home ??
+        details?.score?.home ??
+        basicHomeScore;
+
+      const awayScore =
+        details?.goals?.away ??
+        details?.score?.away ??
+        basicAwayScore;
+
+      const league =
+        details?.league?.name ||
+        basicLeague;
+
+      const events =
+        normalizeEvents(
+          details?.events ||
+          details?.timeline ||
+          []
+        );
+
+      const lineups =
+        normalizeLineups(
+          details?.lineups ||
+          details?.lineup ||
+          []
+        );
+
+      const statistics =
+        details?.statistics ||
+        details?.stats ||
+        [];
+
+      const players =
+        details?.players ||
+        [];
+
+      const contributions =
+        buildContributions(
+          events
+        );
+
+      const playerStats =
+        buildPlayerStats(
+          players
+        );
+
+      const homeLineup =
+        getLineup(
+          lineups,
+          homeId,
+          home,
+          0
+        );
+
+      const awayLineup =
+        getLineup(
+          lineups,
+          awayId,
+          away,
+          1
+        );
+
+      content.innerHTML = `
+
+        <div class="bf-pro-league">
+          🏆 ${bfEscape(league)}
+        </div>
+
+        ${
+          details?.league?.round
+            ? `
+              <div class="bf-pro-round">
+                ${bfEscape(
+                  details.league.round
+                )}
+              </div>
+            `
+            : ""
+        }
+
+        <div class="bf-pro-status-wrap">
+
+          <div class="bf-pro-status">
+            ${bfEscape(
+              professionalStatus(details)
+            )}
+          </div>
+
+        </div>
+
+        <div class="bf-pro-score-header">
+
+          ${professionalTeam(
+            home,
+            homeLogo
+          )}
+
+          <div>
+
+            <div class="bf-pro-score">
+              ${bfEscape(
+                homeScore
+              )}
+              -
+              ${bfEscape(
+                awayScore
+              )}
+            </div>
+
+            ${
+              details?.fixture?.date
+                ? `
+                  <div class="bf-pro-date">
+                    ${bfEscape(
+                      new Date(
+                        details.fixture.date
+                      ).toLocaleString(
+                        "fr-FR",
+                        {
+                          day: "2-digit",
+                          month: "2-digit",
+                          year: "numeric",
+                          hour: "2-digit",
+                          minute: "2-digit"
+                        }
+                      )
+                    )}
+                  </div>
+                `
+                : ""
+            }
+
+          </div>
+
+          ${professionalTeam(
+            away,
+            awayLogo
+          )}
+
+        </div>
+
+        ${renderInfo(
+          details
+        )}
+
+        ${
+          homeLineup ||
+          awayLineup
+            ? renderFormations(
+                homeLineup,
+                awayLineup,
+                home,
+                away,
+                contributions,
+                playerStats
+              )
+            : `
+              <div class="bf-pro-section">
+
+                <div class="bf-pro-section-title">
+                  🧩 Formations & Compositions
+                </div>
+
+                <div class="bf-pro-empty">
+                  التشكيلة مازال ما معلناش عليها فهاد الماتش.
+                </div>
+
+              </div>
+            `
+        }
+
+        ${
+          homeLineup ||
+          awayLineup
+            ? renderPlayers(
+                homeLineup,
+                awayLineup,
+                home,
+                away,
+                contributions,
+                playerStats
+              )
+            : ""
+        }
+
+        ${
+          homeLineup ||
+          awayLineup
+            ? renderBenches(
+                homeLineup,
+                awayLineup,
+                home,
+                away,
+                playerStats
+              )
+            : ""
+        }
+
+        ${renderEvents(
+          events,
+          homeId,
+          awayId,
+          home,
+          away
+        )}
+
+        ${statisticsHTML(
+          statistics
+        )}
+
+      `;
+
+    }
+    catch (error) {
+
+      console.error(
+        "BAKHIRAFOOT DETAILS ERROR:",
+        error
+      );
+
+      content.innerHTML = `
+
+        <div class="bf-pro-league">
+          🏆 ${bfEscape(basicLeague)}
+        </div>
+
+        <div class="bf-pro-status-wrap">
+          <div class="bf-pro-status">
+            ${bfEscape(
+              professionalStatus(match)
+            )}
+          </div>
+        </div>
+
+        <div class="bf-pro-score-header">
+
+          ${professionalTeam(
+            basicHome,
+            basicHomeLogo
+          )}
+
+          <div class="bf-pro-score">
+            ${bfEscape(
+              basicHomeScore
+            )}
+            -
+            ${bfEscape(
+              basicAwayScore
+            )}
+          </div>
+
+          ${professionalTeam(
+            basicAway,
+            basicAwayLogo
+          )}
+
+        </div>
+
+        <div class="bf-pro-section">
+
+          <div class="bf-pro-section-title">
+            ⚠️ Match Details
+          </div>
+
+          <div class="bf-pro-empty">
+
+            تعذر تحميل التفاصيل ديال هاد الماتش.
+
+            <br><br>
+
+            <small>
+              Check console:
+              BAKHIRAFOOT MATCH DETAILS RESPONSE
+            </small>
+
+          </div>
+
+        </div>
+
+      `;
+
+    }
+
+  }
+
+  /* =======================================================
+     CLOSE
+  ======================================================= */
+
+  window.bfCloseProfessionalMatch =
+    function (event) {
+
+      if (
+        event &&
+        event.target &&
+        !event.target.classList.contains(
+          "bf-pro-overlay"
+        )
+      ) {
+        return;
+      }
+
+      const modal =
+        document.getElementById(
+          "bfProfessionalMatchModal"
+        );
+
+      if (modal) {
+        modal.style.display =
+          "none";
+      }
+
+      document.body.style.overflow =
+        "";
+    };
+
+  /* =======================================================
+     ESC
+  ======================================================= */
+
+  if (
+    !window.__bakhiraProfessionalEsc
+  ) {
+
+    document.addEventListener(
+      "keydown",
+      event => {
+
+        if (
+          event.key === "Escape"
+        ) {
+
+          window.bfCloseProfessionalMatch();
+
+        }
+
+      }
+    );
+
+    window.__bakhiraProfessionalEsc =
+      true;
+  }
+
+  /* =======================================================
+     OVERRIDE ONLY MATCH CLICK
+  ======================================================= */
+
+  window.openMatchDetails =
+    openProfessionalMatchDetails;
+
+})();
