@@ -525,7 +525,7 @@
 
   async function loadStandings() {
     const container =
-      document.getElementById("homeTables");
+      document.getElementById("realStandings");
 
     if (!container) {
       return;
