@@ -168,135 +168,173 @@ const competitions = [
 
   function renderMatch(match) {
 
-    const home =
-      match.home ||
-      "Équipe locale";
+  const home =
+    match.home ||
+    "Équipe locale";
 
-    const away =
-      match.away ||
-      "Équipe visiteuse";
+  const away =
+    match.away ||
+    "Équipe visiteuse";
 
-    const homeLogo =
-      match.home_logo ||
-      "";
+  const homeLogo =
+    match.home_logo ||
+    "";
 
-    const awayLogo =
-      match.away_logo ||
-      "";
+  const awayLogo =
+    match.away_logo ||
+    "";
 
-    const homeScore =
-      match.home_score ??
-      "-";
+  const homeScore =
+    match.home_score ?? "-";
 
-    const awayScore =
-      match.away_score ??
-      "-";
+  const awayScore =
+    match.away_score ?? "-";
 
-    const live =
-      isLive(
-        match.status,
-        match.status_text
-      );
+  const live =
+    isLive(
+      match.status,
+      match.status_text
+    );
 
-    return `
-      <article
-        class="match-card sportscore-match"
-      >
+  const statusText =
+    match.status_text ||
+    (live ? "En direct" : "");
 
-        <div class="match-league">
-          ${escapeHTML(
-            match.competition ||
-            "Football"
-          )}
+  const competition =
+    match.competition ||
+    match.league ||
+    "Football";
+
+  return `
+    <article
+      class="match-card bf-pro-match-card"
+    >
+
+      <!-- COMPETITION -->
+      <div class="bf-match-top">
+
+        <div class="bf-match-competition">
+          <span class="bf-match-ball">⚽</span>
+          <strong>
+            ${escapeHTML(competition)}
+          </strong>
         </div>
 
-        <div class="match-main">
+        ${
+          live
+            ? `
+              <span class="bf-match-live">
+                <span class="bf-live-dot"></span>
+                LIVE
+              </span>
+            `
+            : `
+              <span class="bf-match-time">
+                ${formatTime(match.time)}
+              </span>
+            `
+        }
 
-          <div class="team">
-
-            ${
-              homeLogo
-                ? `
-                  <img
-                    src="${escapeHTML(homeLogo)}"
-                    alt="${escapeHTML(home)}"
-                    loading="lazy"
-                  >
-                `
-                : `
-                  <div class="team-logo-fallback">
-                    ⚽
-                  </div>
-                `
-            }
-
-            <strong>
-              ${escapeHTML(home)}
-            </strong>
-
-          </div>
+      </div>
 
 
-          <div class="match-center">
+      <!-- MATCH -->
+      <div class="bf-match-body">
 
-            ${
-              live
-                ? `
-                  <span class="sportscore-live">
-                    LIVE
-                  </span>
-                `
-                : `
-                  <span class="sportscore-time">
-                    ${formatTime(match.time)}
-                  </span>
-                `
-            }
+        <!-- HOME -->
+        <div class="bf-match-team">
 
-            <div class="score">
+          ${
+            homeLogo
+              ? `
+                <img
+                  class="bf-team-logo"
+                  src="${escapeHTML(homeLogo)}"
+                  alt="${escapeHTML(home)}"
+                  loading="lazy"
+                >
+              `
+              : `
+                <div class="bf-team-placeholder">
+                  ⚽
+                </div>
+              `
+          }
+
+          <strong class="bf-team-name">
+            ${escapeHTML(home)}
+          </strong>
+
+        </div>
+
+
+        <!-- SCORE -->
+        <div class="bf-match-score">
+
+          <div class="bf-score-numbers">
+            <span>
               ${escapeHTML(homeScore)}
-              <span>–</span>
+            </span>
+
+            <b>:</b>
+
+            <span>
               ${escapeHTML(awayScore)}
-            </div>
-
-            <small>
-              ${escapeHTML(
-                match.status_text || ""
-              )}
-            </small>
-
+            </span>
           </div>
 
-
-          <div class="team">
-
-            ${
-              awayLogo
-                ? `
-                  <img
-                    src="${escapeHTML(awayLogo)}"
-                    alt="${escapeHTML(away)}"
-                    loading="lazy"
-                  >
-                `
-                : `
-                  <div class="team-logo-fallback">
-                    ⚽
-                  </div>
-                `
-            }
-
-            <strong>
-              ${escapeHTML(away)}
-            </strong>
-
+          <div class="bf-match-status">
+            ${escapeHTML(statusText)}
           </div>
 
         </div>
 
-      </article>
-    `;
-  }
+
+        <!-- AWAY -->
+        <div class="bf-match-team">
+
+          ${
+            awayLogo
+              ? `
+                <img
+                  class="bf-team-logo"
+                  src="${escapeHTML(awayLogo)}"
+                  alt="${escapeHTML(away)}"
+                  loading="lazy"
+                >
+              `
+              : `
+                <div class="bf-team-placeholder">
+                  ⚽
+                </div>
+              `
+          }
+
+          <strong class="bf-team-name">
+            ${escapeHTML(away)}
+          </strong>
+
+        </div>
+
+      </div>
+
+
+      <!-- BOTTOM -->
+      <div class="bf-match-bottom">
+
+        <span>
+          ${live ? "🔴 En direct" : "📅 Match"}
+        </span>
+
+        <span>
+          BakhiraFoot
+        </span>
+
+      </div>
+
+    </article>
+  `;
+}
 
 
   async function loadTodayMatches() {
