@@ -4944,3 +4944,381 @@ body.dark .hero-actions .hero-more {
 .sportscore-standing + .sportscore-standing {
   margin-top: 0;
 }
+/* =========================================
+   BAKHIRAFOOT - PRO MATCH CARDS
+   ========================================= */
+
+.bf-pro-match-card {
+  position: relative;
+  overflow: hidden;
+
+  padding: 0 !important;
+
+  border-radius: 18px !important;
+  border: 1px solid rgba(16, 35, 48, .08) !important;
+
+  background: #ffffff !important;
+
+  box-shadow:
+    0 8px 24px rgba(16, 35, 48, .06) !important;
+
+  transition:
+    transform .18s ease,
+    box-shadow .18s ease,
+    border-color .18s ease !important;
+}
+
+.bf-pro-match-card:hover {
+  transform: translateY(-2px);
+
+  box-shadow:
+    0 12px 30px rgba(16, 35, 48, .10) !important;
+}
+
+
+/* DARK */
+
+body.dark .bf-pro-match-card {
+  background: #13212b !important;
+  border-color: rgba(255,255,255,.07) !important;
+
+  box-shadow:
+    0 8px 24px rgba(0,0,0,.18) !important;
+}
+
+body.dark .bf-pro-match-card:hover {
+  box-shadow:
+    0 12px 30px rgba(0,0,0,.28) !important;
+}
+
+
+/* =========================================
+   TOP
+   ========================================= */
+
+.bf-match-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  gap: 12px;
+
+  padding: 12px 16px;
+
+  border-bottom:
+    1px solid rgba(16,35,48,.06);
+}
+
+body.dark .bf-match-top {
+  border-bottom-color:
+    rgba(255,255,255,.06);
+}
+
+.bf-match-competition {
+  display: flex;
+  align-items: center;
+
+  gap: 7px;
+
+  min-width: 0;
+}
+
+.bf-match-competition strong {
+  overflow: hidden;
+
+  white-space: nowrap;
+  text-overflow: ellipsis;
+
+  font-size: 12px;
+  font-weight: 850;
+}
+
+.bf-match-ball {
+  font-size: 14px;
+}
+
+
+/* TIME */
+
+.bf-match-time {
+  flex-shrink: 0;
+
+  font-size: 11px;
+  font-weight: 850;
+
+  opacity: .65;
+}
+
+
+/* LIVE */
+
+.bf-match-live {
+  display: inline-flex;
+  align-items: center;
+
+  gap: 6px;
+
+  flex-shrink: 0;
+
+  padding: 5px 9px;
+
+  border-radius: 999px;
+
+  background: rgba(229,57,53,.10);
+
+  color: #d93838;
+
+  font-size: 10px;
+  font-weight: 950;
+}
+
+.bf-live-dot {
+  width: 6px;
+  height: 6px;
+
+  border-radius: 50%;
+
+  background: #e53935;
+
+  animation:
+    bfLivePulse 1.3s infinite;
+}
+
+@keyframes bfLivePulse {
+
+  0% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: .35;
+  }
+
+  100% {
+    opacity: 1;
+  }
+
+}
+
+
+/* =========================================
+   MATCH BODY
+   ========================================= */
+
+.bf-match-body {
+  display: grid;
+
+  grid-template-columns:
+    minmax(0, 1fr)
+    105px
+    minmax(0, 1fr);
+
+  align-items: center;
+
+  gap: 12px;
+
+  padding: 22px 18px 18px;
+}
+
+
+/* TEAM */
+
+.bf-match-team {
+  min-width: 0;
+
+  display: flex;
+  flex-direction: column;
+
+  align-items: center;
+
+  gap: 9px;
+
+  text-align: center;
+}
+
+.bf-team-logo,
+.bf-team-placeholder {
+  width: 48px;
+  height: 48px;
+
+  flex: 0 0 48px;
+}
+
+.bf-team-logo {
+  object-fit: contain;
+}
+
+.bf-team-placeholder {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border-radius: 14px;
+
+  background:
+    rgba(16,35,48,.05);
+
+  font-size: 22px;
+}
+
+body.dark .bf-team-placeholder {
+  background:
+    rgba(255,255,255,.06);
+}
+
+.bf-team-name {
+  width: 100%;
+
+  overflow: hidden;
+
+  white-space: nowrap;
+  text-overflow: ellipsis;
+
+  font-size: 13px;
+  font-weight: 850;
+}
+
+
+/* =========================================
+   SCORE
+   ========================================= */
+
+.bf-match-score {
+  display: flex;
+  flex-direction: column;
+
+  align-items: center;
+
+  min-width: 0;
+}
+
+.bf-score-numbers {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  gap: 9px;
+
+  font-size: 29px;
+  line-height: 1;
+
+  font-weight: 950;
+  letter-spacing: -1px;
+}
+
+.bf-score-numbers b {
+  font-size: 20px;
+  opacity: .38;
+}
+
+.bf-match-status {
+  margin-top: 9px;
+
+  max-width: 100%;
+
+  overflow: hidden;
+
+  white-space: nowrap;
+  text-overflow: ellipsis;
+
+  text-align: center;
+
+  font-size: 10px;
+  font-weight: 750;
+
+  opacity: .55;
+}
+
+
+/* =========================================
+   BOTTOM
+   ========================================= */
+
+.bf-match-bottom {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  gap: 10px;
+
+  padding: 9px 16px;
+
+  border-top:
+    1px solid rgba(16,35,48,.055);
+
+  font-size: 10px;
+
+  opacity: .58;
+}
+
+body.dark .bf-match-bottom {
+  border-top-color:
+    rgba(255,255,255,.055);
+}
+
+
+/* =========================================
+   LIVE CARD
+   ========================================= */
+
+.bf-pro-match-card:has(.bf-match-live) {
+  border-color:
+    rgba(229,57,53,.20) !important;
+}
+
+.bf-pro-match-card:has(.bf-match-live) .bf-score-numbers {
+  color: #d93838;
+}
+
+
+/* =========================================
+   MOBILE
+   ========================================= */
+
+@media (max-width: 600px) {
+
+  .bf-match-top {
+    padding: 10px 12px;
+  }
+
+  .bf-match-body {
+    grid-template-columns:
+      minmax(0, 1fr)
+      82px
+      minmax(0, 1fr);
+
+    gap: 7px;
+
+    padding: 18px 12px 15px;
+  }
+
+  .bf-team-logo,
+  .bf-team-placeholder {
+    width: 40px;
+    height: 40px;
+
+    flex-basis: 40px;
+  }
+
+  .bf-team-placeholder {
+    font-size: 18px;
+  }
+
+  .bf-team-name {
+    font-size: 12px;
+  }
+
+  .bf-score-numbers {
+    font-size: 24px;
+    gap: 6px;
+  }
+
+  .bf-score-numbers b {
+    font-size: 17px;
+  }
+
+  .bf-match-bottom {
+    padding: 8px 12px;
+  }
+
+}
