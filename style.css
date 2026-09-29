@@ -4536,3 +4536,244 @@ footer {
     font-size: 9px;
   }
 }
+/* =========================================
+   BAKHIRAFOOT — ACCUEIL HERO PREMIUM V2
+   ========================================= */
+
+#home .title {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+
+  min-height: 250px;
+
+  display: flex;
+  align-items: center;
+
+  padding: 34px !important;
+
+  border: 1px solid #dfe7eb !important;
+  border-radius: 22px !important;
+
+  background:
+    radial-gradient(
+      circle at 88% 18%,
+      rgba(32, 212, 134, .10),
+      transparent 28%
+    ),
+    radial-gradient(
+      circle at 10% 100%,
+      rgba(90, 110, 125, .06),
+      transparent 30%
+    ),
+    linear-gradient(
+      145deg,
+      #ffffff,
+      #f5f8f9
+    ) !important;
+
+  box-shadow:
+    0 14px 38px rgba(15, 23, 42, .06) !important;
+}
+
+#home .title::before {
+  content: "⚽";
+
+  position: absolute;
+
+  right: 55px;
+  top: 28px;
+
+  z-index: -1;
+
+  width: 130px;
+  height: 130px;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  border-radius: 50%;
+
+  background: rgba(255,255,255,.55);
+
+  border: 1px solid rgba(100,120,135,.09);
+
+  font-size: 58px;
+
+  opacity: .55;
+}
+
+#home .title::after {
+  content: "";
+
+  position: absolute;
+
+  right: -65px;
+  bottom: -75px;
+
+  width: 210px;
+  height: 210px;
+
+  border-radius: 50%;
+
+  border: 1px solid rgba(100,120,135,.10);
+}
+
+#home .title > div {
+  position: relative;
+  z-index: 2;
+
+  max-width: 760px;
+}
+
+#home .title h1 {
+  margin: 7px 0 14px !important;
+
+  font-size: clamp(
+    34px,
+    5vw,
+    56px
+  ) !important;
+
+  line-height: 1.02 !important;
+
+  letter-spacing: -.05em !important;
+
+  font-weight: 900 !important;
+
+  color: #14212b !important;
+}
+
+#home .title h1 span {
+  color: #536b79 !important;
+}
+
+#home .title p {
+  max-width: 650px;
+
+  margin: 0;
+
+  font-size: 14px !important;
+
+  line-height: 1.7 !important;
+
+  color: #6d7d87 !important;
+}
+
+/* Petit label au-dessus du titre */
+
+#home .title small {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+
+  padding: 6px 9px;
+
+  border-radius: 7px;
+
+  background: #edf8f3;
+
+  color: #087f51;
+
+  font-size: 9px !important;
+
+  font-weight: 850 !important;
+
+  letter-spacing: .07em;
+}
+
+/* DARK MODE */
+
+.dark #home .title {
+  border-color: #29343d !important;
+
+  background:
+    radial-gradient(
+      circle at 88% 18%,
+      rgba(32, 212, 134, .07),
+      transparent 28%
+    ),
+    radial-gradient(
+      circle at 10% 100%,
+      rgba(160, 180, 195, .05),
+      transparent 30%
+    ),
+    linear-gradient(
+      145deg,
+      #151d24,
+      #10171c
+    ) !important;
+
+  box-shadow:
+    0 14px 38px rgba(0,0,0,.18) !important;
+}
+
+.dark #home .title::before {
+  background: rgba(255,255,255,.025);
+  border-color: rgba(255,255,255,.06);
+}
+
+.dark #home .title::after {
+  border-color: rgba(255,255,255,.06);
+}
+
+.dark #home .title h1 {
+  color: #f1f5f7 !important;
+}
+
+.dark #home .title h1 span {
+  color: #b8c5cc !important;
+}
+
+.dark #home .title p {
+  color: #96a4ad !important;
+}
+
+.dark #home .title small {
+  background: #173229;
+  color: #68dda5;
+}
+
+/* MOBILE */
+
+@media (max-width: 700px) {
+
+  #home .title {
+    min-height: 220px;
+
+    padding: 23px 16px !important;
+
+    border-radius: 16px !important;
+  }
+
+  #home .title::before {
+    right: -5px;
+    top: 20px;
+
+    width: 92px;
+    height: 92px;
+
+    font-size: 38px;
+
+    opacity: .35;
+  }
+
+  #home .title::after {
+    right: -75px;
+    bottom: -85px;
+
+    width: 170px;
+    height: 170px;
+  }
+
+  #home .title h1 {
+    font-size: 30px !important;
+    line-height: 1.08 !important;
+  }
+
+  #home .title p {
+    font-size: 12px !important;
+    line-height: 1.6 !important;
+  }
+}
