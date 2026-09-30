@@ -168,47 +168,77 @@ const competitions = [
 
   function renderMatch(match) {
 
-  const home =
-    match.home ||
-    "Équipe locale";
-
-  const away =
-    match.away ||
-    "Équipe visiteuse";
-
-  const homeLogo =
-    match.home_logo ||
-    "";
-
-  const awayLogo =
-    match.away_logo ||
-    "";
-
-  const homeScore =
-    match.home_score ?? "-";
-
-  const awayScore =
-    match.away_score ?? "-";
-
-  const live =
-    isLive(
-      match.status,
-      match.status_text
-    );
-
-  const statusText =
-    match.status_text ||
-    (live ? "En direct" : "");
-
-  const competition =
-    match.competition ||
-    match.league ||
-    "Football";
+  const home = match.home || "Équipe locale";
+  const away = match.away || "Équipe visiteuse";
+  const homeLogo = match.home_logo || "";
+  const awayLogo = match.away_logo || "";
+  const homeScore = match.home_score ?? "-";
+  const awayScore = match.away_score ?? "-";
+  const live = isLive(match.status, match.status_text);
+  const statusText = match.status_text || (live ? "En direct" : "");
+  const competition = match.competition || match.league || "Football";
+  const matchId = match.id || match.slug || "";
 
   return `
     <article
       class="match-card bf-pro-match-card"
+      onclick="openMatch('${matchId}')"
+      style="cursor: pointer;"
     >
+
+      <!-- COMPETITION -->
+      <div class="bf-match-top">
+        <div class="bf-match-competition">
+          <span class="bf-match-ball">⚽</span>
+          <strong>${escapeHTML(competition)}</strong>
+        </div>
+
+        ${
+          live
+            ? `<span class="bf-match-live"><span class="bf-live-dot"></span> LIVE</span>`
+            : `<span class="bf-match-time">${formatTime(match.time)}</span>`
+        }
+      </div>
+
+      <!-- MATCH BODY -->
+      <div class="bf-match-body">
+        <div class="bf-match-team">
+          ${
+            homeLogo
+              ? `<img class="bf-team-logo" src="${escapeHTML(homeLogo)}" alt="${escapeHTML(home)}" loading="lazy">`
+              : `<div class="bf-team-placeholder">⚽</div>`
+          }
+          <strong class="bf-team-name">${escapeHTML(home)}</strong>
+        </div>
+
+        <div class="bf-match-score">
+          <div class="bf-score-numbers">
+            <span>${escapeHTML(homeScore)}</span>
+            <b>:</b>
+            <span>${escapeHTML(awayScore)}</span>
+          </div>
+          <div class="bf-match-status">${escapeHTML(statusText)}</div>
+        </div>
+
+        <div class="bf-match-team">
+          ${
+            awayLogo
+              ? `<img class="bf-team-logo" src="${escapeHTML(awayLogo)}" alt="${escapeHTML(away)}" loading="lazy">`
+              : `<div class="bf-team-placeholder">⚽</div>`
+          }
+          <strong class="bf-team-name">${escapeHTML(away)}</strong>
+        </div>
+      </div>
+
+      <!-- BOTTOM -->
+      <div class="bf-match-bottom">
+        <span>${live ? "🔴 En direct" : "📅 Match"}</span>
+        <span>BakhiraFoot</span>
+      </div>
+
+    </article>
+  `;
+}
 
       <!-- COMPETITION -->
       <div class="bf-match-top">
