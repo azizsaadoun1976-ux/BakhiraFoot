@@ -1300,9 +1300,12 @@
   function getPlayerPhoto(
   player
 ) {
+  if (!player) {
+    return "";
+  }
+
   if (
-    typeof player === "string" ||
-    !player
+    typeof player === "string"
   ) {
     return "";
   }
@@ -1314,6 +1317,8 @@
       : player;
 
   return first(
+    /* player direct */
+    player?.logo,
     player?.photo,
     player?.image,
     player?.picture,
@@ -1321,9 +1326,10 @@
     player?.headshot,
     player?.photo_url,
     player?.image_url,
-    player?.profile_image,
     player?.player_image,
 
+    /* nested player */
+    p?.logo,
     p?.photo,
     p?.image,
     p?.picture,
@@ -1331,22 +1337,21 @@
     p?.headshot,
     p?.photo_url,
     p?.image_url,
-    p?.profile_image,
     p?.player_image,
-
-    player?.logo,
-    p?.logo,
 
     ""
   );
 }
 
-  function getPlayerRating(
+function getPlayerRating(
   player
 ) {
+  if (!player) {
+    return null;
+  }
+
   if (
-    typeof player === "string" ||
-    !player
+    typeof player === "string"
   ) {
     return null;
   }
@@ -1357,57 +1362,51 @@
       ? player.player
       : player;
 
-  const rating =
+  const value =
     first(
+      /* direct */
       player?.rating,
-
-      player?.statistics?.rating,
-      player?.statistics?.player_rating,
-      player?.statistics?.performance_rating,
-
-      player?.performance?.rating,
-      player?.performance?.player_rating,
-
       player?.match_rating,
       player?.matchRating,
-
       player?.rating_value,
       player?.ratingValue,
 
-      player?.score,
+      /* statistics */
+      player?.statistics?.rating,
+      player?.statistics?.player_rating,
+      player?.performance?.rating,
 
+      /* nested player */
       p?.rating,
+      p?.match_rating,
+      p?.matchRating,
+      p?.rating_value,
+      p?.ratingValue,
 
       p?.statistics?.rating,
       p?.statistics?.player_rating,
-      p?.statistics?.performance_rating,
-
       p?.performance?.rating,
-      p?.performance?.player_rating,
-
-      p?.match_rating,
-      p?.matchRating,
 
       null
     );
 
   if (
-    rating === null ||
-    rating === undefined ||
-    rating === ""
+    value === null ||
+    value === undefined ||
+    value === ""
   ) {
     return null;
   }
 
-  const number =
+  const rating =
     Number(
-      String(rating)
+      String(value)
         .replace(",", ".")
         .trim()
     );
 
-  return Number.isFinite(number)
-    ? number
+  return Number.isFinite(rating)
+    ? rating
     : null;
 }
   function playerKey(
