@@ -1,19 +1,36 @@
 /* =========================================================
-   BAKHIRAFOOT PRO
-   SPORTSCORE = LIVE + DATE
-   SOFASCORE = MATCH DETAILS / LINEUPS / EVENTS / STATS
+   BAKHIRAFOOT PRO API
+   SPORTScore ONLY
+   LIVE + DATE + MATCH DETAILS
+   SCORE + EVENTS + LINEUPS + STATS
 ========================================================= */
 
 module.exports = async (req, res) => {
   try {
-    const { live, date, fixture } = req.query;
 
-    const SPORTSCORE = "https://sportscore.com/api/v1";
-    const SOFA = "https://api.sofascore.com/api/v1";
+    const {
+      live,
+      date,
+      fixture
+    } = req.query;
 
-    const today = new Date().toISOString().split("T")[0];
+    const SPORTSCORE =
+      "https://sportscore.com/api/v1";
 
-    function output(status, data) {
+    const today =
+      new Date()
+        .toISOString()
+        .split("T")[0];
+
+    /* =====================================================
+       RESPONSE
+    ===================================================== */
+
+    function output(
+      status,
+      data
+    ) {
+
       res.setHeader(
         "Cache-Control",
         "s-maxage=30, stale-while-revalidate=60"
@@ -24,43 +41,74 @@ module.exports = async (req, res) => {
         "application/json; charset=utf-8"
       );
 
-      return res.status(status).json(data);
+      return res
+        .status(status)
+        .json(data);
     }
 
+    /* =====================================================
+       FETCH JSON
+    ===================================================== */
+
     async function getJSON(url) {
-      console.log("API REQUEST:", url);
 
-      const response = await fetch(url, {
-        method: "GET",
-        headers: {
-          Accept: "application/json",
-          "User-Agent":
-            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/154 Safari/537.36",
-          Referer: "https://www.sofascore.com/",
-          Origin: "https://www.sofascore.com"
-        },
-        cache: "no-store"
-      });
+      console.log(
+        "SPORTSCORE REQUEST:",
+        url
+      );
 
-      const text = await response.text();
+      const response =
+        await fetch(
+          url,
+          {
+            method: "GET",
+
+            headers: {
+              Accept:
+                "application/json",
+
+              "User-Agent":
+                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/154 Safari/537.36"
+            },
+
+            cache:
+              "no-store"
+          }
+        );
+
+      const rawText =
+        await response.text();
 
       let data;
 
       try {
-        data = JSON.parse(text);
+
+        data =
+          JSON.parse(
+            rawText
+          );
+
       } catch {
+
         data = {
-          raw: text
+          raw:
+            rawText
         };
+
       }
 
       if (!response.ok) {
-        const error = new Error(
-          `HTTP ${response.status} for ${url}`
-        );
 
-        error.status = response.status;
-        error.data = data;
+        const error =
+          new Error(
+            `HTTP ${response.status}`
+          );
+
+        error.status =
+          response.status;
+
+        error.data =
+          data;
 
         throw error;
       }
@@ -68,16 +116,23 @@ module.exports = async (req, res) => {
       return data;
     }
 
+    /* =====================================================
+       HELPERS
+    ===================================================== */
+
     function arr(value) {
+
       return Array.isArray(value)
         ? value
         : [];
     }
 
     function obj(value) {
+
       return (
         value &&
-        typeof value === "object" &&
+        typeof value ===
+          "object" &&
         !Array.isArray(value)
       )
         ? value
@@ -85,18 +140,27 @@ module.exports = async (req, res) => {
     }
 
     function text(value) {
-      if (typeof value === "string") {
+
+      if (
+        typeof value ===
+        "string"
+      ) {
         return value;
       }
 
-      if (typeof value === "number") {
+      if (
+        typeof value ===
+        "number"
+      ) {
         return String(value);
       }
 
       if (
         value &&
-        typeof value === "object"
+        typeof value ===
+          "object"
       ) {
+
         return (
           value.name ||
           value.full_name ||
@@ -110,17 +174,22 @@ module.exports = async (req, res) => {
     }
 
     function idOf(value) {
+
       if (
-        typeof value === "string" ||
-        typeof value === "number"
+        typeof value ===
+          "string" ||
+        typeof value ===
+          "number"
       ) {
         return value;
       }
 
       if (
         value &&
-        typeof value === "object"
+        typeof value ===
+          "object"
       ) {
+
         return (
           value.id ||
           value.team_id ||
@@ -133,7 +202,10 @@ module.exports = async (req, res) => {
     }
 
     function norm(value) {
-      return String(value || "")
+
+      return String(
+        value || ""
+      )
         .normalize("NFD")
         .replace(
           /[\u0300-\u036f]/g,
@@ -148,6 +220,7 @@ module.exports = async (req, res) => {
     }
 
     function slugPart(value) {
+
       return norm(value)
         .replace(
           /\s+/g,
@@ -156,17 +229,152 @@ module.exports = async (req, res) => {
     }
 
     /* =====================================================
-       SPORTScore MATCH NORMALIZER
+       DATE NORMALIZER
     ===================================================== */
 
-    function normalizeMatch(item) {
+    function toISODate(value) {
+
+      if (
+        value === null ||
+        value === undefined ||
+        value === ""
+      ) {
+        return null;
+      }
+
+      if (
+        typeof value ===
+        "number"
+      ) {
+
+        const ms =
+          value < 10000000000
+            ? value * 1000
+            : value;
+
+        const d =
+          new Date(ms);
+
+        if (
+          Number.isNaN(
+            d.getTime()
+          )
+        ) {
+          return null;
+        }
+
+        return d
+          .toISOString()
+          .split("T")[0];
+      }
+
+      const str =
+        String(value)
+          .trim();
+
+      const direct =
+        str.match(
+          /^(\d{4}-\d{2}-\d{2})/
+        );
+
+      if (direct) {
+        return direct[1];
+      }
+
+      if (
+        /^\d+$/.test(str)
+      ) {
+
+        const number =
+          Number(str);
+
+        const ms =
+          number < 10000000000
+            ? number * 1000
+            : number;
+
+        const d =
+          new Date(ms);
+
+        if (
+          Number.isNaN(
+            d.getTime()
+          )
+        ) {
+          return null;
+        }
+
+        return d
+          .toISOString()
+          .split("T")[0];
+      }
+
+      const d =
+        new Date(str);
+
+      if (
+        Number.isNaN(
+          d.getTime()
+        )
+      ) {
+        return null;
+      }
+
+      return d
+        .toISOString()
+        .split("T")[0];
+    }
+
+    /* =====================================================
+       NORMALIZE TEAM
+    ===================================================== */
+
+    function normalizeTeam(
+      team,
+      fallbackName,
+      fallbackLogo
+    ) {
+
+      const raw =
+        team || {};
+
+      return {
+
+        id:
+          idOf(raw),
+
+        name:
+          text(raw) ||
+          raw?.name ||
+          fallbackName ||
+          "Équipe",
+
+        logo:
+          raw?.logo ||
+          raw?.image ||
+          raw?.picture ||
+          fallbackLogo ||
+          ""
+
+      };
+    }
+
+    /* =====================================================
+       NORMALIZE MATCH
+    ===================================================== */
+
+    function normalizeMatch(
+      item
+    ) {
+
       if (!item) {
         return null;
       }
 
       const raw =
         item?.match &&
-        typeof item.match === "object"
+        typeof item.match ===
+          "object"
           ? item.match
           : item;
 
@@ -276,7 +484,9 @@ module.exports = async (req, res) => {
             "inplay"
           )
         ) {
-          statusShort = "LIVE";
+
+          statusShort =
+            "LIVE";
 
         } else if (
           statusText.includes(
@@ -285,33 +495,44 @@ module.exports = async (req, res) => {
           statusText.includes(
             "ended"
           ) ||
-          statusText === "ft"
+          statusText ===
+            "ft"
         ) {
-          statusShort = "FT";
+
+          statusShort =
+            "FT";
 
         } else if (
           statusText.includes(
             "half"
           )
         ) {
-          statusShort = "HT";
+
+          statusShort =
+            "HT";
 
         } else if (
           statusText.includes(
             "postpon"
           )
         ) {
-          statusShort = "PST";
+
+          statusShort =
+            "PST";
 
         } else if (
           statusText.includes(
             "cancel"
           )
         ) {
-          statusShort = "CANC";
+
+          statusShort =
+            "CANC";
 
         } else {
-          statusShort = "NS";
+
+          statusShort =
+            "NS";
         }
       }
 
@@ -374,6 +595,10 @@ module.exports = async (req, res) => {
 
           referee:
             raw?.referee ||
+            null,
+
+          timezone:
+            raw?.timezone ||
             null
 
         },
@@ -404,37 +629,34 @@ module.exports = async (req, res) => {
           logo:
             competition?.logo ||
             raw?.competition_logo ||
-            ""
+            "",
+
+          round:
+            raw?.round ||
+            raw?.round_name ||
+            null,
+
+          season:
+            raw?.season ||
+            null
 
         },
 
         teams: {
 
-          home: {
-
-            id:
-              homeId,
-
-            name:
+          home:
+            normalizeTeam(
+              homeRaw,
               homeName,
-
-            logo:
               homeLogo
+            ),
 
-          },
-
-          away: {
-
-            id:
-              awayId,
-
-            name:
+          away:
+            normalizeTeam(
+              awayRaw,
               awayName,
-
-            logo:
               awayLogo
-
-          }
+            )
 
         },
 
@@ -459,15 +681,23 @@ module.exports = async (req, res) => {
           halftime:
             score?.halftime ||
             {
-              home: null,
-              away: null
+              home:
+                score?.ht?.home ??
+                null,
+
+              away:
+                score?.ht?.away ??
+                null
             },
 
           fulltime:
             score?.fulltime ||
             {
-              home: homeScore,
-              away: awayScore
+              home:
+                homeScore,
+
+              away:
+                awayScore
             }
 
         }
@@ -475,7 +705,13 @@ module.exports = async (req, res) => {
       };
     }
 
-    function getMatches(body) {
+    /* =====================================================
+       MATCH LIST EXTRACTION
+    ===================================================== */
+
+    function getMatches(
+      body
+    ) {
 
       if (
         Array.isArray(
@@ -511,326 +747,54 @@ module.exports = async (req, res) => {
     }
 
     /* =====================================================
-       DATE MATCHES
+       DETAIL ROOT
     ===================================================== */
 
-    if (
-      !live &&
-      !fixture
+    function getDetailRoot(
+      body
     ) {
 
-      const matchDate =
-        date ||
-        today;
-
-      let body;
-
-      try {
-
-        body =
-          await getJSON(
-            `${SPORTSCORE}/fixtures/?sport=football&date=${encodeURIComponent(
-              matchDate
-            )}&limit=200`
-          );
-
-      } catch (error) {
-
-        if (
-          matchDate ===
-          today
-        ) {
-
-          body =
-            await getJSON(
-              `${SPORTSCORE}/matches/?sport=football&limit=50`
-            );
-
-        } else {
-
-          throw error;
-
-        }
-
+      if (
+        body?.match &&
+        typeof body.match ===
+          "object"
+      ) {
+        return body.match;
       }
 
-      const matches =
-        getMatches(body)
-          .map(
-            normalizeMatch
-          )
-          .filter(Boolean);
+      if (
+        body?.data?.match &&
+        typeof body.data.match ===
+          "object"
+      ) {
+        return body.data.match;
+      }
 
-      return output(
-        200,
-        {
-          data:
-            matches,
+      if (
+        body?.data &&
+        typeof body.data ===
+          "object" &&
+        !Array.isArray(
+          body.data
+        )
+      ) {
+        return body.data;
+      }
 
-          provider:
-            "SportScore"
-        }
-      );
+      return body;
     }
 
     /* =====================================================
-       LIVE
+       PLAYER
     ===================================================== */
 
-    if (
-      live === "all"
-    ) {
-
-      const body =
-        await getJSON(
-          `${SPORTSCORE}/fixtures/?sport=football&status=live&limit=200`
-        );
-
-      const matches =
-        getMatches(body)
-          .map(
-            normalizeMatch
-          )
-          .filter(Boolean);
-
-      return output(
-        200,
-        {
-          data:
-            matches,
-
-          provider:
-            "SportScore"
-        }
-      );
-    }
-
-    /* =====================================================
-       FIND MATCH IN SOFASCORE BY TEAMS + DATE
-    ===================================================== */
-
-    function toISODate(value) {
-  if (value === null || value === undefined || value === "") {
-    return null;
-  }
-
-  // Date object
-  if (value instanceof Date) {
-    if (Number.isNaN(value.getTime())) return null;
-    return value.toISOString().split("T")[0];
-  }
-
-  // Numeric timestamp
-  if (typeof value === "number") {
-    const ms =
-      value < 10000000000
-        ? value * 1000
-        : value;
-
-    const d = new Date(ms);
-
-    if (Number.isNaN(d.getTime())) return null;
-
-    return d.toISOString().split("T")[0];
-  }
-
-  const str = String(value).trim();
-
-  // YYYY-MM-DD or ISO date
-  const isoMatch =
-    str.match(/^(\d{4}-\d{2}-\d{2})/);
-
-  if (isoMatch) {
-    return isoMatch[1];
-  }
-
-  // Numeric timestamp stored as string
-  if (/^\d+$/.test(str)) {
-    const num = Number(str);
-
-    const ms =
-      num < 10000000000
-        ? num * 1000
-        : num;
-
-    const d = new Date(ms);
-
-    if (Number.isNaN(d.getTime())) return null;
-
-    return d.toISOString().split("T")[0];
-  }
-
-  // Any other valid date string
-  const d = new Date(str);
-
-  if (Number.isNaN(d.getTime())) {
-    return null;
-  }
-
-  return d.toISOString().split("T")[0];
-} 
-   async function findSofaEvent(
-  homeName,
-  awayName,
-  isoDate
-) {
-  const wantedHome = norm(homeName);
-  const wantedAway = norm(awayName);
-
-  const baseISO =
-    toISODate(isoDate) ||
-    today;
-
-  const baseDate =
-    new Date(`${baseISO}T12:00:00Z`);
-
-  if (Number.isNaN(baseDate.getTime())) {
-    console.warn(
-      "INVALID SOFASCORE BASE DATE:",
-      isoDate
-    );
-
-    return null;
-  }
-
-  const dates = [];
-
-  for (let offset = -1; offset <= 1; offset++) {
-    const d = new Date(baseDate);
-
-    d.setUTCDate(
-      d.getUTCDate() + offset
-    );
-
-    dates.push(
-      d.toISOString().split("T")[0]
-    );
-  }
-
-  console.log(
-    "SOFASCORE SEARCH:",
-    {
-      home: wantedHome,
-      away: wantedAway,
-      dates
-    }
-  );
-
-  for (const d of dates) {
-    try {
-      const body = await getJSON(
-        `${SOFA}/sport/football/scheduled-events/${d}`
-      );
-
-      const events = arr(
-        body?.events
-      );
-
-      console.log(
-        "SOFASCORE EVENTS:",
-        d,
-        events.length
-      );
-
-      // 1. Exact match
-      const exact = events.find(event => {
-        const home = norm(
-          event?.homeTeam?.name
-        );
-
-        const away = norm(
-          event?.awayTeam?.name
-        );
-
-        return (
-          home === wantedHome &&
-          away === wantedAway
-        );
-      });
-
-      if (exact) {
-        console.log(
-          "SOFASCORE EXACT MATCH:",
-          exact.id,
-          exact.homeTeam?.name,
-          exact.awayTeam?.name
-        );
-
-        return exact;
-      }
-
-      // 2. Fuzzy match
-      const fuzzy = events.find(event => {
-        const home = norm(
-          event?.homeTeam?.name
-        );
-
-        const away = norm(
-          event?.awayTeam?.name
-        );
-
-        const homeOk =
-          home.includes(wantedHome) ||
-          wantedHome.includes(home);
-
-        const awayOk =
-          away.includes(wantedAway) ||
-          wantedAway.includes(away);
-
-        return homeOk && awayOk;
-      });
-
-      if (fuzzy) {
-        console.log(
-          "SOFASCORE FUZZY MATCH:",
-          fuzzy.id,
-          fuzzy.homeTeam?.name,
-          fuzzy.awayTeam?.name
-        );
-
-        return fuzzy;
-      }
-
-    } catch (error) {
-      console.warn(
-        "SOFASCORE SCHEDULE ERROR:",
-        d,
-        error.message
-      );
-    }
-  }
-
-  console.warn(
-    "SOFASCORE MATCH NOT FOUND:",
-    homeName,
-    "vs",
-    awayName,
-    baseISO
-  );
-
-  return null;
-}
-
-    /* =====================================================
-       PLAYER NORMALIZATION
-    ===================================================== */
-
-    function normalizeSofaPlayer(
+    function normalizePlayer(
       row
     ) {
 
-      const player =
+      const raw =
         row?.player ||
         row ||
-        {};
-
-      const stat =
-        row?.statistics?.[0] ||
-        row?.statistics ||
-        {};
-
-      const games =
-        stat?.games ||
         {};
 
       return {
@@ -838,62 +802,64 @@ module.exports = async (req, res) => {
         player: {
 
           id:
-            player?.id ||
+            raw?.id ||
+            row?.player_id ||
             null,
 
           name:
-            player?.name ||
-            player?.shortName ||
-            row?.playerName ||
+            raw?.name ||
+            raw?.short_name ||
+            row?.name ||
             "Joueur",
 
           number:
             row?.shirtNumber ??
             row?.jerseyNumber ??
-            player?.shirtNumber ??
-            player?.jerseyNumber ??
+            raw?.shirtNumber ??
+            raw?.jerseyNumber ??
+            row?.number ??
             null,
 
           pos:
             row?.position ||
-            player?.position ||
+            raw?.position ||
+            row?.pos ||
             "",
 
           grid:
-            row?.positionGrid ||
             row?.grid ||
+            row?.positionGrid ||
+            raw?.grid ||
             "",
 
           photo:
-            player?.picture ||
-            player?.image ||
+            raw?.picture ||
+            raw?.image ||
+            row?.photo ||
             ""
 
         },
 
         rating:
           row?.rating ??
-          stat?.rating ??
-          games?.rating ??
+          row?.performance?.rating ??
           null,
 
         games: {
 
           rating:
             row?.rating ??
-            stat?.rating ??
-            games?.rating ??
+            row?.performance?.rating ??
             null,
 
           minutes:
-            row?.minutesPlayed ??
             row?.minutes ??
-            games?.minutes ??
+            row?.minutesPlayed ??
             null,
 
           position:
             row?.position ||
-            player?.position ||
+            raw?.position ||
             "",
 
           substitute:
@@ -908,13 +874,13 @@ module.exports = async (req, res) => {
         goals: {
 
           total:
-            row?.statistics?.[0]?.goals?.total ??
             row?.goals?.total ??
+            row?.goals ??
             0,
 
           assists:
-            row?.statistics?.[0]?.goals?.assists ??
             row?.goals?.assists ??
+            row?.assists ??
             0
 
         },
@@ -922,13 +888,13 @@ module.exports = async (req, res) => {
         cards: {
 
           yellow:
-            row?.statistics?.[0]?.cards?.yellow ??
             row?.cards?.yellow ??
+            row?.yellow ??
             0,
 
           red:
-            row?.statistics?.[0]?.cards?.red ??
             row?.cards?.red ??
+            row?.red ??
             0
 
         },
@@ -936,8 +902,8 @@ module.exports = async (req, res) => {
         passes: {
 
           key:
-            row?.statistics?.[0]?.passes?.key ??
             row?.passes?.key ??
+            row?.key_passes ??
             0
 
         },
@@ -945,13 +911,13 @@ module.exports = async (req, res) => {
         shots: {
 
           total:
-            row?.statistics?.[0]?.shots?.total ??
             row?.shots?.total ??
+            row?.shots ??
             0,
 
           on:
-            row?.statistics?.[0]?.shots?.on ??
             row?.shots?.on ??
+            row?.shots_on_target ??
             0
 
         }
@@ -960,58 +926,86 @@ module.exports = async (req, res) => {
     }
 
     /* =====================================================
-       LINEUPS
+       LINEUP NORMALIZER
     ===================================================== */
 
-    function normalizeSofaLineup(
-      side,
+    function normalizeLineup(
+      source,
       team
     ) {
 
       if (
-        !side ||
-        typeof side !== "object"
+        !source ||
+        typeof source !==
+          "object"
       ) {
         return null;
       }
 
-      let allPlayers =
+      let players =
         arr(
-          side?.players
+          source?.players
         );
 
       if (
-        !allPlayers.length
+        !players.length
       ) {
 
-        allPlayers = [
+        players =
+          arr(
+            source?.startingLineup
+          );
+      }
 
-          ...arr(
-            side?.startingLineup
-          ),
+      if (
+        !players.length
+      ) {
 
-          ...arr(
-            side?.substitutes
-          )
+        players =
+          arr(
+            source?.startingXI
+          );
+      }
 
-        ];
+      if (
+        !players.length
+      ) {
 
+        players =
+          arr(
+            source?.starters
+          );
+      }
+
+      let substitutes =
+        arr(
+          source?.substitutes
+        );
+
+      if (
+        !substitutes.length
+      ) {
+
+        substitutes =
+          arr(
+            source?.bench
+          );
       }
 
       const startXI =
-        allPlayers
+        players
           .filter(
-            row => {
+            player => {
 
               if (
-                row?.substitute ===
+                player?.substitute ===
                 true
               ) {
                 return false;
               }
 
               if (
-                row?.starter ===
+                player?.starter ===
                 false
               ) {
                 return false;
@@ -1021,20 +1015,13 @@ module.exports = async (req, res) => {
             }
           )
           .map(
-            normalizeSofaPlayer
+            normalizePlayer
           );
 
-      const substitutes =
-        allPlayers
-          .filter(
-            row =>
-              row?.substitute ===
-                true ||
-              row?.starter ===
-                false
-          )
+      const bench =
+        substitutes
           .map(
-            normalizeSofaPlayer
+            normalizePlayer
           );
 
       return {
@@ -1043,212 +1030,313 @@ module.exports = async (req, res) => {
 
           id:
             team?.id ||
-            side?.team?.id ||
+            source?.team?.id ||
             null,
 
           name:
             team?.name ||
-            side?.team?.name ||
+            source?.team?.name ||
             "",
 
           logo:
             team?.logo ||
-            team?.picture ||
-            side?.team?.logo ||
+            source?.team?.logo ||
             ""
 
         },
 
         formation:
-          side?.formation ||
-          side?.formationUsed ||
-          side?.tacticalFormation ||
+          source?.formation ||
+          source?.tacticalFormation ||
+          source?.formationUsed ||
           "—",
 
         coach:
-          side?.manager ||
-          side?.coach ||
+          source?.coach ||
+          source?.manager ||
           null,
 
         startXI,
 
-        substitutes
+        substitutes:
+          bench
 
       };
     }
 
     /* =====================================================
-       INCIDENTS
+       FIND LINEUPS
     ===================================================== */
 
-    function normalizeIncidents(
-      body,
-      sofaEvent
+    function getLineups(
+      root,
+      homeTeam,
+      awayTeam
     ) {
 
-      const incidents =
-        arr(
-          body?.incidents
-        );
+      const source =
+        root?.lineups ||
+        root?.lineup ||
+        root?.compositions ||
+        root?.formations ||
+        null;
 
-      return incidents.map(
-        incident => {
+      if (
+        !source
+      ) {
+        return [];
+      }
 
-          const isHome =
-            incident?.isHome ===
-            true;
+      /* Array format */
 
-          const player =
-            incident?.player ||
-            {};
+      if (
+        Array.isArray(
+          source
+        )
+      ) {
 
-          const assist =
-            incident?.assist1 ||
-            incident?.assist ||
-            incident?.relatedPlayer ||
-            {};
+        const normalized =
+          source
+            .map(
+              item => {
 
-          let type =
-            incident?.incidentType ||
-            incident?.type ||
-            "Other";
+                const itemTeam =
+                  item?.team ||
+                  {};
 
-          let detail =
-            incident?.incidentClass ||
-            incident?.incidentClassName ||
-            incident?.reason ||
-            "";
+                const isHome =
+                  (
+                    homeTeam.id &&
+                    itemTeam.id &&
+                    String(
+                      homeTeam.id
+                    ) ===
+                    String(
+                      itemTeam.id
+                    )
+                  );
 
-          let playerName =
-            player?.name ||
-            incident?.playerName ||
-            "";
+                const isAway =
+                  (
+                    awayTeam.id &&
+                    itemTeam.id &&
+                    String(
+                      awayTeam.id
+                    ) ===
+                    String(
+                      itemTeam.id
+                    )
+                  );
 
-          if (
-            type ===
-            "substitution"
-          ) {
+                return {
 
-            const playerIn =
-              incident?.playerIn?.name ||
-              incident?.playerInName ||
-              "";
+                  raw:
+                    item,
 
-            const playerOut =
-              incident?.playerOut?.name ||
-              incident?.playerOutName ||
-              playerName ||
-              "";
+                  isHome,
 
-            playerName =
-              playerOut ||
-              playerIn ||
-              "Substitution";
+                  isAway
 
-            detail =
-              playerIn
-                ? `Entrée : ${playerIn}`
-                : "Changement";
+                };
 
-          }
+              }
+            );
 
-          if (
-            type ===
-            "card"
-          ) {
+        return normalized
+          .map(
+            item =>
+              normalizeLineup(
+                item.raw,
+                item.isHome
+                  ? homeTeam
+                  : item.isAway
+                    ? awayTeam
+                    : item.raw?.team ||
+                      {}
+              )
+          )
+          .filter(Boolean);
+      }
 
-            if (
-              incident?.incidentClass ===
-              "red"
-            ) {
+      /* Home / Away format */
 
-              detail =
-                "red";
+      const homeSource =
+        source?.home ||
+        source?.homeTeam ||
+        source?.host ||
+        null;
 
-            } else if (
-              incident?.incidentClass ===
-                "yellowRed" ||
-              incident?.incidentClass ===
-                "yellow-red"
-            ) {
+      const awaySource =
+        source?.away ||
+        source?.awayTeam ||
+        source?.guest ||
+        null;
 
-              detail =
-                "yellow-red";
+      const result = [];
 
-            } else {
+      if (
+        homeSource
+      ) {
 
-              detail =
-                "yellow";
+        const lineup =
+          normalizeLineup(
+            homeSource,
+            homeTeam
+          );
 
-            }
-
-          }
-
-          return {
-
-            time: {
-
-              elapsed:
-                incident?.time ??
-                incident?.minute ??
-                null,
-
-              extra:
-                incident?.addedTime ??
-                null
-
-            },
-
-            team: {
-
-              id:
-                isHome
-                  ? sofaEvent?.homeTeam?.id ||
-                    null
-                  : sofaEvent?.awayTeam?.id ||
-                    null,
-
-              name:
-                isHome
-                  ? sofaEvent?.homeTeam?.name ||
-                    ""
-                  : sofaEvent?.awayTeam?.name ||
-                    ""
-
-            },
-
-            player: {
-
-              id:
-                player?.id ||
-                null,
-
-              name:
-                playerName
-
-            },
-
-            assist: {
-
-              id:
-                assist?.id ||
-                null,
-
-              name:
-                assist?.name ||
-                ""
-
-            },
-
-            type,
-
-            detail
-
-          };
-
+        if (
+          lineup
+        ) {
+          result.push(
+            lineup
+          );
         }
-      );
+      }
 
+      if (
+        awaySource
+      ) {
+
+        const lineup =
+          normalizeLineup(
+            awaySource,
+            awayTeam
+          );
+
+        if (
+          lineup
+        ) {
+          result.push(
+            lineup
+          );
+        }
+      }
+
+      return result;
+    }
+
+    /* =====================================================
+       EVENTS
+    ===================================================== */
+
+    function normalizeEvents(
+      root
+    ) {
+
+      const source =
+        root?.events ||
+        root?.incidents ||
+        root?.timeline ||
+        root?.match_events ||
+        [];
+
+      return arr(
+        source
+      )
+        .map(
+          event => {
+
+            const type =
+              event?.type ||
+              event?.incidentType ||
+              event?.event_type ||
+              "Other";
+
+            const detail =
+              event?.detail ||
+              event?.incidentClass ||
+              event?.reason ||
+              event?.description ||
+              "";
+
+            const player =
+              event?.player ||
+              {};
+
+            const assist =
+              event?.assist ||
+              event?.assist1 ||
+              {};
+
+            const team =
+              event?.team ||
+              {};
+
+            const minute =
+              event?.time?.elapsed ??
+              event?.minute ??
+              event?.time ??
+              null;
+
+            const extra =
+              event?.time?.extra ??
+              event?.addedTime ??
+              event?.extra ??
+              null;
+
+            return {
+
+              time: {
+
+                elapsed:
+                  minute,
+
+                extra:
+                  extra
+
+              },
+
+              team: {
+
+                id:
+                  team?.id ||
+                  event?.team_id ||
+                  null,
+
+                name:
+                  team?.name ||
+                  event?.team_name ||
+                  ""
+
+              },
+
+              player: {
+
+                id:
+                  player?.id ||
+                  event?.player_id ||
+                  null,
+
+                name:
+                  player?.name ||
+                  event?.player_name ||
+                  ""
+
+              },
+
+              assist: {
+
+                id:
+                  assist?.id ||
+                  event?.assist_id ||
+                  null,
+
+                name:
+                  assist?.name ||
+                  event?.assist_name ||
+                  ""
+
+              },
+
+              type:
+                type,
+
+              detail:
+                detail
+
+            };
+          }
+        );
     }
 
     /* =====================================================
@@ -1256,142 +1344,177 @@ module.exports = async (req, res) => {
     ===================================================== */
 
     function normalizeStatistics(
-      body,
-      sofaEvent
+      root,
+      homeTeam,
+      awayTeam
     ) {
 
-      const periods =
-        arr(
-          body?.statistics
-        );
-
-      const all =
-        periods.find(
-          block =>
-            String(
-              block?.period ||
-              ""
-            ).toUpperCase() ===
-            "ALL"
-        ) ||
-        periods[0] ||
-        {};
-
-      const homeStats =
+      const source =
+        root?.statistics ||
+        root?.stats ||
         [];
 
-      const awayStats =
-        [];
+      /* SportScore / SofaScore-like groups */
 
-      for (
-        const group of
+      if (
+        Array.isArray(
+          source
+        ) &&
+        source[0]?.groups
+      ) {
+
+        const all =
+          source.find(
+            block =>
+              String(
+                block?.period ||
+                ""
+              ).toUpperCase() ===
+              "ALL"
+          ) ||
+          source[0] ||
+          {};
+
+        const homeStats = [];
+        const awayStats = [];
+
         arr(
           all?.groups
         )
-      ) {
+          .forEach(
+            group => {
 
-        for (
-          const item of
-          arr(
-            group?.statisticsItems
-          )
-        ) {
+              arr(
+                group?.statisticsItems
+              )
+                .forEach(
+                  item => {
 
-          const name =
-            item?.name ||
-            item?.key ||
-            "Stat";
+                    const name =
+                      item?.name ||
+                      item?.key ||
+                      "Stat";
 
-          const homeValue =
-            item?.home ??
-            item?.homeValue ??
-            "-";
+                    homeStats.push({
 
-          const awayValue =
-            item?.away ??
-            item?.awayValue ??
-            "-";
+                      type:
+                        name,
 
-          homeStats.push({
+                      value:
+                        item?.home ??
+                        item?.homeValue ??
+                        "-"
 
-            type:
-              name,
+                    });
 
-            value:
-              homeValue
+                    awayStats.push({
 
-          });
+                      type:
+                        name,
 
-          awayStats.push({
+                      value:
+                        item?.away ??
+                        item?.awayValue ??
+                        "-"
 
-            type:
-              name,
+                    });
 
-            value:
-              awayValue
+                  }
+                );
 
-          });
+            }
+          );
 
-        }
+        return [
 
+          {
+
+            team:
+              homeTeam,
+
+            statistics:
+              homeStats
+
+          },
+
+          {
+
+            team:
+              awayTeam,
+
+            statistics:
+              awayStats
+
+          }
+
+        ];
       }
 
-      return [
+      /* Array: one block per team */
 
-        {
+      if (
+        Array.isArray(
+          source
+        ) &&
+        source.length >= 2
+      ) {
 
-          team: {
+        return source
+          .slice(0, 2)
+          .map(
+            (
+              block,
+              index
+            ) => {
 
-            id:
-              sofaEvent?.homeTeam?.id ||
-              null,
+              const values =
+                arr(
+                  block?.statistics ||
+                  block?.stats
+                )
+                  .map(
+                    stat => ({
 
-            name:
-              sofaEvent?.homeTeam?.name ||
-              "Domicile"
+                      type:
+                        stat?.type ||
+                        stat?.name ||
+                        "Stat",
 
-          },
+                      value:
+                        stat?.value ??
+                        "-"
 
-          statistics:
-            homeStats
+                    })
+                  );
 
-        },
+              return {
 
-        {
+                team:
+                  index === 0
+                    ? homeTeam
+                    : awayTeam,
 
-          team: {
+                statistics:
+                  values
 
-            id:
-              sofaEvent?.awayTeam?.id ||
-              null,
+              };
 
-            name:
-              sofaEvent?.awayTeam?.name ||
-              "Extérieur"
+            }
+          );
+      }
 
-          },
-
-          statistics:
-            awayStats
-
-        }
-
-      ];
+      return [];
     }
 
     /* =====================================================
-       PLAYER GROUPS
+       PLAYERS GROUPS
     ===================================================== */
 
-    function buildPlayerGroups(
-      homeLineup,
-      awayLineup
+    function buildPlayers(
+      lineups
     ) {
 
-      return [
-        homeLineup,
-        awayLineup
-      ]
+      return lineups
         .filter(Boolean)
         .map(
           lineup => ({
@@ -1419,7 +1542,9 @@ module.exports = async (req, res) => {
        MATCH DETAILS
     ===================================================== */
 
-    if (fixture) {
+    if (
+      fixture
+    ) {
 
       const slug =
         String(
@@ -1431,15 +1556,13 @@ module.exports = async (req, res) => {
         return output(
           400,
           {
-
             error:
               "Match slug manquant",
 
-            data: []
-
+            data:
+              []
           }
         );
-
       }
 
       console.log(
@@ -1447,15 +1570,11 @@ module.exports = async (req, res) => {
         slug
       );
 
-      /* -----------------------------------------------
-         SPORTScore basic data
-      ----------------------------------------------- */
-
-      let sportBody;
+      let body;
 
       try {
 
-        sportBody =
+        body =
           await getJSON(
             `${SPORTSCORE}/match/?sport=football&slug=${encodeURIComponent(
               slug
@@ -1463,30 +1582,30 @@ module.exports = async (req, res) => {
           );
 
       } catch (
-        error
+        firstError
       ) {
 
-        sportBody =
+        console.warn(
+          "PRIMARY MATCH ENDPOINT FAILED:",
+          firstError.message
+        );
+
+        body =
           await getJSON(
             `https://sportscore.com/api/widget/match/?sport=football&slug=${encodeURIComponent(
               slug
             )}`
           );
-
       }
 
-      const sportMatch =
-        sportBody?.match ||
-        sportBody?.data?.match ||
-        sportBody?.data ||
-        sportBody;
-
-      const basic =
-        normalizeMatch(
-          sportMatch
+      const root =
+        getDetailRoot(
+          body
         );
 
-      if (!basic) {
+      if (
+        !root
+      ) {
 
         return output(
           404,
@@ -1495,286 +1614,221 @@ module.exports = async (req, res) => {
             error:
               "Match introuvable",
 
-            data: []
+            data:
+              []
 
           }
         );
-
       }
 
-      /* -----------------------------------------------
-         Find same match in SofaScore
-      ----------------------------------------------- */
-
-      const sofaEvent =
-        await findSofaEvent(
-
-          basic?.teams?.home?.name ||
-          "",
-
-          basic?.teams?.away?.name ||
-          "",
-
-         toISODate(
-  basic?.fixture?.date
-) || today
-
+      const basic =
+        normalizeMatch(
+          root
         );
 
-      /*
-         SofaScore unavailable:
-         fallback to SportScore basic/event data.
-      */
-
       if (
-        !sofaEvent?.id
+        !basic
       ) {
 
         return output(
-          200,
+          404,
           {
 
-            data: {
+            error:
+              "Match introuvable",
 
-              ...basic,
-
-              events:
-                arr(
-                  sportMatch?.events
-                ),
-
-              lineups:
-                [],
-
-              statistics:
-                [],
-
-              players:
-                [],
-
-              detailStatus:
-                "SofaScore event not found"
-
-            },
-
-            provider:
-              "SportScore"
+            data:
+              []
 
           }
         );
-
       }
 
-      const eventId =
-        sofaEvent.id;
-
-      console.log(
-        "SOFASCORE EVENT ID:",
-        eventId
-      );
-
-      /* -----------------------------------------------
-         Fetch all detailed data
-      ----------------------------------------------- */
-
-      const [
-        sofaEventBody,
-        lineupBody,
-        incidentBody,
-        statisticsBody
-      ] =
-        await Promise.all([
-
-          getJSON(
-            `${SOFA}/event/${eventId}`
-          ).catch(
-            () => ({})
-          ),
-
-          getJSON(
-            `${SOFA}/event/${eventId}/lineups`
-          ).catch(
-            () => ({})
-          ),
-
-          getJSON(
-            `${SOFA}/event/${eventId}/incidents`
-          ).catch(
-            () => ({})
-          ),
-
-          getJSON(
-            `${SOFA}/event/${eventId}/statistics`
-          ).catch(
-            () => ({})
-          )
-
-        ]);
-
-      const eventCore =
-        sofaEventBody?.event ||
-        sofaEvent;
-
-      /* -----------------------------------------------
+      /* =================================================
          REAL TEAMS
-      ----------------------------------------------- */
+      ================================================= */
 
-      const homeTeam = {
-
-        id:
-          eventCore?.homeTeam?.id ||
-          sofaEvent?.homeTeam?.id ||
-          basic.teams.home.id ||
-          null,
-
-        name:
-          eventCore?.homeTeam?.name ||
-          sofaEvent?.homeTeam?.name ||
+      const homeTeam =
+        normalizeTeam(
+          root?.home_team ||
+          root?.homeTeam ||
+          root?.teams?.home ||
+          basic.teams.home,
           basic.teams.home.name,
-
-        logo:
-          eventCore?.homeTeam?.logo ||
-          eventCore?.homeTeam?.image ||
-          basic.teams.home.logo ||
-          ""
-
-      };
-
-      const awayTeam = {
-
-        id:
-          eventCore?.awayTeam?.id ||
-          sofaEvent?.awayTeam?.id ||
-          basic.teams.away.id ||
-          null,
-
-        name:
-          eventCore?.awayTeam?.name ||
-          sofaEvent?.awayTeam?.name ||
-          basic.teams.away.name,
-
-        logo:
-          eventCore?.awayTeam?.logo ||
-          eventCore?.awayTeam?.image ||
-          basic.teams.away.logo ||
-          ""
-
-      };
-
-      /* -----------------------------------------------
-         LINEUPS
-      ----------------------------------------------- */
-
-      const homeLineup =
-        normalizeSofaLineup(
-          lineupBody?.home,
-          homeTeam
+          basic.teams.home.logo
         );
 
-      const awayLineup =
-        normalizeSofaLineup(
-          lineupBody?.away,
+      const awayTeam =
+        normalizeTeam(
+          root?.away_team ||
+          root?.awayTeam ||
+          root?.teams?.away ||
+          basic.teams.away,
+          basic.teams.away.name,
+          basic.teams.away.logo
+        );
+
+      /* =================================================
+         LINEUPS
+      ================================================= */
+
+      const lineups =
+        getLineups(
+          root,
+          homeTeam,
           awayTeam
         );
 
-      const lineups = [
-
-        homeLineup,
-
-        awayLineup
-
-      ].filter(Boolean);
-
-      /* -----------------------------------------------
+      /* =================================================
          EVENTS
-      ----------------------------------------------- */
+      ================================================= */
 
       const events =
-        normalizeIncidents(
-          incidentBody,
-          {
-            ...sofaEvent,
-            ...eventCore
-          }
+        normalizeEvents(
+          root
         );
 
-      /* -----------------------------------------------
-         STATS
-      ----------------------------------------------- */
+      /* =================================================
+         STATISTICS
+      ================================================= */
 
       const statistics =
         normalizeStatistics(
-          statisticsBody,
-          {
-            ...sofaEvent,
-            ...eventCore
-          }
+          root,
+          homeTeam,
+          awayTeam
         );
 
-      /* -----------------------------------------------
+      /* =================================================
          PLAYERS
-      ----------------------------------------------- */
+      ================================================= */
 
       const players =
-        buildPlayerGroups(
-          homeLineup,
-          awayLineup
+        buildPlayers(
+          lineups
         );
 
-      /* -----------------------------------------------
+      /* =================================================
          SCORE
-      ----------------------------------------------- */
+      ================================================= */
+
+      const score =
+        obj(
+          root?.score
+        );
 
       const homeScore =
-        eventCore?.homeScore?.current ??
-        eventCore?.homeScore?.display ??
+        root?.home_score ??
+        root?.homeScore ??
+        score?.home ??
+        score?.fulltime?.home ??
         basic.goals.home ??
         null;
 
       const awayScore =
-        eventCore?.awayScore?.current ??
-        eventCore?.awayScore?.display ??
+        root?.away_score ??
+        root?.awayScore ??
+        score?.away ??
+        score?.fulltime?.away ??
         basic.goals.away ??
         null;
 
-      /* -----------------------------------------------
+      /* =================================================
          STATUS
-      ----------------------------------------------- */
+      ================================================= */
+
+      const statusText =
+        String(
+          root?.status_text ||
+          root?.status ||
+          basic.fixture.status.long ||
+          ""
+        ).toLowerCase();
 
       let statusShort =
+        root?.status_code ||
+        root?.short_status ||
+        basic.fixture.status.short ||
         "NS";
 
       if (
-        eventCore?.status?.type ===
-        "finished"
-      ) {
-
-        statusShort =
-          "FT";
-
-      } else if (
-        eventCore?.status?.type ===
-        "inprogress"
+        statusText.includes(
+          "live"
+        ) ||
+        statusText.includes(
+          "in play"
+        ) ||
+        statusText.includes(
+          "inplay"
+        )
       ) {
 
         statusShort =
           "LIVE";
 
       } else if (
-        eventCore?.status?.type ===
-        "postponed"
+        statusText.includes(
+          "half"
+        )
       ) {
 
         statusShort =
-          "PST";
+          "HT";
 
+      } else if (
+        statusText.includes(
+          "finish"
+        ) ||
+        statusText.includes(
+          "ended"
+        ) ||
+        statusText === "ft"
+      ) {
+
+        statusShort =
+          "FT";
       }
 
-      /* -----------------------------------------------
-         FINAL RESPONSE
-      ----------------------------------------------- */
+      /* =================================================
+         DATE
+      ================================================= */
 
-      const finalDetails = {
+      const date =
+        root?.time ||
+        root?.date ||
+        root?.start_time ||
+        root?.kickoff ||
+        basic.fixture.date ||
+        null;
+
+      /* =================================================
+         LEAGUE
+      ================================================= */
+
+      const competition =
+        root?.competition ||
+        root?.league ||
+        {};
+
+      /* =================================================
+         VENUE
+      ================================================= */
+
+      const venue =
+        root?.venue ||
+        basic.fixture.venue ||
+        null;
+
+      const referee =
+        root?.referee ||
+        basic.fixture.referee ||
+        null;
+
+      /* =================================================
+         FINAL DETAIL
+      ================================================= */
+
+      const details = {
 
         fixture: {
 
@@ -1784,19 +1838,16 @@ module.exports = async (req, res) => {
           slug,
 
           upstreamId:
-            eventId,
+            root?.id ||
+            root?.match_id ||
+            basic.fixture.upstreamId ||
+            slug,
 
-          date:
-            eventCore?.startTimestamp
-              ? new Date(
-                  eventCore.startTimestamp *
-                  1000
-                ).toISOString()
-              : basic.fixture.date ||
-                null,
+          date,
 
           timezone:
-            "UTC",
+            root?.timezone ||
+            null,
 
           status: {
 
@@ -1804,59 +1855,69 @@ module.exports = async (req, res) => {
               statusShort,
 
             long:
-              eventCore?.status?.description ||
-              eventCore?.status?.type ||
+              root?.status_text ||
+              root?.status ||
               basic.fixture.status.long ||
               "Match",
 
             elapsed:
-              eventCore?.status?.period1Elapsed ||
-              eventCore?.status?.period2Elapsed ||
+              root?.minute ??
+              root?.elapsed ??
+              root?.status?.elapsed ??
+              basic.fixture.status.elapsed ??
               null
 
           },
 
-          venue:
-            eventCore?.venue ||
-            basic.fixture.venue ||
-            null,
+          venue,
 
           referee:
-            eventCore?.referee?.name ||
-            basic.fixture.referee ||
-            null
+            typeof referee ===
+            "object"
+              ? referee?.name ||
+                ""
+              : referee
 
         },
 
         league: {
 
           id:
-            eventCore?.tournament?.uniqueTournament?.id ||
-            eventCore?.tournament?.id ||
+            idOf(
+              competition
+            ) ||
             basic.league.id ||
             null,
 
           name:
-            eventCore?.tournament?.uniqueTournament?.name ||
-            eventCore?.tournament?.name ||
+            text(
+              competition
+            ) ||
+            root?.competition_name ||
+            root?.league_name ||
             basic.league.name,
 
           country:
-            eventCore?.tournament?.category?.name ||
+            competition?.country ||
+            root?.country ||
             basic.league.country ||
             "",
 
           logo:
+            competition?.logo ||
             basic.league.logo ||
             "",
 
           round:
-            eventCore?.roundInfo?.name ||
-            eventCore?.roundInfo?.round ||
+            root?.round ||
+            root?.round_name ||
+            basic.league.round ||
             null,
 
           season:
-            eventCore?.season?.name ||
+            root?.season?.name ||
+            root?.season ||
+            basic.league.season ||
             null
 
         },
@@ -1892,11 +1953,13 @@ module.exports = async (req, res) => {
           halftime: {
 
             home:
-              eventCore?.homeScore?.period1 ??
+              score?.halftime?.home ??
+              score?.ht?.home ??
               null,
 
             away:
-              eventCore?.awayScore?.period1 ??
+              score?.halftime?.away ??
+              score?.ht?.away ??
               null
 
           },
@@ -1921,33 +1984,27 @@ module.exports = async (req, res) => {
 
         players,
 
-        sofascore: {
-
-          eventId
-
-        },
-
         provider:
-          "SportScore + SofaScore"
+          "SportScore"
 
       };
 
       console.log(
-        "DETAILS RESULT:",
+        "DETAIL RESULT:",
         JSON.stringify(
           {
-
-            eventId,
+            match:
+              `${homeTeam.name} vs ${awayTeam.name}`,
 
             lineups:
               lineups.length,
 
             homePlayers:
-              homeLineup?.startXI?.length ||
+              lineups[0]?.startXI?.length ||
               0,
 
             awayPlayers:
-              awayLineup?.startXI?.length ||
+              lineups[1]?.startXI?.length ||
               0,
 
             events:
@@ -1958,7 +2015,6 @@ module.exports = async (req, res) => {
               0
 
           },
-
           null,
           2
         )
@@ -1969,28 +2025,111 @@ module.exports = async (req, res) => {
         {
 
           data:
-            finalDetails,
+            details,
 
           provider:
-            "SportScore + SofaScore"
+            "SportScore"
 
         }
       );
     }
 
+    /* =====================================================
+       LIVE
+    ===================================================== */
+
+    if (
+      live === "all"
+    ) {
+
+      const body =
+        await getJSON(
+          `${SPORTSCORE}/fixtures/?sport=football&status=live&limit=200`
+        );
+
+      const matches =
+        getMatches(body)
+          .map(
+            normalizeMatch
+          )
+          .filter(Boolean);
+
+      return output(
+        200,
+        {
+
+          data:
+            matches,
+
+          provider:
+            "SportScore"
+
+        }
+      );
+    }
+
+    /* =====================================================
+       DATE
+    ===================================================== */
+
+    const matchDate =
+      date ||
+      today;
+
+    let body;
+
+    try {
+
+      body =
+        await getJSON(
+          `${SPORTSCORE}/fixtures/?sport=football&date=${encodeURIComponent(
+            matchDate
+          )}&limit=200`
+        );
+
+    } catch (
+      error
+    ) {
+
+      if (
+        matchDate === today
+      ) {
+
+        body =
+          await getJSON(
+            `${SPORTSCORE}/matches/?sport=football&limit=50`
+          );
+
+      } else {
+
+        throw error;
+
+      }
+    }
+
+    const matches =
+      getMatches(body)
+        .map(
+          normalizeMatch
+        )
+        .filter(Boolean);
+
     return output(
-      400,
+      200,
       {
 
-        error:
-          "Invalid request",
+        data:
+          matches,
 
-        data: []
+        provider:
+          "SportScore"
 
       }
     );
 
-  } catch (error) {
+  } catch (
+    error
+  ) {
 
     console.error(
       "BAKHIRAFOOT API ERROR:",
@@ -2010,7 +2149,8 @@ module.exports = async (req, res) => {
           error?.data ||
           null,
 
-        data: []
+        data:
+          []
 
       }
     );
