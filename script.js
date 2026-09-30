@@ -4027,6 +4027,854 @@ function renderMatchInformation(
 }
 
 /* =========================================================
+   LOAD REAL SPORTScore MATCH DETAILS
+========================================================= */
+
+async function loadRealMatchDetails(fixtureId) {
+
+  const value =
+    String(fixtureId || "").trim();
+
+  if (!value) {
+    throw new Error("Fixture manquant");
+  }
+
+  /*
+     بعض الروابط كتكون:
+     team-a-vs-team-b/xxxxx
+
+     نجربو كذلك:
+     team-a-vs-team-b
+
+     باش ما نبقاوش مربوطين بشكل واحد للـslug.
+  */
+
+  const candidates = [];
+
+  function addCandidate(value) {
+
+    if (
+      value &&
+      !candidates.includes(value)
+    ) {
+      candidates.push(value);
+    }
+
+  }
+
+  addCandidate(value);
+
+  if (value.includes("/")) {
+
+    addCandidate(
+      value.split("/")[0]
+    );
+
+  }
+
+  /*
+     إذا كان عندنا URL path كامل
+     ناخدو حتى آخر جزء.
+  */
+
+  if (value.includes("/")) {
+
+    const parts =
+      value
+        .split("/")
+        .filter(Boolean);
+
+    addCandidate(
+      parts[parts.length - 1]
+    );
+
+  }
+
+  let lastError = null;
+
+  for (
+    const slug of candidates
+  ) {
+
+    const url =
+      `https://sportscore.com/api/widget/match/?sport=football&slug=${encodeURIComponent(
+        slug
+      )}&src=bakhira-foot`;
+
+    console.log(
+      "SPORTSCORE DETAILS TRY:",
+      url
+    );
+
+    try {
+
+      const response =
+        await fetch(
+          url,
+          {
+            method: "GET",
+            cache: "no-store",
+            headers: {
+              Accept:
+                "application/json"
+            }
+          }
+        );
+
+      const text =
+        await response.text();
+
+      let data;
+
+      try {
+
+        data =
+          JSON.parse(text);
+
+      } catch {
+
+        data = null;
+
+      }
+
+      if (!response.ok) {
+
+        throw new Error(
+          `HTTP ${response.status}`
+        );
+
+      }
+
+      if (!data) {
+
+        throw new Error(
+          "Réponse JSON invalide"
+        );
+
+      }
+
+      console.log(
+        "SPORTSCORE RAW DETAILS:",
+        data
+      );
+
+      return data;
+
+    } catch (error) {
+
+      console.warn(
+        "DETAIL TRY FAILED:",
+        slug,
+        error.message
+      );
+
+      lastError =
+        error;
+
+    }
+
+  }
+
+  throw (
+    lastError ||
+    new Error(
+      "Match details introuvables"
+    )
+  );
+}
+
+
+/* =========================================================
+   ADAPT SPORTScore DATA TO BAKHIRAFOOT
+========================================================= */
+
+function adaptSportScoreDetails(
+  raw,
+  fallbackMatch
+) {
+
+  const root =
+    raw?.match ||
+    raw?.data?.match ||
+    raw?.data ||
+    raw;
+
+  if (
+    !root ||
+    typeof root !== "object"
+  ) {
+    return null;
+  }
+
+
+  /* =======================================================
+     TEAM
+  ======================================================= */
+
+  function makeTeam(
+    value,
+    fallback
+  ) {
+
+    if (
+      typeof value === "string"
+    ) {
+
+      return {
+        id: null,
+        name: value,
+        logo: ""
+      };
+
+    }
+
+    const team =
+      value || {};
+
+    return {
+
+      id:
+        team?.id ??
+        team?.team_id ??
+        null,
+
+      name:
+        team?.name ||
+        fallback ||
+        "Équipe",
+
+      logo:
+        team?.logo ||
+        team?.image ||
+        team?.picture ||
+        ""
+
+    };
+
+  }
+
+
+  const homeSource =
+    root?.home_team ||
+    root?.homeTeam ||
+    root?.teams?.home ||
+    root?.home ||
+    null;
+
+  const awaySource =
+    root?.away_team ||
+    root?.awayTeam ||
+    root?.teams?.away ||
+    root?.away ||
+    null;
+
+
+  const homeTeam =
+    makeTeam(
+      homeSource,
+      getHome(fallbackMatch)
+    );
+
+  const awayTeam =
+    makeTeam(
+      awaySource,
+      getAway(fallbackMatch)
+    );
+
+
+  /* =======================================================
+     SCORE
+  ======================================================= */
+
+  const rawScore =
+    root?.score ||
+    {};
+
+  const homeScore =
+    root?.home_score ??
+    root?.homeScore ??
+    rawScore?.home ??
+    rawScore?.fulltime?.home ??
+    getHomeScore(
+      fallbackMatch
+    );
+
+  const awayScore =
+    root?.away_score ??
+    root?.awayScore ??
+    rawScore?.away ??
+    rawScore?.fulltime?.away ??
+    getAwayScore(
+      fallbackMatch
+    );
+
+
+  /* =======================================================
+     DATE
+  ======================================================= */
+
+  const matchDate =
+    root?.time ||
+    root?.date ||
+    root?.start_time ||
+    root?.kickoff ||
+    fallbackMatch?.fixture?.date ||
+    null;
+
+
+  /* =======================================================
+     STATUS
+  ======================================================= */
+
+  let statusShort =
+    root?.status_code ||
+    root?.short_status ||
+    "";
+
+  const statusString =
+    String(
+      root?.status_text ||
+      root?.status?.text ||
+      root?.status?.description ||
+      root?.status ||
+      ""
+    ).toLowerCase();
+
+  if (!statusShort) {
+
+    if (
+      statusString.includes(
+        "live"
+      ) ||
+      statusString.includes(
+        "in play"
+      ) ||
+      statusString.includes(
+        "inplay"
+      )
+    ) {
+
+      statusShort =
+        "LIVE";
+
+    }
+    else if (
+      statusString.includes(
+        "half"
+      )
+    ) {
+
+      statusShort =
+        "HT";
+
+    }
+    else if (
+      statusString.includes(
+        "finish"
+      ) ||
+      statusString.includes(
+        "ended"
+      ) ||
+      statusString === "ft"
+    ) {
+
+      statusShort =
+        "FT";
+
+    }
+    else if (
+      statusString.includes(
+        "postpon"
+      )
+    ) {
+
+      statusShort =
+        "PST";
+
+    }
+    else {
+
+      statusShort =
+        "NS";
+
+    }
+
+  }
+
+
+  /* =======================================================
+     LEAGUE
+  ======================================================= */
+
+  const leagueSource =
+    root?.competition ||
+    root?.league ||
+    {};
+
+  const league = {
+
+    id:
+      leagueSource?.id ??
+      null,
+
+    name:
+      leagueSource?.name ||
+      root?.competition_name ||
+      root?.league_name ||
+      getLeague(
+        fallbackMatch
+      ),
+
+    country:
+      leagueSource?.country ||
+      root?.country ||
+      "",
+
+    logo:
+      leagueSource?.logo ||
+      "",
+
+    round:
+      root?.round ||
+      root?.round_name ||
+      null,
+
+    season:
+      typeof root?.season === "object"
+        ? root?.season?.name
+        : root?.season || null
+
+  };
+
+
+  /* =======================================================
+     LINEUPS
+  ======================================================= */
+
+  const lineupSource =
+    root?.lineups ||
+    root?.lineup ||
+    root?.compositions ||
+    root?.formations ||
+    null;
+
+  const lineups = [];
+
+
+  function addLineup(
+    source,
+    team
+  ) {
+
+    if (
+      !source ||
+      typeof source !== "object"
+    ) {
+      return;
+    }
+
+    const lineup =
+      normalizeSofaLineup(
+        source,
+        team
+      );
+
+    if (lineup) {
+
+      lineups.push(
+        lineup
+      );
+
+    }
+
+  }
+
+
+  if (
+    Array.isArray(
+      lineupSource
+    )
+  ) {
+
+    lineupSource.forEach(
+      (item, index) => {
+
+        const itemTeam =
+          item?.team ||
+          {};
+
+        const itemTeamId =
+          itemTeam?.id ||
+          itemTeam?.team_id ||
+          null;
+
+        let team;
+
+        if (
+          homeTeam.id &&
+          itemTeamId &&
+          String(
+            homeTeam.id
+          ) ===
+          String(
+            itemTeamId
+          )
+        ) {
+
+          team =
+            homeTeam;
+
+        }
+        else if (
+          awayTeam.id &&
+          itemTeamId &&
+          String(
+            awayTeam.id
+          ) ===
+          String(
+            itemTeamId
+          )
+        ) {
+
+          team =
+            awayTeam;
+
+        }
+        else {
+
+          team =
+            index === 0
+              ? homeTeam
+              : awayTeam;
+
+        }
+
+        addLineup(
+          item,
+          team
+        );
+
+      }
+    );
+
+  }
+  else if (
+    lineupSource &&
+    typeof lineupSource ===
+      "object"
+  ) {
+
+    const homeSource =
+      lineupSource?.home ||
+      lineupSource?.homeTeam ||
+      lineupSource?.host ||
+      null;
+
+    const awaySource =
+      lineupSource?.away ||
+      lineupSource?.awayTeam ||
+      lineupSource?.guest ||
+      null;
+
+    addLineup(
+      homeSource,
+      homeTeam
+    );
+
+    addLineup(
+      awaySource,
+      awayTeam
+    );
+
+  }
+
+
+  /* =======================================================
+     EVENTS
+  ======================================================= */
+
+  const eventSource =
+    root?.incidents ||
+    root?.events ||
+    root?.timeline ||
+    root?.match_events ||
+    [];
+
+  const events =
+    Array.isArray(
+      eventSource
+    )
+      ? eventSource.map(
+          event => {
+
+            const player =
+              event?.player ||
+              {};
+
+            const assist =
+              event?.assist ||
+              event?.assist1 ||
+              event?.relatedPlayer ||
+              {};
+
+            const team =
+              event?.team ||
+              {};
+
+            return {
+
+              time: {
+
+                elapsed:
+                  event?.time?.elapsed ??
+                  event?.minute ??
+                  event?.time ??
+                  null,
+
+                extra:
+                  event?.time?.extra ??
+                  event?.addedTime ??
+                  event?.extra ??
+                  null
+
+              },
+
+              team: {
+
+                id:
+                  team?.id ??
+                  event?.team_id ??
+                  null,
+
+                name:
+                  team?.name ||
+                  event?.team_name ||
+                  ""
+
+              },
+
+              player: {
+
+                id:
+                  player?.id ??
+                  event?.player_id ??
+                  null,
+
+                name:
+                  player?.name ||
+                  event?.player_name ||
+                  ""
+
+              },
+
+              assist: {
+
+                id:
+                  assist?.id ??
+                  event?.assist_id ??
+                  null,
+
+                name:
+                  assist?.name ||
+                  event?.assist_name ||
+                  ""
+
+              },
+
+              type:
+                event?.type ||
+                event?.incidentType ||
+                event?.event_type ||
+                "Other",
+
+              detail:
+                event?.detail ||
+                event?.incidentClass ||
+                event?.reason ||
+                event?.description ||
+                ""
+
+            };
+
+          }
+        )
+      : [];
+
+
+  /* =======================================================
+     STATISTICS
+  ======================================================= */
+
+  let statistics = [];
+
+  try {
+
+    statistics =
+      normalizeStatistics(
+        root,
+        {
+          homeTeam,
+          awayTeam
+        }
+      );
+
+  } catch (
+    error
+  ) {
+
+    console.warn(
+      "STATISTICS ADAPTER ERROR:",
+      error
+    );
+
+    statistics = [];
+
+  }
+
+
+  /* =======================================================
+     PLAYERS
+  ======================================================= */
+
+  const players =
+    buildPlayerGroups(
+      lineups
+    );
+
+
+  /* =======================================================
+     FINAL DATA
+  ======================================================= */
+
+  return {
+
+    fixture: {
+
+      id:
+        fallbackMatch?.fixture?.id ||
+        fallbackMatch?.id ||
+        null,
+
+      slug:
+        fallbackMatch?.fixture?.slug ||
+        fallbackMatch?.slug ||
+        null,
+
+      upstreamId:
+        root?.id ||
+        root?.match_id ||
+        null,
+
+      date:
+        matchDate,
+
+      timezone:
+        root?.timezone ||
+        "UTC",
+
+      status: {
+
+        short:
+          statusShort,
+
+        long:
+          root?.status_text ||
+          root?.status?.description ||
+          root?.status ||
+          "Match",
+
+        elapsed:
+          root?.minute ??
+          root?.elapsed ??
+          root?.status?.elapsed ??
+          null
+
+      },
+
+      venue:
+        root?.venue ||
+        null,
+
+      referee:
+        typeof root?.referee ===
+          "object"
+          ? root?.referee?.name ||
+            ""
+          : root?.referee ||
+            ""
+
+    },
+
+    league,
+
+    teams: {
+
+      home:
+        homeTeam,
+
+      away:
+        awayTeam
+
+    },
+
+    goals: {
+
+      home:
+        homeScore,
+
+      away:
+        awayScore
+
+    },
+
+    score: {
+
+      home:
+        homeScore,
+
+      away:
+        awayScore,
+
+      halftime: {
+
+        home:
+          rawScore?.halftime?.home ??
+          rawScore?.ht?.home ??
+          null,
+
+        away:
+          rawScore?.halftime?.away ??
+          rawScore?.ht?.away ??
+          null
+
+      },
+
+      fulltime: {
+
+        home:
+          homeScore,
+
+        away:
+          awayScore
+
+      }
+
+    },
+
+    events,
+
+    lineups,
+
+    statistics,
+
+    players
+
+  };
+
+}
+
+
+/* =========================================================
    OPEN MATCH DETAILS
 ========================================================= */
 
@@ -4036,7 +4884,11 @@ async function openMatchDetails(index) {
     currentMatches[index];
 
   if (!match) {
-    toast("تفاصيل الماتش غير متوفرة");
+
+    toast(
+      "تفاصيل الماتش غير متوفرة"
+    );
+
     return;
   }
 
@@ -4047,11 +4899,6 @@ async function openMatchDetails(index) {
     match?.id ||
     null;
 
-  if (!fixtureId) {
-    toast("معرف المباراة غير متوفر");
-    return;
-  }
-
   createMatchModal();
 
   const modal =
@@ -4060,18 +4907,28 @@ async function openMatchDetails(index) {
   const content =
     $("matchDetailsContent");
 
-  if (!modal || !content) {
+  if (
+    !modal ||
+    !content
+  ) {
     return;
   }
 
   currentOpenedFixture =
-    String(fixtureId);
+    String(
+      fixtureId || ""
+    );
 
   modal.style.display =
     "block";
 
   document.body.style.overflow =
     "hidden";
+
+
+  /* =======================================================
+     HEADER
+  ======================================================= */
 
   const home =
     getHome(match);
@@ -4119,8 +4976,12 @@ async function openMatchDetails(index) {
             ? `
               <img
                 class="bf-details-logo"
-                src="${escapeHTML(homeLogo)}"
-                alt="${escapeHTML(home)}"
+                src="${escapeHTML(
+                  homeLogo
+                )}"
+                alt="${escapeHTML(
+                  home
+                )}"
               >
             `
             : `
@@ -4139,9 +5000,13 @@ async function openMatchDetails(index) {
       <div>
 
         <div class="bf-details-score">
-          ${escapeHTML(homeScore)}
+          ${escapeHTML(
+            homeScore
+          )}
           -
-          ${escapeHTML(awayScore)}
+          ${escapeHTML(
+            awayScore
+          )}
         </div>
 
       </div>
@@ -4153,8 +5018,12 @@ async function openMatchDetails(index) {
             ? `
               <img
                 class="bf-details-logo"
-                src="${escapeHTML(awayLogo)}"
-                alt="${escapeHTML(away)}"
+                src="${escapeHTML(
+                  awayLogo
+                )}"
+                alt="${escapeHTML(
+                  away
+                )}"
               >
             `
             : `
@@ -4175,41 +5044,47 @@ async function openMatchDetails(index) {
     <div class="bf-detail-section">
 
       <h3>
-        ⏳ Chargement des détails...
+        ⏳ Chargement...
       </h3>
 
       <div class="bf-detail-item">
-        Récupération de la composition, des événements et des statistiques.
+        Chargement des données réelles de la rencontre.
       </div>
 
     </div>
+
   `;
+
+
+  /* =======================================================
+     NO FIXTURE
+  ======================================================= */
+
+  if (!fixtureId) {
+
+    content.innerHTML += `
+
+      <div class="bf-detail-section">
+
+        <div class="bf-detail-item">
+          ⚠️ Identifiant du match introuvable.
+        </div>
+
+      </div>
+
+    `;
+
+    return;
+  }
+
 
   try {
 
-    const response =
-      await fetch(
-        `${API_BASE}/api/match-details?fixture=${encodeURIComponent(
-          String(fixtureId)
-        )}`,
-        {
-          cache: "no-store"
-        }
+    const raw =
+      await loadRealMatchDetails(
+        fixtureId
       );
 
-    if (!response.ok) {
-      throw new Error(
-        `HTTP ${response.status}`
-      );
-    }
-
-    const result =
-      await response.json();
-
-    console.log(
-      "BAKHIRAFOOT DETAILS:",
-      result
-    );
 
     if (
       currentOpenedFixture !==
@@ -4218,16 +5093,22 @@ async function openMatchDetails(index) {
       return;
     }
 
-    const details =
-      result?.data;
 
-    if (
-      !details
-    ) {
-      throw new Error(
-        "Détails introuvables"
+    const details =
+      adaptSportScoreDetails(
+        raw,
+        match
       );
+
+
+    if (!details) {
+
+      throw new Error(
+        "Données du match invalides"
+      );
+
     }
+
 
     const realHome =
       details?.teams?.home?.name ||
@@ -4237,6 +5118,14 @@ async function openMatchDetails(index) {
       details?.teams?.away?.name ||
       away;
 
+    const realHomeId =
+      details?.teams?.home?.id ||
+      getHomeId(match);
+
+    const realAwayId =
+      details?.teams?.away?.id ||
+      getAwayId(match);
+
     const realHomeLogo =
       details?.teams?.home?.logo ||
       homeLogo;
@@ -4244,14 +5133,6 @@ async function openMatchDetails(index) {
     const realAwayLogo =
       details?.teams?.away?.logo ||
       awayLogo;
-
-    const realHomeId =
-      details?.teams?.home?.id ||
-      null;
-
-    const realAwayId =
-      details?.teams?.away?.id ||
-      null;
 
     const realHomeScore =
       details?.goals?.home ??
@@ -4272,18 +5153,18 @@ async function openMatchDetails(index) {
         ? details.events
         : [];
 
-    const lineups =
-      Array.isArray(
-        details?.lineups
-      )
-        ? details.lineups
-        : [];
-
     const statistics =
       Array.isArray(
         details?.statistics
       )
         ? details.statistics
+        : [];
+
+    const lineups =
+      Array.isArray(
+        details?.lineups
+      )
+        ? details.lineups
         : [];
 
     const players =
@@ -4321,10 +5202,13 @@ async function openMatchDetails(index) {
       lineups[1] ||
       null;
 
+
     content.innerHTML = `
 
       <div class="bf-details-league">
-        🏆 ${escapeHTML(realLeague)}
+        🏆 ${escapeHTML(
+          realLeague
+        )}
       </div>
 
       <div class="bf-details-status-wrap">
@@ -4362,7 +5246,9 @@ async function openMatchDetails(index) {
           }
 
           <span class="bf-details-team-name">
-            ${escapeHTML(realHome)}
+            ${escapeHTML(
+              realHome
+            )}
           </span>
 
         </div>
@@ -4418,14 +5304,20 @@ async function openMatchDetails(index) {
           }
 
           <span class="bf-details-team-name">
-            ${escapeHTML(realAway)}
+            ${escapeHTML(
+              realAway
+            )}
           </span>
 
         </div>
 
       </div>
 
-      ${renderMatchInformation(details)}
+
+      ${renderMatchInformation(
+        details
+      )}
+
 
       ${
         homeLineup ||
@@ -4448,12 +5340,13 @@ async function openMatchDetails(index) {
               </h3>
 
               <div class="bf-detail-item">
-                Formation indisponible pour cette rencontre.
+                La composition n'est pas encore disponible pour cette rencontre.
               </div>
 
             </div>
           `
       }
+
 
       ${
         homeLineup ||
@@ -4468,20 +5361,9 @@ async function openMatchDetails(index) {
               performanceMap,
               eventMap
             )
-          : `
-            <div class="bf-detail-section">
-
-              <h3>
-                ⭐ Performance des joueurs
-              </h3>
-
-              <div class="bf-detail-item">
-                Composition indisponible.
-              </div>
-
-            </div>
-          `
+          : ""
       }
+
 
       ${
         homeLineup ||
@@ -4499,6 +5381,7 @@ async function openMatchDetails(index) {
           : ""
       }
 
+
       ${renderEvents(
         events,
         realHomeId,
@@ -4506,6 +5389,7 @@ async function openMatchDetails(index) {
         realHome,
         realAway
       )}
+
 
       ${
         statistics.length
@@ -4525,164 +5409,52 @@ async function openMatchDetails(index) {
           : ""
       }
 
+
+      <div
+        style="
+          margin-top:24px;
+          padding-top:14px;
+          border-top:1px solid rgba(127,127,127,.15);
+          text-align:center;
+          font-size:11px;
+          opacity:.6;
+        "
+      >
+        Données fournies par
+        <a
+          href="https://sportscore.com/"
+          target="_blank"
+          rel="dofollow noopener"
+        >
+          SportScore
+        </a>
+      </div>
+
     `;
 
   } catch (error) {
 
     console.error(
-      "MATCH DETAILS ERROR:",
+      "BAKHIRAFOOT DETAILS ERROR:",
       error
     );
-
-    content.innerHTML += `
-
-      <div class="bf-detail-section">
-
-        <h3>
-          ⚠️ Erreur
-        </h3>
-
-        <div class="bf-detail-item">
-          Impossible de charger les détails de cette rencontre.
-        </div>
-
-      </div>
-
-    `;
-  }
-}
-    /*
-       إذا المستخدم سد الـmodal أو فتح ماتش آخر
-       منخليش response القديم يكتب فوق الجديد.
-    */
-    if (
-      currentOpenedFixture !==
-      fixtureId
-    ) {
-      return;
-    }
-
-    const realHome =
-      getHome(details) ||
-      home;
-
-    const realAway =
-      getAway(details) ||
-      away;
-
-    const realHomeId =
-      getHomeId(details) ||
-      getHomeId(match);
-
-    const realAwayId =
-      getAwayId(details) ||
-      getAwayId(match);
-
-    const realHomeLogo =
-      getHomeLogo(details) ||
-      homeLogo;
-
-    const realAwayLogo =
-      getAwayLogo(details) ||
-      awayLogo;
-
-    const realHomeScore =
-      getHomeScore(details);
-
-    const realAwayScore =
-      getAwayScore(details);
-
-    const realLeague =
-      details?.league?.name ||
-      league;
-
-    const realStatus =
-      statusLabel(details);
-
-    const realDate =
-      details?.fixture?.date ||
-      date;
-
-    const events =
-      details?.events ||
-      details?.fixture?.events ||
-      [];
-
-    const statistics =
-      details?.statistics ||
-      [];
-
-    const lineups =
-      normalizeLineups(
-        details?.lineups ||
-        []
-      );
-
-    const players =
-      details?.players ||
-      [];
-
-    const performanceMap =
-      buildPlayerPerformanceMap(
-        players
-      );
-
-    const eventMap =
-      buildEventContributions(
-        events
-      );
-
-    const homeLineup =
-      getLineupForTeam(
-        lineups,
-        realHomeId,
-        realHome
-      ) ||
-      lineups[0] ||
-      null;
-
-    const awayLineup =
-      getLineupForTeam(
-        lineups,
-        realAwayId,
-        realAway
-      ) ||
-      lineups[1] ||
-      null;
-
-    const venue =
-      details?.fixture?.venue?.name ||
-      details?.venue?.name ||
-      details?.venue ||
-      null;
-
-    const city =
-      details?.fixture?.venue?.city ||
-      details?.venue?.city ||
-      null;
 
     content.innerHTML = `
 
       <div class="bf-details-league">
-        🏆 ${escapeHTML(realLeague)}
+        🏆 ${escapeHTML(
+          league
+        )}
       </div>
 
-      ${
-        details?.league?.round
-          ? `
-            <div class="bf-details-round">
-              ${escapeHTML(
-                details.league.round
-              )}
-            </div>
-          `
-          : ""
-      }
-
       <div class="bf-details-status-wrap">
+
         <div class="bf-details-status">
-          ${escapeHTML(realStatus)}
+          ${escapeHTML(
+            statusLabel(match)
+          )}
         </div>
+
       </div>
 
       <div class="bf-details-teams">
@@ -4690,15 +5462,15 @@ async function openMatchDetails(index) {
         <div class="bf-details-team">
 
           ${
-            realHomeLogo
+            homeLogo
               ? `
                 <img
                   class="bf-details-logo"
                   src="${escapeHTML(
-                    realHomeLogo
+                    homeLogo
                   )}"
                   alt="${escapeHTML(
-                    realHome
+                    home
                   )}"
                 >
               `
@@ -4710,60 +5482,33 @@ async function openMatchDetails(index) {
           }
 
           <span class="bf-details-team-name">
-            ${escapeHTML(realHome)}
+            ${escapeHTML(home)}
           </span>
 
         </div>
 
-        <div>
-
-          <div class="bf-details-score">
-            ${escapeHTML(realHomeScore)}
-            -
-            ${escapeHTML(realAwayScore)}
-          </div>
-
-          ${
-            realDate
-              ? `
-                <div class="bf-details-time">
-                  ${escapeHTML(
-                    formatDate(realDate)
-                  )}
-                </div>
-              `
-              : ""
-          }
-
-          ${
-            venue
-              ? `
-                <div class="bf-details-venue">
-                  🏟️ ${escapeHTML(venue)}
-                  ${
-                    city
-                      ? ` · ${escapeHTML(city)}`
-                      : ""
-                  }
-                </div>
-              `
-              : ""
-          }
-
+        <div class="bf-details-score">
+          ${escapeHTML(
+            homeScore
+          )}
+          -
+          ${escapeHTML(
+            awayScore
+          )}
         </div>
 
         <div class="bf-details-team">
 
           ${
-            realAwayLogo
+            awayLogo
               ? `
                 <img
                   class="bf-details-logo"
                   src="${escapeHTML(
-                    realAwayLogo
+                    awayLogo
                   )}"
                   alt="${escapeHTML(
-                    realAway
+                    away
                   )}"
                 >
               `
@@ -4775,117 +5520,12 @@ async function openMatchDetails(index) {
           }
 
           <span class="bf-details-team-name">
-            ${escapeHTML(realAway)}
+            ${escapeHTML(away)}
           </span>
 
         </div>
 
       </div>
-
-      ${renderMatchInformation(details)}
-
-      ${
-        homeLineup ||
-        awayLineup
-          ? renderFormations(
-              homeLineup,
-              awayLineup,
-              realHome,
-              realAway,
-              realHomeId,
-              realAwayId,
-              performanceMap,
-              eventMap
-            )
-          : `
-            <div class="bf-detail-section">
-
-              <h3>
-                🧩 Formations & Compositions
-              </h3>
-
-              <div class="bf-detail-item">
-                التشكيلة مازال ما متوفراش لهاد الماتش.
-              </div>
-
-            </div>
-          `
-      }
-
-      ${
-        homeLineup ||
-        awayLineup
-          ? renderPlayersSection(
-              homeLineup,
-              awayLineup,
-              realHome,
-              realAway,
-              realHomeId,
-              realAwayId,
-              performanceMap,
-              eventMap
-            )
-          : ""
-      }
-
-      ${
-        homeLineup ||
-        awayLineup
-          ? renderBenchSection(
-              homeLineup,
-              awayLineup,
-              realHome,
-              realAway,
-              realHomeId,
-              realAwayId,
-              performanceMap,
-              eventMap
-            )
-          : ""
-      }
-
-      ${renderEvents(
-        events,
-        realHomeId,
-        realAwayId,
-        realHome,
-        realAway
-      )}
-
-      ${
-        Array.isArray(statistics) &&
-        statistics.length
-          ? `
-            <div class="bf-detail-section">
-
-              <h3>
-                📊 Statistiques du match
-              </h3>
-
-              ${renderStatistics(
-                statistics
-              )}
-
-            </div>
-          `
-          : ""
-      }
-
-    `;
-
-  } catch (error) {
-
-    console.error(
-      "MATCH DETAILS ERROR:",
-      error
-    );
-
-    /*
-       منبدلوش header ديال الماتش،
-       غير كنزيدو رسالة الخطأ.
-    */
-
-    content.innerHTML += `
 
       <div class="bf-detail-section">
 
@@ -4894,62 +5534,17 @@ async function openMatchDetails(index) {
         </h3>
 
         <div class="bf-detail-item">
-          تعذر تحميل التشكيلة والإحصائيات ديال هاد الماتش.
+          ما قدرناش نجيبو تفاصيل هاد الماتش من SportScore دابا.
         </div>
 
       </div>
 
     `;
+
   }
+
 }
 
-/* =========================================================
-   CLOSE MODAL
-========================================================= */
-
-function closeMatchDetails(event) {
-
-  if (
-    event &&
-    event.target &&
-    !event.target.classList.contains(
-      "bf-modal-overlay"
-    )
-  ) {
-    return;
-  }
-
-  const modal =
-    $("matchModal");
-
-  if (modal) {
-    modal.style.display =
-      "none";
-  }
-
-  currentOpenedFixture =
-    null;
-
-  document.body.style.overflow =
-    "";
-}
-
-/* =========================================================
-   ESC KEY
-========================================================= */
-
-document.addEventListener(
-  "keydown",
-  event => {
-
-    if (
-      event.key === "Escape"
-    ) {
-      closeMatchDetails();
-    }
-
-  }
-);
 
 /* =========================================================
    DATE BAR
