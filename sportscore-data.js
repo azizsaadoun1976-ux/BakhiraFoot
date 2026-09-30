@@ -168,77 +168,47 @@ const competitions = [
 
   function renderMatch(match) {
 
-  const home = match.home || "Équipe locale";
-  const away = match.away || "Équipe visiteuse";
-  const homeLogo = match.home_logo || "";
-  const awayLogo = match.away_logo || "";
-  const homeScore = match.home_score ?? "-";
-  const awayScore = match.away_score ?? "-";
-  const live = isLive(match.status, match.status_text);
-  const statusText = match.status_text || (live ? "En direct" : "");
-  const competition = match.competition || match.league || "Football";
-  const matchId = match.id || match.slug || "";
+  const home =
+    match.home ||
+    "Équipe locale";
+
+  const away =
+    match.away ||
+    "Équipe visiteuse";
+
+  const homeLogo =
+    match.home_logo ||
+    "";
+
+  const awayLogo =
+    match.away_logo ||
+    "";
+
+  const homeScore =
+    match.home_score ?? "-";
+
+  const awayScore =
+    match.away_score ?? "-";
+
+  const live =
+    isLive(
+      match.status,
+      match.status_text
+    );
+
+  const statusText =
+    match.status_text ||
+    (live ? "En direct" : "");
+
+  const competition =
+    match.competition ||
+    match.league ||
+    "Football";
 
   return `
     <article
       class="match-card bf-pro-match-card"
-      onclick="openMatch('${matchId}')"
-      style="cursor: pointer;"
     >
-
-      <!-- COMPETITION -->
-      <div class="bf-match-top">
-        <div class="bf-match-competition">
-          <span class="bf-match-ball">⚽</span>
-          <strong>${escapeHTML(competition)}</strong>
-        </div>
-
-        ${
-          live
-            ? `<span class="bf-match-live"><span class="bf-live-dot"></span> LIVE</span>`
-            : `<span class="bf-match-time">${formatTime(match.time)}</span>`
-        }
-      </div>
-
-      <!-- MATCH BODY -->
-      <div class="bf-match-body">
-        <div class="bf-match-team">
-          ${
-            homeLogo
-              ? `<img class="bf-team-logo" src="${escapeHTML(homeLogo)}" alt="${escapeHTML(home)}" loading="lazy">`
-              : `<div class="bf-team-placeholder">⚽</div>`
-          }
-          <strong class="bf-team-name">${escapeHTML(home)}</strong>
-        </div>
-
-        <div class="bf-match-score">
-          <div class="bf-score-numbers">
-            <span>${escapeHTML(homeScore)}</span>
-            <b>:</b>
-            <span>${escapeHTML(awayScore)}</span>
-          </div>
-          <div class="bf-match-status">${escapeHTML(statusText)}</div>
-        </div>
-
-        <div class="bf-match-team">
-          ${
-            awayLogo
-              ? `<img class="bf-team-logo" src="${escapeHTML(awayLogo)}" alt="${escapeHTML(away)}" loading="lazy">`
-              : `<div class="bf-team-placeholder">⚽</div>`
-          }
-          <strong class="bf-team-name">${escapeHTML(away)}</strong>
-        </div>
-      </div>
-
-      <!-- BOTTOM -->
-      <div class="bf-match-bottom">
-        <span>${live ? "🔴 En direct" : "📅 Match"}</span>
-        <span>BakhiraFoot</span>
-      </div>
-
-    </article>
-  `;
-}
 
       <!-- COMPETITION -->
       <div class="bf-match-top">
@@ -2266,37 +2236,3 @@ body.dark .ss-club-fallback {
   );
 
 })();
-// sportscore-data.js
-
-async function getSportScoreMatchDetails(matchId) {
-  try {
-    // 1. جلب تفاصيل الماتش والأحداث من SportScore
-    const response = await fetch(`https://sportscore1.p.rapidapi.com/events/${matchId}`, {
-      method: 'GET',
-      headers: {
-        'x-rapidapi-key': 'YOUR_RAPIDAPI_KEY_HERE', // حط المفتاح ديالك هنا
-        'x-rapidapi-host': 'sportscore1.p.rapidapi.com'
-      }
-    });
-
-    const result = await response.json();
-    const data = result.data;
-
-    // 2. تحويل البيانات للفرومات اللي كيقراها match-details.js
-    return {
-      league_name: data.section?.name || 'مباراة كرة قدم',
-      home_team: data.home_team?.name || 'الفريق المستضيف',
-      home_logo: data.home_team?.logo,
-      away_team: data.away_team?.name || 'الفريق الضيف',
-      away_logo: data.away_team?.logo,
-      score: `${data.home_score?.current || 0} - ${data.away_score?.current || 0}`,
-      status: data.status,
-      events: data.incidents || [], // الأحداث (أهداف، كروت)
-      lineups: data.lineups || null, // التشكيلة
-      stats: data.statistics || null  // الإحصائيات
-    };
-  } catch (error) {
-    console.error('خطأ في جلب تفاصيل المباراة:', error);
-    return null;
-  }
-}
