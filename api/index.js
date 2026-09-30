@@ -1542,108 +1542,126 @@ module.exports = async (req, res) => {
        MATCH DETAILS
     ===================================================== */
 
-    if (
-      fixture
-    ) {
+    /* =====================================================
+   MATCH DETAILS
+===================================================== */
 
-      const slug =
-        String(
-          fixture
-        ).trim();
+if (fixture) {
 
-      if (!slug) {
+  const slug =
+    String(fixture).trim();
 
-        return output(
-          400,
-          {
-            error:
-              "Match slug manquant",
-
-            data:
-              []
-          }
-        );
+  if (!slug) {
+    return output(
+      400,
+      {
+        error:
+          "Fixture manquant",
+        data: []
       }
+    );
+  }
 
-      console.log(
-        "DETAILS REQUESTED:",
-        slug
-      );
+  const url =
+    `https://sportscore.com/api/widget/match/?sport=football&slug=${encodeURIComponent(
+      slug
+    )}&src=bakhira-foot`;
 
-      let body;
+  const raw =
+    await getJSON(url);
 
-      try {
+  const root =
+    raw?.match ||
+    raw?.data?.match ||
+    raw?.data ||
+    raw;
 
-        body =
-          await getJSON(
-            `${SPORTSCORE}/match/?sport=football&slug=${encodeURIComponent(
-              slug
-            )}`
-          );
-
-      } catch (
-        firstError
-      ) {
-
-        console.warn(
-          "PRIMARY MATCH ENDPOINT FAILED:",
-          firstError.message
-        );
-
-        body =
-          await getJSON(
-            `https://sportscore.com/api/widget/match/?sport=football&slug=${encodeURIComponent(
-              slug
-            )}`
-          );
+  if (
+    !root ||
+    typeof root !== "object"
+  ) {
+    return output(
+      404,
+      {
+        error:
+          "Détails du match introuvables",
+        data: []
       }
+    );
+  }
 
-      const root =
-        getDetailRoot(
-          body
-        );
+  /*
+   * كنخليو lineups كما هي:
+   *
+   * home_formation
+   * away_formation
+   * home_xi
+   * away_xi
+   * home_subs
+   * away_subs
+   */
 
-      if (
-        !root
-      ) {
+  const lineups =
+    root?.lineups ||
+    root?.lineup ||
+    {};
 
-        return output(
-          404,
-          {
+  /*
+   * الأحداث الحقيقية
+   */
 
-            error:
-              "Match introuvable",
+  const events =
+    root?.incidents ||
+    root?.events ||
+    root?.timeline ||
+    [];
 
-            data:
-              []
+  /*
+   * الإحصائيات
+   */
 
-          }
-        );
+  const statistics =
+    root?.statistics ||
+    root?.stats ||
+    [];
+
+  /*
+   * اللاعبين
+   */
+
+  const players =
+    root?.players ||
+    [];
+
+  return output(
+    200,
+    {
+      data: {
+        ...root,
+
+        lineups,
+
+        lineup:
+          lineups,
+
+        events,
+
+        incidents:
+          events,
+
+        timeline:
+          events,
+
+        statistics,
+
+        stats:
+          statistics,
+
+        players
       }
-
-      const basic =
-        normalizeMatch(
-          root
-        );
-
-      if (
-        !basic
-      ) {
-
-        return output(
-          404,
-          {
-
-            error:
-              "Match introuvable",
-
-            data:
-              []
-
-          }
-        );
-      }
-
+    }
+  );
+}
       /* =================================================
          REAL TEAMS
       ================================================= */
