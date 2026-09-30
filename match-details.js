@@ -161,7 +161,20 @@
     );
 
     addStyles();
-
+.bfmd-action {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  margin: 0 2px;
+  padding: 3px 5px;
+  border-radius: 6px;
+  background: rgba(0,0,0,.78);
+  color: #fff;
+  font-size: 12px;
+  line-height: 1;
+  font-weight: 950;
+  white-space: nowrap;
+}
     return modal;
   }
 
@@ -3361,15 +3374,13 @@
      PITCH EVENT BADGES
   ========================================================= */
 
-  function playerBadges(
+function playerBadges(
   player,
   statsMap
 ) {
   const stats =
     statsMap.get(
-      playerKey(
-        player
-      )
+      playerKey(player)
     ) || {
       goals: 0,
       assists: 0,
@@ -3379,83 +3390,111 @@
       out: 0
     };
 
+  const raw =
+    player?.player &&
+    typeof player.player === "object"
+      ? player.player
+      : player || {};
+
+  const playerGoals =
+    Number(
+      first(
+        player?.goals?.total,
+        player?.goals,
+        raw?.goals?.total,
+        raw?.goals,
+        0
+      )
+    ) || 0;
+
+  const playerAssists =
+    Number(
+      first(
+        player?.goals?.assists,
+        player?.assists,
+        raw?.goals?.assists,
+        raw?.assists,
+        0
+      )
+    ) || 0;
+
+  const goals =
+    Math.max(
+      Number(stats.goals) || 0,
+      playerGoals
+    );
+
+  const assists =
+    Math.max(
+      Number(stats.assists) || 0,
+      playerAssists
+    );
+
   const badges = [];
 
-  if (
-    Number(stats.goals) > 0
-  ) {
-    badges.push(
-      `⚽ ${Number(stats.goals)}`
-    );
+  if (goals > 0) {
+    badges.push(`
+      <span class="bfmd-action">
+        ⚽ ${goals}
+      </span>
+    `);
   }
 
-  if (
-    Number(stats.assists) > 0
-  ) {
-    badges.push(
-      `🅰️ ${Number(stats.assists)}`
-    );
+  if (assists > 0) {
+    badges.push(`
+      <span class="bfmd-action">
+        🅰️ ${assists}
+      </span>
+    `);
   }
 
   if (
     Number(stats.yellow) > 0
   ) {
-    badges.push(
-      `🟨 ${Number(stats.yellow)}`
-    );
+    badges.push(`
+      <span class="bfmd-action">
+        🟨 ${Number(stats.yellow)}
+      </span>
+    `);
   }
 
   if (
     Number(stats.red) > 0
   ) {
-    badges.push(
-      `🟥 ${Number(stats.red)}`
-    );
+    badges.push(`
+      <span class="bfmd-action">
+        🟥 ${Number(stats.red)}
+      </span>
+    `);
   }
 
   if (
     Number(stats.in) > 0
   ) {
-    badges.push(
-      `↗️ ${Number(stats.in)}`
-    );
+    badges.push(`
+      <span class="bfmd-action">
+        ↗️ ${Number(stats.in)}
+      </span>
+    `);
   }
 
   if (
     Number(stats.out) > 0
   ) {
-    badges.push(
-      `↙️ ${Number(stats.out)}`
-    );
+    badges.push(`
+      <span class="bfmd-action">
+        ↙️ ${Number(stats.out)}
+      </span>
+    `);
   }
 
-  if (!badges.length) {
-    return "";
-  }
-
-  return `
-    <div
-      class="bfmd-event-mini"
-      title="${esc(
-        badges.join(" • ")
-      )}"
-    >
-      ${badges
-        .map(
-          badge => `
-            <span
-              style="
-                margin:0 2px;
-                font-weight:950;
-              "
-            >
-              ${esc(badge)}
-            </span>
-          `
-        )
-        .join("")}
-    </div>
-  `;
+  return badges.length
+    ? `
+      <div class="bfmd-event-mini">
+        ${badges.join("")}
+      </div>
+    `
+    : "";
 }
   /* =========================================================
      RENDER PITCH
