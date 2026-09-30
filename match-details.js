@@ -470,105 +470,119 @@
         bottom: 8px;
       }
 
-      .bfmd-player {
-        position: absolute;
-        transform:
-          translate(-50%,-50%);
-        width: 82px;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        z-index: 5;
-      }
+    .bfmd-player {
+  position: absolute;
+  transform: translate(-50%, -50%);
+  width: 105px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  z-index: 5;
+  pointer-events: none;
+}
 
-      .bfmd-photo-wrap {
-        position: relative;
-        width: 40px;
-        height: 40px;
-        overflow: hidden;
-        border-radius: 50%;
-        border:
-          2px solid rgba(255,255,255,.95);
-        background: #fff;
-        box-shadow:
-          0 4px 12px rgba(0,0,0,.35);
-      }
+.bfmd-photo-wrap {
+  position: relative;
+  width: 48px;
+  height: 48px;
+  overflow: hidden;
+  border-radius: 50%;
+  border: 2px solid rgba(255,255,255,.96);
+  background: #fff;
+  box-shadow:
+    0 4px 14px rgba(0,0,0,.38);
+}
 
-      .bfmd-photo {
-        display: block;
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
-      }
+.bfmd-photo {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
 
-      .bfmd-number {
-        position: absolute;
-        right: -7px;
-        bottom: -5px;
-        min-width: 18px;
-        height: 18px;
-        padding: 0 4px;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        border-radius: 999px;
-        background: #fff;
-        color: #111827;
-        border:
-          1px solid rgba(0,0,0,.15);
-        font-size: 8px;
-        font-weight: 950;
-      }
+.bfmd-number {
+  position: absolute;
+  right: -7px;
+  bottom: -5px;
+  min-width: 21px;
+  height: 21px;
+  padding: 0 5px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border-radius: 999px;
+  background: #fff;
+  color: #111827;
+  border: 1px solid rgba(0,0,0,.16);
+  font-size: 10px;
+  font-weight: 950;
+}
 
-      .bfmd-number-only {
-        width: 36px;
-        height: 36px;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        border-radius: 50%;
-        background: #fff;
-        color: #111827;
-        font-size: 11px;
-        font-weight: 950;
-        box-shadow:
-          0 4px 11px rgba(0,0,0,.30);
-      }
+.bfmd-number-only {
+  width: 43px;
+  height: 43px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border-radius: 50%;
+  background: #fff;
+  color: #111827;
+  font-size: 12px;
+  font-weight: 950;
+  box-shadow:
+    0 4px 12px rgba(0,0,0,.32);
+}
 
-      .bfmd-name {
-        max-width: 82px;
-        margin-top: 5px;
-        padding: 3px 5px;
-        border-radius: 5px;
-        background: rgba(0,0,0,.72);
-        color: #fff;
-        font-size: 8px;
-        font-weight: 900;
-        text-align: center;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-      }
+.bfmd-name {
+  max-width: 105px;
+  margin-top: 5px;
+  padding: 4px 7px;
+  border-radius: 6px;
+  background: rgba(0,0,0,.78);
+  color: #fff;
+  font-size: 11px;
+  line-height: 1.15;
+  font-weight: 950;
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
 
-      .bfmd-rating {
-        margin-top: 2px;
-        padding: 2px 5px;
-        border-radius: 5px;
-        background: #fff;
-        color: #111827;
-        font-size: 8px;
-        font-weight: 900;
-      }
+.bfmd-rating {
+  margin-top: 3px;
+  padding: 3px 7px;
+  border-radius: 6px;
+  background: #fff;
+  color: #111827;
+  font-size: 10px;
+  line-height: 1;
+  font-weight: 950;
+  box-shadow:
+    0 2px 7px rgba(0,0,0,.22);
+}
 
-      .bfmd-event-mini {
-        position: absolute;
-        top: -8px;
-        left: -8px;
-        z-index: 10;
-        display: flex;
-        gap: 2px;
-        font-size: 10px;
-      }
+.bfmd-event-mini {
+  position: absolute;
+  top: -14px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  padding: 3px 6px;
+  min-height: 20px;
+  border-radius: 999px;
+  background: rgba(0,0,0,.76);
+  color: #fff;
+  font-size: 13px;
+  line-height: 1;
+  white-space: nowrap;
+  box-shadow:
+    0 3px 8px rgba(0,0,0,.28);
+}
 
       /* =====================================================
          PLAYER LIST
@@ -3463,19 +3477,19 @@
                   )}
                 </div>
 
-                ${
-                  rating !== null
-                    ? `
-                      <div class="bfmd-rating">
-                        ⭐ ${esc(
-                          Number(
-                            rating
-                          ).toFixed(1)
-                        )}
-                      </div>
-                    `
-                    : ""
-                }
+                <div class="bfmd-rating">
+  ⭐ ${
+    rating !== null &&
+    rating !== undefined &&
+    rating !== ""
+      ? esc(
+          Number(
+            rating
+          ).toFixed(1)
+        )
+      : "—"
+  }
+</div>
 
               </div>
             `;
