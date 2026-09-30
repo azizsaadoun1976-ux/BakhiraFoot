@@ -2200,43 +2200,47 @@
   }
 
   /* =======================================================
-     GLOBAL
+     GLOBAL - REMPLACE L'ANCIEN OPEN MATCH DETAILS
   ======================================================= */
 
-  window.bfOpenMatchDetails =
-    openDetails;
+  window.bfOpenMatchDetails = openDetails;
 
-  /* =======================================================
-     CLICK MATCH
-  ======================================================= */
+  /*
+   * script.js كينادي:
+   * openMatchDetails(index)
+   *
+   * هنا كنحوّلو هاد النداء للنافذة الجديدة
+   * ديال match-details.js.
+   */
+  window.openMatchDetails = function (index) {
 
-  document.addEventListener(
-    "click",
-    function (e) {
+    const card = document.querySelector(
+      `.match-card[data-match-index="${index}"]`
+    );
 
-      const card =
-        e.target.closest(
-          "[data-match-slug]," +
-          "[data-slug]," +
-          "[data-fixture-id]," +
-          "[data-fixture]"
-        );
-
-      if (!card) {
-        return;
-      }
-
-      /*
-       * ما نفتحووش التفاصيل إلا
-       * إذا فعلاً عندنا identifier.
-       */
-      if (
-        getSlug(card)
-      ) {
-        openDetails(card);
-      }
-
+    if (!card) {
+      console.error(
+        "BakhiraFoot: match card introuvable",
+        index
+      );
+      return;
     }
-  );
+
+    const identifier =
+      card.dataset.fixtureId ||
+      card.dataset.matchSlug ||
+      card.dataset.slug ||
+      card.dataset.fixture;
+
+    if (!identifier) {
+      console.error(
+        "BakhiraFoot: identifiant fixture introuvable",
+        card
+      );
+      return;
+    }
+
+    openDetails(card);
+  };
 
 })();
