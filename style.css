@@ -6322,3 +6322,10 @@ body.dark #scores .bf-match-competition-bar {
   padding: 20px;
   font-size: 14px;
 }
+/* =========================================================
+   ACCUEIL : MASQUER LA SIDEBAR GAUCHE
+   ========================================================= */
+
+body:has(#home.page.active) aside {
+  display: none;
+}
