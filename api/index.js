@@ -9,7 +9,11 @@ module.exports = async (req, res) => {
     const { live, date, fixture } = req.query;
 
     const SPORTSCORE = "https://sportscore.com/api/v1";
-    const SOFA = "https://api.sofascore.com/api/v1";
+    const SOFA_HOSTS = [
+  "https://www.sofascore.com/api/v1",
+  "https://api.sofascore.com/api/v1",
+  "https://api.sofascore.app/api/v1"
+];
 
     const today = new Date().toISOString().split("T")[0];
 
@@ -669,148 +673,456 @@ module.exports = async (req, res) => {
 
   return d.toISOString().split("T")[0];
 } 
-   async function findSofaEvent(
+   async function getSofaJSON(path) {
+
+  let lastError = null;
+
+  for (const host of SOFA_HOSTS) {
+
+    try {
+
+      const url =
+        `${host}${path}`;
+
+      console.log(
+        "SOFA TRY:",
+        url
+      );
+
+      const response =
+        await fetch(
+          url,
+          {
+            method: "GET",
+            headers: {
+              Accept:
+                "application/json",
+              "User-Agent":
+                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/154 Safari/537.36",
+              Referer:
+                "https://www.sofascore.com/",
+              Origin:
+                "https://www.sofascore.com"
+            },
+            cache: "no-store"
+          }
+        );
+
+      const text =
+        await response.text();
+
+      let data;
+
+      try {
+        data =
+          JSON.parse(text);
+      } catch {
+        data = {
+          raw: text
+        };
+      }
+
+      if (!response.ok) {
+
+        const error =
+          new Error(
+            `HTTP ${response.status}`
+          );
+
+        error.status =
+          response.status;
+
+        error.data =
+          data;
+
+        throw error;
+      }
+
+      return data;
+
+    } catch (error) {
+
+      console.warn(
+        "SOFA HOST FAILED:",
+        host,
+        error.message
+      );
+
+      lastError =
+        error;
+    }
+  }
+
+  throw (
+    lastError ||
+    new Error(
+      "SofaScore unavailable"
+    )
+  );
+}
+async function findSofaEvent(
   homeName,
   awayName,
   isoDate
 ) {
-  const wantedHome = norm(homeName);
-  const wantedAway = norm(awayName);
+
+  const wantedHome =
+    norm(homeName);
+
+  const wantedAway =
+    norm(awayName);
 
   const baseISO =
     toISODate(isoDate) ||
     today;
 
-  const baseDate =
-    new Date(`${baseISO}T12:00:00Z`);
-
-  if (Number.isNaN(baseDate.getTime())) {
-    console.warn(
-      "INVALID SOFASCORE BASE DATE:",
-      isoDate
-    );
-
-    return null;
-  }
-
-  const dates = [];
-
-  for (let offset = -1; offset <= 1; offset++) {
-    const d = new Date(baseDate);
-
-    d.setUTCDate(
-      d.getUTCDate() + offset
-    );
-
-    dates.push(
-      d.toISOString().split("T")[0]
-    );
-  }
-
   console.log(
-    "SOFASCORE SEARCH:",
+    "SEARCH SOFA MATCH:",
     {
       home: wantedHome,
       away: wantedAway,
-      dates
+      date: baseISO
     }
   );
 
-  for (const d of dates) {
-    try {
-      const body = await getJSON(
-        `${SOFA}/sport/football/scheduled-events/${d}`
-      );
+  /* =========================================
+     METHOD 1
+     DAILY SCHEDULE
+  ========================================= */
 
-      const events = arr(
-        body?.events
-      );
+  const dates = [];
+
+  const baseDate =
+    new Date(
+      `${baseISO}T12:00:00Z`
+    );
+
+  for (
+    let offset = -2;
+    offset <= 2;
+    offset++
+  ) {
+
+    const d =
+      new Date(baseDate);
+
+    d.setUTCDate(
+      d.getUTCDate() +
+      offset
+    );
+
+    dates.push(
+      d.toISOString()
+        .split("T")[0]
+    );
+  }
+
+  for (
+    const d of dates
+  ) {
+
+    try {
+
+      const body =
+        await getSofaJSON(
+          `/sport/football/scheduled-events/${d}`
+        );
+
+      const events =
+        arr(body?.events);
 
       console.log(
-        "SOFASCORE EVENTS:",
+        "SOFA DAILY:",
         d,
         events.length
       );
 
-      // 1. Exact match
-      const exact = events.find(event => {
-        const home = norm(
-          event?.homeTeam?.name
-        );
+      const exact =
+        events.find(event => {
 
-        const away = norm(
-          event?.awayTeam?.name
-        );
+          const home =
+            norm(
+              event?.homeTeam?.name
+            );
 
-        return (
-          home === wantedHome &&
-          away === wantedAway
-        );
-      });
+          const away =
+            norm(
+              event?.awayTeam?.name
+            );
+
+          return (
+            home === wantedHome &&
+            away === wantedAway
+          );
+        });
 
       if (exact) {
+
         console.log(
-          "SOFASCORE EXACT MATCH:",
-          exact.id,
-          exact.homeTeam?.name,
-          exact.awayTeam?.name
+          "✅ SOFA MATCH FOUND:",
+          exact.id
         );
 
         return exact;
       }
 
-      // 2. Fuzzy match
-      const fuzzy = events.find(event => {
-        const home = norm(
-          event?.homeTeam?.name
-        );
+      const fuzzy =
+        events.find(event => {
 
-        const away = norm(
-          event?.awayTeam?.name
-        );
+          const home =
+            norm(
+              event?.homeTeam?.name
+            );
 
-        const homeOk =
-          home.includes(wantedHome) ||
-          wantedHome.includes(home);
+          const away =
+            norm(
+              event?.awayTeam?.name
+            );
 
-        const awayOk =
-          away.includes(wantedAway) ||
-          wantedAway.includes(away);
-
-        return homeOk && awayOk;
-      });
+          return (
+            (
+              home.includes(
+                wantedHome
+              ) ||
+              wantedHome.includes(
+                home
+              )
+            ) &&
+            (
+              away.includes(
+                wantedAway
+              ) ||
+              wantedAway.includes(
+                away
+              )
+            )
+          );
+        });
 
       if (fuzzy) {
+
         console.log(
-          "SOFASCORE FUZZY MATCH:",
-          fuzzy.id,
-          fuzzy.homeTeam?.name,
-          fuzzy.awayTeam?.name
+          "✅ SOFA FUZZY MATCH:",
+          fuzzy.id
         );
 
         return fuzzy;
       }
 
     } catch (error) {
+
       console.warn(
-        "SOFASCORE SCHEDULE ERROR:",
+        "DAILY SEARCH ERROR:",
         d,
         error.message
       );
+
     }
   }
 
-  console.warn(
-    "SOFASCORE MATCH NOT FOUND:",
+  /* =========================================
+     METHOD 2
+     SEARCH HOME TEAM
+  ========================================= */
+
+  try {
+
+    const searchHome =
+      await getSofaJSON(
+        `/search/all?q=${encodeURIComponent(
+          homeName
+        )}`
+      );
+
+    const results =
+      [
+        ...arr(
+          searchHome?.results
+        ),
+        ...arr(
+          searchHome?.entities
+        ),
+        ...arr(
+          searchHome?.data
+        )
+      ];
+
+    const teamResult =
+      results.find(item => {
+
+        const entity =
+          item?.entity ||
+          item?.team ||
+          item;
+
+        return (
+          String(
+            entity?.type ||
+            ""
+          ).toLowerCase() ===
+          "team"
+        ) &&
+        norm(
+          entity?.name
+        ) === wantedHome;
+      }) ||
+      results.find(item => {
+
+        const entity =
+          item?.entity ||
+          item?.team ||
+          item;
+
+        return norm(
+          entity?.name
+        ).includes(
+          wantedHome
+        );
+      });
+
+    const homeTeam =
+      teamResult?.entity ||
+      teamResult?.team ||
+      teamResult ||
+      null;
+
+    const homeTeamId =
+      homeTeam?.id ||
+      null;
+
+    console.log(
+      "HOME TEAM ID:",
+      homeTeamId
+    );
+
+    /* =======================================
+       TEAM LAST EVENTS
+    ======================================= */
+
+    if (homeTeamId) {
+
+      for (
+        let page = 0;
+        page <= 2;
+        page++
+      ) {
+
+        try {
+
+          const body =
+            await getSofaJSON(
+              `/team/${homeTeamId}/events/last/${page}`
+            );
+
+          const events =
+            arr(
+              body?.events
+            );
+
+          const match =
+            events.find(event => {
+
+              const eventHome =
+                norm(
+                  event?.homeTeam?.name
+                );
+
+              const eventAway =
+                norm(
+                  event?.awayTeam?.name
+                );
+
+              if (
+                !(
+                  (
+                    eventHome ===
+                    wantedHome
+                  ) ||
+                  (
+                    eventAway ===
+                    wantedHome
+                  )
+                )
+              ) {
+                return false;
+              }
+
+              const opponent =
+                eventHome === wantedHome
+                  ? eventAway
+                  : eventHome;
+
+              if (
+                !(
+                  opponent ===
+                  wantedAway ||
+                  opponent.includes(
+                    wantedAway
+                  ) ||
+                  wantedAway.includes(
+                    opponent
+                  )
+                )
+              ) {
+                return false;
+              }
+
+              const eventDate =
+                event?.startTimestamp
+                  ? new Date(
+                      event.startTimestamp *
+                      1000
+                    )
+                      .toISOString()
+                      .split("T")[0]
+                  : "";
+
+              return (
+                !eventDate ||
+                eventDate === baseISO
+              );
+            });
+
+          if (match) {
+
+            console.log(
+              "✅ TEAM EVENTS MATCH:",
+              match.id
+            );
+
+            return match;
+          }
+
+        } catch (error) {
+
+          console.warn(
+            "TEAM EVENTS ERROR:",
+            error.message
+          );
+
+        }
+
+      }
+    }
+
+  } catch (error) {
+
+    console.warn(
+      "TEAM SEARCH ERROR:",
+      error.message
+    );
+
+  }
+
+  console.error(
+    "❌ SOFA MATCH NOT FOUND:",
     homeName,
     "vs",
-    awayName,
-    baseISO
+    awayName
   );
 
   return null;
 }
-
     /* =====================================================
        PLAYER NORMALIZATION
     ===================================================== */
@@ -1585,29 +1897,24 @@ module.exports = async (req, res) => {
       ] =
         await Promise.all([
 
-          getJSON(
-            `${SOFA}/event/${eventId}`
+         await getSofaJSON(
+  `/event/${eventId}`
+)
           ).catch(
             () => ({})
           ),
 
-          getJSON(
-            `${SOFA}/event/${eventId}/lineups`
-          ).catch(
-            () => ({})
-          ),
+        await getSofaJSON(
+  `/event/${eventId}/lineups`
+).catch(() => ({}))
 
-          getJSON(
-            `${SOFA}/event/${eventId}/incidents`
-          ).catch(
-            () => ({})
-          ),
+await getSofaJSON(
+  `/event/${eventId}/incidents`
+).catch(() => ({}))
 
-          getJSON(
-            `${SOFA}/event/${eventId}/statistics`
-          ).catch(
-            () => ({})
-          )
+await getSofaJSON(
+  `/event/${eventId}/statistics`
+).catch(() => ({}))
 
         ]);
 
