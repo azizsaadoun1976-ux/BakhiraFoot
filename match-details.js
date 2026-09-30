@@ -1797,3 +1797,52 @@
   );
 
 })();
+// match-details.js
+
+// 1. الفانكشن اللي كاتعرض أحداث المباراة (الأهداف والإنذارات)
+function displayMatchEvents(events) {
+  const eventsContainer = document.getElementById('match-events');
+  if (!eventsContainer) return;
+
+  if (!events || events.length === 0) {
+    eventsContainer.innerHTML = '<p class="no-data">لا توجد أحداث حية حالياً</p>';
+    return;
+  }
+
+  let html = '';
+  events.forEach(event => {
+    let icon = '⚽'; // هدف
+    if (event.type === 'yellow_card') icon = '🟨';
+    if (event.type === 'red_card') icon = '🟥';
+    if (event.type === 'substitute') icon = '🔄';
+
+    html += `
+      <div class="event-item">
+        <span class="event-time">${event.minute}'</span>
+        <span class="event-icon">${icon}</span>
+        <span class="event-player">${event.player_name}</span>
+      </div>
+    `;
+  });
+
+  eventsContainer.innerHTML = html;
+}
+
+// 2. الفانكشن اللي كاتعرض التشكيلة (Lineup)
+function displayLineups(lineups) {
+  const lineupContainer = document.getElementById('match-lineups');
+  if (!lineupContainer) return;
+
+  if (!lineups) {
+    lineupContainer.innerHTML = '<p class="no-data">التشكيلة الرسمية غير متوفرة بعد</p>';
+    return;
+  }
+
+  // هنا كتقدر تعرض أسماء اللاعبين
+  lineupContainer.innerHTML = `
+    <div class="lineup-box">
+      <h3>التشكيلة الرسمية</h3>
+      <p>تم تحميل التشكيلة بنجاح</p>
+    </div>
+  `;
+}
