@@ -1,14 +1,21 @@
 (() => {
   "use strict";
 
-  const STORAGE_KEY = "bakhirafoot_theme";
+  const STORAGE_KEY = "bakhirafoot-theme";
 
-  const systemTheme = window.matchMedia(
-    "(prefers-color-scheme: dark)"
-  );
+  function getSavedTheme() {
+    const saved =
+      localStorage.getItem(STORAGE_KEY);
+
+    return saved === "dark" ||
+      saved === "light"
+      ? saved
+      : null;
+  }
 
   function applyTheme(theme) {
-    const dark = theme === "dark";
+    const dark =
+      theme === "dark";
 
     document.documentElement.classList.toggle(
       "dark",
@@ -19,80 +26,44 @@
       "dark",
       dark
     );
-  }
 
-  function getSavedTheme() {
-    const saved =
-      localStorage.getItem(STORAGE_KEY);
+    const button =
+      document.getElementById("theme");
 
-    if (
-      saved === "dark" ||
-      saved === "light"
-    ) {
-      return saved;
+    if (button) {
+      button.textContent =
+        dark ? "☀️" : "☾";
+
+      button.setAttribute(
+        "aria-label",
+        dark
+          ? "Activer le mode clair"
+          : "Activer le mode sombre"
+      );
     }
-
-    return null;
-  }
-
-  function getCurrentTheme() {
-    const dark =
-      document.documentElement.classList.contains("dark") ||
-      document.body?.classList.contains("dark");
-
-    return dark ? "dark" : "light";
   }
 
   function init() {
-    /*
-     * أول زيارة:
-     * يتبع إعدادات الجهاز.
-     *
-     * إذا سبق للمستخدم اختيار mode:
-     * نستعمل اختياره.
-     */
+    const saved =
+      getSavedTheme();
 
-    const saved = getSavedTheme();
-
-    applyTheme(
-      saved ||
-      (systemTheme.matches
-        ? "dark"
-        : "light")
-    );
-
-    /*
-     * نخلي الزر الأصلي #theme خدام.
-     * من بعد كل click نحفظ الاختيار الجديد.
-     */
-
-    const themeButton =
-      document.getElementById("theme");
-
-    if (themeButton) {
-      themeButton.addEventListener(
-        "click",
-        () => {
-          setTimeout(() => {
-            const current =
-              getCurrentTheme();
-
-            localStorage.setItem(
-              STORAGE_KEY,
-              current
-            );
-          }, 0);
-        }
-      );
+    if (saved) {
+      applyTheme(saved);
+      return;
     }
 
-    /*
-     * إلا تبدل mode ديال الجهاز:
-     * نتبع الجهاز غير إلا المستخدم
-     * ما سبقش اختار mode بيديه.
-     */
+    const system =
+      window.matchMedia(
+        "(prefers-color-scheme: dark)"
+      );
 
-    systemTheme.addEventListener(
+    applyTheme(
+      system.matches
+        ? "dark"
+        : "light"
+    );
+
+    system.addEventListener(
       "change",
       event => {
         if (getSavedTheme()) {
@@ -109,7 +80,8 @@
   }
 
   if (
-    document.readyState === "loading"
+    document.readyState ===
+    "loading"
   ) {
     document.addEventListener(
       "DOMContentLoaded",
