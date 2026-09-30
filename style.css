@@ -6347,3 +6347,576 @@ body:has(#home.page.active) aside {
   width: 100%;
   max-width: none;
 }
+/* =========================================================
+   BAKHIRAFOOT - FULL MOBILE RESPONSIVE
+   ========================================================= */
+
+@media (max-width: 700px) {
+
+  /* ================= BODY ================= */
+
+  html,
+  body {
+    width: 100%;
+    max-width: 100%;
+    overflow-x: hidden;
+  }
+
+  body {
+    font-size: 14px;
+  }
+
+  /* ================= HEADER ================= */
+
+  header {
+    height: auto;
+    min-height: 64px;
+    padding: 10px 12px;
+    gap: 9px;
+    flex-wrap: wrap;
+  }
+
+  .logo {
+    flex: 0 0 auto;
+    max-width: 145px;
+  }
+
+  .logo img {
+    width: 135px;
+    max-width: 100%;
+  }
+
+  nav {
+    order: 3;
+    width: 100%;
+    height: 42px;
+    overflow-x: auto;
+    overflow-y: hidden;
+    flex: 0 0 100%;
+    gap: 0;
+    scrollbar-width: none;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  nav::-webkit-scrollbar {
+    display: none;
+  }
+
+  nav button,
+  nav a {
+    flex: 0 0 auto;
+    font-size: 12px !important;
+    padding: 0 11px !important;
+    white-space: nowrap;
+  }
+
+  .tools {
+    margin-left: auto;
+    flex: 1;
+    min-width: 0;
+    gap: 6px;
+  }
+
+  .tools input {
+    width: 100%;
+    min-width: 0;
+    padding: 9px 10px;
+    font-size: 12px;
+  }
+
+  .tools button {
+    flex: 0 0 38px;
+    width: 38px;
+    padding: 8px 0;
+  }
+
+
+  /* ================= LAYOUT ================= */
+
+  .layout {
+    width: 100%;
+    max-width: 100%;
+    display: block;
+  }
+
+  /*
+   * Sidebar تبقى مخفية
+   */
+  .layout > aside {
+    display: none !important;
+  }
+
+  main {
+    width: 100%;
+    max-width: 100%;
+    padding: 12px;
+  }
+
+
+  /* ================= HERO ================= */
+
+  .hero {
+    width: 100%;
+    min-height: 540px;
+    padding: 25px 18px 190px;
+    border-radius: 14px;
+    display: block;
+    position: relative;
+  }
+
+  .hero-content {
+    width: 100%;
+    max-width: 100%;
+  }
+
+  .hero-badge {
+    font-size: 10px;
+    padding: 6px 10px;
+    margin-bottom: 12px;
+  }
+
+  .hero small {
+    font-size: 9px;
+    letter-spacing: .6px;
+  }
+
+  .hero h1 {
+    max-width: 100%;
+    font-size: 29px;
+    line-height: 1.12;
+    margin: 10px 0 12px;
+  }
+
+  .hero p {
+    max-width: 100%;
+    font-size: 13px;
+    line-height: 1.55;
+    margin-bottom: 18px;
+  }
+
+  .hero-actions {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    align-items: stretch;
+    gap: 8px;
+  }
+
+  .hero-actions button {
+    width: 100%;
+    min-height: 44px;
+    font-size: 13px;
+  }
+
+  .green,
+  .hero-more {
+    padding: 11px 16px;
+  }
+
+  /* Scene */
+
+  .sea-scene {
+    width: 100%;
+    height: 190px;
+    left: 0;
+    right: auto;
+    top: auto;
+    bottom: 0;
+  }
+
+  .sun {
+    top: 12px;
+    right: 35px;
+    font-size: 38px;
+  }
+
+  .ball-floating {
+    right: 70px;
+    top: 65px;
+    font-size: 45px;
+  }
+
+  .boat {
+    right: 20px;
+    bottom: 60px;
+    font-size: 54px;
+  }
+
+
+  /* ================= HEADERS ================= */
+
+  .head,
+  .title {
+    gap: 10px;
+  }
+
+  .head {
+    margin-top: 20px;
+  }
+
+  .head h2 {
+    font-size: 19px;
+  }
+
+  .head button {
+    font-size: 11px;
+    white-space: nowrap;
+  }
+
+  .title h1,
+  h1 {
+    font-size: 24px;
+  }
+
+
+  /* ================= CARDS ================= */
+
+  .cards {
+    grid-template-columns: 1fr !important;
+    gap: 10px;
+  }
+
+  .card,
+  .league,
+  .table {
+    width: 100%;
+    min-width: 0;
+    padding: 13px;
+  }
+
+  .card h3 {
+    font-size: 16px;
+  }
+
+  .card p {
+    font-size: 12px;
+  }
+
+
+  /* ================= DATES ================= */
+
+  .dates {
+    width: 100%;
+    gap: 5px;
+    margin: 14px 0;
+    overflow-x: auto;
+    padding-bottom: 4px;
+    -webkit-overflow-scrolling: touch;
+  }
+
+  .dates button {
+    flex: 0 0 auto;
+    padding: 9px 13px;
+    font-size: 11px;
+  }
+
+
+  /* ================= OLD MATCH ROW ================= */
+
+  .row {
+    width: 100%;
+    padding: 11px 8px;
+    grid-template-columns:
+      52px
+      minmax(0, 1fr)
+      52px
+      62px;
+    gap: 5px;
+  }
+
+
+  /* ================= TEAMS ================= */
+
+  .teams {
+    grid-template-columns:
+      minmax(0, 1fr)
+      60px
+      minmax(0, 1fr);
+    gap: 5px;
+  }
+
+  .score {
+    font-size: 17px;
+  }
+
+  .time {
+    font-size: 10px;
+  }
+
+
+  /* ================= TABLES ================= */
+
+  .tables {
+    grid-template-columns: 1fr !important;
+    gap: 10px;
+  }
+
+  .table {
+    overflow-x: auto;
+  }
+
+  .table table {
+    min-width: 500px;
+    font-size: 12px;
+  }
+
+
+  /* ================= LEAGUES ================= */
+
+  .league {
+    font-size: 15px;
+  }
+
+  .league small {
+    font-size: 10px;
+  }
+
+
+  /* ================= NEWS ================= */
+
+  .newsImg {
+    height: 155px;
+  }
+
+
+  /* ================= TEAM ================= */
+
+  .teamLogo {
+    font-size: 34px;
+  }
+
+  .detail {
+    margin-top: 14px;
+  }
+
+
+  /* ================= SCORES ================= */
+
+  #scores {
+    width: 100%;
+    max-width: 100%;
+  }
+
+  #scores .scores-header {
+    width: 100%;
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 10px;
+  }
+
+  #scores .scores-header-text {
+    width: 100%;
+  }
+
+  #scores .scores-header-text h1 {
+    font-size: 29px;
+    line-height: 1.1;
+  }
+
+  #scores .scores-header-text p {
+    font-size: 12px;
+    line-height: 1.5;
+  }
+
+  #scores .scores-date-section {
+    width: 100%;
+    padding: 11px;
+    border-radius: 14px;
+  }
+
+  #scores .scores-date-title {
+    align-items: flex-start;
+    flex-direction: column;
+    gap: 3px;
+  }
+
+  #scores .scores-date-title strong {
+    font-size: 13px;
+  }
+
+  #scores .scores-date-title span {
+    font-size: 10px;
+  }
+
+  #scores .scores-match-list {
+    width: 100%;
+    gap: 10px;
+  }
+
+  #scores .bf-ultra-match {
+    width: 100%;
+    border-radius: 15px !important;
+  }
+
+  #scores .bf-match-competition-bar {
+    min-height: 43px;
+    padding: 8px 10px !important;
+  }
+
+  #scores .bf-match-competition-logo {
+    width: 24px !important;
+    height: 24px !important;
+  }
+
+  #scores .bf-match-teams {
+    width: 100%;
+    grid-template-columns:
+      minmax(0, 1fr)
+      68px
+      minmax(0, 1fr) !important;
+    padding: 17px 8px 15px !important;
+    gap: 4px !important;
+  }
+
+  #scores .bf-ultra-team-logo,
+  #scores .bf-ultra-team-placeholder {
+    width: 42px !important;
+    height: 42px !important;
+  }
+
+  #scores .bf-ultra-team-name {
+    font-size: 10px !important;
+    line-height: 1.2;
+    word-break: break-word;
+  }
+
+  #scores .bf-ultra-score {
+    font-size: 25px !important;
+    margin-top: 6px !important;
+  }
+
+  #scores .bf-ultra-middle {
+    max-width: 68px;
+    font-size: 9px !important;
+    overflow: hidden;
+  }
+
+  #scores .bf-ultra-center small {
+    font-size: 9px !important;
+  }
+
+
+  /* ================= MATCH DETAILS ================= */
+
+  .match-tabs {
+    width: 100%;
+    overflow-x: auto;
+    justify-content: flex-start;
+    gap: 4px;
+    scrollbar-width: none;
+  }
+
+  .match-tabs::-webkit-scrollbar {
+    display: none;
+  }
+
+  .tab-btn {
+    flex: 0 0 auto;
+    padding: 9px 12px;
+    font-size: 12px;
+  }
+
+  .tab-content {
+    width: 100%;
+    padding: 10px;
+    overflow-x: hidden;
+  }
+
+  .event-item {
+    gap: 7px;
+    padding: 8px 5px;
+    font-size: 12px;
+  }
+
+  .event-time {
+    min-width: 27px;
+  }
+
+
+  /* ================= ADS ================= */
+
+  ins.adsbygoogle {
+    width: 100% !important;
+    max-width: 100% !important;
+  }
+
+
+  /* ================= FOOTER ================= */
+
+  footer {
+    width: 100%;
+    padding: 18px 12px !important;
+    text-align: center;
+  }
+
+}
+
+
+/* =========================================================
+   EXTRA SMALL PHONES
+   ========================================================= */
+
+@media (max-width: 390px) {
+
+  header {
+    padding-left: 9px;
+    padding-right: 9px;
+  }
+
+  .logo img {
+    width: 120px;
+  }
+
+  nav button,
+  nav a {
+    font-size: 11px !important;
+    padding: 0 9px !important;
+  }
+
+  main {
+    padding: 9px;
+  }
+
+  .hero {
+    min-height: 520px;
+    padding: 21px 15px 175px;
+  }
+
+  .hero h1 {
+    font-size: 26px;
+  }
+
+  .hero p {
+    font-size: 12px;
+  }
+
+  .sea-scene {
+    height: 175px;
+  }
+
+  #scores .scores-header-text h1 {
+    font-size: 26px;
+  }
+
+  #scores .bf-match-teams {
+    grid-template-columns:
+      minmax(0, 1fr)
+      60px
+      minmax(0, 1fr) !important;
+  }
+
+  #scores .bf-ultra-score {
+    font-size: 22px !important;
+  }
+
+  #scores .bf-ultra-team-logo,
+  #scores .bf-ultra-team-placeholder {
+    width: 37px !important;
+    height: 37px !important;
+  }
+
+  #scores .bf-ultra-team-name {
+    font-size: 9px !important;
+  }
+
+}
