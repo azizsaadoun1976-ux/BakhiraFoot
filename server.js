@@ -6,7 +6,8 @@ app.use(express.static("."));
 
 const SPORTSCORE_BASE =
   "https://sportscore.com/api/v1";
-
+const SPORTSCORE_WIDGET_BASE =
+  "https://sportscore.com";
 /* =========================================================
    CACHE
 ========================================================= */
@@ -76,15 +77,22 @@ function setCached(
 async function sportScoreFetch(
   path
 ) {
-  const response = await fetch(
-    `${SPORTSCORE_BASE}${path}`,
-    {
-      headers: {
-        Accept: "application/json"
-      },
-      cache: "no-store"
-    }
-  );
+  const base =
+    path.startsWith("/api/widget/")
+      ? SPORTSCORE_WIDGET_BASE
+      : SPORTSCORE_BASE;
+
+  const response =
+    await fetch(
+      `${base}${path}`,
+      {
+        headers: {
+          Accept:
+            "application/json"
+        },
+        cache: "no-store"
+      }
+    );
 
   if (!response.ok) {
     const error =
@@ -100,6 +108,7 @@ async function sportScoreFetch(
 
   return await response.json();
 }
+
 
 /* =========================================================
    EXTRACT LIST
