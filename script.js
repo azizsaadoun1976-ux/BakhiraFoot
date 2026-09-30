@@ -5022,7 +5022,25 @@ async function openMatchDetails(index) {
 
   document.body.style.overflow =
     "hidden";
+}
+  const selectedMatch =
+    currentMatches[index];
 
+  const selectedFixture =
+    selectedMatch?.fixture?.slug ||
+    selectedMatch?.slug ||
+    selectedMatch?.fixture?.id ||
+    selectedMatch?.id ||
+    null;
+
+  if (
+    selectedFixture &&
+    typeof window.bfOpenMatchDetails === "function"
+  ) {
+    return window.bfOpenMatchDetails(
+      selectedFixture
+    );
+  }
 
   /* =======================================================
      HEADER
