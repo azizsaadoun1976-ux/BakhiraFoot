@@ -50,72 +50,107 @@ module.exports = async (req, res) => {
        FETCH JSON
     ===================================================== */
 
-    async function getJSON(url) {
+   async function getJSON(url) {
 
-      console.log(
-        "SPORTSCORE REQUEST:",
-        url
+  const controller =
+    new AbortController();
+
+  const timeout =
+    setTimeout(
+      () => {
+        controller.abort();
+      },
+      10000
+    );
+
+  try {
+
+    console.log(
+      "SPORTSCORE REQUEST:",
+      url
+    );
+
+    const response =
+      await fetch(
+        url,
+        {
+          method: "GET",
+
+          headers: {
+            Accept:
+              "application/json",
+
+            "User-Agent":
+              "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/154 Safari/537.36"
+          },
+
+          cache:
+            "no-store",
+
+          signal:
+            controller.signal
+        }
       );
 
-      const response =
-        await fetch(
-          url,
-          {
-            method: "GET",
+    const rawText =
+      await response.text();
 
-            headers: {
-              Accept:
-                "application/json",
+    let data;
 
-              "User-Agent":
-                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/154 Safari/537.36"
-            },
-
-            cache:
-              "no-store"
-          }
+    try {
+      data =
+        JSON.parse(
+          rawText
         );
-
-      const rawText =
-        await response.text();
-
-      let data;
-
-      try {
-
-        data =
-          JSON.parse(
-            rawText
-          );
-
-      } catch {
-
-        data = {
-          raw:
-            rawText
-        };
-
-      }
-
-      if (!response.ok) {
-
-        const error =
-          new Error(
-            `HTTP ${response.status}`
-          );
-
-        error.status =
-          response.status;
-
-        error.data =
-          data;
-
-        throw error;
-      }
-
-      return data;
+    }
+    catch {
+      data = {
+        raw:
+          rawText
+      };
     }
 
+    if (!response.ok) {
+
+      const error =
+        new Error(
+          `HTTP ${response.status}`
+        );
+
+      error.status =
+        response.status;
+
+      error.data =
+        data;
+
+      throw error;
+    }
+
+    return data;
+
+  }
+  catch (error) {
+
+    if (
+      error?.name ===
+      "AbortError"
+    ) {
+      throw new Error(
+        "SportScore timeout"
+      );
+    }
+
+    throw error;
+
+  }
+  finally {
+
+    clearTimeout(
+      timeout
+    );
+
+  }
+}
     /* =====================================================
        HELPERS
     ===================================================== */
