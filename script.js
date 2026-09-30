@@ -4224,7 +4224,7 @@ async function openMatchDetails(index) {
 
     const response =
       await fetch(
-        `${API_BASE}/api/match-details?fixture=${encodeURIComponent(fixtureId)}`
+        `${API_BASE}/api?fixture=${encodeURIComponent(fixtureId)}`
         {
           cache: "no-store"
         }
