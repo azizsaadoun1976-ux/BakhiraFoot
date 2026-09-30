@@ -1846,3 +1846,96 @@ function displayLineups(lineups) {
     </div>
   `;
 }
+// 1. الفانكشن الخاصة بالتبديل بين التبويبات (Tabs Switcher)
+function switchTab(tabName) {
+  // إخفاء كافة المحتويات
+  const contents = document.querySelectorAll('.tab-content');
+  contents.forEach(content => content.classList.remove('active'));
+
+  // إزالة التفعيل من جميع الأزرار
+  const buttons = document.querySelectorAll('.tab-btn');
+  buttons.forEach(btn => btn.classList.remove('active'));
+
+  // إظهار المحتوى المحدد وتفعيل الزر المضغوط
+  const selectedTab = document.getElementById('tab-' + tabName);
+  if (selectedTab) selectedTab.classList.add('active');
+
+  if (event && event.currentTarget) {
+    event.currentTarget.classList.add('active');
+  }
+}
+
+// 2. الفانكشن اللي كاتعرض تفاصيل الماتش فـ الصفحة
+function renderMatchDetails(match) {
+  if (!match) return;
+
+  // أ) عرض هيدر الماتش (النتيجة، الفرق، والتوقيت)
+  const headerContainer = document.getElementById('match-header-container');
+  if (headerContainer) {
+    headerContainer.innerHTML = `
+      <div style="background:#111e2e; padding:20px; border-radius:12px; text-align:center; border:1px solid #1e2d3d;">
+        <div style="color:#16a34a; font-weight:bold; margin-bottom:10px;">${match.league_name || 'مباراة كرة قدم'}</div>
+        <div style="display:flex; justify-size:space-around; align-items:center;">
+          <div style="flex:1;">
+            <img src="${match.home_logo || 'logo.svg'}" style="width:50px; height:50px; object-fit:contain;" />
+            <h3 style="margin-top:5px; font-size:16px;">${match.home_team}</h3>
+          </div>
+          <div style="flex:1; font-size:24px; font-weight:bold; color:#fff;">
+            ${match.score ? match.score : match.time || 'VS'}
+          </div>
+          <div style="flex:1;">
+            <img src="${match.away_logo || 'logo.svg'}" style="width:50px; height:50px; object-fit:contain;" />
+            <h3 style="margin-top:5px; font-size:16px;">${match.away_team}</h3>
+          </div>
+        </div>
+      </div>
+    `;
+  }
+
+  // ب) عرض الأحداث (Events)
+  const eventsContainer = document.getElementById('match-events');
+  if (eventsContainer) {
+    if (match.events && match.events.length > 0) {
+      eventsContainer.innerHTML = match.events.map(e => `
+        <div class="event-item">
+          <span class="event-time">${e.minute}'</span>
+          <span>${e.type === 'goal' ? '⚽' : e.type === 'card' ? '🟨' : '🔄'}</span>
+          <span>${e.player_name}</span>
+        </div>
+      `).join('');
+    } else {
+      eventsContainer.innerHTML = '<p class="no-data">لا توجد أحداث مسجلة حتى الآن</p>';
+    }
+  }
+
+  // ج) عرض التشكيلة (Lineups)
+  const lineupsContainer = document.getElementById('match-lineups');
+  if (lineupsContainer) {
+    lineupsContainer.innerHTML = match.lineups 
+      ? `<pre style="color:#fff;">${JSON.stringify(match.lineups, null, 2)}</pre>`
+      : '<p class="no-data">التشكيلة الرسمية تظهر قبل بداية المباراة بـ 60 دقيقة</p>';
+  }
+
+  // د) عرض الإحصائيات (Stats)
+  const statsContainer = document.getElementById('match-stats');
+  if (statsContainer) {
+    statsContainer.innerHTML = match.stats 
+      ? '<p style="color:#fff;">الإحصائيات متوفرة</p>'
+      : '<p class="no-data">الإحصائيات غير متوفرة لهذه المباراة</p>';
+  }
+}
+
+// 3. فتح صفحة تفاصيل الماتش بضغطة زر
+function openMatch(matchId) {
+  // إخفاء جميع الصفحات وإظهار صفحة التفاصيل
+  const pages = document.querySelectorAll('.page');
+  pages.forEach(p => p.classList.remove('active'));
+
+  const detailsPage = document.getElementById('match-details-page');
+  if (detailsPage) detailsPage.classList.add('active');
+
+  // جلب البيانات من sportscore-data.js (إذا كانت الفانكشن متوفرة)
+  if (typeof getSportScoreMatchDetails === 'function') {
+    getSportScoreMatchDetails(matchId).then(data => renderMatchDetails(data));
+  }
+}
