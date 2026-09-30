@@ -1076,277 +1076,499 @@ module.exports = async (req, res) => {
        FIND LINEUPS
     ===================================================== */
 
-    function getLineups(
-      root,
-      homeTeam,
-      awayTeam
-    ) {
+   function getLineups(
+  root,
+  homeTeam,
+  awayTeam
+) {
 
-      const source =
-        root?.lineups ||
-        root?.lineup ||
-        root?.compositions ||
-        root?.formations ||
-        null;
+  const source =
+    root?.lineups ||
+    root?.lineup ||
+    root?.compositions ||
+    root?.formations ||
+    {};
 
-      if (
-        !source
-      ) {
-        return [];
-      }
+  const result = [];
 
-      /* Array format */
+  /*
+   * =====================================================
+   * DIRECT SPORTScore FORMAT
+   *
+   * home_formation
+   * away_formation
+   * home_xi
+   * away_xi
+   * home_subs
+   * away_subs
+   * =====================================================
+   */
 
-      if (
-        Array.isArray(
-          source
+  const directHomeXI =
+    Array.isArray(
+      source?.home_xi
+    )
+      ? source.home_xi
+      : Array.isArray(
+          root?.home_xi
         )
-      ) {
+        ? root.home_xi
+        : [];
 
-        const normalized =
-          source
-            .map(
-              item => {
+  const directAwayXI =
+    Array.isArray(
+      source?.away_xi
+    )
+      ? source.away_xi
+      : Array.isArray(
+          root?.away_xi
+        )
+        ? root.away_xi
+        : [];
 
-                const itemTeam =
-                  item?.team ||
-                  {};
+  const directHomeSubs =
+    Array.isArray(
+      source?.home_subs
+    )
+      ? source.home_subs
+      : Array.isArray(
+          root?.home_subs
+        )
+        ? root.home_subs
+        : [];
 
-                const isHome =
-                  (
-                    homeTeam.id &&
-                    itemTeam.id &&
-                    String(
-                      homeTeam.id
-                    ) ===
-                    String(
-                      itemTeam.id
-                    )
-                  );
+  const directAwaySubs =
+    Array.isArray(
+      source?.away_subs
+    )
+      ? source.away_subs
+      : Array.isArray(
+          root?.away_subs
+        )
+        ? root.away_subs
+        : [];
 
-                const isAway =
-                  (
-                    awayTeam.id &&
-                    itemTeam.id &&
-                    String(
-                      awayTeam.id
-                    ) ===
-                    String(
-                      itemTeam.id
-                    )
-                  );
+  const directHomeFormation =
+    source?.home_formation ||
+    root?.home_formation ||
+    "—";
 
-                return {
+  const directAwayFormation =
+    source?.away_formation ||
+    root?.away_formation ||
+    "—";
 
-                  raw:
-                    item,
+  /*
+   * إذا كان SportScore عطانا home_xi / away_xi
+   * كنستعملهم مباشرة.
+   */
 
-                  isHome,
+  if (
+    directHomeXI.length ||
+    directHomeSubs.length ||
+    directHomeFormation !== "—"
+  ) {
 
-                  isAway
+    result.push({
+      team: homeTeam,
 
-                };
+      formation:
+        directHomeFormation,
 
-              }
-            );
+      coach:
+        source?.home_coach ||
+        root?.home_coach ||
+        null,
 
-        return normalized
-          .map(
-            item =>
-              normalizeLineup(
-                item.raw,
-                item.isHome
-                  ? homeTeam
-                  : item.isAway
-                    ? awayTeam
-                    : item.raw?.team ||
-                      {}
-              )
+      startXI:
+        directHomeXI.map(
+          normalizePlayer
+        ),
+
+      substitutes:
+        directHomeSubs.map(
+          normalizePlayer
+        )
+    });
+  }
+
+  if (
+    directAwayXI.length ||
+    directAwaySubs.length ||
+    directAwayFormation !== "—"
+  ) {
+
+    result.push({
+      team: awayTeam,
+
+      formation:
+        directAwayFormation,
+
+      coach:
+        source?.away_coach ||
+        root?.away_coach ||
+        null,
+
+      startXI:
+        directAwayXI.map(
+          normalizePlayer
+        ),
+
+      substitutes:
+        directAwaySubs.map(
+          normalizePlayer
+        )
+    });
+  }
+
+  /*
+   * =====================================================
+   * إذا ما كانش direct format
+   * كنرجعو للformats القديمة.
+   * =====================================================
+   */
+
+  if (
+    result.length
+  ) {
+    return result;
+  }
+
+  if (
+    Array.isArray(source)
+  ) {
+
+    const normalized =
+      source
+        .map(
+          item => {
+
+            const itemTeam =
+              item?.team ||
+              {};
+
+            const isHome =
+              !!(
+                homeTeam?.id &&
+                itemTeam?.id &&
+                String(
+                  homeTeam.id
+                ) ===
+                String(
+                  itemTeam.id
+                )
+              );
+
+            const isAway =
+              !!(
+                awayTeam?.id &&
+                itemTeam?.id &&
+                String(
+                  awayTeam.id
+                ) ===
+                String(
+                  itemTeam.id
+                )
+              );
+
+            return {
+              raw: item,
+              isHome,
+              isAway
+            };
+          }
+        );
+
+    return normalized
+      .map(
+        item =>
+          normalizeLineup(
+            item.raw,
+            item.isHome
+              ? homeTeam
+              : item.isAway
+                ? awayTeam
+                : item.raw?.team ||
+                  {}
           )
-          .filter(Boolean);
-      }
+      )
+      .filter(Boolean);
+  }
 
-      /* Home / Away format */
+  /*
+   * Home / Away object format
+   */
 
-      const homeSource =
-        source?.home ||
-        source?.homeTeam ||
-        source?.host ||
-        null;
+  const homeSource =
+    source?.home ||
+    source?.homeTeam ||
+    source?.host ||
+    null;
 
-      const awaySource =
-        source?.away ||
-        source?.awayTeam ||
-        source?.guest ||
-        null;
+  const awaySource =
+    source?.away ||
+    source?.awayTeam ||
+    source?.guest ||
+    null;
 
-      const result = [];
+  if (
+    homeSource
+  ) {
 
-      if (
-        homeSource
-      ) {
+    const homeLineup =
+      normalizeLineup(
+        homeSource,
+        homeTeam
+      );
 
-        const lineup =
-          normalizeLineup(
-            homeSource,
-            homeTeam
-          );
-
-        if (
-          lineup
-        ) {
-          result.push(
-            lineup
-          );
-        }
-      }
-
-      if (
-        awaySource
-      ) {
-
-        const lineup =
-          normalizeLineup(
-            awaySource,
-            awayTeam
-          );
-
-        if (
-          lineup
-        ) {
-          result.push(
-            lineup
-          );
-        }
-      }
-
-      return result;
+    if (
+      homeLineup
+    ) {
+      result.push(
+        homeLineup
+      );
     }
+  }
+
+  if (
+    awaySource
+  ) {
+
+    const awayLineup =
+      normalizeLineup(
+        awaySource,
+        awayTeam
+      );
+
+    if (
+      awayLineup
+    ) {
+      result.push(
+        awayLineup
+      );
+    }
+  }
+
+  return result;
+}
 
     /* =====================================================
        EVENTS
     ===================================================== */
 
     function normalizeEvents(
-      root
+  root
+) {
+
+  const source =
+    root?.events ||
+    root?.incidents ||
+    root?.timeline ||
+    root?.match_events ||
+    [];
+
+  function getName(value) {
+
+    if (
+      typeof value === "string"
     ) {
-
-      const source =
-        root?.events ||
-        root?.incidents ||
-        root?.timeline ||
-        root?.match_events ||
-        [];
-
-      return arr(
-        source
-      )
-        .map(
-          event => {
-
-            const type =
-              event?.type ||
-              event?.incidentType ||
-              event?.event_type ||
-              "Other";
-
-            const detail =
-              event?.detail ||
-              event?.incidentClass ||
-              event?.reason ||
-              event?.description ||
-              "";
-
-            const player =
-              event?.player ||
-              {};
-
-            const assist =
-              event?.assist ||
-              event?.assist1 ||
-              {};
-
-            const team =
-              event?.team ||
-              {};
-
-            const minute =
-              event?.time?.elapsed ??
-              event?.minute ??
-              event?.time ??
-              null;
-
-            const extra =
-              event?.time?.extra ??
-              event?.addedTime ??
-              event?.extra ??
-              null;
-
-            return {
-
-              time: {
-
-                elapsed:
-                  minute,
-
-                extra:
-                  extra
-
-              },
-
-              team: {
-
-                id:
-                  team?.id ||
-                  event?.team_id ||
-                  null,
-
-                name:
-                  team?.name ||
-                  event?.team_name ||
-                  ""
-
-              },
-
-              player: {
-
-                id:
-                  player?.id ||
-                  event?.player_id ||
-                  null,
-
-                name:
-                  player?.name ||
-                  event?.player_name ||
-                  ""
-
-              },
-
-              assist: {
-
-                id:
-                  assist?.id ||
-                  event?.assist_id ||
-                  null,
-
-                name:
-                  assist?.name ||
-                  event?.assist_name ||
-                  ""
-
-              },
-
-              type:
-                type,
-
-              detail:
-                detail
-
-            };
-          }
-        );
+      return value;
     }
 
+    if (
+      value &&
+      typeof value === "object"
+    ) {
+      return (
+        value.name ||
+        value.full_name ||
+        value.fullName ||
+        value.player?.name ||
+        ""
+      );
+    }
+
+    return "";
+  }
+
+  return arr(
+    source
+  ).map(
+    event => {
+
+      const type =
+        event?.type ||
+        event?.incidentType ||
+        event?.event_type ||
+        event?.kind ||
+        "Other";
+
+      const detail =
+        event?.detail ||
+        event?.incidentClass ||
+        event?.reason ||
+        event?.description ||
+        "";
+
+      const playerName =
+        getName(
+          event?.player
+        ) ||
+        event?.player_name ||
+        event?.playerName ||
+        getName(
+          event?.scorer
+        ) ||
+        getName(
+          event?.goal_scorer
+        ) ||
+        "";
+
+      const assistName =
+        getName(
+          event?.assist
+        ) ||
+        getName(
+          event?.assist1
+        ) ||
+        event?.assist_name ||
+        event?.assistName ||
+        "";
+
+      const playerIn =
+        getName(
+          event?.player_in
+        ) ||
+        getName(
+          event?.playerIn
+        ) ||
+        getName(
+          event?.incoming
+        ) ||
+        event?.player_in_name ||
+        event?.playerInName ||
+        "";
+
+      const playerOut =
+        getName(
+          event?.player_out
+        ) ||
+        getName(
+          event?.playerOut
+        ) ||
+        getName(
+          event?.outgoing
+        ) ||
+        event?.player_out_name ||
+        event?.playerOutName ||
+        "";
+
+      const team =
+        event?.team ||
+        {};
+
+      const minute =
+        event?.time?.elapsed ??
+        (
+          typeof event?.time ===
+          "number"
+            ? event.time
+            : null
+        ) ??
+        event?.minute ??
+        event?.elapsed ??
+        null;
+
+      const extra =
+        event?.time?.extra ??
+        event?.extra ??
+        event?.addedTime ??
+        null;
+
+      return {
+
+        time: {
+          elapsed:
+            minute,
+
+          extra:
+            extra
+        },
+
+        team: {
+          id:
+            team?.id ??
+            event?.team_id ??
+            event?.teamId ??
+            null,
+
+          name:
+            team?.name ||
+            event?.team_name ||
+            event?.teamName ||
+            ""
+        },
+
+        player: {
+          id:
+            (
+              event?.player &&
+              typeof event.player ===
+                "object"
+                ? event.player.id
+                : null
+            ) ??
+            event?.player_id ??
+            null,
+
+          name:
+            playerName
+        },
+
+        assist: {
+          id:
+            (
+              event?.assist &&
+              typeof event.assist ===
+                "object"
+                ? event.assist.id
+                : null
+            ) ??
+            event?.assist_id ??
+            null,
+
+          name:
+            assistName
+        },
+
+        /*
+         * هادو مهمين للتبديلات
+         */
+        player_in:
+          playerIn,
+
+        player_out:
+          playerOut,
+
+        /*
+         * كنخليوهم حتى هما
+         * باش الواجهة تقدر تستعملهم.
+         */
+        playerIn:
+          playerIn,
+
+        playerOut:
+          playerOut,
+
+        type:
+          type,
+
+        detail:
+          detail
+      };
+    }
+  );
+}
     /* =====================================================
        STATISTICS
     ===================================================== */
