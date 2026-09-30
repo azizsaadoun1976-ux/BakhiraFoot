@@ -25,111 +25,7 @@
    */
 
   const DETAILS_API = "/api?fixture=";
-async function fetchDetailsJSON(
-  identifier
-) {
 
-  const controller =
-    new AbortController();
-
-  const timer =
-    setTimeout(
-      () => controller.abort(),
-      12000
-    );
-
-  try {
-
-    /*
-     * أول محاولة:
-     * API ديال BakhiraFoot
-     */
-    try {
-
-      const response =
-        await fetch(
-          `${DETAILS_API}${encodeURIComponent(
-            identifier
-          )}`,
-          {
-            method: "GET",
-            cache: "no-store",
-            headers: {
-              Accept:
-                "application/json"
-            },
-            signal:
-              controller.signal
-          }
-        );
-
-      if (
-        response.ok
-      ) {
-
-        const data =
-          await response.json();
-
-        return data;
-      }
-
-    }
-    catch (
-      error
-    ) {
-
-      console.warn(
-        "BAKHIRAFOOT API FAILED:",
-        error
-      );
-
-    }
-
-    /*
-     * ثاني محاولة:
-     * SportScore مباشرة
-     *
-     * غير إلا كان identifier عبارة عن slug.
-     */
-    const directURL =
-      `https://sportscore.com/api/widget/match/?sport=football&slug=${encodeURIComponent(
-        identifier
-      )}&src=bakhira-foot`;
-
-    const directResponse =
-      await fetch(
-        directURL,
-        {
-          method: "GET",
-          cache: "no-store",
-          headers: {
-            Accept:
-              "application/json"
-          },
-          signal:
-            controller.signal
-        }
-      );
-
-    if (
-      !directResponse.ok
-    ) {
-      throw new Error(
-        `HTTP ${directResponse.status}`
-      );
-    }
-
-    return await directResponse.json();
-
-  }
-  finally {
-
-    clearTimeout(
-      timer
-    );
-
-  }
-}
   /* =========================================================
      BASIC HELPERS
   ========================================================= */
@@ -1488,408 +1384,424 @@ function getPlayerRating(
   ========================================================= */
 
   function buildLineup(
-    details,
-    side,
-    team
+  details,
+  side,
+  team
+) {
+
+  const raw =
+    details?.lineups ||
+    details?.lineup ||
+    details?.compositions ||
+    details?.formations ||
+    null;
+
+  let source = null;
+
+  /*
+   * =====================================================
+   * 1) ARRAY
+   *
+   * api/index.js الحالي كيرجع:
+   *
+   * [
+   *   {
+   *     team: home,
+   *     formation: "...",
+   *     startXI: [...]
+   *   },
+   *
+   *   {
+   *     team: away,
+   *     formation: "...",
+   *     startXI: [...]
+   *   }
+   * ]
+   *
+   * لذلك نستعمل index مباشرة.
+   * =====================================================
+   */
+
+  if (
+    Array.isArray(raw)
   ) {
-    const raw =
-      first(
-        details?.lineups,
-        details?.lineup,
-        details?.compositions,
-        details?.formations,
-        null
-      );
 
-    let source = null;
+    const wantedIndex =
+      side === "home"
+        ? 0
+        : 1;
 
-    if (
-      Array.isArray(raw)
-    ) {
-      source =
-        arrayTeamGroup(
-          raw,
-          team,
-          side
-        );
-    }
-    else if (
-      obj(raw)
-    ) {
-      source =
-        sideObject(
-          raw,
-          side
-        );
-    }
+    source =
+      raw[wantedIndex] ||
+      null;
 
     /*
-     * إذا ما لقيناش source مباشرة،
-     * كنستعملو raw نفسه فالحالة
-     * اللي فيه home_xi / away_xi.
+     * احتياط إضافي إذا تبدل الترتيب.
      */
-    const sourceRoot =
-      source ||
-      (
-        obj(raw)
-          ? raw
-          : {}
-      );
+    if (
+      !source
+    ) {
 
-    let formation =
+      source =
+        raw.find(
+          item => {
+
+            const itemTeam =
+              item?.team ||
+              item?.club ||
+              {};
+
+            const id =
+              itemTeam?.id ||
+              item?.team_id ||
+              item?.teamId ||
+              null;
+
+            const name =
+              itemTeam?.name ||
+              item?.team_name ||
+              item?.name ||
+              "";
+
+            if (
+              team?.id &&
+              id &&
+              String(
+                team.id
+              ) ===
+              String(
+                id
+              )
+            ) {
+              return true;
+            }
+
+            return (
+              name &&
+              team?.name &&
+              norm(
+                name
+              ) ===
+              norm(
+                team.name
+              )
+            );
+          }
+        ) || null;
+    }
+  }
+
+  /*
+   * =====================================================
+   * 2) OBJECT
+   *
+   * home / away
+   * homeTeam / awayTeam
+   * host / guest
+   * =====================================================
+   */
+
+  else if (
+    obj(raw)
+  ) {
+
+    source =
+      raw?.[side] ||
+      raw?.[
+        side === "home"
+          ? "homeTeam"
+          : "awayTeam"
+      ] ||
+      raw?.[
+        side === "home"
+          ? "host"
+          : "guest"
+      ] ||
+      null;
+
+    /*
+     * direct format:
+     *
+     * home_xi
+     * away_xi
+     */
+
+    if (
+      !source
+    ) {
+
+      const directXI =
+        raw?.[
+          `${side}_xi`
+        ];
+
+      const directSubs =
+        raw?.[
+          `${side}_subs`
+        ];
+
+      const directFormation =
+        raw?.[
+          `${side}_formation`
+        ];
+
+      if (
+        Array.isArray(
+          directXI
+        ) ||
+        Array.isArray(
+          directSubs
+        ) ||
+        directFormation
+      ) {
+
+        source = {
+
+          team,
+
+          formation:
+            directFormation ||
+            "—",
+
+          startXI:
+            Array.isArray(
+              directXI
+            )
+              ? directXI
+              : [],
+
+          substitutes:
+            Array.isArray(
+              directSubs
+            )
+              ? directSubs
+              : []
+
+        };
+
+      }
+    }
+  }
+
+  /*
+   * =====================================================
+   * إذا ما لقيناش source
+   * =====================================================
+   */
+
+  if (
+    !source
+  ) {
+
+    return {
+
+      side,
+
+      team,
+
+      formation:
+        "—",
+
+      xi: [],
+
+      subs: []
+
+    };
+  }
+
+  /*
+   * =====================================================
+   * FORMATION
+   * =====================================================
+   */
+
+  const formation =
+    normalizeFormation(
       first(
         source?.formation,
         source?.tactics?.formation,
-        raw?.[`${side}_formation`],
-        raw?.formation?.[side],
-        raw?.formation?.[
-          `${side}_formation`
-        ],
+        source?.tacticalFormation,
         details?.[
           `${side}_formation`
         ],
-        details?.formation?.[
-          `${side}_formation`
-        ],
         "—"
+      )
+    );
+
+  /*
+   * =====================================================
+   * START XI
+   * =====================================================
+   */
+
+  let starters =
+    first(
+      source?.startXI,
+      source?.startingXI,
+      source?.starting_xi,
+      source?.starters,
+      source?.startingLineup,
+      source?.xi,
+      []
+    );
+
+  starters =
+    Array.isArray(
+      starters
+    )
+      ? starters
+      : [];
+
+  /*
+   * -----------------------------------------------------
+   * إذا source فيه players كاملين
+   * وعندهم starter / first
+   * -----------------------------------------------------
+   */
+
+  if (
+    !starters.length &&
+    Array.isArray(
+      source?.players
+    )
+  ) {
+
+    const players =
+      source.players;
+
+    const marked =
+      players.filter(
+        player => {
+
+          if (
+            player?.first !==
+              undefined
+          ) {
+            return (
+              player.first === 1 ||
+              player.first === true ||
+              player.first === "1"
+            );
+          }
+
+          if (
+            player?.starter !==
+              undefined
+          ) {
+            return (
+              player.starter === true
+            );
+          }
+
+          if (
+            player?.substitute !==
+              undefined
+          ) {
+            return (
+              player.substitute !== true
+            );
+          }
+
+          return false;
+        }
       );
 
-    formation =
-      normalizeFormation(
-        formation
-      );
-
-    let starters =
-      [];
-
-    let substitutes =
-      [];
-
-    /*
-     * 1. Direct side keys:
-     *
-     * home_xi / away_xi
-     * home_subs / away_subs
-     */
     if (
-      obj(raw)
+      marked.length
     ) {
       starters =
-        arr(
-          first(
-            raw?.[
-              `${side}_xi`
-            ],
-            raw?.[
-              `${side}_starting`
-            ],
-            raw?.[
-              `${side}_starting_xi`
-            ],
-            raw?.[
-              `${side}_startingXI`
-            ],
-            []
-          )
-        );
-
-      substitutes =
-        arr(
-          first(
-            raw?.[
-              `${side}_subs`
-            ],
-            raw?.[
-              `${side}_substitutes`
-            ],
-            raw?.[
-              `${side}_bench`
-            ],
-            []
-          )
-        );
+        marked;
     }
-
-    /*
-     * 2. Source-level keys
-     */
-    if (
-      !starters.length
-    ) {
+    else {
       starters =
-        getPlayers(
-          sourceRoot?.startXI ||
-          sourceRoot?.startingXI ||
-          sourceRoot?.starting_xi ||
-          sourceRoot?.starters ||
-          sourceRoot?.xi ||
-          sourceRoot?.players ||
-          [],
-          side
-        );
-    }
-
-    if (
-      !substitutes.length
-    ) {
-      substitutes =
-        arr(
-          first(
-            sourceRoot?.subs,
-            sourceRoot?.substitutes,
-            sourceRoot?.bench,
-            sourceRoot?.backup,
-            []
-          )
-        );
-    }
-
-    /*
-     * 3. lineups is object
-     * وفيه players شاملين الفريقين
-     */
-    if (
-      !starters.length &&
-      obj(raw)
-    ) {
-      const allPlayers =
-        arr(
-          raw?.players ||
-          raw?.lineup_players
-        );
-
-      if (
-        allPlayers.length
-      ) {
-        const teamPlayers =
-          allPlayers.filter(
-            player =>
-              playerBelongsToTeam(
-                player,
-                side,
-                team
-              )
-          );
-
-        const marked =
-          teamPlayers.filter(
-            player =>
-              playerIsStarting(
-                player
-              ) === true
-          );
-
-        if (
-          marked.length
-        ) {
-          starters =
-            marked;
-        }
-        else if (
-          teamPlayers.length >= 11
-        ) {
-          starters =
-            teamPlayers.slice(
-              0,
-              11
-            );
-
-          substitutes =
-            teamPlayers.slice(
-              11
-            );
-        }
-      }
-    }
-
-    /*
-     * 4. lineups array containing players
-     */
-    if (
-      !starters.length &&
-      Array.isArray(raw)
-    ) {
-      const playerObjects =
-        raw.filter(
-          item =>
-            obj(item) &&
-            (
-              item?.name ||
-              item?.player_name ||
-              item?.player
-            )
-        );
-
-      if (
-        playerObjects.length
-      ) {
-        const teamPlayers =
-          playerObjects.filter(
-            player =>
-              playerBelongsToTeam(
-                player,
-                side,
-                team
-              )
-          );
-
-        const marked =
-          teamPlayers.filter(
-            player =>
-              playerIsStarting(
-                player
-              ) === true
-          );
-
-        if (
-          marked.length
-        ) {
-          starters =
-            marked;
-        }
-        else if (
-          teamPlayers.length >= 11
-        ) {
-          starters =
-            teamPlayers.slice(
-              0,
-              11
-            );
-
-          substitutes =
-            teamPlayers.slice(
-              11
-            );
-        }
-      }
-    }
-
-    /*
-     * 5. details home/away direct
-     */
-    if (
-      !starters.length
-    ) {
-      starters =
-        arr(
-          first(
-            details?.[
-              `${side}_xi`
-            ],
-            details?.[
-              `${side}_startingXI`
-            ],
-            []
-          )
-        );
-    }
-
-    /*
-     * 6. If source itself is the XI array.
-     */
-    if (
-      !starters.length &&
-      Array.isArray(source)
-    ) {
-      starters =
-        source.slice(
+        players.slice(
           0,
           11
         );
     }
-
-    return {
-      side,
-      team,
-      formation,
-      xi:
-        starters,
-      subs:
-        substitutes
-    };
   }
 
-  function playerBelongsToTeam(
-    player,
-    side,
-    team
-  ) {
-    if (!obj(player)) {
-      return false;
-    }
+  /*
+   * =====================================================
+   * SUBSTITUTES
+   * =====================================================
+   */
 
-    const sideValue =
-      playerSide(
-        player
-      );
-
-    if (
-      sideValue
-    ) {
-      if (
-        side === "home" &&
-        (
-          sideValue ===
-            "home" ||
-          sideValue ===
-            "host"
-        )
-      ) {
-        return true;
-      }
-
-      if (
-        side === "away" &&
-        (
-          sideValue ===
-            "away" ||
-          sideValue ===
-            "guest"
-        )
-      ) {
-        return true;
-      }
-
-      return false;
-    }
-
-    const playerTeam =
-      player?.team ||
-      player?.club ||
-      {};
-
-    const id =
-      first(
-        playerTeam?.id,
-        playerTeam?.team_id,
-        player?.team_id,
-        null
-      );
-
-    if (
-      team?.id &&
-      id &&
-      String(team.id) ===
-        String(id)
-    ) {
-      return true;
-    }
-
-    const name =
-      first(
-        playerTeam?.name,
-        player?.team_name,
-        ""
-      );
-
-    return (
-      name &&
-      team?.name &&
-      norm(name) ===
-        norm(team.name)
+  let substitutes =
+    first(
+      source?.substitutes,
+      source?.subs,
+      source?.bench,
+      source?.backup,
+      []
     );
+
+  substitutes =
+    Array.isArray(
+      substitutes
+    )
+      ? substitutes
+      : [];
+
+  /*
+   * إذا players فيها first=0
+   * نستعملوهم كـbench.
+   */
+
+  if (
+    !substitutes.length &&
+    Array.isArray(
+      source?.players
+    )
+  ) {
+
+    substitutes =
+      source.players.filter(
+        player =>
+          player?.first === 0 ||
+          player?.first === false ||
+          player?.first === "0" ||
+          player?.substitute === true ||
+          player?.starter === false
+      );
+
   }
 
+  /*
+   * =====================================================
+   * نضمنو 11 starters فقط
+   * =====================================================
+   */
+
+  starters =
+    starters
+      .slice(
+        0,
+        11
+      );
+
+  /*
+   * =====================================================
+   * RESULT
+   * =====================================================
+   */
+
+  return {
+
+    side,
+
+    team,
+
+    formation,
+
+    xi:
+      starters,
+
+    subs:
+      substitutes
+
+  };
+}
   /* =========================================================
      PITCH POSITION
   ========================================================= */
@@ -2048,96 +1960,147 @@ function pitchPositions(
 ) {
 
   const players =
-    arr(lineup?.xi).slice(0, 11);
+    arr(
+      lineup?.xi
+    ).slice(
+      0,
+      11
+    );
 
-  if (!players.length) {
+  if (
+    !players.length
+  ) {
     return [];
   }
 
   /*
-   * ============================================
-   * 1) إلا كانت x/y موجودة، نستعملوها مباشرة
-   * ============================================
+   * =====================================================
+   * 1) نستعمل x/y الحقيقية إلا كانت موجودة
+   * =====================================================
    */
 
-  const realPositions =
-    players.map(player => {
+  const exact =
+    players.map(
+      player => {
 
-      const p =
-        player?.player &&
-        typeof player.player === "object"
-          ? player.player
-          : player;
+        const p =
+          player?.player &&
+          typeof player.player ===
+            "object"
+            ? player.player
+            : player;
 
-      const x = Number(
-        first(
-          p?.x,
-          player?.x,
-          null
-        )
-      );
+        const x =
+          Number(
+            first(
+              p?.x,
+              player?.x,
+              p?.posX,
+              player?.posX,
+              NaN
+            )
+          );
 
-      const y = Number(
-        first(
-          p?.y,
-          player?.y,
-          null
-        )
-      );
+        const y =
+          Number(
+            first(
+              p?.y,
+              player?.y,
+              p?.posY,
+              player?.posY,
+              NaN
+            )
+          );
 
-      return {
-        player,
-        x,
-        y,
-        valid:
-          Number.isFinite(x) &&
-          Number.isFinite(y)
-      };
-    });
+        return {
+          player,
+          x,
+          y,
+          valid:
+            Number.isFinite(x) &&
+            Number.isFinite(y) &&
+            x >= 0 &&
+            x <= 100 &&
+            y >= 0 &&
+            y <= 100
+        };
+      }
+    );
 
-  const validCount =
-    realPositions.filter(
-      item => item.valid
-    ).length;
+  const valid =
+    exact.filter(
+      item =>
+        item.valid
+    );
+
+  /*
+   * إذا عندنا coordinates حقيقية
+   * نستعملوها.
+   */
 
   if (
-    validCount === players.length
+    valid.length >=
+      Math.max(
+        5,
+        Math.ceil(
+          players.length *
+          0.6
+        )
+      )
   ) {
 
-    return realPositions.map(item => {
+    return exact.map(
+      item => {
 
-      let y = item.y;
+        if (
+          !item.valid
+        ) {
 
-      if (side === "away") {
-        y = 100 - y;
+          return {
+            player:
+              item.player,
+
+            x: 50,
+
+            y: side === "home"
+              ? 50
+              : 50
+          };
+        }
+
+        return {
+
+          player:
+            item.player,
+
+          x:
+            Math.max(
+              7,
+              Math.min(
+                93,
+                item.x
+              )
+            ),
+
+          y:
+            Math.max(
+              7,
+              Math.min(
+                93,
+                side === "away"
+                  ? 100 - item.y
+                  : item.y
+              )
+            )
+        };
       }
-
-      return {
-        player: item.player,
-
-        x: Math.max(
-          8,
-          Math.min(
-            92,
-            item.x
-          )
-        ),
-
-        y: Math.max(
-          8,
-          Math.min(
-            92,
-            y
-          )
-        )
-      };
-    });
+    );
   }
 
   /*
-   * ============================================
-   * 2) FALLBACK حسب Position + Formation
-   * ============================================
+   * =====================================================
+   * 2) FALLBACK حسب position + formation
+   * =====================================================
    */
 
   const formation =
@@ -2145,134 +2108,162 @@ function pitchPositions(
       lineup?.formation
     );
 
-  const gk = [];
+  const goalkeeper = [];
   const defenders = [];
   const midfielders = [];
   const forwards = [];
   const unknown = [];
 
-  players.forEach(player => {
+  players.forEach(
+    player => {
 
-    const type =
-      category(player);
+      const type =
+        category(
+          player
+        );
 
-    if (type === "gk") {
-      gk.push(player);
-    }
-    else if (type === "def") {
-      defenders.push(player);
-    }
-    else if (type === "mid") {
-      midfielders.push(player);
-    }
-    else if (type === "fwd") {
-      forwards.push(player);
-    }
-    else {
-      unknown.push(player);
-    }
+      if (
+        type === "gk"
+      ) {
+        goalkeeper.push(
+          player
+        );
+      }
+      else if (
+        type === "def"
+      ) {
+        defenders.push(
+          player
+        );
+      }
+      else if (
+        type === "mid"
+      ) {
+        midfielders.push(
+          player
+        );
+      }
+      else if (
+        type === "fwd"
+      ) {
+        forwards.push(
+          player
+        );
+      }
+      else {
+        unknown.push(
+          player
+        );
+      }
 
-  });
+    }
+  );
+
+  const rows =
+    [];
 
   /*
-   * GK
+   * GK دائما بوحدو
    */
-  const rows = [];
 
-  if (gk.length) {
+  if (
+    goalkeeper.length
+  ) {
+
     rows.push(
-      gk.slice(0, 1)
+      goalkeeper.slice(
+        0,
+        1
+      )
     );
-  } else {
-    rows.push([]);
+
+  }
+  else {
+
+    const possibleGK =
+      players.find(
+        player =>
+          norm(
+            getPlayerPosition(
+              player
+            )
+          ) === "gk"
+      );
+
+    rows.push(
+      possibleGK
+        ? [possibleGK]
+        : []
+    );
+
   }
 
   /*
-   * Formation:
+   * باقي formation
    *
    * 4-3-3
-   * 4 DEF / 3 MID / 3 FWD
+   * → 4 defenders
+   * → 3 midfielders
+   * → 3 forwards
    *
    * 4-2-3-1
-   * 4 DEF / 2 MID / 3 MID/FWD / 1 FWD
+   * → 4 defenders
+   * → 2 midfielders
+   * → 3 midfielders/attackers
+   * → 1 forward
    */
 
-  let defIndex = 0;
-  let midIndex = 0;
-  let fwdIndex = 0;
-  let unknownIndex = 0;
+  const pools = [
+    defenders,
+    midfielders,
+    forwards
+  ];
+
+  let unknownIndex =
+    0;
 
   formation.forEach(
-    (count, rowIndex) => {
+    (count, index) => {
 
-      let source = [];
+      let pool =
+        pools[index] ||
+        [];
 
-      if (rowIndex === 0) {
-        source =
-          defenders.slice(
-            defIndex,
-            defIndex + count
-          );
-
-        defIndex +=
-          source.length;
-      }
-
-      else if (
-        rowIndex ===
-        formation.length - 1
-      ) {
-        source =
-          forwards.slice(
-            fwdIndex,
-            fwdIndex + count
-          );
-
-        fwdIndex +=
-          source.length;
-      }
-
-      else {
-        source =
-          midfielders.slice(
-            midIndex,
-            midIndex + count
-          );
-
-        midIndex +=
-          source.length;
-      }
+      const row =
+        pool.slice(
+          0,
+          count
+        );
 
       /*
-       * إلا نقصات شي بلاصة،
-       * نعمرها من players اللي ما تصنفوش.
+       * إلا نقصنا لاعبين
+       * نكمّلو من unknown
        */
 
       while (
-        source.length < count &&
+        row.length <
+          count &&
         unknownIndex <
           unknown.length
       ) {
 
-        source.push(
+        row.push(
           unknown[
             unknownIndex++
           ]
         );
-
       }
 
       rows.push(
-        source
+        row
       );
 
     }
   );
 
   /*
-   * ============================================
-   * 3) آخر fallback
-   * ============================================
+   * أي لاعب بقى
+   * نضيفوه لآخر خط.
    */
 
   const used =
@@ -2283,7 +2274,9 @@ function pitchPositions(
   const leftovers =
     players.filter(
       player =>
-        !used.has(player)
+        !used.has(
+          player
+        )
     );
 
   if (
@@ -2299,22 +2292,31 @@ function pitchPositions(
   }
 
   /*
-   * ============================================
-   * 4) تحويل rows إلى coordinates
-   * ============================================
+   * =====================================================
+   * تحويل rows إلى coordinates
+   * =====================================================
    */
 
-  const result = [];
+  const positions =
+    [];
 
   rows.forEach(
-    (row, rowIndex) => {
+    (
+      row,
+      rowIndex
+    ) => {
 
-      if (!row.length) {
+      if (
+        !row.length
+      ) {
         return;
       }
 
       row.forEach(
-        (player, index) => {
+        (
+          player,
+          index
+        ) => {
 
           const x =
             row.length === 1
@@ -2325,7 +2327,8 @@ function pitchPositions(
                   (
                     index /
                     (
-                      row.length - 1
+                      row.length -
+                      1
                     )
                   )
                 );
@@ -2338,7 +2341,8 @@ function pitchPositions(
                 rowIndex /
                 Math.max(
                   1,
-                  rows.length - 1
+                  rows.length -
+                    1
                 )
               )
             );
@@ -2350,7 +2354,7 @@ function pitchPositions(
               100 - y;
           }
 
-          result.push({
+          positions.push({
 
             player,
 
@@ -2380,9 +2384,8 @@ function pitchPositions(
     }
   );
 
-  return result;
+  return positions;
 }
-
   /* =========================================================
      PLAYER AVATAR
   ========================================================= */
@@ -4155,15 +4158,22 @@ function playerHasInjury(
 
     try {
 
-     const payload =
-  await fetchDetailsJSON(
-    identifier
-  );
+      const response =
+        await fetch(
+          `${DETAILS_API}${encodeURIComponent(
+            identifier
+          )}`,
+          {
+            cache: "no-store",
+            headers: {
+              Accept:
+                "application/json"
+            }
+          }
+        );
 
-console.log(
-  "BAKHIRAFOOT DETAILS JSON:",
-  payload
-);
+      const rawText =
+        await response.text();
 
       if (!response.ok) {
         throw new Error(
