@@ -50,8 +50,10 @@ module.exports = async (req, res) => {
        FETCH JSON
     ===================================================== */
 
-   async function getJSON(url) {
-
+ async function getJSON(
+  url,
+  signal
+) {
   const controller =
     new AbortController();
 
@@ -87,6 +89,8 @@ module.exports = async (req, res) => {
           cache:
             "no-store",
 
+           signal:
+  signal
           signal:
             controller.signal
         }
@@ -2131,502 +2135,507 @@ function normalizePlayer(row) {
         );
     }
 
-    /* =====================================================
-       MATCH DETAILS
-    ===================================================== */
+   /* =====================================================
+   MATCH DETAILS
+===================================================== */
+
+if (fixture) {
+
+  const slug =
+    String(
+      fixture
+    ).trim();
+
+  if (!slug) {
+
+    return output(
+      400,
+      {
+        error:
+          "Match slug manquant",
+
+        data:
+          []
+      }
+    );
+  }
+
+  console.log(
+    "DETAILS REQUESTED:",
+    slug
+  );
+
+  /*
+   * نستعملو Widget مباشرة.
+   * ما نبقاوش نجربو /api/v1/match
+   * قبل منه.
+   */
+
+  const controller =
+    new AbortController();
+
+  const timeout =
+    setTimeout(
+      () => {
+        controller.abort();
+      },
+      12000
+    );
+
+  let body;
+
+  try {
+
+    body =
+      await getJSON(
+        `https://sportscore.com/api/widget/match/?sport=football&slug=${encodeURIComponent(
+          slug
+        )}&src=bakhira-foot`,
+        controller.signal
+      );
+
+  }
+  catch (error) {
 
     if (
-      fixture
+      error?.name ===
+      "AbortError"
     ) {
 
-      const slug =
-        String(
-          fixture
-        ).trim();
-
-      if (!slug) {
-
-        return output(
-          400,
-          {
-            error:
-              "Match slug manquant",
-
-            data:
-              []
-          }
-        );
-      }
-
-      console.log(
-        "DETAILS REQUESTED:",
-        slug
-      );
-
-      let body;
-
-      try {
-
-        body =
-          await getJSON(
-            `${SPORTSCORE}/match/?sport=football&slug=${encodeURIComponent(
-              slug
-            )}`
-          );
-
-      } catch (
-        firstError
-      ) {
-
-        console.warn(
-          "PRIMARY MATCH ENDPOINT FAILED:",
-          firstError.message
-        );
-
-        body =
-          await getJSON(
-            `https://sportscore.com/api/widget/match/?sport=football&slug=${encodeURIComponent(
-              slug
-            )}`
-          );
-      }
-
-      const root =
-        getDetailRoot(
-          body
-        );
-
-      if (
-        !root
-      ) {
-
-        return output(
-          404,
-          {
-
-            error:
-              "Match introuvable",
-
-            data:
-              []
-
-          }
-        );
-      }
-
-      const basic =
-        normalizeMatch(
-          root
-        );
-
-      if (
-        !basic
-      ) {
-
-        return output(
-          404,
-          {
-
-            error:
-              "Match introuvable",
-
-            data:
-              []
-
-          }
-        );
-      }
-
-      /* =================================================
-         REAL TEAMS
-      ================================================= */
-
-      const homeTeam =
-        normalizeTeam(
-          root?.home_team ||
-          root?.homeTeam ||
-          root?.teams?.home ||
-          basic.teams.home,
-          basic.teams.home.name,
-          basic.teams.home.logo
-        );
-
-      const awayTeam =
-        normalizeTeam(
-          root?.away_team ||
-          root?.awayTeam ||
-          root?.teams?.away ||
-          basic.teams.away,
-          basic.teams.away.name,
-          basic.teams.away.logo
-        );
-
-      /* =================================================
-         LINEUPS
-      ================================================= */
-
-      const lineups =
-        getLineups(
-          root,
-          homeTeam,
-          awayTeam
-        );
-
-      /* =================================================
-         EVENTS
-      ================================================= */
-
-      const events =
-        normalizeEvents(
-          root
-        );
-
-      /* =================================================
-         STATISTICS
-      ================================================= */
-
-      const statistics =
-        normalizeStatistics(
-          root,
-          homeTeam,
-          awayTeam
-        );
-
-      /* =================================================
-         PLAYERS
-      ================================================= */
-
-      const players =
-        buildPlayers(
-          lineups
-        );
-
-      /* =================================================
-         SCORE
-      ================================================= */
-
-      const score =
-        obj(
-          root?.score
-        );
-
-      const homeScore =
-        root?.home_score ??
-        root?.homeScore ??
-        score?.home ??
-        score?.fulltime?.home ??
-        basic.goals.home ??
-        null;
-
-      const awayScore =
-        root?.away_score ??
-        root?.awayScore ??
-        score?.away ??
-        score?.fulltime?.away ??
-        basic.goals.away ??
-        null;
-
-      /* =================================================
-         STATUS
-      ================================================= */
-
-      const statusText =
-        String(
-          root?.status_text ||
-          root?.status ||
-          basic.fixture.status.long ||
-          ""
-        ).toLowerCase();
-
-      let statusShort =
-        root?.status_code ||
-        root?.short_status ||
-        basic.fixture.status.short ||
-        "NS";
-
-      if (
-        statusText.includes(
-          "live"
-        ) ||
-        statusText.includes(
-          "in play"
-        ) ||
-        statusText.includes(
-          "inplay"
-        )
-      ) {
-
-        statusShort =
-          "LIVE";
-
-      } else if (
-        statusText.includes(
-          "half"
-        )
-      ) {
-
-        statusShort =
-          "HT";
-
-      } else if (
-        statusText.includes(
-          "finish"
-        ) ||
-        statusText.includes(
-          "ended"
-        ) ||
-        statusText === "ft"
-      ) {
-
-        statusShort =
-          "FT";
-      }
-
-      /* =================================================
-         DATE
-      ================================================= */
-
-      const date =
-        root?.time ||
-        root?.date ||
-        root?.start_time ||
-        root?.kickoff ||
-        basic.fixture.date ||
-        null;
-
-      /* =================================================
-         LEAGUE
-      ================================================= */
-
-      const competition =
-        root?.competition ||
-        root?.league ||
-        {};
-
-      /* =================================================
-         VENUE
-      ================================================= */
-
-      const venue =
-        root?.venue ||
-        basic.fixture.venue ||
-        null;
-
-      const referee =
-        root?.referee ||
-        basic.fixture.referee ||
-        null;
-
-      /* =================================================
-         FINAL DETAIL
-      ================================================= */
-
-      const details = {
-
-        fixture: {
-
-          id:
-            slug,
-
-          slug,
-
-          upstreamId:
-            root?.id ||
-            root?.match_id ||
-            basic.fixture.upstreamId ||
-            slug,
-
-          date,
-
-          timezone:
-            root?.timezone ||
-            null,
-
-          status: {
-
-            short:
-              statusShort,
-
-            long:
-              root?.status_text ||
-              root?.status ||
-              basic.fixture.status.long ||
-              "Match",
-
-            elapsed:
-              root?.minute ??
-              root?.elapsed ??
-              root?.status?.elapsed ??
-              basic.fixture.status.elapsed ??
-              null
-
-          },
-
-          venue,
-
-          referee:
-            typeof referee ===
-            "object"
-              ? referee?.name ||
-                ""
-              : referee
-
-        },
-
-        league: {
-
-          id:
-            idOf(
-              competition
-            ) ||
-            basic.league.id ||
-            null,
-
-          name:
-            text(
-              competition
-            ) ||
-            root?.competition_name ||
-            root?.league_name ||
-            basic.league.name,
-
-          country:
-            competition?.country ||
-            root?.country ||
-            basic.league.country ||
-            "",
-
-          logo:
-            competition?.logo ||
-            basic.league.logo ||
-            "",
-
-          round:
-            root?.round ||
-            root?.round_name ||
-            basic.league.round ||
-            null,
-
-          season:
-            root?.season?.name ||
-            root?.season ||
-            basic.league.season ||
-            null
-
-        },
-
-        teams: {
-
-          home:
-            homeTeam,
-
-          away:
-            awayTeam
-
-        },
-
-        goals: {
-
-          home:
-            homeScore,
-
-          away:
-            awayScore
-
-        },
-
-        score: {
-
-          home:
-            homeScore,
-
-          away:
-            awayScore,
-
-          halftime: {
-
-            home:
-              score?.halftime?.home ??
-              score?.ht?.home ??
-              null,
-
-            away:
-              score?.halftime?.away ??
-              score?.ht?.away ??
-              null
-
-          },
-
-          fulltime: {
-
-            home:
-              homeScore,
-
-            away:
-              awayScore
-
-          }
-
-        },
-
-        events,
-
-        lineups,
-
-        statistics,
-
-        players,
-
-        provider:
-          "SportScore"
-
-      };
-
-      console.log(
-        "DETAIL RESULT:",
-        JSON.stringify(
-          {
-            match:
-              `${homeTeam.name} vs ${awayTeam.name}`,
-
-            lineups:
-              lineups.length,
-
-            homePlayers:
-              lineups[0]?.startXI?.length ||
-              0,
-
-            awayPlayers:
-              lineups[1]?.startXI?.length ||
-              0,
-
-            events:
-              events.length,
-
-            statistics:
-              statistics?.[0]?.statistics?.length ||
-              0
-
-          },
-          null,
-          2
-        )
-      );
-
       return output(
-        200,
+        504,
         {
+          error:
+            "SportScore timeout",
 
           data:
-            details,
-
-          provider:
-            "SportScore"
-
+            []
         }
       );
     }
 
+    throw error;
+
+  }
+  finally {
+
+    clearTimeout(
+      timeout
+    );
+
+  }
+
+  const root =
+    getDetailRoot(
+      body
+    );
+
+  if (!root) {
+
+    return output(
+      404,
+      {
+        error:
+          "Match introuvable",
+
+        data:
+          []
+      }
+    );
+  }
+
+  const basic =
+    normalizeMatch(
+      root
+    );
+
+  if (!basic) {
+
+    return output(
+      404,
+      {
+        error:
+          "Match introuvable",
+
+        data:
+          []
+      }
+    );
+  }
+
+  const homeTeam =
+    normalizeTeam(
+      root?.home_team ||
+      root?.homeTeam ||
+      root?.teams?.home ||
+      basic.teams.home,
+
+      basic.teams.home.name,
+
+      basic.teams.home.logo
+    );
+
+  const awayTeam =
+    normalizeTeam(
+      root?.away_team ||
+      root?.awayTeam ||
+      root?.teams?.away ||
+      basic.teams.away,
+
+      basic.teams.away.name,
+
+      basic.teams.away.logo
+    );
+
+  /*
+   * LINEUPS
+   */
+
+  const lineups =
+    getLineups(
+      root,
+      homeTeam,
+      awayTeam
+    );
+
+  /*
+   * EVENTS
+   */
+
+  const events =
+    normalizeEvents(
+      root
+    );
+
+  /*
+   * STATISTICS
+   */
+
+  const statistics =
+    normalizeStatistics(
+      root,
+      homeTeam,
+      awayTeam
+    );
+
+  /*
+   * PLAYERS
+   */
+
+  const players =
+    buildPlayers(
+      lineups
+    );
+
+  /*
+   * SCORE
+   */
+
+  const score =
+    obj(
+      root?.score
+    );
+
+  const homeScore =
+    root?.home_score ??
+    root?.homeScore ??
+    score?.home ??
+    score?.fulltime?.home ??
+    basic.goals.home ??
+    null;
+
+  const awayScore =
+    root?.away_score ??
+    root?.awayScore ??
+    score?.away ??
+    score?.fulltime?.away ??
+    basic.goals.away ??
+    null;
+
+  /*
+   * STATUS
+   */
+
+  const statusText =
+    String(
+      root?.status_text ||
+      root?.status ||
+      basic.fixture.status.long ||
+      ""
+    ).toLowerCase();
+
+  let statusShort =
+    root?.status_code ||
+    root?.short_status ||
+    basic.fixture.status.short ||
+    "NS";
+
+  if (
+    statusText.includes("live") ||
+    statusText.includes("in play") ||
+    statusText.includes("inplay")
+  ) {
+
+    statusShort =
+      "LIVE";
+
+  }
+  else if (
+    statusText.includes("half")
+  ) {
+
+    statusShort =
+      "HT";
+
+  }
+  else if (
+    statusText.includes("finish") ||
+    statusText.includes("ended") ||
+    statusText === "ft"
+  ) {
+
+    statusShort =
+      "FT";
+  }
+
+  /*
+   * DATE
+   */
+
+  const date =
+    root?.time ||
+    root?.date ||
+    root?.start_time ||
+    root?.kickoff ||
+    basic.fixture.date ||
+    null;
+
+  /*
+   * LEAGUE
+   */
+
+  const competition =
+    root?.competition ||
+    root?.league ||
+    {};
+
+  /*
+   * VENUE / REFEREE
+   */
+
+  const venue =
+    root?.venue ||
+    basic.fixture.venue ||
+    null;
+
+  const referee =
+    root?.referee ||
+    basic.fixture.referee ||
+    null;
+
+  /*
+   * FINAL DATA
+   */
+
+  const details = {
+
+    fixture: {
+
+      id:
+        slug,
+
+      slug,
+
+      upstreamId:
+        root?.id ||
+        root?.match_id ||
+        basic.fixture.upstreamId ||
+        slug,
+
+      date,
+
+      timezone:
+        root?.timezone ||
+        null,
+
+      status: {
+
+        short:
+          statusShort,
+
+        long:
+          root?.status_text ||
+          root?.status ||
+          basic.fixture.status.long ||
+          "Match",
+
+        elapsed:
+          root?.minute ??
+          root?.elapsed ??
+          root?.status?.elapsed ??
+          basic.fixture.status.elapsed ??
+          null
+
+      },
+
+      venue,
+
+      referee:
+        typeof referee ===
+        "object"
+          ? referee?.name ||
+            ""
+          : referee
+
+    },
+
+    league: {
+
+      id:
+        idOf(
+          competition
+        ) ||
+        basic.league.id ||
+        null,
+
+      name:
+        text(
+          competition
+        ) ||
+        root?.competition_name ||
+        root?.league_name ||
+        basic.league.name,
+
+      country:
+        competition?.country ||
+        root?.country ||
+        basic.league.country ||
+        "",
+
+      logo:
+        competition?.logo ||
+        basic.league.logo ||
+        "",
+
+      round:
+        root?.round ||
+        root?.round_name ||
+        basic.league.round ||
+        null,
+
+      season:
+        root?.season?.name ||
+        root?.season ||
+        basic.league.season ||
+        null
+
+    },
+
+    teams: {
+
+      home:
+        homeTeam,
+
+      away:
+        awayTeam
+
+    },
+
+    goals: {
+
+      home:
+        homeScore,
+
+      away:
+        awayScore
+
+    },
+
+    score: {
+
+      home:
+        homeScore,
+
+      away:
+        awayScore,
+
+      halftime: {
+
+        home:
+          score?.halftime?.home ??
+          score?.ht?.home ??
+          null,
+
+        away:
+          score?.halftime?.away ??
+          score?.ht?.away ??
+          null
+
+      },
+
+      fulltime: {
+
+        home:
+          homeScore,
+
+        away:
+          awayScore
+
+      }
+
+    },
+
+    events,
+
+    lineups,
+
+    statistics,
+
+    players,
+
+    provider:
+      "SportScore"
+
+  };
+
+  console.log(
+    "DETAIL RESULT:",
+    JSON.stringify(
+      {
+        match:
+          `${homeTeam.name} vs ${awayTeam.name}`,
+
+        lineups:
+          lineups.length,
+
+        homePlayers:
+          lineups[0]?.startXI?.length ||
+          0,
+
+        awayPlayers:
+          lineups[1]?.startXI?.length ||
+          0,
+
+        events:
+          events.length
+
+      },
+      null,
+      2
+    )
+  );
+
+  return output(
+    200,
+    {
+      data:
+        details,
+
+      provider:
+        "SportScore"
+    }
+  );
+}
     /* =====================================================
        LIVE
     ===================================================== */
