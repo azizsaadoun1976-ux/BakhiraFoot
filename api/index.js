@@ -788,12 +788,55 @@ module.exports = async (req, res) => {
        PLAYER
     ===================================================== */
 
-   function normalizePlayer(row) {
+function normalizePlayer(row) {
+
+  if (
+    typeof row === "string"
+  ) {
+    return {
+      player: {
+        id: null,
+        name: row,
+        number: null,
+        pos: "",
+        grid: "",
+        photo: ""
+      },
+
+      rating: null,
+
+      games: {
+        rating: null,
+        minutes: null,
+        position: "",
+        substitute: false,
+        captain: false
+      },
+
+      goals: {
+        total: 0,
+        assists: 0
+      },
+
+      cards: {
+        yellow: 0,
+        red: 0
+      },
+
+      passes: {
+        key: 0
+      },
+
+      shots: {
+        total: 0,
+        on: 0
+      }
+    };
+  }
 
   const source =
     row &&
-    typeof row === "object" &&
-    !Array.isArray(row)
+    typeof row === "object"
       ? row
       : {};
 
@@ -804,7 +847,9 @@ module.exports = async (req, res) => {
       : source;
 
   return {
+
     player: {
+
       id:
         player?.id ??
         source?.player_id ??
@@ -823,6 +868,7 @@ module.exports = async (req, res) => {
         source?.shirtNumber ??
         source?.shirt_number ??
         source?.jerseyNumber ??
+        source?.jersey_number ??
         player?.number ??
         player?.shirtNumber ??
         player?.shirt_number ??
@@ -841,6 +887,7 @@ module.exports = async (req, res) => {
         source?.positionGrid ||
         source?.position_grid ||
         player?.grid ||
+        player?.positionGrid ||
         "",
 
       photo:
@@ -862,6 +909,7 @@ module.exports = async (req, res) => {
       null,
 
     games: {
+
       rating:
         source?.rating ??
         source?.performance?.rating ??
@@ -1076,7 +1124,7 @@ module.exports = async (req, res) => {
        FIND LINEUPS
     ===================================================== */
 
-   function getLineups(
+  function getLineups(
   root,
   homeTeam,
   awayTeam
@@ -1087,13 +1135,17 @@ module.exports = async (req, res) => {
     root?.lineup ||
     root?.compositions ||
     root?.formations ||
-    {};
+    null;
 
   const result = [];
 
+  if (!source) {
+    return result;
+  }
+
   /*
    * =====================================================
-   * DIRECT SPORTScore FORMAT
+   * FORMAT DIRECT
    *
    * home_formation
    * away_formation
@@ -1104,228 +1156,318 @@ module.exports = async (req, res) => {
    * =====================================================
    */
 
-  const directHomeXI =
-    Array.isArray(
-      source?.home_xi
-    )
-      ? source.home_xi
-      : Array.isArray(
-          root?.home_xi
-        )
-        ? root.home_xi
-        : [];
-
-  const directAwayXI =
-    Array.isArray(
-      source?.away_xi
-    )
-      ? source.away_xi
-      : Array.isArray(
-          root?.away_xi
-        )
-        ? root.away_xi
-        : [];
-
-  const directHomeSubs =
-    Array.isArray(
-      source?.home_subs
-    )
-      ? source.home_subs
-      : Array.isArray(
-          root?.home_subs
-        )
-        ? root.home_subs
-        : [];
-
-  const directAwaySubs =
-    Array.isArray(
-      source?.away_subs
-    )
-      ? source.away_subs
-      : Array.isArray(
-          root?.away_subs
-        )
-        ? root.away_subs
-        : [];
-
-  const directHomeFormation =
-    source?.home_formation ||
-    root?.home_formation ||
-    "—";
-
-  const directAwayFormation =
-    source?.away_formation ||
-    root?.away_formation ||
-    "—";
-
-  /*
-   * إذا كان SportScore عطانا home_xi / away_xi
-   * كنستعملهم مباشرة.
-   */
-
   if (
-    directHomeXI.length ||
-    directHomeSubs.length ||
-    directHomeFormation !== "—"
+    source &&
+    typeof source === "object" &&
+    !Array.isArray(source)
   ) {
 
-    result.push({
-      team: homeTeam,
+    const homeXI =
+      Array.isArray(
+        source.home_xi
+      )
+        ? source.home_xi
+        : Array.isArray(
+            source.home_starting_xi
+          )
+          ? source.home_starting_xi
+          : Array.isArray(
+              source.home_startingXI
+            )
+            ? source.home_startingXI
+            : [];
 
-      formation:
-        directHomeFormation,
+    const awayXI =
+      Array.isArray(
+        source.away_xi
+      )
+        ? source.away_xi
+        : Array.isArray(
+            source.away_starting_xi
+          )
+          ? source.away_starting_xi
+          : Array.isArray(
+              source.away_startingXI
+            )
+            ? source.away_startingXI
+            : [];
 
-      coach:
-        source?.home_coach ||
-        root?.home_coach ||
-        null,
+    const homeSubs =
+      Array.isArray(
+        source.home_subs
+      )
+        ? source.home_subs
+        : Array.isArray(
+            source.home_substitutes
+          )
+          ? source.home_substitutes
+          : Array.isArray(
+              source.home_bench
+            )
+            ? source.home_bench
+            : [];
 
-      startXI:
-        directHomeXI.map(
-          normalizePlayer
-        ),
+    const awaySubs =
+      Array.isArray(
+        source.away_subs
+      )
+        ? source.away_subs
+        : Array.isArray(
+            source.away_substitutes
+          )
+          ? source.away_substitutes
+          : Array.isArray(
+              source.away_bench
+            )
+            ? source.away_bench
+            : [];
 
-      substitutes:
-        directHomeSubs.map(
-          normalizePlayer
-        )
-    });
-  }
+    const homeFormation =
+      source.home_formation ||
+      source.homeFormation ||
+      source.home_tactic ||
+      source.home?.formation ||
+      "—";
 
-  if (
-    directAwayXI.length ||
-    directAwaySubs.length ||
-    directAwayFormation !== "—"
-  ) {
+    const awayFormation =
+      source.away_formation ||
+      source.awayFormation ||
+      source.away_tactic ||
+      source.away?.formation ||
+      "—";
 
-    result.push({
-      team: awayTeam,
+    /*
+     * HOME
+     */
 
-      formation:
-        directAwayFormation,
+    if (
+      homeXI.length ||
+      homeSubs.length ||
+      homeFormation !== "—"
+    ) {
 
-      coach:
-        source?.away_coach ||
-        root?.away_coach ||
-        null,
+      result.push({
 
-      startXI:
-        directAwayXI.map(
-          normalizePlayer
-        ),
+        team: {
+          id:
+            homeTeam?.id ||
+            null,
 
-      substitutes:
-        directAwaySubs.map(
-          normalizePlayer
-        )
-    });
+          name:
+            homeTeam?.name ||
+            "Domicile",
+
+          logo:
+            homeTeam?.logo ||
+            ""
+        },
+
+        formation:
+          homeFormation,
+
+        coach:
+          source.home_coach ||
+          source.homeCoach ||
+          source.home?.coach ||
+          null,
+
+        startXI:
+          homeXI.map(
+            normalizePlayer
+          ),
+
+        substitutes:
+          homeSubs.map(
+            normalizePlayer
+          )
+
+      });
+    }
+
+    /*
+     * AWAY
+     */
+
+    if (
+      awayXI.length ||
+      awaySubs.length ||
+      awayFormation !== "—"
+    ) {
+
+      result.push({
+
+        team: {
+          id:
+            awayTeam?.id ||
+            null,
+
+          name:
+            awayTeam?.name ||
+            "Extérieur",
+
+          logo:
+            awayTeam?.logo ||
+            ""
+        },
+
+        formation:
+          awayFormation,
+
+        coach:
+          source.away_coach ||
+          source.awayCoach ||
+          source.away?.coach ||
+          null,
+
+        startXI:
+          awayXI.map(
+            normalizePlayer
+          ),
+
+        substitutes:
+          awaySubs.map(
+            normalizePlayer
+          )
+
+      });
+    }
+
+    /*
+     * إلا لقينا direct format
+     * كنرجعو هنا.
+     */
+
+    if (
+      result.length
+    ) {
+      return result;
+    }
   }
 
   /*
    * =====================================================
-   * إذا ما كانش direct format
-   * كنرجعو للformats القديمة.
+   * ARRAY FORMAT
    * =====================================================
    */
-
-  if (
-    result.length
-  ) {
-    return result;
-  }
 
   if (
     Array.isArray(source)
   ) {
 
-    const normalized =
-      source
-        .map(
-          item => {
-
-            const itemTeam =
-              item?.team ||
-              {};
-
-            const isHome =
-              !!(
-                homeTeam?.id &&
-                itemTeam?.id &&
-                String(
-                  homeTeam.id
-                ) ===
-                String(
-                  itemTeam.id
-                )
-              );
-
-            const isAway =
-              !!(
-                awayTeam?.id &&
-                itemTeam?.id &&
-                String(
-                  awayTeam.id
-                ) ===
-                String(
-                  itemTeam.id
-                )
-              );
-
-            return {
-              raw: item,
-              isHome,
-              isAway
-            };
-          }
-        );
-
-    return normalized
+    return source
       .map(
-        item =>
-          normalizeLineup(
-            item.raw,
-            item.isHome
-              ? homeTeam
-              : item.isAway
-                ? awayTeam
-                : item.raw?.team ||
-                  {}
-          )
+        item => {
+
+          const itemTeam =
+            item?.team ||
+            {};
+
+          let team =
+            null;
+
+          if (
+            homeTeam?.id &&
+            itemTeam?.id &&
+            String(
+              homeTeam.id
+            ) ===
+            String(
+              itemTeam.id
+            )
+          ) {
+            team =
+              homeTeam;
+          }
+          else if (
+            awayTeam?.id &&
+            itemTeam?.id &&
+            String(
+              awayTeam.id
+            ) ===
+            String(
+              itemTeam.id
+            )
+          ) {
+            team =
+              awayTeam;
+          }
+          else {
+
+            const name =
+              itemTeam?.name ||
+              item?.team_name ||
+              "";
+
+            if (
+              name &&
+              homeTeam?.name &&
+              norm(name) ===
+                norm(
+                  homeTeam.name
+                )
+            ) {
+              team =
+                homeTeam;
+            }
+            else if (
+              name &&
+              awayTeam?.name &&
+              norm(name) ===
+                norm(
+                  awayTeam.name
+                )
+            ) {
+              team =
+                awayTeam;
+            }
+          }
+
+          if (!team) {
+            return null;
+          }
+
+          return normalizeLineup(
+            item,
+            team
+          );
+        }
       )
       .filter(Boolean);
   }
 
   /*
-   * Home / Away object format
+   * =====================================================
+   * HOME / AWAY OBJECT
+   * =====================================================
    */
 
   const homeSource =
-    source?.home ||
-    source?.homeTeam ||
-    source?.host ||
+    source.home ||
+    source.homeTeam ||
+    source.host ||
     null;
 
   const awaySource =
-    source?.away ||
-    source?.awayTeam ||
-    source?.guest ||
+    source.away ||
+    source.awayTeam ||
+    source.guest ||
     null;
 
   if (
     homeSource
   ) {
 
-    const homeLineup =
+    const lineup =
       normalizeLineup(
         homeSource,
         homeTeam
       );
 
     if (
-      homeLineup
+      lineup
     ) {
       result.push(
-        homeLineup
+        lineup
       );
     }
   }
@@ -1334,17 +1476,17 @@ module.exports = async (req, res) => {
     awaySource
   ) {
 
-    const awayLineup =
+    const lineup =
       normalizeLineup(
         awaySource,
         awayTeam
       );
 
     if (
-      awayLineup
+      lineup
     ) {
       result.push(
-        awayLineup
+        lineup
       );
     }
   }
@@ -1356,7 +1498,7 @@ module.exports = async (req, res) => {
        EVENTS
     ===================================================== */
 
-    function normalizeEvents(
+   function normalizeEvents(
   root
 ) {
 
@@ -1383,6 +1525,7 @@ module.exports = async (req, res) => {
         value.name ||
         value.full_name ||
         value.fullName ||
+        value.short_name ||
         value.player?.name ||
         ""
       );
@@ -1398,8 +1541,8 @@ module.exports = async (req, res) => {
 
       const type =
         event?.type ||
-        event?.incidentType ||
         event?.event_type ||
+        event?.incidentType ||
         event?.kind ||
         "Other";
 
@@ -1414,14 +1557,15 @@ module.exports = async (req, res) => {
         getName(
           event?.player
         ) ||
-        event?.player_name ||
-        event?.playerName ||
         getName(
           event?.scorer
         ) ||
         getName(
           event?.goal_scorer
         ) ||
+        event?.player_name ||
+        event?.playerName ||
+        event?.scorer_name ||
         "";
 
       const assistName =
@@ -1464,14 +1608,15 @@ module.exports = async (req, res) => {
         "";
 
       const team =
-        event?.team ||
-        {};
+        event?.team &&
+        typeof event.team === "object"
+          ? event.team
+          : {};
 
       const minute =
         event?.time?.elapsed ??
         (
-          typeof event?.time ===
-          "number"
+          typeof event?.time === "number"
             ? event.time
             : null
         ) ??
@@ -1513,13 +1658,10 @@ module.exports = async (req, res) => {
           id:
             (
               event?.player &&
-              typeof event.player ===
-                "object"
-                ? event.player.id
-                : null
-            ) ??
-            event?.player_id ??
-            null,
+              typeof event.player === "object"
+            )
+              ? event.player.id || null
+              : event?.player_id || null,
 
           name:
             playerName
@@ -1529,31 +1671,21 @@ module.exports = async (req, res) => {
           id:
             (
               event?.assist &&
-              typeof event.assist ===
-                "object"
-                ? event.assist.id
-                : null
-            ) ??
-            event?.assist_id ??
-            null,
+              typeof event.assist === "object"
+            )
+              ? event.assist.id || null
+              : event?.assist_id || null,
 
           name:
             assistName
         },
 
-        /*
-         * هادو مهمين للتبديلات
-         */
         player_in:
           playerIn,
 
         player_out:
           playerOut,
 
-        /*
-         * كنخليوهم حتى هما
-         * باش الواجهة تقدر تستعملهم.
-         */
         playerIn:
           playerIn,
 
