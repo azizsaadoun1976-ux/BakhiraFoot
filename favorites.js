@@ -192,49 +192,7 @@
     });
   }
 
-  const teamElements =
-  card.querySelectorAll(
-    ".flash-team"
-  );
-
-teamElements.forEach(
-  teamElement => {
-
-    const team =
-      teamElement
-        .querySelector(
-          ".team span:not(.teamLogo)"
-        )
-        ?.textContent
-        .trim();
-
-    if (!team) {
-      return;
-    }
-
-    teamElement.classList.add(
-      "bf-clickable-team"
-    );
-
-    teamElement
-      .setAttribute(
-        "title",
-        `Ajouter ${team} aux favoris`
-      );
-
-    teamElement.addEventListener(
-      "click",
-      event => {
-
-        event.preventDefault();
-        event.stopPropagation();
-
-        toggleFavorite(team);
-
-      }
-    );
-  }
-);
+  
 
   function refreshStars() {
     document
