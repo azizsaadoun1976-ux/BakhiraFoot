@@ -1384,424 +1384,408 @@ function getPlayerRating(
   ========================================================= */
 
   function buildLineup(
-  details,
-  side,
-  team
-) {
-
-  const raw =
-    details?.lineups ||
-    details?.lineup ||
-    details?.compositions ||
-    details?.formations ||
-    null;
-
-  let source = null;
-
-  /*
-   * =====================================================
-   * 1) ARRAY
-   *
-   * api/index.js الحالي كيرجع:
-   *
-   * [
-   *   {
-   *     team: home,
-   *     formation: "...",
-   *     startXI: [...]
-   *   },
-   *
-   *   {
-   *     team: away,
-   *     formation: "...",
-   *     startXI: [...]
-   *   }
-   * ]
-   *
-   * لذلك نستعمل index مباشرة.
-   * =====================================================
-   */
-
-  if (
-    Array.isArray(raw)
+    details,
+    side,
+    team
   ) {
+    const raw =
+      first(
+        details?.lineups,
+        details?.lineup,
+        details?.compositions,
+        details?.formations,
+        null
+      );
 
-    const wantedIndex =
-      side === "home"
-        ? 0
-        : 1;
+    let source = null;
 
-    source =
-      raw[wantedIndex] ||
-      null;
-
-    /*
-     * احتياط إضافي إذا تبدل الترتيب.
-     */
     if (
-      !source
+      Array.isArray(raw)
     ) {
-
       source =
-        raw.find(
-          item => {
-
-            const itemTeam =
-              item?.team ||
-              item?.club ||
-              {};
-
-            const id =
-              itemTeam?.id ||
-              item?.team_id ||
-              item?.teamId ||
-              null;
-
-            const name =
-              itemTeam?.name ||
-              item?.team_name ||
-              item?.name ||
-              "";
-
-            if (
-              team?.id &&
-              id &&
-              String(
-                team.id
-              ) ===
-              String(
-                id
-              )
-            ) {
-              return true;
-            }
-
-            return (
-              name &&
-              team?.name &&
-              norm(
-                name
-              ) ===
-              norm(
-                team.name
-              )
-            );
-          }
-        ) || null;
+        arrayTeamGroup(
+          raw,
+          team,
+          side
+        );
     }
-  }
-
-  /*
-   * =====================================================
-   * 2) OBJECT
-   *
-   * home / away
-   * homeTeam / awayTeam
-   * host / guest
-   * =====================================================
-   */
-
-  else if (
-    obj(raw)
-  ) {
-
-    source =
-      raw?.[side] ||
-      raw?.[
-        side === "home"
-          ? "homeTeam"
-          : "awayTeam"
-      ] ||
-      raw?.[
-        side === "home"
-          ? "host"
-          : "guest"
-      ] ||
-      null;
+    else if (
+      obj(raw)
+    ) {
+      source =
+        sideObject(
+          raw,
+          side
+        );
+    }
 
     /*
-     * direct format:
-     *
-     * home_xi
-     * away_xi
+     * إذا ما لقيناش source مباشرة،
+     * كنستعملو raw نفسه فالحالة
+     * اللي فيه home_xi / away_xi.
      */
+    const sourceRoot =
+      source ||
+      (
+        obj(raw)
+          ? raw
+          : {}
+      );
 
-    if (
-      !source
-    ) {
-
-      const directXI =
-        raw?.[
-          `${side}_xi`
-        ];
-
-      const directSubs =
-        raw?.[
-          `${side}_subs`
-        ];
-
-      const directFormation =
-        raw?.[
-          `${side}_formation`
-        ];
-
-      if (
-        Array.isArray(
-          directXI
-        ) ||
-        Array.isArray(
-          directSubs
-        ) ||
-        directFormation
-      ) {
-
-        source = {
-
-          team,
-
-          formation:
-            directFormation ||
-            "—",
-
-          startXI:
-            Array.isArray(
-              directXI
-            )
-              ? directXI
-              : [],
-
-          substitutes:
-            Array.isArray(
-              directSubs
-            )
-              ? directSubs
-              : []
-
-        };
-
-      }
-    }
-  }
-
-  /*
-   * =====================================================
-   * إذا ما لقيناش source
-   * =====================================================
-   */
-
-  if (
-    !source
-  ) {
-
-    return {
-
-      side,
-
-      team,
-
-      formation:
-        "—",
-
-      xi: [],
-
-      subs: []
-
-    };
-  }
-
-  /*
-   * =====================================================
-   * FORMATION
-   * =====================================================
-   */
-
-  const formation =
-    normalizeFormation(
+    let formation =
       first(
         source?.formation,
         source?.tactics?.formation,
-        source?.tacticalFormation,
+        raw?.[`${side}_formation`],
+        raw?.formation?.[side],
+        raw?.formation?.[
+          `${side}_formation`
+        ],
         details?.[
           `${side}_formation`
         ],
+        details?.formation?.[
+          `${side}_formation`
+        ],
         "—"
-      )
-    );
-
-  /*
-   * =====================================================
-   * START XI
-   * =====================================================
-   */
-
-  let starters =
-    first(
-      source?.startXI,
-      source?.startingXI,
-      source?.starting_xi,
-      source?.starters,
-      source?.startingLineup,
-      source?.xi,
-      []
-    );
-
-  starters =
-    Array.isArray(
-      starters
-    )
-      ? starters
-      : [];
-
-  /*
-   * -----------------------------------------------------
-   * إذا source فيه players كاملين
-   * وعندهم starter / first
-   * -----------------------------------------------------
-   */
-
-  if (
-    !starters.length &&
-    Array.isArray(
-      source?.players
-    )
-  ) {
-
-    const players =
-      source.players;
-
-    const marked =
-      players.filter(
-        player => {
-
-          if (
-            player?.first !==
-              undefined
-          ) {
-            return (
-              player.first === 1 ||
-              player.first === true ||
-              player.first === "1"
-            );
-          }
-
-          if (
-            player?.starter !==
-              undefined
-          ) {
-            return (
-              player.starter === true
-            );
-          }
-
-          if (
-            player?.substitute !==
-              undefined
-          ) {
-            return (
-              player.substitute !== true
-            );
-          }
-
-          return false;
-        }
       );
 
+    formation =
+      normalizeFormation(
+        formation
+      );
+
+    let starters =
+      [];
+
+    let substitutes =
+      [];
+
+    /*
+     * 1. Direct side keys:
+     *
+     * home_xi / away_xi
+     * home_subs / away_subs
+     */
     if (
-      marked.length
+      obj(raw)
     ) {
       starters =
-        marked;
+        arr(
+          first(
+            raw?.[
+              `${side}_xi`
+            ],
+            raw?.[
+              `${side}_starting`
+            ],
+            raw?.[
+              `${side}_starting_xi`
+            ],
+            raw?.[
+              `${side}_startingXI`
+            ],
+            []
+          )
+        );
+
+      substitutes =
+        arr(
+          first(
+            raw?.[
+              `${side}_subs`
+            ],
+            raw?.[
+              `${side}_substitutes`
+            ],
+            raw?.[
+              `${side}_bench`
+            ],
+            []
+          )
+        );
     }
-    else {
+
+    /*
+     * 2. Source-level keys
+     */
+    if (
+      !starters.length
+    ) {
       starters =
-        players.slice(
+        getPlayers(
+          sourceRoot?.startXI ||
+          sourceRoot?.startingXI ||
+          sourceRoot?.starting_xi ||
+          sourceRoot?.starters ||
+          sourceRoot?.xi ||
+          sourceRoot?.players ||
+          [],
+          side
+        );
+    }
+
+    if (
+      !substitutes.length
+    ) {
+      substitutes =
+        arr(
+          first(
+            sourceRoot?.subs,
+            sourceRoot?.substitutes,
+            sourceRoot?.bench,
+            sourceRoot?.backup,
+            []
+          )
+        );
+    }
+
+    /*
+     * 3. lineups is object
+     * وفيه players شاملين الفريقين
+     */
+    if (
+      !starters.length &&
+      obj(raw)
+    ) {
+      const allPlayers =
+        arr(
+          raw?.players ||
+          raw?.lineup_players
+        );
+
+      if (
+        allPlayers.length
+      ) {
+        const teamPlayers =
+          allPlayers.filter(
+            player =>
+              playerBelongsToTeam(
+                player,
+                side,
+                team
+              )
+          );
+
+        const marked =
+          teamPlayers.filter(
+            player =>
+              playerIsStarting(
+                player
+              ) === true
+          );
+
+        if (
+          marked.length
+        ) {
+          starters =
+            marked;
+        }
+        else if (
+          teamPlayers.length >= 11
+        ) {
+          starters =
+            teamPlayers.slice(
+              0,
+              11
+            );
+
+          substitutes =
+            teamPlayers.slice(
+              11
+            );
+        }
+      }
+    }
+
+    /*
+     * 4. lineups array containing players
+     */
+    if (
+      !starters.length &&
+      Array.isArray(raw)
+    ) {
+      const playerObjects =
+        raw.filter(
+          item =>
+            obj(item) &&
+            (
+              item?.name ||
+              item?.player_name ||
+              item?.player
+            )
+        );
+
+      if (
+        playerObjects.length
+      ) {
+        const teamPlayers =
+          playerObjects.filter(
+            player =>
+              playerBelongsToTeam(
+                player,
+                side,
+                team
+              )
+          );
+
+        const marked =
+          teamPlayers.filter(
+            player =>
+              playerIsStarting(
+                player
+              ) === true
+          );
+
+        if (
+          marked.length
+        ) {
+          starters =
+            marked;
+        }
+        else if (
+          teamPlayers.length >= 11
+        ) {
+          starters =
+            teamPlayers.slice(
+              0,
+              11
+            );
+
+          substitutes =
+            teamPlayers.slice(
+              11
+            );
+        }
+      }
+    }
+
+    /*
+     * 5. details home/away direct
+     */
+    if (
+      !starters.length
+    ) {
+      starters =
+        arr(
+          first(
+            details?.[
+              `${side}_xi`
+            ],
+            details?.[
+              `${side}_startingXI`
+            ],
+            []
+          )
+        );
+    }
+
+    /*
+     * 6. If source itself is the XI array.
+     */
+    if (
+      !starters.length &&
+      Array.isArray(source)
+    ) {
+      starters =
+        source.slice(
           0,
           11
         );
     }
+
+    return {
+      side,
+      team,
+      formation,
+      xi:
+        starters,
+      subs:
+        substitutes
+    };
   }
 
-  /*
-   * =====================================================
-   * SUBSTITUTES
-   * =====================================================
-   */
-
-  let substitutes =
-    first(
-      source?.substitutes,
-      source?.subs,
-      source?.bench,
-      source?.backup,
-      []
-    );
-
-  substitutes =
-    Array.isArray(
-      substitutes
-    )
-      ? substitutes
-      : [];
-
-  /*
-   * إذا players فيها first=0
-   * نستعملوهم كـbench.
-   */
-
-  if (
-    !substitutes.length &&
-    Array.isArray(
-      source?.players
-    )
-  ) {
-
-    substitutes =
-      source.players.filter(
-        player =>
-          player?.first === 0 ||
-          player?.first === false ||
-          player?.first === "0" ||
-          player?.substitute === true ||
-          player?.starter === false
-      );
-
-  }
-
-  /*
-   * =====================================================
-   * نضمنو 11 starters فقط
-   * =====================================================
-   */
-
-  starters =
-    starters
-      .slice(
-        0,
-        11
-      );
-
-  /*
-   * =====================================================
-   * RESULT
-   * =====================================================
-   */
-
-  return {
-
+  function playerBelongsToTeam(
+    player,
     side,
+    team
+  ) {
+    if (!obj(player)) {
+      return false;
+    }
 
-    team,
+    const sideValue =
+      playerSide(
+        player
+      );
 
-    formation,
+    if (
+      sideValue
+    ) {
+      if (
+        side === "home" &&
+        (
+          sideValue ===
+            "home" ||
+          sideValue ===
+            "host"
+        )
+      ) {
+        return true;
+      }
 
-    xi:
-      starters,
+      if (
+        side === "away" &&
+        (
+          sideValue ===
+            "away" ||
+          sideValue ===
+            "guest"
+        )
+      ) {
+        return true;
+      }
 
-    subs:
-      substitutes
+      return false;
+    }
 
-  };
-}
+    const playerTeam =
+      player?.team ||
+      player?.club ||
+      {};
+
+    const id =
+      first(
+        playerTeam?.id,
+        playerTeam?.team_id,
+        player?.team_id,
+        null
+      );
+
+    if (
+      team?.id &&
+      id &&
+      String(team.id) ===
+        String(id)
+    ) {
+      return true;
+    }
+
+    const name =
+      first(
+        playerTeam?.name,
+        player?.team_name,
+        ""
+      );
+
+    return (
+      name &&
+      team?.name &&
+      norm(name) ===
+        norm(team.name)
+    );
+  }
+
   /* =========================================================
      PITCH POSITION
   ========================================================= */
@@ -1975,77 +1959,44 @@ function pitchPositions(
 
   /*
    * =====================================================
-   * 1) نستعمل x/y الحقيقية إلا كانت موجودة
+   * أول اختيار:
+   * الإحداثيات الحقيقية x/y ديال SportScore
    * =====================================================
    */
 
   const exact =
     players.map(
-      player => {
-
-        const p =
-          player?.player &&
-          typeof player.player ===
-            "object"
-            ? player.player
-            : player;
-
-        const x =
-          Number(
-            first(
-              p?.x,
-              player?.x,
-              p?.posX,
-              player?.posX,
-              NaN
-            )
-          );
-
-        const y =
-          Number(
-            first(
-              p?.y,
-              player?.y,
-              p?.posY,
-              player?.posY,
-              NaN
-            )
-          );
-
-        return {
-          player,
-          x,
-          y,
-          valid:
-            Number.isFinite(x) &&
-            Number.isFinite(y) &&
-            x >= 0 &&
-            x <= 100 &&
-            y >= 0 &&
-            y <= 100
-        };
-      }
+      player => ({
+        player,
+        coordinates:
+          playerCoordinates(
+            player
+          )
+      })
     );
 
-  const valid =
+  const validCount =
     exact.filter(
       item =>
-        item.valid
-    );
+        item.coordinates.valid
+    ).length;
 
   /*
-   * إذا عندنا coordinates حقيقية
-   * نستعملوها.
+   * إلا كانو عندنا 7 لاعبين أو أكثر بإحداثيات
+   * كنستعملو coordinates الحقيقية.
+   *
+   * فهاد الحالة:
+   * GK غادي يبقى GK
+   * DEF غادي يبقى DEF
+   * MID غادي يبقى MID
+   * FWD غادي يبقى FWD
    */
 
   if (
-    valid.length >=
-      Math.max(
-        5,
-        Math.ceil(
-          players.length *
-          0.6
-        )
+    validCount >=
+      Math.min(
+        7,
+        players.length
       )
   ) {
 
@@ -2053,7 +2004,7 @@ function pitchPositions(
       item => {
 
         if (
-          !item.valid
+          !item.coordinates.valid
         ) {
 
           return {
@@ -2062,10 +2013,28 @@ function pitchPositions(
 
             x: 50,
 
-            y: side === "home"
-              ? 50
-              : 50
+            y:
+              side === "away"
+                ? 50
+                : 50
           };
+        }
+
+        let y =
+          item.coordinates.y;
+
+        /*
+         * Away كنقلبو الاتجاه
+         * باش الحارس يكون فالجهة
+         * المقابلة للمهاجم.
+         */
+
+        if (
+          side ===
+          "away"
+        ) {
+          y =
+            100 - y;
         }
 
         return {
@@ -2074,24 +2043,10 @@ function pitchPositions(
             item.player,
 
           x:
-            Math.max(
-              7,
-              Math.min(
-                93,
-                item.x
-              )
-            ),
+            item.coordinates.x,
 
-          y:
-            Math.max(
-              7,
-              Math.min(
-                93,
-                side === "away"
-                  ? 100 - item.y
-                  : item.y
-              )
-            )
+          y
+
         };
       }
     );
@@ -2099,176 +2054,116 @@ function pitchPositions(
 
   /*
    * =====================================================
-   * 2) FALLBACK حسب position + formation
+   * FALLBACK
+   * إلا ما كانتش x/y
    * =====================================================
    */
 
-  const formation =
+  const rows =
     formationRows(
       lineup?.formation
     );
 
-  const goalkeeper = [];
-  const defenders = [];
-  const midfielders = [];
-  const forwards = [];
+  const gk = [];
+  const def = [];
+  const mid = [];
+  const fwd = [];
   const unknown = [];
 
   players.forEach(
     player => {
 
-      const type =
+      switch (
         category(
           player
-        );
+        )
+      ) {
 
-      if (
-        type === "gk"
-      ) {
-        goalkeeper.push(
-          player
-        );
-      }
-      else if (
-        type === "def"
-      ) {
-        defenders.push(
-          player
-        );
-      }
-      else if (
-        type === "mid"
-      ) {
-        midfielders.push(
-          player
-        );
-      }
-      else if (
-        type === "fwd"
-      ) {
-        forwards.push(
-          player
-        );
-      }
-      else {
-        unknown.push(
-          player
-        );
-      }
+        case "gk":
+          gk.push(
+            player
+          );
+          break;
 
+        case "def":
+          def.push(
+            player
+          );
+          break;
+
+        case "mid":
+          mid.push(
+            player
+          );
+          break;
+
+        case "fwd":
+          fwd.push(
+            player
+          );
+          break;
+
+        default:
+          unknown.push(
+            player
+          );
+      }
     }
   );
 
-  const rows =
+  const groups =
     [];
 
-  /*
-   * GK دائما بوحدو
-   */
-
-  if (
-    goalkeeper.length
-  ) {
-
-    rows.push(
-      goalkeeper.slice(
-        0,
-        1
-      )
-    );
-
-  }
-  else {
-
-    const possibleGK =
-      players.find(
-        player =>
-          norm(
-            getPlayerPosition(
-              player
-            )
-          ) === "gk"
-      );
-
-    rows.push(
-      possibleGK
-        ? [possibleGK]
-        : []
-    );
-
-  }
-
-  /*
-   * باقي formation
-   *
-   * 4-3-3
-   * → 4 defenders
-   * → 3 midfielders
-   * → 3 forwards
-   *
-   * 4-2-3-1
-   * → 4 defenders
-   * → 2 midfielders
-   * → 3 midfielders/attackers
-   * → 1 forward
-   */
+  groups.push(
+    gk.slice(
+      0,
+      1
+    )
+  );
 
   const pools = [
-    defenders,
-    midfielders,
-    forwards
+    def,
+    mid,
+    fwd
   ];
 
   let unknownIndex =
     0;
 
-  formation.forEach(
-    (count, index) => {
+  rows.forEach(
+    count => {
 
       let pool =
-        pools[index] ||
+        pools.shift() ||
         [];
 
-      const row =
-        pool.slice(
-          0,
-          count
-        );
-
-      /*
-       * إلا نقصنا لاعبين
-       * نكمّلو من unknown
-       */
-
       while (
-        row.length <
+        pool.length <
           count &&
         unknownIndex <
           unknown.length
       ) {
 
-        row.push(
+        pool.push(
           unknown[
             unknownIndex++
           ]
         );
       }
 
-      rows.push(
-        row
+      groups.push(
+        pool.slice(
+          0,
+          count
+        )
       );
 
     }
   );
 
-  /*
-   * أي لاعب بقى
-   * نضيفوه لآخر خط.
-   */
-
   const used =
     new Set(
-      rows.flat()
+      groups.flat()
     );
 
   const leftovers =
@@ -2283,34 +2178,21 @@ function pitchPositions(
     leftovers.length
   ) {
 
-    rows[
-      rows.length - 1
+    groups[
+      groups.length - 1
     ].push(
       ...leftovers
     );
-
   }
-
-  /*
-   * =====================================================
-   * تحويل rows إلى coordinates
-   * =====================================================
-   */
 
   const positions =
     [];
 
-  rows.forEach(
+  groups.forEach(
     (
       row,
       rowIndex
     ) => {
-
-      if (
-        !row.length
-      ) {
-        return;
-      }
 
       row.forEach(
         (
@@ -2321,71 +2203,50 @@ function pitchPositions(
           const x =
             row.length === 1
               ? 50
-              : 10 +
+              : 12 +
+                76 *
                 (
-                  80 *
+                  index /
                   (
-                    index /
-                    (
-                      row.length -
-                      1
-                    )
+                    row.length -
+                    1
                   )
                 );
 
           let y =
-            8 +
+            7 +
+            86 *
             (
-              84 *
-              (
-                rowIndex /
-                Math.max(
-                  1,
-                  rows.length -
-                    1
-                )
+              rowIndex /
+              Math.max(
+                1,
+                groups.length -
+                  1
               )
             );
 
           if (
-            side === "away"
+            side ===
+            "away"
           ) {
             y =
               100 - y;
           }
 
           positions.push({
-
             player,
-
-            x:
-              Math.max(
-                6,
-                Math.min(
-                  94,
-                  x
-                )
-              ),
-
-            y:
-              Math.max(
-                6,
-                Math.min(
-                  94,
-                  y
-                )
-              )
-
+            x,
+            y
           });
 
         }
       );
-
     }
   );
 
   return positions;
 }
+
   /* =========================================================
      PLAYER AVATAR
   ========================================================= */
