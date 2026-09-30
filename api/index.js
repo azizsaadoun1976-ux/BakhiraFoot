@@ -609,153 +609,207 @@ module.exports = async (req, res) => {
        FIND MATCH IN SOFASCORE BY TEAMS + DATE
     ===================================================== */
 
-    async function findSofaEvent(
-      homeName,
-      awayName,
+    function toISODate(value) {
+  if (value === null || value === undefined || value === "") {
+    return null;
+  }
+
+  // Date object
+  if (value instanceof Date) {
+    if (Number.isNaN(value.getTime())) return null;
+    return value.toISOString().split("T")[0];
+  }
+
+  // Numeric timestamp
+  if (typeof value === "number") {
+    const ms =
+      value < 10000000000
+        ? value * 1000
+        : value;
+
+    const d = new Date(ms);
+
+    if (Number.isNaN(d.getTime())) return null;
+
+    return d.toISOString().split("T")[0];
+  }
+
+  const str = String(value).trim();
+
+  // YYYY-MM-DD or ISO date
+  const isoMatch =
+    str.match(/^(\d{4}-\d{2}-\d{2})/);
+
+  if (isoMatch) {
+    return isoMatch[1];
+  }
+
+  // Numeric timestamp stored as string
+  if (/^\d+$/.test(str)) {
+    const num = Number(str);
+
+    const ms =
+      num < 10000000000
+        ? num * 1000
+        : num;
+
+    const d = new Date(ms);
+
+    if (Number.isNaN(d.getTime())) return null;
+
+    return d.toISOString().split("T")[0];
+  }
+
+  // Any other valid date string
+  const d = new Date(str);
+
+  if (Number.isNaN(d.getTime())) {
+    return null;
+  }
+
+  return d.toISOString().split("T")[0];
+} 
+   async function findSofaEvent(
+  homeName,
+  awayName,
+  isoDate
+) {
+  const wantedHome = norm(homeName);
+  const wantedAway = norm(awayName);
+
+  const baseISO =
+    toISODate(isoDate) ||
+    today;
+
+  const baseDate =
+    new Date(`${baseISO}T12:00:00Z`);
+
+  if (Number.isNaN(baseDate.getTime())) {
+    console.warn(
+      "INVALID SOFASCORE BASE DATE:",
       isoDate
-    ) {
+    );
 
-      const wantedHome =
-        norm(homeName);
+    return null;
+  }
 
-      const wantedAway =
-        norm(awayName);
+  const dates = [];
 
-      const dates = [];
+  for (let offset = -1; offset <= 1; offset++) {
+    const d = new Date(baseDate);
 
-      const baseDate =
-        isoDate
-          ? new Date(
-              `${isoDate}T12:00:00Z`
-            )
-          : new Date();
+    d.setUTCDate(
+      d.getUTCDate() + offset
+    );
 
-      for (
-        let offset = -2;
-        offset <= 2;
-        offset++
-      ) {
+    dates.push(
+      d.toISOString().split("T")[0]
+    );
+  }
 
-        const d =
-          new Date(
-            baseDate
-          );
-
-        d.setUTCDate(
-          d.getUTCDate() +
-          offset
-        );
-
-        dates.push(
-          d.toISOString()
-            .split("T")[0]
-        );
-      }
-
-      for (
-        const d of dates
-      ) {
-
-        try {
-
-          const body =
-            await getJSON(
-              `${SOFA}/sport/football/scheduled-events/${d}`
-            );
-
-          const events =
-            arr(
-              body?.events
-            );
-
-          const exact =
-            events.find(
-              event => {
-
-                const home =
-                  norm(
-                    event?.homeTeam?.name
-                  );
-
-                const away =
-                  norm(
-                    event?.awayTeam?.name
-                  );
-
-                return (
-                  home ===
-                    wantedHome &&
-                  away ===
-                    wantedAway
-                );
-
-              }
-            );
-
-          if (
-            exact
-          ) {
-            return exact;
-          }
-
-          const fuzzy =
-            events.find(
-              event => {
-
-                const home =
-                  norm(
-                    event?.homeTeam?.name
-                  );
-
-                const away =
-                  norm(
-                    event?.awayTeam?.name
-                  );
-
-                return (
-                  (
-                    home.includes(
-                      wantedHome
-                    ) ||
-                    wantedHome.includes(
-                      home
-                    )
-                  ) &&
-                  (
-                    away.includes(
-                      wantedAway
-                    ) ||
-                    wantedAway.includes(
-                      away
-                    )
-                  )
-                );
-
-              }
-            );
-
-          if (
-            fuzzy
-          ) {
-            return fuzzy;
-          }
-
-        } catch (
-          error
-        ) {
-
-          console.warn(
-            "SOFASCORE SCHEDULE ERROR:",
-            d,
-            error.message
-          );
-
-        }
-
-      }
-
-      return null;
+  console.log(
+    "SOFASCORE SEARCH:",
+    {
+      home: wantedHome,
+      away: wantedAway,
+      dates
     }
+  );
+
+  for (const d of dates) {
+    try {
+      const body = await getJSON(
+        `${SOFA}/sport/football/scheduled-events/${d}`
+      );
+
+      const events = arr(
+        body?.events
+      );
+
+      console.log(
+        "SOFASCORE EVENTS:",
+        d,
+        events.length
+      );
+
+      // 1. Exact match
+      const exact = events.find(event => {
+        const home = norm(
+          event?.homeTeam?.name
+        );
+
+        const away = norm(
+          event?.awayTeam?.name
+        );
+
+        return (
+          home === wantedHome &&
+          away === wantedAway
+        );
+      });
+
+      if (exact) {
+        console.log(
+          "SOFASCORE EXACT MATCH:",
+          exact.id,
+          exact.homeTeam?.name,
+          exact.awayTeam?.name
+        );
+
+        return exact;
+      }
+
+      // 2. Fuzzy match
+      const fuzzy = events.find(event => {
+        const home = norm(
+          event?.homeTeam?.name
+        );
+
+        const away = norm(
+          event?.awayTeam?.name
+        );
+
+        const homeOk =
+          home.includes(wantedHome) ||
+          wantedHome.includes(home);
+
+        const awayOk =
+          away.includes(wantedAway) ||
+          wantedAway.includes(away);
+
+        return homeOk && awayOk;
+      });
+
+      if (fuzzy) {
+        console.log(
+          "SOFASCORE FUZZY MATCH:",
+          fuzzy.id,
+          fuzzy.homeTeam?.name,
+          fuzzy.awayTeam?.name
+        );
+
+        return fuzzy;
+      }
+
+    } catch (error) {
+      console.warn(
+        "SOFASCORE SCHEDULE ERROR:",
+        d,
+        error.message
+      );
+    }
+  }
+
+  console.warn(
+    "SOFASCORE MATCH NOT FOUND:",
+    homeName,
+    "vs",
+    awayName,
+    baseISO
+  );
+
+  return null;
+}
 
     /* =====================================================
        PLAYER NORMALIZATION
@@ -1461,14 +1515,9 @@ module.exports = async (req, res) => {
           basic?.teams?.away?.name ||
           "",
 
-          basic?.fixture?.date
-            ? String(
-                basic.fixture.date
-              ).slice(
-                0,
-                10
-              )
-            : today
+         toISODate(
+  basic?.fixture?.date
+) || today
 
         );
 
