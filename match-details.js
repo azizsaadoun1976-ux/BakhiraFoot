@@ -25,7 +25,111 @@
    */
 
   const DETAILS_API = "/api?fixture=";
+async function fetchDetailsJSON(
+  identifier
+) {
 
+  const controller =
+    new AbortController();
+
+  const timer =
+    setTimeout(
+      () => controller.abort(),
+      12000
+    );
+
+  try {
+
+    /*
+     * أول محاولة:
+     * API ديال BakhiraFoot
+     */
+    try {
+
+      const response =
+        await fetch(
+          `${DETAILS_API}${encodeURIComponent(
+            identifier
+          )}`,
+          {
+            method: "GET",
+            cache: "no-store",
+            headers: {
+              Accept:
+                "application/json"
+            },
+            signal:
+              controller.signal
+          }
+        );
+
+      if (
+        response.ok
+      ) {
+
+        const data =
+          await response.json();
+
+        return data;
+      }
+
+    }
+    catch (
+      error
+    ) {
+
+      console.warn(
+        "BAKHIRAFOOT API FAILED:",
+        error
+      );
+
+    }
+
+    /*
+     * ثاني محاولة:
+     * SportScore مباشرة
+     *
+     * غير إلا كان identifier عبارة عن slug.
+     */
+    const directURL =
+      `https://sportscore.com/api/widget/match/?sport=football&slug=${encodeURIComponent(
+        identifier
+      )}&src=bakhira-foot`;
+
+    const directResponse =
+      await fetch(
+        directURL,
+        {
+          method: "GET",
+          cache: "no-store",
+          headers: {
+            Accept:
+              "application/json"
+          },
+          signal:
+            controller.signal
+        }
+      );
+
+    if (
+      !directResponse.ok
+    ) {
+      throw new Error(
+        `HTTP ${directResponse.status}`
+      );
+    }
+
+    return await directResponse.json();
+
+  }
+  finally {
+
+    clearTimeout(
+      timer
+    );
+
+  }
+}
   /* =========================================================
      BASIC HELPERS
   ========================================================= */
@@ -4051,22 +4155,15 @@ function playerHasInjury(
 
     try {
 
-      const response =
-        await fetch(
-          `${DETAILS_API}${encodeURIComponent(
-            identifier
-          )}`,
-          {
-            cache: "no-store",
-            headers: {
-              Accept:
-                "application/json"
-            }
-          }
-        );
+     const payload =
+  await fetchDetailsJSON(
+    identifier
+  );
 
-      const rawText =
-        await response.text();
+console.log(
+  "BAKHIRAFOOT DETAILS JSON:",
+  payload
+);
 
       if (!response.ok) {
         throw new Error(
