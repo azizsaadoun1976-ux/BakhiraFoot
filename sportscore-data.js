@@ -2236,3 +2236,37 @@ body.dark .ss-club-fallback {
   );
 
 })();
+// sportscore-data.js
+
+async function getSportScoreMatchDetails(matchId) {
+  try {
+    // 1. جلب تفاصيل الماتش والأحداث من SportScore
+    const response = await fetch(`https://sportscore1.p.rapidapi.com/events/${matchId}`, {
+      method: 'GET',
+      headers: {
+        'x-rapidapi-key': 'YOUR_RAPIDAPI_KEY_HERE', // حط المفتاح ديالك هنا
+        'x-rapidapi-host': 'sportscore1.p.rapidapi.com'
+      }
+    });
+
+    const result = await response.json();
+    const data = result.data;
+
+    // 2. تحويل البيانات للفرومات اللي كيقراها match-details.js
+    return {
+      league_name: data.section?.name || 'مباراة كرة قدم',
+      home_team: data.home_team?.name || 'الفريق المستضيف',
+      home_logo: data.home_team?.logo,
+      away_team: data.away_team?.name || 'الفريق الضيف',
+      away_logo: data.away_team?.logo,
+      score: `${data.home_score?.current || 0} - ${data.away_score?.current || 0}`,
+      status: data.status,
+      events: data.incidents || [], // الأحداث (أهداف، كروت)
+      lineups: data.lineups || null, // التشكيلة
+      stats: data.statistics || null  // الإحصائيات
+    };
+  } catch (error) {
+    console.error('خطأ في جلب تفاصيل المباراة:', error);
+    return null;
+  }
+}
