@@ -1298,43 +1298,118 @@
   }
 
   function getPlayerPhoto(
-    player
+  player
+) {
+  if (
+    typeof player === "string" ||
+    !player
   ) {
-    if (
-      typeof player === "string"
-    ) {
-      return "";
-    }
-
-    return first(
-      player?.photo,
-      player?.image,
-      player?.picture,
-      player?.avatar,
-      player?.player?.photo,
-      player?.player?.image,
-      player?.player?.picture,
-      ""
-    );
+    return "";
   }
+
+  const p =
+    player?.player &&
+    typeof player.player === "object"
+      ? player.player
+      : player;
+
+  return first(
+    player?.photo,
+    player?.image,
+    player?.picture,
+    player?.avatar,
+    player?.headshot,
+    player?.photo_url,
+    player?.image_url,
+    player?.profile_image,
+    player?.player_image,
+
+    p?.photo,
+    p?.image,
+    p?.picture,
+    p?.avatar,
+    p?.headshot,
+    p?.photo_url,
+    p?.image_url,
+    p?.profile_image,
+    p?.player_image,
+
+    player?.logo,
+    p?.logo,
+
+    ""
+  );
+}
 
   function getPlayerRating(
-    player
+  player
+) {
+  if (
+    typeof player === "string" ||
+    !player
   ) {
-    if (
-      typeof player === "string"
-    ) {
-      return null;
-    }
-
-    return first(
-      player?.rating,
-      player?.statistics?.rating,
-      player?.player?.rating,
-      null
-    );
+    return null;
   }
 
+  const p =
+    player?.player &&
+    typeof player.player === "object"
+      ? player.player
+      : player;
+
+  const rating =
+    first(
+      player?.rating,
+
+      player?.statistics?.rating,
+      player?.statistics?.player_rating,
+      player?.statistics?.performance_rating,
+
+      player?.performance?.rating,
+      player?.performance?.player_rating,
+
+      player?.match_rating,
+      player?.matchRating,
+
+      player?.rating_value,
+      player?.ratingValue,
+
+      player?.score,
+
+      p?.rating,
+
+      p?.statistics?.rating,
+      p?.statistics?.player_rating,
+      p?.statistics?.performance_rating,
+
+      p?.performance?.rating,
+      p?.performance?.player_rating,
+
+      p?.match_rating,
+      p?.matchRating,
+
+      null
+    );
+
+  if (
+    rating === null ||
+    rating === undefined ||
+    rating === ""
+  ) {
+    return null;
+  }
+
+  const number =
+    Number(
+      String(rating)
+        .replace(",", ".")
+        .trim()
+    );
+
+  return Number.isFinite(number)
+    ? number
+    : null;
+}
   function playerKey(
     player
   ) {
@@ -3287,80 +3362,101 @@
   ========================================================= */
 
   function playerBadges(
-    player,
-    statsMap
+  player,
+  statsMap
+) {
+  const stats =
+    statsMap.get(
+      playerKey(
+        player
+      )
+    ) || {
+      goals: 0,
+      assists: 0,
+      yellow: 0,
+      red: 0,
+      in: 0,
+      out: 0
+    };
+
+  const badges = [];
+
+  if (
+    Number(stats.goals) > 0
   ) {
-    const stats =
-      statsMap.get(
-        playerKey(
-          player
-        )
-      );
-
-    if (!stats) {
-      return "";
-    }
-
-    const badges =
-      [];
-
-    if (
-      stats.goals
-    ) {
-      badges.push(
-        "⚽"
-      );
-    }
-
-    if (
-      stats.assists
-    ) {
-      badges.push(
-        "🅰️"
-      );
-    }
-
-    if (
-      stats.yellow
-    ) {
-      badges.push(
-        "🟨"
-      );
-    }
-
-    if (
-      stats.red
-    ) {
-      badges.push(
-        "🟥"
-      );
-    }
-
-    if (
-      stats.in
-    ) {
-      badges.push(
-        "↗️"
-      );
-    }
-
-    if (
-      stats.out
-    ) {
-      badges.push(
-        "↙️"
-      );
-    }
-
-    return badges.length
-      ? `
-        <div class="bfmd-event-mini">
-          ${badges.join("")}
-        </div>
-      `
-      : "";
+    badges.push(
+      `⚽ ${Number(stats.goals)}`
+    );
   }
 
+  if (
+    Number(stats.assists) > 0
+  ) {
+    badges.push(
+      `🅰️ ${Number(stats.assists)}`
+    );
+  }
+
+  if (
+    Number(stats.yellow) > 0
+  ) {
+    badges.push(
+      `🟨 ${Number(stats.yellow)}`
+    );
+  }
+
+  if (
+    Number(stats.red) > 0
+  ) {
+    badges.push(
+      `🟥 ${Number(stats.red)}`
+    );
+  }
+
+  if (
+    Number(stats.in) > 0
+  ) {
+    badges.push(
+      `↗️ ${Number(stats.in)}`
+    );
+  }
+
+  if (
+    Number(stats.out) > 0
+  ) {
+    badges.push(
+      `↙️ ${Number(stats.out)}`
+    );
+  }
+
+  if (!badges.length) {
+    return "";
+  }
+
+  return `
+    <div
+      class="bfmd-event-mini"
+      title="${esc(
+        badges.join(" • ")
+      )}"
+    >
+      ${badges
+        .map(
+          badge => `
+            <span
+              style="
+                margin:0 2px;
+                font-weight:950;
+              "
+            >
+              ${esc(badge)}
+            </span>
+          `
+        )
+        .join("")}
+    </div>
+  `;
+}
   /* =========================================================
      RENDER PITCH
   ========================================================= */
