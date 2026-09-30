@@ -1246,80 +1246,128 @@
     );
   }
 
-  function getPlayerNumber(
-    player
-  ) {
-    if (
-      typeof player === "string"
-    ) {
-      return "-";
-    }
+ function getPlayerNumber(
+  player
+) {
 
-    return first(
-      player?.number,
-      player?.shirt_number,
-      player?.shirtNumber,
-      player?.jersey,
-      player?.player?.number,
-      "-"
-    );
-  }
+  const p =
+    player?.player &&
+    typeof player.player ===
+      "object"
+      ? player.player
+      : player;
 
-  function getPlayerPosition(
-    player
-  ) {
-    if (
-      typeof player === "string"
-    ) {
-      return "";
-    }
+  return first(
 
-    return first(
-      player?.position,
-      player?.pos,
-      player?.role,
-      player?.player?.position,
-      ""
-    );
-  }
+    p?.number,
 
-  function getPlayerPhoto(
-    player
-  ) {
-    if (
-      typeof player === "string"
-    ) {
-      return "";
-    }
+    p?.shirt_number,
 
-    return first(
-      player?.photo,
-      player?.image,
-      player?.picture,
-      player?.avatar,
-      player?.player?.photo,
-      player?.player?.image,
-      player?.player?.picture,
-      ""
-    );
-  }
+    p?.shirtNumber,
 
-  function getPlayerRating(
-    player
-  ) {
-    if (
-      typeof player === "string"
-    ) {
-      return null;
-    }
+    p?.jersey,
 
-    return first(
-      player?.rating,
-      player?.statistics?.rating,
-      player?.player?.rating,
-      null
-    );
-  }
+    p?.jersey_number,
+
+    p?.jerseyNumber,
+
+    player?.number,
+
+    player?.shirt_number,
+
+    player?.shirtNumber,
+
+    "-"
+
+  );
+}
+
+
+function getPlayerPosition(
+  player
+) {
+
+  const p =
+    player?.player &&
+    typeof player.player ===
+      "object"
+      ? player.player
+      : player;
+
+  return first(
+
+    p?.position,
+
+    p?.pos,
+
+    p?.role,
+
+    player?.position,
+
+    player?.pos,
+
+    ""
+  );
+}
+
+
+function getPlayerPhoto(
+  player
+) {
+
+  const p =
+    player?.player &&
+    typeof player.player ===
+      "object"
+      ? player.player
+      : player;
+
+  return first(
+
+    p?.photo,
+
+    p?.logo,
+
+    p?.picture,
+
+    p?.image,
+
+    p?.avatar,
+
+    player?.photo,
+
+    player?.logo,
+
+    player?.picture,
+
+    player?.image,
+
+    player?.avatar,
+
+    ""
+  );
+}
+
+
+function getPlayerRating(
+  player
+) {
+
+  return first(
+
+    player?.rating,
+
+    player?.performance?.rating,
+
+    player?.statistics?.rating,
+
+    player?.games?.rating,
+
+    player?.player?.rating,
+
+    null
+  );
+}
 
   function playerKey(
     player
@@ -1833,7 +1881,64 @@
     return "unknown";
   }
 
-  function pitchPositions(
+function playerCoordinates(
+  player
+) {
+
+  const p =
+    player?.player &&
+    typeof player.player ===
+      "object"
+      ? player.player
+      : player;
+
+  const x =
+    Number(
+      first(
+        p?.x,
+        player?.x,
+        p?.posX,
+        player?.posX,
+        null
+      )
+    );
+
+  const y =
+    Number(
+      first(
+        p?.y,
+        player?.y,
+        p?.posY,
+        player?.posY,
+        null
+      )
+    );
+
+  if (
+    Number.isFinite(x) &&
+    Number.isFinite(y) &&
+    x >= 0 &&
+    x <= 100 &&
+    y >= 0 &&
+    y <= 100
+  ) {
+
+    return {
+      x,
+      y,
+      valid: true
+    };
+  }
+
+  return {
+    x: null,
+    y: null,
+    valid: false
+  };
+}
+
+
+function pitchPositions(
   lineup,
   side
 ) {
@@ -2668,81 +2773,179 @@
   /* =========================================================
      PITCH EVENT BADGES
   ========================================================= */
+function playerHasInjury(
+  player
+) {
 
-  function playerBadges(
-    player,
-    statsMap
+  const p =
+    player?.player &&
+    typeof player.player ===
+      "object"
+      ? player.player
+      : player;
+
+  const direct =
+    first(
+      player?.injury,
+      player?.injured,
+      p?.injury,
+      p?.injured,
+      null
+    );
+
+  if (
+    direct
   ) {
-    const stats =
-      statsMap.get(
-        playerKey(
-          player
-        )
-      );
-
-    if (!stats) {
-      return "";
-    }
-
-    const badges =
-      [];
-
-    if (
-      stats.goals
-    ) {
-      badges.push(
-        "⚽"
-      );
-    }
-
-    if (
-      stats.assists
-    ) {
-      badges.push(
-        "🅰️"
-      );
-    }
-
-    if (
-      stats.yellow
-    ) {
-      badges.push(
-        "🟨"
-      );
-    }
-
-    if (
-      stats.red
-    ) {
-      badges.push(
-        "🟥"
-      );
-    }
-
-    if (
-      stats.in
-    ) {
-      badges.push(
-        "↗️"
-      );
-    }
-
-    if (
-      stats.out
-    ) {
-      badges.push(
-        "↙️"
-      );
-    }
-
-    return badges.length
-      ? `
-        <div class="bfmd-event-mini">
-          ${badges.join("")}
-        </div>
-      `
-      : "";
+    return true;
   }
+
+  const incidents =
+    first(
+      player?.incidents,
+      p?.incidents,
+      []
+    );
+
+  if (
+    Array.isArray(
+      incidents
+    )
+  ) {
+
+    return incidents.some(
+      incident => {
+
+        const type =
+          norm(
+            first(
+              incident?.type,
+              incident?.event_type,
+              incident?.incidentType,
+              ""
+            )
+          );
+
+        const detail =
+          norm(
+            first(
+              incident?.detail,
+              incident?.description,
+              incident?.reason,
+              ""
+            )
+          );
+
+        return (
+          type.includes(
+            "injur"
+          ) ||
+          detail.includes(
+            "injur"
+          ) ||
+          type.includes(
+            "hurt"
+          ) ||
+          detail.includes(
+            "hurt"
+          )
+        );
+      }
+    );
+  }
+
+  return false;
+}
+  function playerBadges(
+  player,
+  statsMap
+) {
+
+  const stats =
+    statsMap.get(
+      playerKey(
+        player
+      )
+    ) || {
+      goals: 0,
+      assists: 0,
+      yellow: 0,
+      red: 0,
+      in: 0,
+      out: 0
+    };
+
+  const badges =
+    [];
+
+  if (
+    stats.goals
+  ) {
+    badges.push(
+      "⚽"
+    );
+  }
+
+  if (
+    stats.assists
+  ) {
+    badges.push(
+      "🅰️"
+    );
+  }
+
+  if (
+    stats.yellow
+  ) {
+    badges.push(
+      "🟨"
+    );
+  }
+
+  if (
+    stats.red
+  ) {
+    badges.push(
+      "🟥"
+    );
+  }
+
+  if (
+    stats.in
+  ) {
+    badges.push(
+      "↗️"
+    );
+  }
+
+  if (
+    stats.out
+  ) {
+    badges.push(
+      "↙️"
+    );
+  }
+
+  if (
+    playerHasInjury(
+      player
+    )
+  ) {
+    badges.push(
+      "🤕"
+    );
+  }
+
+  return badges.length
+    ? `
+      <div
+        class="bfmd-event-mini"
+        title="Événements du joueur"
+      >
+        ${badges.join("")}
+      </div>
+    `
+    : "";
+}
 
   /* =========================================================
      RENDER PITCH
@@ -2860,19 +3063,19 @@
                   )}
                 </div>
 
-                ${
-                  rating !== null
-                    ? `
-                      <div class="bfmd-rating">
-                        ⭐ ${esc(
-                          Number(
-                            rating
-                          ).toFixed(1)
-                        )}
-                      </div>
-                    `
-                    : ""
-                }
+               <div class="bfmd-rating">
+  ⭐ ${
+    rating !== null &&
+    rating !== undefined &&
+    rating !== ""
+      ? esc(
+          Number(
+            rating
+          ).toFixed(1)
+        )
+      : "—"
+  }
+</div>
 
               </div>
             `;
