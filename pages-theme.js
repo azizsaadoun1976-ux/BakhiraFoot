@@ -1,25 +1,28 @@
 (() => {
   "use strict";
 
-  const STORAGE_KEY =
-    "bakhirafoot_theme";
+  const STORAGE_KEY = "bakhirafoot-theme";
 
-  const systemTheme =
-    window.matchMedia(
-      "(prefers-color-scheme: dark)"
-    );
+  function getSavedTheme() {
+    const saved =
+      localStorage.getItem(STORAGE_KEY);
+
+    return saved === "dark" ||
+      saved === "light"
+      ? saved
+      : null;
+  }
 
   function applyTheme(theme) {
-
     const dark =
       theme === "dark";
 
-    document.body.classList.toggle(
+    document.documentElement.classList.toggle(
       "dark",
       dark
     );
 
-    document.documentElement.classList.toggle(
+    document.body.classList.toggle(
       "dark",
       dark
     );
@@ -28,7 +31,6 @@
       document.getElementById("theme");
 
     if (button) {
-
       button.textContent =
         dark ? "☀️" : "☾";
 
@@ -41,39 +43,26 @@
     }
   }
 
-  function getSavedTheme() {
-
-    const saved =
-      localStorage.getItem(
-        STORAGE_KEY
-      );
-
-    if (
-      saved === "dark" ||
-      saved === "light"
-    ) {
-      return saved;
-    }
-
-    return null;
-  }
-
   function init() {
+    const button =
+      document.getElementById("theme");
 
     const saved =
       getSavedTheme();
 
+    const system =
+      window.matchMedia(
+        "(prefers-color-scheme: dark)"
+      );
+
     applyTheme(
       saved ||
       (
-        systemTheme.matches
+        system.matches
           ? "dark"
           : "light"
       )
     );
-
-    const button =
-      document.getElementById("theme");
 
     if (!button) {
       return;
@@ -82,7 +71,6 @@
     button.addEventListener(
       "click",
       () => {
-
         const current =
           document.body.classList.contains(
             "dark"
@@ -102,15 +90,9 @@
       }
     );
 
-    systemTheme.addEventListener(
+    system.addEventListener(
       "change",
       event => {
-
-        /*
-         * Si l'utilisateur a déjà choisi
-         * manuellement, on respecte son choix.
-         */
-
         if (getSavedTheme()) {
           return;
         }
@@ -135,5 +117,4 @@
   } else {
     init();
   }
-
 })();
