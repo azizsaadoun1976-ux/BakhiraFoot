@@ -4036,24 +4036,42 @@ async function openMatchDetails(index) {
     currentMatches[index];
 
   if (!match) {
-    toast(
-      "تفاصيل الماتش غير متوفرة"
-    );
+    toast("تفاصيل الماتش غير متوفرة");
     return;
   }
 
   const fixtureId =
-    getFixtureId(match);
+    match?.fixture?.slug ||
+    match?.slug ||
+    match?.fixture?.id ||
+    match?.id ||
+    null;
 
-  currentOpenedFixture =
-    fixtureId;
+  if (!fixtureId) {
+    toast("معرف المباراة غير متوفر");
+    return;
+  }
 
   createMatchModal();
+
+  const modal =
+    $("matchModal");
 
   const content =
     $("matchDetailsContent");
 
-  if (!content) return;
+  if (!modal || !content) {
+    return;
+  }
+
+  currentOpenedFixture =
+    String(fixtureId);
+
+  modal.style.display =
+    "block";
+
+  document.body.style.overflow =
+    "hidden";
 
   const home =
     getHome(match);
@@ -4076,31 +4094,18 @@ async function openMatchDetails(index) {
   const league =
     getLeague(match);
 
-  const status =
-    statusLabel(match);
-
-  const date =
-    match?.fixture?.date ||
-    match?.date ||
-    null;
-
   content.innerHTML = `
 
     <div class="bf-details-league">
       🏆 ${escapeHTML(league)}
     </div>
 
-    <div class="bf-details-round">
-      ${fixtureId
-        ? `ID Match: ${escapeHTML(fixtureId)}`
-        : ""
-      }
-    </div>
-
     <div class="bf-details-status-wrap">
 
       <div class="bf-details-status">
-        ${escapeHTML(status)}
+        ${escapeHTML(
+          statusLabel(match)
+        )}
       </div>
 
     </div>
@@ -4139,18 +4144,6 @@ async function openMatchDetails(index) {
           ${escapeHTML(awayScore)}
         </div>
 
-        ${
-          date
-            ? `
-              <div class="bf-details-time">
-                ${escapeHTML(
-                  formatDate(date)
-                )}
-              </div>
-            `
-            : ""
-        }
-
       </div>
 
       <div class="bf-details-team">
@@ -4182,49 +4175,23 @@ async function openMatchDetails(index) {
     <div class="bf-detail-section">
 
       <h3>
-        ⏳ تفاصيل المباراة
+        ⏳ Chargement des détails...
       </h3>
 
       <div class="bf-detail-item">
-        جاري تحميل التشكيلة والإحصائيات والأحداث...
+        Récupération de la composition, des événements et des statistiques.
       </div>
 
     </div>
   `;
 
-  const modal =
-    $("matchModal");
-
-  if (modal) {
-    modal.style.display =
-      "block";
-
-    document.body.style.overflow =
-      "hidden";
-  }
-
-  if (!fixtureId) {
-
-    content.innerHTML += `
-
-      <div class="bf-detail-section">
-
-        <div class="bf-detail-item">
-          ⚠️ معرف المباراة غير متوفر.
-        </div>
-
-      </div>
-
-    `;
-
-    return;
-  }
-
   try {
 
     const response =
       await fetch(
-        `${API_BASE}/api/match-details?fixture=${encodeURIComponent(fixtureId)}`,
+        `${API_BASE}/api/match-details?fixture=${encodeURIComponent(
+          String(fixtureId)
+        )}`,
         {
           cache: "no-store"
         }
@@ -4236,25 +4203,354 @@ async function openMatchDetails(index) {
       );
     }
 
-    const data =
+    const result =
       await response.json();
 
     console.log(
-      "MATCH DETAILS:",
-      data
+      "BAKHIRAFOOT DETAILS:",
+      result
     );
 
-    const details =
-      extractMatchDetails(
-        data
-      );
+    if (
+      currentOpenedFixture !==
+      String(fixtureId)
+    ) {
+      return;
+    }
 
-    if (!details) {
+    const details =
+      result?.data;
+
+    if (
+      !details
+    ) {
       throw new Error(
-        "Aucune donnée détaillée"
+        "Détails introuvables"
       );
     }
 
+    const realHome =
+      details?.teams?.home?.name ||
+      home;
+
+    const realAway =
+      details?.teams?.away?.name ||
+      away;
+
+    const realHomeLogo =
+      details?.teams?.home?.logo ||
+      homeLogo;
+
+    const realAwayLogo =
+      details?.teams?.away?.logo ||
+      awayLogo;
+
+    const realHomeId =
+      details?.teams?.home?.id ||
+      null;
+
+    const realAwayId =
+      details?.teams?.away?.id ||
+      null;
+
+    const realHomeScore =
+      details?.goals?.home ??
+      homeScore;
+
+    const realAwayScore =
+      details?.goals?.away ??
+      awayScore;
+
+    const realLeague =
+      details?.league?.name ||
+      league;
+
+    const events =
+      Array.isArray(
+        details?.events
+      )
+        ? details.events
+        : [];
+
+    const lineups =
+      Array.isArray(
+        details?.lineups
+      )
+        ? details.lineups
+        : [];
+
+    const statistics =
+      Array.isArray(
+        details?.statistics
+      )
+        ? details.statistics
+        : [];
+
+    const players =
+      Array.isArray(
+        details?.players
+      )
+        ? details.players
+        : [];
+
+    const performanceMap =
+      buildPlayerPerformanceMap(
+        players
+      );
+
+    const eventMap =
+      buildEventContributions(
+        events
+      );
+
+    const homeLineup =
+      getLineupForTeam(
+        lineups,
+        realHomeId,
+        realHome
+      ) ||
+      lineups[0] ||
+      null;
+
+    const awayLineup =
+      getLineupForTeam(
+        lineups,
+        realAwayId,
+        realAway
+      ) ||
+      lineups[1] ||
+      null;
+
+    content.innerHTML = `
+
+      <div class="bf-details-league">
+        🏆 ${escapeHTML(realLeague)}
+      </div>
+
+      <div class="bf-details-status-wrap">
+
+        <div class="bf-details-status">
+          ${escapeHTML(
+            statusLabel(details)
+          )}
+        </div>
+
+      </div>
+
+      <div class="bf-details-teams">
+
+        <div class="bf-details-team">
+
+          ${
+            realHomeLogo
+              ? `
+                <img
+                  class="bf-details-logo"
+                  src="${escapeHTML(
+                    realHomeLogo
+                  )}"
+                  alt="${escapeHTML(
+                    realHome
+                  )}"
+                >
+              `
+              : `
+                <div class="bf-details-fallback-logo">
+                  ⚽
+                </div>
+              `
+          }
+
+          <span class="bf-details-team-name">
+            ${escapeHTML(realHome)}
+          </span>
+
+        </div>
+
+        <div>
+
+          <div class="bf-details-score">
+            ${escapeHTML(
+              realHomeScore
+            )}
+            -
+            ${escapeHTML(
+              realAwayScore
+            )}
+          </div>
+
+          ${
+            details?.fixture?.date
+              ? `
+                <div class="bf-details-time">
+                  ${escapeHTML(
+                    formatDate(
+                      details.fixture.date
+                    )
+                  )}
+                </div>
+              `
+              : ""
+          }
+
+        </div>
+
+        <div class="bf-details-team">
+
+          ${
+            realAwayLogo
+              ? `
+                <img
+                  class="bf-details-logo"
+                  src="${escapeHTML(
+                    realAwayLogo
+                  )}"
+                  alt="${escapeHTML(
+                    realAway
+                  )}"
+                >
+              `
+              : `
+                <div class="bf-details-fallback-logo">
+                  ⚽
+                </div>
+              `
+          }
+
+          <span class="bf-details-team-name">
+            ${escapeHTML(realAway)}
+          </span>
+
+        </div>
+
+      </div>
+
+      ${renderMatchInformation(details)}
+
+      ${
+        homeLineup ||
+        awayLineup
+          ? renderFormations(
+              homeLineup,
+              awayLineup,
+              realHome,
+              realAway,
+              realHomeId,
+              realAwayId,
+              performanceMap,
+              eventMap
+            )
+          : `
+            <div class="bf-detail-section">
+
+              <h3>
+                🧩 Formations & Compositions
+              </h3>
+
+              <div class="bf-detail-item">
+                Formation indisponible pour cette rencontre.
+              </div>
+
+            </div>
+          `
+      }
+
+      ${
+        homeLineup ||
+        awayLineup
+          ? renderPlayersSection(
+              homeLineup,
+              awayLineup,
+              realHome,
+              realAway,
+              realHomeId,
+              realAwayId,
+              performanceMap,
+              eventMap
+            )
+          : `
+            <div class="bf-detail-section">
+
+              <h3>
+                ⭐ Performance des joueurs
+              </h3>
+
+              <div class="bf-detail-item">
+                Composition indisponible.
+              </div>
+
+            </div>
+          `
+      }
+
+      ${
+        homeLineup ||
+        awayLineup
+          ? renderBenchSection(
+              homeLineup,
+              awayLineup,
+              realHome,
+              realAway,
+              realHomeId,
+              realAwayId,
+              performanceMap,
+              eventMap
+            )
+          : ""
+      }
+
+      ${renderEvents(
+        events,
+        realHomeId,
+        realAwayId,
+        realHome,
+        realAway
+      )}
+
+      ${
+        statistics.length
+          ? `
+            <div class="bf-detail-section">
+
+              <h3>
+                📊 Statistiques du match
+              </h3>
+
+              ${renderStatistics(
+                statistics
+              )}
+
+            </div>
+          `
+          : ""
+      }
+
+    `;
+
+  } catch (error) {
+
+    console.error(
+      "MATCH DETAILS ERROR:",
+      error
+    );
+
+    content.innerHTML += `
+
+      <div class="bf-detail-section">
+
+        <h3>
+          ⚠️ Erreur
+        </h3>
+
+        <div class="bf-detail-item">
+          Impossible de charger les détails de cette rencontre.
+        </div>
+
+      </div>
+
+    `;
+  }
+}
     /*
        إذا المستخدم سد الـmodal أو فتح ماتش آخر
        منخليش response القديم يكتب فوق الجديد.
