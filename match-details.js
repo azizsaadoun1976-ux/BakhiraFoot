@@ -1833,7 +1833,7 @@
     return "unknown";
   }
 
-  function pitchPositions(
+ function pitchPositions(
   lineup,
   side
 ) {
@@ -1845,90 +1845,637 @@
     return [];
   }
 
-  /*
-   * ============================================
-   * 1) إلا كانت x/y موجودة، نستعملوها مباشرة
-   * ============================================
-   */
+  /* =====================================================
+     HELPERS
+  ===================================================== */
 
-  const realPositions =
-    players.map(player => {
+  function unwrap(player) {
+    if (
+      player?.player &&
+      typeof player.player === "object"
+    ) {
+      return player.player;
+    }
 
-      const p =
-        player?.player &&
-        typeof player.player === "object"
-          ? player.player
-          : player;
+    return player || {};
+  }
 
-      const x = Number(
-        first(
-          p?.x,
-          player?.x,
-          null
-        )
+  function numberValue(value) {
+    if (
+      value === undefined ||
+      value === null ||
+      value === ""
+    ) {
+      return null;
+    }
+
+    const n =
+      Number(
+        String(value)
+          .replace(",", ".")
+          .trim()
       );
 
-      const y = Number(
-        first(
-          p?.y,
-          player?.y,
-          null
-        )
+    return Number.isFinite(n)
+      ? n
+      : null;
+  }
+
+  function percent(value) {
+    const n =
+      numberValue(value);
+
+    if (n === null) {
+      return null;
+    }
+
+    /*
+     * بعض المصادر كتستعمل:
+     * 0 -> 1
+     * وبعضها:
+     * 0 -> 100
+     */
+
+    if (
+      n >= 0 &&
+      n <= 1
+    ) {
+      return n * 100;
+    }
+
+    return n;
+  }
+
+  function getGrid(player) {
+
+    const p =
+      unwrap(player);
+
+    const raw =
+      first(
+        p?.grid,
+        player?.grid,
+
+        p?.position_grid,
+        player?.position_grid,
+
+        p?.positionGrid,
+        player?.positionGrid,
+
+        null
       );
 
-      return {
-        player,
-        x,
-        y,
-        valid:
-          Number.isFinite(x) &&
-          Number.isFinite(y)
-      };
-    });
+    if (
+      raw === null ||
+      raw === undefined ||
+      raw === ""
+    ) {
+      return null;
+    }
 
-  const validCount =
-    realPositions.filter(
-      item => item.valid
-    ).length;
+    /*
+     * grid ممكن تكون:
+     * 1:1
+     * 2:1
+     * 2:2
+     * 3:3
+     */
 
-  if (
-    validCount === players.length
-  ) {
+    if (
+      typeof raw === "object"
+    ) {
 
-    return realPositions.map(item => {
+      const row =
+        numberValue(
+          first(
+            raw?.row,
+            raw?.x,
+            raw?.line,
+            raw?.position,
+            null
+          )
+        );
 
-      let y = item.y;
+      const col =
+        numberValue(
+          first(
+            raw?.column,
+            raw?.col,
+            raw?.y,
+            raw?.slot,
+            null
+          )
+        );
 
-      if (side === "away") {
-        y = 100 - y;
+      if (
+        row !== null &&
+        col !== null &&
+        row > 0 &&
+        col > 0
+      ) {
+        return {
+          row,
+          col
+        };
       }
 
-      return {
-        player: item.player,
+      return null;
+    }
 
-        x: Math.max(
-          8,
-          Math.min(
-            92,
-            item.x
-          )
-        ),
+    const value =
+      String(raw)
+        .trim();
 
-        y: Math.max(
-          8,
-          Math.min(
-            92,
-            y
-          )
+    const match =
+      value.match(
+        /(\d+)\s*[:;,/_-]\s*(\d+)/
+      );
+
+    if (!match) {
+      return null;
+    }
+
+    const row =
+      Number(match[1]);
+
+    const col =
+      Number(match[2]);
+
+    if (
+      !Number.isFinite(row) ||
+      !Number.isFinite(col) ||
+      row <= 0 ||
+      col <= 0
+    ) {
+      return null;
+    }
+
+    return {
+      row,
+      col
+    };
+  }
+
+  function classify(player) {
+
+    const p =
+      unwrap(player);
+
+    const position =
+      norm(
+        first(
+          p?.position,
+          p?.pos,
+          p?.role,
+          player?.position,
+          player?.pos,
+          player?.role,
+          ""
         )
-      };
-    });
+      );
+
+    /* GK */
+
+    if (
+      [
+        "g",
+        "gk",
+        "1",
+        "goalkeeper",
+        "goalie",
+        "keeper"
+      ].includes(position) ||
+
+      position.includes(
+        "goalkeeper"
+      ) ||
+
+      position.includes(
+        "keeper"
+      )
+    ) {
+      return "gk";
+    }
+
+    /* DEFENDERS */
+
+    if (
+      [
+        "d",
+        "df",
+        "def",
+        "2",
+        "cb",
+        "lb",
+        "rb",
+        "lwb",
+        "rwb",
+        "left back",
+        "right back",
+        "centre back",
+        "center back",
+        "central defender",
+        "full back",
+        "wing back"
+      ].includes(position) ||
+
+      position.includes("def") ||
+
+      position.includes("back") ||
+
+      position.includes("centre back") ||
+
+      position.includes("center back") ||
+
+      position.includes("stopper")
+    ) {
+      return "def";
+    }
+
+    /* MIDFIELDERS */
+
+    if (
+      [
+        "m",
+        "mf",
+        "mid",
+        "3",
+        "dm",
+        "cm",
+        "am",
+        "lm",
+        "rm",
+        "dmc",
+        "mc",
+        "cml",
+        "cmr",
+        "aml",
+        "amr",
+        "left midfield",
+        "right midfield",
+        "central midfield",
+        "defensive midfield",
+        "attacking midfield"
+      ].includes(position) ||
+
+      position.includes("mid") ||
+
+      position.includes("middle") ||
+
+      position.includes("defensive midfield") ||
+
+      position.includes("attacking midfield")
+    ) {
+      return "mid";
+    }
+
+    /* FORWARDS */
+
+    if (
+      [
+        "f",
+        "fw",
+        "att",
+        "4",
+        "st",
+        "cf",
+        "ss",
+        "lw",
+        "rw",
+        "lf",
+        "rf",
+        "left wing",
+        "right wing",
+        "forward",
+        "striker",
+        "centre forward",
+        "center forward"
+      ].includes(position) ||
+
+      position.includes("forw") ||
+
+      position.includes("att") ||
+
+      position.includes("strik") ||
+
+      position.includes("wing") ||
+
+      position.includes("forward")
+    ) {
+      return "fwd";
+    }
+
+    return "unknown";
   }
 
   /*
-   * ============================================
-   * 2) FALLBACK حسب Position + Formation
-   * ============================================
+   * =====================================================
+   * 1) GRID
+   * =====================================================
+   *
+   * الأولوية للـgrid حيث كتحدد:
+   * row = الخط
+   * col = المكان داخل الخط
+   */
+
+  const gridPositions =
+    players.map(player => {
+
+      const grid =
+        getGrid(player);
+
+      return {
+        player,
+        grid,
+        valid:
+          !!grid
+      };
+
+    });
+
+  const gridValid =
+    gridPositions.filter(
+      item => item.valid
+    );
+
+  /*
+   * إلا كان عندنا grid كافية،
+   * نستعملوها.
+   */
+
+  if (
+    gridValid.length >=
+    Math.max(
+      7,
+      Math.ceil(
+        players.length * 0.7
+      )
+    )
+  ) {
+
+    const rows =
+      gridValid.map(
+        item =>
+          item.grid.row
+      );
+
+    const minRow =
+      Math.min(...rows);
+
+    const maxRow =
+      Math.max(...rows);
+
+    const rowRange =
+      Math.max(
+        1,
+        maxRow - minRow
+      );
+
+    /*
+     * أقصى column لكل row
+     */
+
+    const maxColByRow =
+      {};
+
+    gridValid.forEach(
+      item => {
+
+        const row =
+          item.grid.row;
+
+        maxColByRow[row] =
+          Math.max(
+            maxColByRow[row] || 1,
+            item.grid.col
+          );
+
+      }
+    );
+
+    const result =
+      gridPositions.map(
+        item => {
+
+          if (!item.valid) {
+            return null;
+          }
+
+          const row =
+            item.grid.row;
+
+          const col =
+            item.grid.col;
+
+          const maxCol =
+            maxColByRow[row] || 1;
+
+          let x;
+
+          if (
+            maxCol <= 1
+          ) {
+            x = 50;
+          }
+          else {
+            /*
+             * كنخلي اللاعبين بعيدين شوية
+             * على الحواف
+             */
+            x =
+              18 +
+              (
+                64 *
+                (
+                  (col - 1) /
+                  (maxCol - 1)
+                )
+              );
+          }
+
+          let y;
+
+          if (
+            rowRange <= 1
+          ) {
+            y = 50;
+          }
+          else {
+
+            y =
+              8 +
+              (
+                84 *
+                (
+                  (row - minRow) /
+                  rowRange
+                )
+              );
+          }
+
+          /*
+           * Away كيتقلب
+           * باش GK يبقى فالجهة المقابلة.
+           */
+
+          if (
+            side === "away"
+          ) {
+            y =
+              100 - y;
+          }
+
+          return {
+            player:
+              item.player,
+
+            x:
+              Math.max(
+                6,
+                Math.min(
+                  94,
+                  x
+                )
+              ),
+
+            y:
+              Math.max(
+                6,
+                Math.min(
+                  94,
+                  y
+                )
+              )
+          };
+
+        }
+      )
+      .filter(Boolean);
+
+    if (
+      result.length >= 7
+    ) {
+      return result;
+    }
+  }
+
+  /*
+   * =====================================================
+   * 2) X / Y REAL
+   * =====================================================
+   */
+
+  const xyPositions =
+    players.map(
+      player => {
+
+        const p =
+          unwrap(player);
+
+        const rawX =
+          first(
+            p?.x,
+            player?.x,
+            null
+          );
+
+        const rawY =
+          first(
+            p?.y,
+            player?.y,
+            null
+          );
+
+        const x =
+          percent(rawX);
+
+        const y =
+          percent(rawY);
+
+        return {
+          player,
+
+          x,
+
+          y,
+
+          valid:
+            x !== null &&
+            y !== null
+        };
+
+      }
+    );
+
+  const xyValid =
+    xyPositions.filter(
+      item => item.valid
+    );
+
+  /*
+   * ما نستعملوش x/y إلا كانو كافيين.
+   */
+
+  if (
+    xyValid.length ===
+    players.length
+  ) {
+
+    return xyPositions.map(
+      item => {
+
+        let x =
+          item.x;
+
+        let y =
+          item.y;
+
+        /*
+         * بعض المصادر يمكن تعطي
+         * x/y بقيم معكوسة.
+         *
+         * كنخلي X أفقي
+         * و Y عمودي.
+         */
+
+        if (
+          side === "away"
+        ) {
+          y =
+            100 - y;
+        }
+
+        return {
+          player:
+            item.player,
+
+          x:
+            Math.max(
+              6,
+              Math.min(
+                94,
+                x
+              )
+            ),
+
+          y:
+            Math.max(
+              6,
+              Math.min(
+                94,
+                y
+              )
+            )
+        };
+
+      }
+    );
+  }
+
+  /*
+   * =====================================================
+   * 3) FORMATION + POSITION
+   * =====================================================
    */
 
   const formation =
@@ -1942,51 +2489,59 @@
   const forwards = [];
   const unknown = [];
 
-  players.forEach(player => {
+  players.forEach(
+    player => {
 
-    const type =
-      category(player);
+      const type =
+        classify(player);
 
-    if (type === "gk") {
-      gk.push(player);
-    }
-    else if (type === "def") {
-      defenders.push(player);
-    }
-    else if (type === "mid") {
-      midfielders.push(player);
-    }
-    else if (type === "fwd") {
-      forwards.push(player);
-    }
-    else {
-      unknown.push(player);
-    }
+      if (
+        type === "gk"
+      ) {
+        gk.push(player);
+      }
 
-  });
+      else if (
+        type === "def"
+      ) {
+        defenders.push(player);
+      }
+
+      else if (
+        type === "mid"
+      ) {
+        midfielders.push(player);
+      }
+
+      else if (
+        type === "fwd"
+      ) {
+        forwards.push(player);
+      }
+
+      else {
+        unknown.push(player);
+      }
+
+    }
+  );
 
   /*
    * GK
    */
+
   const rows = [];
 
-  if (gk.length) {
+  if (
+    gk.length
+  ) {
     rows.push(
       gk.slice(0, 1)
     );
-  } else {
+  }
+  else {
     rows.push([]);
   }
-
-  /*
-   * Formation:
-   *
-   * 4-3-3
-   * 4 DEF / 3 MID / 3 FWD
-   *
-   * 4-2-3-1
-   * 4 DEF / 2 MID / 3 MID/FWD / 1 FWD
-   */
 
   let defIndex = 0;
   let midIndex = 0;
@@ -1994,11 +2549,21 @@
   let unknownIndex = 0;
 
   formation.forEach(
-    (count, rowIndex) => {
+    (
+      count,
+      rowIndex
+    ) => {
 
       let source = [];
 
-      if (rowIndex === 0) {
+      /*
+       * Défense
+       */
+
+      if (
+        rowIndex === 0
+      ) {
+
         source =
           defenders.slice(
             defIndex,
@@ -2009,10 +2574,15 @@
           source.length;
       }
 
+      /*
+       * Attaque
+       */
+
       else if (
         rowIndex ===
         formation.length - 1
       ) {
+
         source =
           forwards.slice(
             fwdIndex,
@@ -2023,7 +2593,12 @@
           source.length;
       }
 
+      /*
+       * Milieu
+       */
+
       else {
+
         source =
           midfielders.slice(
             midIndex,
@@ -2035,12 +2610,13 @@
       }
 
       /*
-       * إلا نقصات شي بلاصة،
-       * نعمرها من players اللي ما تصنفوش.
+       * Si manque joueurs
        */
 
       while (
-        source.length < count &&
+        source.length <
+          count &&
+
         unknownIndex <
           unknown.length
       ) {
@@ -2061,9 +2637,7 @@
   );
 
   /*
-   * ============================================
-   * 3) آخر fallback
-   * ============================================
+   * Les joueurs restants
    */
 
   const used =
@@ -2090,49 +2664,79 @@
   }
 
   /*
-   * ============================================
-   * 4) تحويل rows إلى coordinates
-   * ============================================
+   * =====================================================
+   * 4) ROW -> COORDINATES
+   * =====================================================
    */
 
   const result = [];
 
   rows.forEach(
-    (row, rowIndex) => {
+    (
+      row,
+      rowIndex
+    ) => {
 
-      if (!row.length) {
+      if (
+        !row.length
+      ) {
         return;
       }
 
       row.forEach(
-        (player, index) => {
+        (
+          player,
+          index
+        ) => {
 
-          const x =
+          let x;
+
+          if (
             row.length === 1
-              ? 50
-              : 10 +
-                (
-                  80 *
-                  (
-                    index /
-                    (
-                      row.length - 1
-                    )
-                  )
-                );
+          ) {
+            x = 50;
+          }
 
-          let y =
-            8 +
-            (
-              84 *
+          else {
+
+            x =
+              16 +
               (
-                rowIndex /
-                Math.max(
-                  1,
-                  rows.length - 1
+                68 *
+                (
+                  index /
+                  (
+                    row.length - 1
+                  )
                 )
-              )
-            );
+              );
+
+          }
+
+          let y;
+
+          if (
+            rows.length === 1
+          ) {
+            y = 50;
+          }
+
+          else {
+
+            y =
+              8 +
+              (
+                84 *
+                (
+                  rowIndex /
+                  Math.max(
+                    1,
+                    rows.length - 1
+                  )
+                )
+              );
+
+          }
 
           if (
             side === "away"
@@ -2173,7 +2777,6 @@
 
   return result;
 }
-
   /* =========================================================
      PLAYER AVATAR
   ========================================================= */
