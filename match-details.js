@@ -25,111 +25,7 @@
    */
 
   const DETAILS_API = "/api?fixture=";
-async function fetchDetailsJSON(
-  identifier
-) {
 
-  const controller =
-    new AbortController();
-
-  const timer =
-    setTimeout(
-      () => controller.abort(),
-      12000
-    );
-
-  try {
-
-    /*
-     * أول محاولة:
-     * API ديال BakhiraFoot
-     */
-    try {
-
-      const response =
-        await fetch(
-          `${DETAILS_API}${encodeURIComponent(
-            identifier
-          )}`,
-          {
-            method: "GET",
-            cache: "no-store",
-            headers: {
-              Accept:
-                "application/json"
-            },
-            signal:
-              controller.signal
-          }
-        );
-
-      if (
-        response.ok
-      ) {
-
-        const data =
-          await response.json();
-
-        return data;
-      }
-
-    }
-    catch (
-      error
-    ) {
-
-      console.warn(
-        "BAKHIRAFOOT API FAILED:",
-        error
-      );
-
-    }
-
-    /*
-     * ثاني محاولة:
-     * SportScore مباشرة
-     *
-     * غير إلا كان identifier عبارة عن slug.
-     */
-    const directURL =
-      `https://sportscore.com/api/widget/match/?sport=football&slug=${encodeURIComponent(
-        identifier
-      )}&src=bakhira-foot`;
-
-    const directResponse =
-      await fetch(
-        directURL,
-        {
-          method: "GET",
-          cache: "no-store",
-          headers: {
-            Accept:
-              "application/json"
-          },
-          signal:
-            controller.signal
-        }
-      );
-
-    if (
-      !directResponse.ok
-    ) {
-      throw new Error(
-        `HTTP ${directResponse.status}`
-      );
-    }
-
-    return await directResponse.json();
-
-  }
-  finally {
-
-    clearTimeout(
-      timer
-    );
-
-  }
-}
   /* =========================================================
      BASIC HELPERS
   ========================================================= */
@@ -1350,128 +1246,80 @@ async function fetchDetailsJSON(
     );
   }
 
- function getPlayerNumber(
-  player
-) {
+  function getPlayerNumber(
+    player
+  ) {
+    if (
+      typeof player === "string"
+    ) {
+      return "-";
+    }
 
-  const p =
-    player?.player &&
-    typeof player.player ===
-      "object"
-      ? player.player
-      : player;
+    return first(
+      player?.number,
+      player?.shirt_number,
+      player?.shirtNumber,
+      player?.jersey,
+      player?.player?.number,
+      "-"
+    );
+  }
 
-  return first(
+  function getPlayerPosition(
+    player
+  ) {
+    if (
+      typeof player === "string"
+    ) {
+      return "";
+    }
 
-    p?.number,
+    return first(
+      player?.position,
+      player?.pos,
+      player?.role,
+      player?.player?.position,
+      ""
+    );
+  }
 
-    p?.shirt_number,
+  function getPlayerPhoto(
+    player
+  ) {
+    if (
+      typeof player === "string"
+    ) {
+      return "";
+    }
 
-    p?.shirtNumber,
+    return first(
+      player?.photo,
+      player?.image,
+      player?.picture,
+      player?.avatar,
+      player?.player?.photo,
+      player?.player?.image,
+      player?.player?.picture,
+      ""
+    );
+  }
 
-    p?.jersey,
+  function getPlayerRating(
+    player
+  ) {
+    if (
+      typeof player === "string"
+    ) {
+      return null;
+    }
 
-    p?.jersey_number,
-
-    p?.jerseyNumber,
-
-    player?.number,
-
-    player?.shirt_number,
-
-    player?.shirtNumber,
-
-    "-"
-
-  );
-}
-
-
-function getPlayerPosition(
-  player
-) {
-
-  const p =
-    player?.player &&
-    typeof player.player ===
-      "object"
-      ? player.player
-      : player;
-
-  return first(
-
-    p?.position,
-
-    p?.pos,
-
-    p?.role,
-
-    player?.position,
-
-    player?.pos,
-
-    ""
-  );
-}
-
-
-function getPlayerPhoto(
-  player
-) {
-
-  const p =
-    player?.player &&
-    typeof player.player ===
-      "object"
-      ? player.player
-      : player;
-
-  return first(
-
-    p?.photo,
-
-    p?.logo,
-
-    p?.picture,
-
-    p?.image,
-
-    p?.avatar,
-
-    player?.photo,
-
-    player?.logo,
-
-    player?.picture,
-
-    player?.image,
-
-    player?.avatar,
-
-    ""
-  );
-}
-
-
-function getPlayerRating(
-  player
-) {
-
-  return first(
-
-    player?.rating,
-
-    player?.performance?.rating,
-
-    player?.statistics?.rating,
-
-    player?.games?.rating,
-
-    player?.player?.rating,
-
-    null
-  );
-}
+    return first(
+      player?.rating,
+      player?.statistics?.rating,
+      player?.player?.rating,
+      null
+    );
+  }
 
   function playerKey(
     player
@@ -1985,64 +1833,7 @@ function getPlayerRating(
     return "unknown";
   }
 
-function playerCoordinates(
-  player
-) {
-
-  const p =
-    player?.player &&
-    typeof player.player ===
-      "object"
-      ? player.player
-      : player;
-
-  const x =
-    Number(
-      first(
-        p?.x,
-        player?.x,
-        p?.posX,
-        player?.posX,
-        null
-      )
-    );
-
-  const y =
-    Number(
-      first(
-        p?.y,
-        player?.y,
-        p?.posY,
-        player?.posY,
-        null
-      )
-    );
-
-  if (
-    Number.isFinite(x) &&
-    Number.isFinite(y) &&
-    x >= 0 &&
-    x <= 100 &&
-    y >= 0 &&
-    y <= 100
-  ) {
-
-    return {
-      x,
-      y,
-      valid: true
-    };
-  }
-
-  return {
-    x: null,
-    y: null,
-    valid: false
-  };
-}
-
-
-function pitchPositions(
+  function pitchPositions(
   lineup,
   side
 ) {
@@ -2877,179 +2668,81 @@ function pitchPositions(
   /* =========================================================
      PITCH EVENT BADGES
   ========================================================= */
-function playerHasInjury(
-  player
-) {
 
-  const p =
-    player?.player &&
-    typeof player.player ===
-      "object"
-      ? player.player
-      : player;
-
-  const direct =
-    first(
-      player?.injury,
-      player?.injured,
-      p?.injury,
-      p?.injured,
-      null
-    );
-
-  if (
-    direct
-  ) {
-    return true;
-  }
-
-  const incidents =
-    first(
-      player?.incidents,
-      p?.incidents,
-      []
-    );
-
-  if (
-    Array.isArray(
-      incidents
-    )
-  ) {
-
-    return incidents.some(
-      incident => {
-
-        const type =
-          norm(
-            first(
-              incident?.type,
-              incident?.event_type,
-              incident?.incidentType,
-              ""
-            )
-          );
-
-        const detail =
-          norm(
-            first(
-              incident?.detail,
-              incident?.description,
-              incident?.reason,
-              ""
-            )
-          );
-
-        return (
-          type.includes(
-            "injur"
-          ) ||
-          detail.includes(
-            "injur"
-          ) ||
-          type.includes(
-            "hurt"
-          ) ||
-          detail.includes(
-            "hurt"
-          )
-        );
-      }
-    );
-  }
-
-  return false;
-}
   function playerBadges(
-  player,
-  statsMap
-) {
-
-  const stats =
-    statsMap.get(
-      playerKey(
-        player
-      )
-    ) || {
-      goals: 0,
-      assists: 0,
-      yellow: 0,
-      red: 0,
-      in: 0,
-      out: 0
-    };
-
-  const badges =
-    [];
-
-  if (
-    stats.goals
+    player,
+    statsMap
   ) {
-    badges.push(
-      "⚽"
-    );
-  }
+    const stats =
+      statsMap.get(
+        playerKey(
+          player
+        )
+      );
 
-  if (
-    stats.assists
-  ) {
-    badges.push(
-      "🅰️"
-    );
-  }
+    if (!stats) {
+      return "";
+    }
 
-  if (
-    stats.yellow
-  ) {
-    badges.push(
-      "🟨"
-    );
-  }
+    const badges =
+      [];
 
-  if (
-    stats.red
-  ) {
-    badges.push(
-      "🟥"
-    );
-  }
+    if (
+      stats.goals
+    ) {
+      badges.push(
+        "⚽"
+      );
+    }
 
-  if (
-    stats.in
-  ) {
-    badges.push(
-      "↗️"
-    );
-  }
+    if (
+      stats.assists
+    ) {
+      badges.push(
+        "🅰️"
+      );
+    }
 
-  if (
-    stats.out
-  ) {
-    badges.push(
-      "↙️"
-    );
-  }
+    if (
+      stats.yellow
+    ) {
+      badges.push(
+        "🟨"
+      );
+    }
 
-  if (
-    playerHasInjury(
-      player
-    )
-  ) {
-    badges.push(
-      "🤕"
-    );
-  }
+    if (
+      stats.red
+    ) {
+      badges.push(
+        "🟥"
+      );
+    }
 
-  return badges.length
-    ? `
-      <div
-        class="bfmd-event-mini"
-        title="Événements du joueur"
-      >
-        ${badges.join("")}
-      </div>
-    `
-    : "";
-}
+    if (
+      stats.in
+    ) {
+      badges.push(
+        "↗️"
+      );
+    }
+
+    if (
+      stats.out
+    ) {
+      badges.push(
+        "↙️"
+      );
+    }
+
+    return badges.length
+      ? `
+        <div class="bfmd-event-mini">
+          ${badges.join("")}
+        </div>
+      `
+      : "";
+  }
 
   /* =========================================================
      RENDER PITCH
@@ -3167,19 +2860,19 @@ function playerHasInjury(
                   )}
                 </div>
 
-               <div class="bfmd-rating">
-  ⭐ ${
-    rating !== null &&
-    rating !== undefined &&
-    rating !== ""
-      ? esc(
-          Number(
-            rating
-          ).toFixed(1)
-        )
-      : "—"
-  }
-</div>
+                ${
+                  rating !== null
+                    ? `
+                      <div class="bfmd-rating">
+                        ⭐ ${esc(
+                          Number(
+                            rating
+                          ).toFixed(1)
+                        )}
+                      </div>
+                    `
+                    : ""
+                }
 
               </div>
             `;
@@ -4155,15 +3848,22 @@ function playerHasInjury(
 
     try {
 
-     const payload =
-  await fetchDetailsJSON(
-    identifier
-  );
+      const response =
+        await fetch(
+          `${DETAILS_API}${encodeURIComponent(
+            identifier
+          )}`,
+          {
+            cache: "no-store",
+            headers: {
+              Accept:
+                "application/json"
+            }
+          }
+        );
 
-console.log(
-  "BAKHIRAFOOT DETAILS JSON:",
-  payload
-);
+      const rawText =
+        await response.text();
 
       if (!response.ok) {
         throw new Error(
