@@ -1160,17 +1160,87 @@ module.exports = async (req, res) => {
 
       /* Home / Away format */
 
-      const homeSource =
-        source?.home ||
-        source?.homeTeam ||
-        source?.host ||
-        null;
+const hasHomeData =
+  source?.home_xi ||
+  source?.home_starting ||
+  source?.home_starting_xi ||
+  source?.home_startingXI ||
+  source?.home_subs ||
+  source?.home_substitutes ||
+  source?.home_bench ||
+  source?.home_formation;
 
-      const awaySource =
-        source?.away ||
-        source?.awayTeam ||
-        source?.guest ||
-        null;
+const hasAwayData =
+  source?.away_xi ||
+  source?.away_starting ||
+  source?.away_starting_xi ||
+  source?.away_startingXI ||
+  source?.away_subs ||
+  source?.away_substitutes ||
+  source?.away_bench ||
+  source?.away_formation;
+
+const homeSource =
+  source?.home ||
+  source?.homeTeam ||
+  source?.host ||
+  (
+    hasHomeData
+      ? {
+          team: homeTeam,
+
+          formation:
+            source?.home_formation ||
+            source?.formation?.home ||
+            source?.formation?.home_formation ||
+            "—",
+
+          players:
+            source?.home_xi ||
+            source?.home_starting ||
+            source?.home_starting_xi ||
+            source?.home_startingXI ||
+            [],
+
+          substitutes:
+            source?.home_subs ||
+            source?.home_substitutes ||
+            source?.home_bench ||
+            []
+        }
+      : null
+  );
+
+const awaySource =
+  source?.away ||
+  source?.awayTeam ||
+  source?.guest ||
+  (
+    hasAwayData
+      ? {
+          team: awayTeam,
+
+          formation:
+            source?.away_formation ||
+            source?.formation?.away ||
+            source?.formation?.away_formation ||
+            "—",
+
+          players:
+            source?.away_xi ||
+            source?.away_starting ||
+            source?.away_starting_xi ||
+            source?.away_startingXI ||
+            [],
+
+          substitutes:
+            source?.away_subs ||
+            source?.away_substitutes ||
+            source?.away_bench ||
+            []
+        }
+      : null
+  );
 
       const result = [];
 
@@ -1249,15 +1319,41 @@ module.exports = async (req, res) => {
               event?.description ||
               "";
 
-            const player =
-              event?.player ||
-              {};
+           const player =
+  event?.player ??
+  event?.player_name ??
+  "";
 
-            const assist =
-              event?.assist ||
-              event?.assist1 ||
-              {};
+const assist =
+  event?.assist ??
+  event?.assist1 ??
+  event?.assist_name ??
+  "";
 
+function valueName(value) {
+  if (
+    typeof value === "string" ||
+    typeof value === "number"
+  ) {
+    return String(value);
+  }
+
+  if (
+    value &&
+    typeof value === "object"
+  ) {
+    return (
+      value.name ||
+      value.full_name ||
+      value.fullName ||
+      value.short_name ||
+      value.player?.name ||
+      ""
+    );
+  }
+
+  return "";
+}
             const team =
               event?.team ||
               {};
@@ -1307,10 +1403,10 @@ module.exports = async (req, res) => {
                   event?.player_id ||
                   null,
 
-                name:
-                  player?.name ||
-                  event?.player_name ||
-                  ""
+               name:
+  valueName(player) ||
+  event?.player_name ||
+  "",
 
               },
 
@@ -1321,10 +1417,10 @@ module.exports = async (req, res) => {
                   event?.assist_id ||
                   null,
 
-                name:
-                  assist?.name ||
-                  event?.assist_name ||
-                  ""
+               name:
+  valueName(assist) ||
+  event?.assist_name ||
+  "",
 
               },
 
@@ -1338,7 +1434,33 @@ module.exports = async (req, res) => {
           }
         );
     }
+playerIn:
+  valueName(
+    event?.player_in ??
+    event?.playerIn ??
+    event?.incoming ??
+    event?.in_player ??
+    event?.substitute
+  ) ||
+  event?.player_in_name ||
+  event?.playerInName ||
+  "",
 
+playerOut:
+  valueName(
+    event?.player_out ??
+    event?.playerOut ??
+    event?.outgoing ??
+    event?.out_player ??
+    event?.replaced
+  ) ||
+  event?.player_out_name ||
+  event?.playerOutName ||
+  "",
+      };
+          }
+        );
+    }
     /* =====================================================
        STATISTICS
     ===================================================== */
