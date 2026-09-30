@@ -571,7 +571,6 @@ function findCachedMatch(
 async function getMatchDetails(
   identifier
 ) {
-
   const cached =
     getCached(
       detailsCache,
@@ -580,14 +579,16 @@ async function getMatchDetails(
     );
 
   if (cached) {
-
     return {
       data: cached,
       cached: true
     };
-
   }
 
+  /*
+   * كنلقاو الماتش فالـcache باش ناخدو
+   * الـslug الحقيقي ديالو.
+   */
   const baseMatch =
     findCachedMatch(
       identifier
@@ -595,53 +596,270 @@ async function getMatchDetails(
 
   const slug =
     baseMatch?.fixture?.slug ||
-    identifier;
+    baseMatch?.slug ||
+    String(identifier);
 
+  /*
+   * مهم:
+   * كنستعملو الـWidget endpoint الرسمي
+   * حيث كيرجع:
+   *
+   * {
+   *   sport: "football",
+   *   match: {
+   *      incidents: [],
+   *      lineups: {
+   *        home_formation: "...",
+   *        away_formation: "...",
+   *        home_xi: [],
+   *        away_xi: [],
+   *        home_subs: [],
+   *        away_subs: []
+   *      }
+   *   }
+   * }
+   */
   const data =
     await sportScoreFetch(
-      `/match/?sport=football&slug=${encodeURIComponent(
+      `/api/widget/match/?sport=football&slug=${encodeURIComponent(
         slug
-      )}`
+      )}&src=bakhira-foot`
     );
 
   /*
-     SportScore match endpoint
-     كيقدر يرجع envelope فيه data
-     أو match مباشرة.
-  */
-
+   * استخراج match الحقيقي.
+   */
   const detail =
     data?.match ||
+    data?.data?.match ||
     data?.data ||
     data;
 
+  if (
+    !detail ||
+    typeof detail !== "object"
+  ) {
+    throw new Error(
+      "Données détaillées du match introuvables"
+    );
+  }
+
+  /*
+   * Adapter ديال معلومات الماتش الأساسية.
+   */
   const adapted =
     adaptFixture(
       detail
     ) || baseMatch;
 
-  const details = {
+  /*
+   * مهم:
+   * كنحتافظو بالـlineups كما رجعات من SportScore
+   * بلا ما نحولو object لـ [].
+   */
+  const lineups =
+    detail?.lineups ??
+    detail?.lineup ??
+    detail?.compositions ??
+    {};
 
+  /*
+   * الأحداث الحقيقية.
+   */
+  const events =
+    detail?.incidents ??
+    detail?.events ??
+    detail?.timeline ??
+    [];
+
+  /*
+   * الإحصائيات.
+   */
+  const statistics =
+    detail?.stats ??
+    detail?.statistics ??
+    [];
+
+  /*
+   * اللاعبين إذا كانوا موجودين.
+   */
+  const players =
+    detail?.players ??
+    [];
+
+  /*
+   * كنرجعو التفاصيل كاملة.
+   */
+  const details = {
     ...adapted,
 
-    events:
-      detail?.timeline ||
-      detail?.events ||
-      [],
+    /*
+     * معلومات SportScore الأصلية
+     */
+    sport:
+      data?.sport ||
+      "football",
 
-    lineups:
-      detail?.lineups ||
-      [],
+    /*
+     * فرق
+     */
+    home:
+      detail?.home ||
+      adapted?.teams?.home?.name ||
+      baseMatch?.teams?.home?.name,
 
-    statistics:
-      detail?.statistics ||
-      [],
+    away:
+      detail?.away ||
+      adapted?.teams?.away?.name ||
+      baseMatch?.teams?.away?.name,
 
-    players:
-      detail?.players ||
-      []
+    home_logo:
+      detail?.home_logo ||
+      adapted?.teams?.home?.logo ||
+      "",
 
+    away_logo:
+      detail?.away_logo ||
+      adapted?.teams?.away?.logo ||
+      "",
+
+    /*
+     * النتيجة
+     */
+    home_score:
+      detail?.home_score ??
+      adapted?.score?.home ??
+      null,
+
+    away_score:
+      detail?.away_score ??
+      adapted?.score?.away ??
+      null,
+
+    /*
+     * الحالة
+     */
+    status:
+      detail?.status ||
+      adapted?.fixture?.status?.short ||
+      "MATCH",
+
+    status_text:
+      detail?.status_text ||
+      adapted?.fixture?.status?.long ||
+      "",
+
+    /*
+     * الوقت
+     */
+    time:
+      detail?.time ||
+      adapted?.fixture?.date ||
+      null,
+
+    /*
+     * البطولة
+     */
+    competition:
+      detail?.competition ||
+      adapted?.league?.name ||
+      "Football",
+
+    /*
+     * المكان
+     */
+    venue:
+      detail?.venue ||
+      null,
+
+    referee:
+      detail?.referee ||
+      null,
+
+    /*
+     * الأحداث
+     */
+    events,
+
+    incidents:
+      events,
+
+    timeline:
+      events,
+
+    /*
+     * التشكيلات
+     */
+    lineups,
+
+    lineup:
+      lineups,
+
+    /*
+     * الإحصائيات
+     */
+    statistics,
+
+    stats:
+      statistics,
+
+    /*
+     * اللاعبين
+     */
+    players
   };
+
+  /*
+   * مهم للتشخيص:
+   * غادي نشوفو فـ Vercel console واش فعلاً
+   * وصلات التشكيلة.
+   */
+  console.log(
+    "BAKHIRAFOOT DETAILS:",
+    {
+      slug,
+      home:
+        details.home,
+      away:
+        details.away,
+      formations: {
+        home:
+          lineups?.home_formation ||
+          null,
+        away:
+          lineups?.away_formation ||
+          null
+      },
+      homeXI:
+        Array.isArray(
+          lineups?.home_xi
+        )
+          ? lineups.home_xi.length
+          : 0,
+      awayXI:
+        Array.isArray(
+          lineups?.away_xi
+        )
+          ? lineups.away_xi.length
+          : 0,
+      homeSubs:
+        Array.isArray(
+          lineups?.home_subs
+        )
+          ? lineups.home_subs.length
+          : 0,
+      awaySubs:
+        Array.isArray(
+          lineups?.away_subs
+        )
+          ? lineups.away_subs.length
+          : 0,
+      events:
+        Array.isArray(events)
+          ? events.length
+          : 0
+    }
+  );
 
   setCached(
     detailsCache,
