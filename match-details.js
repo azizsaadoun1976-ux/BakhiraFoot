@@ -1,33 +1,10 @@
 (function () {
   "use strict";
 
-  /*
-   * =========================================================
-   * BAKHIRAFOOT - MATCH DETAILS
-   * =========================================================
-   *
-   * كيقرا:
-   * /api?fixture=...
-   *
-   * وكيحوّل formats مختلفة ديال SportScore
-   * إلى:
-   *
-   * - formation
-   * - starting XI
-   * - substitutes
-   * - goals
-   * - assists
-   * - yellow / red cards
-   * - substitutions
-   * - event timeline
-   * - player ratings
-   * - player photos إلا كانت موجودة
-   */
-
   const DETAILS_API = "/api?fixture=";
 
   /* =========================================================
-     BASIC HELPERS
+     HELPERS
   ========================================================= */
 
   function esc(value) {
@@ -37,17 +14,6 @@
       .replace(/>/g, "&gt;")
       .replace(/"/g, "&quot;")
       .replace(/'/g, "&#039;");
-  }
-
-  function text(value, fallback = "") {
-    if (
-      value === undefined ||
-      value === null
-    ) {
-      return fallback;
-    }
-
-    return String(value);
   }
 
   function first(...values) {
@@ -81,7 +47,7 @@
   }
 
   function norm(value) {
-    return text(value)
+    return String(value ?? "")
       .trim()
       .toLowerCase()
       .normalize("NFD")
@@ -89,10 +55,7 @@
         /[\u0300-\u036f]/g,
         ""
       )
-      .replace(
-        /\s+/g,
-        " "
-      );
+      .replace(/\s+/g, " ");
   }
 
   /* =========================================================
@@ -100,6 +63,7 @@
   ========================================================= */
 
   function createModal() {
+
     let modal =
       document.getElementById(
         "bfMatchDetailsModal"
@@ -138,27 +102,27 @@
       </div>
     `;
 
-    document.body.appendChild(modal);
+    document.body.appendChild(
+      modal
+    );
 
-    const overlay =
-      modal.querySelector(
+    modal
+      .querySelector(
         ".bfmd-overlay"
+      )
+      .addEventListener(
+        "click",
+        closeModal
       );
 
-    const close =
-      modal.querySelector(
+    modal
+      .querySelector(
         ".bfmd-close"
+      )
+      .addEventListener(
+        "click",
+        closeModal
       );
-
-    overlay.addEventListener(
-      "click",
-      closeModal
-    );
-
-    close.addEventListener(
-      "click",
-      closeModal
-    );
 
     addStyles();
 
@@ -166,16 +130,19 @@
   }
 
   function closeModal() {
+
     const modal =
       document.getElementById(
         "bfMatchDetailsModal"
       );
 
     if (modal) {
-      modal.style.display = "none";
+      modal.style.display =
+        "none";
     }
 
-    document.body.style.overflow = "";
+    document.body.style.overflow =
+      "";
   }
 
   /* =========================================================
@@ -183,6 +150,7 @@
   ========================================================= */
 
   function addStyles() {
+
     if (
       document.getElementById(
         "bfmdStyle"
@@ -198,6 +166,7 @@
       "bfmdStyle";
 
     style.textContent = `
+
       #bfMatchDetailsModal {
         position: fixed;
         inset: 0;
@@ -219,7 +188,7 @@
 
       .bfmd-box {
         position: relative;
-        width: min(1200px, 100%);
+        width: min(1200px,100%);
         max-height: 95vh;
         overflow-y: auto;
         padding: 28px;
@@ -365,7 +334,7 @@
       }
 
       /* =====================================================
-         PITCHES
+         PITCH
       ===================================================== */
 
       .bfmd-pitches {
@@ -403,6 +372,7 @@
         width: 100%;
         aspect-ratio: .67;
         overflow: hidden;
+
         background:
           repeating-linear-gradient(
             90deg,
@@ -416,7 +386,8 @@
       .bfmd-border {
         position: absolute;
         inset: 8px;
-        border: 2px solid rgba(255,255,255,.92);
+        border:
+          2px solid rgba(255,255,255,.92);
       }
 
       .bfmd-half {
@@ -425,7 +396,8 @@
         right: 8px;
         top: 50%;
         height: 2px;
-        background: rgba(255,255,255,.92);
+        background:
+          rgba(255,255,255,.92);
       }
 
       .bfmd-circle {
@@ -532,7 +504,7 @@
         font-size: 11px;
         font-weight: 950;
         box-shadow:
-          0 4px 11px rgba(0,0,0,.30);
+          0 4px 11px rgba(0,0,0,.3);
       }
 
       .bfmd-name {
@@ -571,7 +543,7 @@
       }
 
       /* =====================================================
-         PLAYER LIST
+         PLAYERS
       ===================================================== */
 
       .bfmd-players {
@@ -590,7 +562,7 @@
         margin: 15px 0 8px;
         font-size: 11px;
         font-weight: 950;
-        opacity: .70;
+        opacity: .7;
       }
 
       .bfmd-row {
@@ -655,7 +627,7 @@
         border-radius: 10px;
         background: rgba(127,127,127,.06);
         font-size: 11px;
-        opacity: .60;
+        opacity: .6;
       }
 
       /* =====================================================
@@ -832,14 +804,17 @@
       }
     `;
 
-    document.head.appendChild(style);
+    document.head.appendChild(
+      style
+    );
   }
 
   /* =========================================================
-     TEAM
+     TEAMS
   ========================================================= */
 
   function getTeams(details) {
+
     const teams =
       details?.teams || {};
 
@@ -861,8 +836,10 @@
       source,
       side
     ) {
+
       if (
-        typeof source === "string"
+        typeof source ===
+        "string"
       ) {
         return {
           id: null,
@@ -872,18 +849,23 @@
       }
 
       return {
+
         id:
           first(
             source?.id,
             source?.team_id,
-            details?.[`${side}_id`],
+            details?.[
+              `${side}_id`
+            ],
             null
           ),
 
         name:
           first(
             source?.name,
-            details?.[`${side}_name`],
+            details?.[
+              `${side}_name`
+            ],
             side === "home"
               ? "Domicile"
               : "Extérieur"
@@ -894,13 +876,16 @@
             source?.logo,
             source?.image,
             source?.picture,
-            details?.[`${side}_logo`],
+            details?.[
+              `${side}_logo`
+            ],
             ""
           )
       };
     }
 
     return {
+
       home:
         makeTeam(
           homeSource,
@@ -912,854 +897,814 @@
           awaySource,
           "away"
         )
+
     };
   }
 
   /* =========================================================
-     FORMATION
+     LINEUPS
   ========================================================= */
 
-  function normalizeFormation(
-    formation
-  ) {
-    const value =
-      text(formation)
-        .trim();
-
-    if (!value) {
-      return "—";
-    }
-
-    if (
-      value.includes("-")
-    ) {
-      return value;
-    }
-
-    if (
-      /^\d{3,4}$/.test(value)
-    ) {
-      const parts =
-        value
-          .split("")
-          .map(Number);
-
-      return parts.join("-");
-    }
-
-    return value;
-  }
-
-  /* =========================================================
-     LINEUP SOURCE HELPERS
-  ========================================================= */
-
-  function sideObject(
-    raw,
-    side
-  ) {
-    if (!obj(raw)) {
-      return null;
-    }
-
-    return (
-      raw?.[side] ||
-      raw?.[side === "home"
-        ? "homeTeam"
-        : "awayTeam"] ||
-      raw?.[
-        side === "home"
-          ? "host"
-          : "guest"
-      ] ||
-      null
-    );
-  }
-
-  function teamMatches(
-    source,
+  function getTeamLineup(
+    details,
+    side,
     team
   ) {
-    if (!obj(source)) {
-      return false;
-    }
 
-    const sourceTeam =
-      source?.team ||
-      source?.team_info ||
-      source?.club ||
+    const lineups =
+      details?.lineups ||
       {};
 
-    const id =
+    let formation =
       first(
-        sourceTeam?.id,
-        sourceTeam?.team_id,
-        source?.team_id,
-        source?.id,
-        null
+        lineups?.[
+          `${side}_formation`
+        ],
+        lineups?.[
+          `${side}Formation`
+        ],
+        lineups?.[
+          `${side}` +
+          "_tactic"
+        ],
+        lineups?.[side]?.formation,
+        "—"
       );
 
-    const name =
+    let xi =
       first(
-        sourceTeam?.name,
-        source?.team_name,
-        source?.name,
-        ""
+        lineups?.[
+          `${side}_xi`
+        ],
+        lineups?.[
+          `${side}_starting_xi`
+        ],
+        lineups?.[
+          `${side}_startingXI`
+        ],
+        lineups?.[side]?.startXI,
+        lineups?.[side]?.startingXI,
+        lineups?.[side]?.xi,
+        []
       );
+
+    let subs =
+      first(
+        lineups?.[
+          `${side}_subs`
+        ],
+        lineups?.[
+          `${side}_substitutes`
+        ],
+        lineups?.[side]?.subs,
+        lineups?.[side]?.substitutes,
+        []
+      );
+
+    /*
+     * API ممكن يرجع lineups كـarray
+     */
 
     if (
-      team?.id &&
-      id &&
-      String(team.id) ===
-        String(id)
-    ) {
-      return true;
-    }
-
-    if (
-      name &&
-      team?.name &&
-      norm(name) ===
-        norm(team.name)
-    ) {
-      return true;
-    }
-
-    return false;
-  }
-
-  function arrayTeamGroup(
-    raw,
-    team,
-    side
-  ) {
-    if (!Array.isArray(raw)) {
-      return null;
-    }
-
-    const exact =
-      raw.find(
-        item =>
-          teamMatches(
-            item,
-            team
-          )
-      );
-
-    if (exact) {
-      return exact;
-    }
-
-    const sideFound =
-      raw.find(item => {
-        const s =
-          norm(
-            first(
-              item?.side,
-              item?.team_side,
-              ""
-            )
-          );
-
-        return (
-          s === side ||
-          (
-            side === "home" &&
-            s === "host"
-          ) ||
-          (
-            side === "away" &&
-            s === "guest"
-          )
-        );
-      });
-
-    if (sideFound) {
-      return sideFound;
-    }
-
-    return null;
-  }
-
-  /* =========================================================
-     PLAYERS FROM SOURCE
-  ========================================================= */
-
-  function playerSide(
-    player
-  ) {
-    return norm(
-      first(
-        player?.side,
-        player?.team_side,
-        player?.teamType,
-        ""
+      Array.isArray(
+        lineups
       )
-    );
-  }
+    {
 
-  function playerIsStarting(
-    player
-  ) {
-    if (!obj(player)) {
-      return null;
-    }
+      const item =
+        lineups.find(
+          lineup => {
 
-    const value =
-      first(
-        player?.is_starting,
-        player?.starting,
-        player?.starter,
-        player?.isStarter,
-        player?.in_starting,
-        null
-      );
+            const lineupTeam =
+              lineup?.team ||
+              {};
 
-    if (
-      value === null
-    ) {
-      return null;
-    }
+            const id =
+              lineupTeam?.id ||
+              lineup?.team_id ||
+              null;
 
-    return (
-      value === true ||
-      value === 1 ||
-      value === "1" ||
-      value === "true"
-    );
-  }
+            const name =
+              lineupTeam?.name ||
+              lineup?.team_name ||
+              "";
 
-  function playersFromSource(
-    source,
-    wantedSide
-  ) {
-    if (!source) {
-      return [];
-    }
+            return (
 
-    let candidates = [];
+              (
+                team?.id &&
+                id &&
+                String(
+                  team.id
+                ) ===
+                String(
+                  id
+                )
+              )
 
-    if (
-      Array.isArray(source)
-    ) {
-      candidates =
-        source.slice();
-    }
-    else if (
-      obj(source)
-    ) {
-      candidates =
-        first(
-          source?.startXI,
-          source?.startingXI,
-          source?.starting_xi,
-          source?.starters,
-          source?.players,
-          source?.xi,
-          []
-        );
+              ||
+
+              (
+                name &&
+                team?.name &&
+                norm(name) ===
+                  norm(
+                    team.name
+                  )
+              )
+
+            );
+          }
+        ) ||
+        lineups[
+          side === "home"
+            ? 0
+            : 1
+        ] ||
+        null;
 
       if (
-        !Array.isArray(
-          candidates
-        )
+        item
       ) {
-        candidates = [];
+
+        formation =
+          first(
+            item?.formation,
+            item?.tacticalFormation,
+            formation,
+            "—"
+          );
+
+        xi =
+          first(
+            item?.startXI,
+            item?.startingXI,
+            item?.starting_xi,
+            item?.starters,
+            item?.xi,
+            xi,
+            []
+          );
+
+        subs =
+          first(
+            item?.substitutes,
+            item?.subs,
+            item?.bench,
+            subs,
+            []
+          );
       }
     }
 
-    if (!candidates.length) {
-      return [];
-    }
+    return {
 
-    const hasSides =
-      candidates.some(
-        item =>
-          playerSide(
-            item
-          )
-      );
+      side,
 
-    if (
-      hasSides &&
-      wantedSide
-    ) {
-      candidates =
-        candidates.filter(
-          item => {
+      team,
 
-            const side =
-              playerSide(
-                item
-              );
+      formation:
+        formation || "—",
 
-            if (
-              wantedSide ===
-              "home"
-            ) {
-              return (
-                side === "home" ||
-                side === "host"
-              );
-            }
+      xi:
+        Array.isArray(xi)
+          ? xi
+          : [],
 
-            return (
-              side === "away" ||
-              side === "guest"
-            );
-          }
-        );
-    }
+      subs:
+        Array.isArray(subs)
+          ? subs
+          : []
 
-    return candidates;
-  }
-
-  function getPlayers(
-    source,
-    wantedSide
-  ) {
-    return playersFromSource(
-      source,
-      wantedSide
-    );
+    };
   }
 
   /* =========================================================
      PLAYER HELPERS
   ========================================================= */
 
-  function getPlayerName(
-    player
+  function getPlayer(
+    item
   ) {
+
     if (
-      typeof player === "string"
+      item?.player &&
+      typeof item.player ===
+        "object"
     ) {
-      return player;
+      return item.player;
     }
+
+    return item || {};
+  }
+
+  function getPlayerName(
+    item
+  ) {
+
+    if (
+      typeof item ===
+      "string"
+    ) {
+      return item;
+    }
+
+    const player =
+      getPlayer(
+        item
+      );
 
     return first(
       player?.name,
-      player?.player_name,
-      player?.player?.name,
-      player?.short_name,
+      player?.full_name,
+      player?.fullName,
+      item?.name,
+      item?.player_name,
       "Joueur"
     );
   }
 
   function getPlayerNumber(
-    player
+    item
   ) {
+
     if (
-      typeof player === "string"
+      typeof item ===
+      "string"
     ) {
       return "-";
     }
 
+    const player =
+      getPlayer(
+        item
+      );
+
     return first(
-      player?.number,
+      item?.shirt_number,
+      item?.shirtNumber,
+      item?.jersey_number,
+      item?.jerseyNumber,
+      item?.number,
       player?.shirt_number,
       player?.shirtNumber,
-      player?.jersey,
-      player?.player?.number,
+      player?.jersey_number,
+      player?.jerseyNumber,
+      player?.number,
       "-"
     );
   }
 
   function getPlayerPosition(
-    player
+    item
   ) {
+
     if (
-      typeof player === "string"
+      typeof item ===
+      "string"
     ) {
       return "";
     }
 
+    const player =
+      getPlayer(
+        item
+      );
+
     return first(
+      item?.position,
+      item?.pos,
       player?.position,
       player?.pos,
-      player?.role,
-      player?.player?.position,
       ""
     );
   }
 
   function getPlayerPhoto(
-    player
+    item
   ) {
+
     if (
-      typeof player === "string"
+      typeof item ===
+      "string"
     ) {
       return "";
     }
 
+    const player =
+      getPlayer(
+        item
+      );
+
     return first(
+      item?.logo,
+      item?.photo,
+      item?.picture,
+      item?.image,
+      item?.avatar,
+      player?.logo,
       player?.photo,
-      player?.image,
       player?.picture,
+      player?.image,
       player?.avatar,
-      player?.player?.photo,
-      player?.player?.image,
-      player?.player?.picture,
       ""
     );
   }
 
   function getPlayerRating(
-    player
+    item
   ) {
+
     if (
-      typeof player === "string"
+      typeof item ===
+      "string"
     ) {
       return null;
     }
 
+    const player =
+      getPlayer(
+        item
+      );
+
     return first(
+      item?.rating,
+      item?.performance?.rating,
+      item?.statistics?.rating,
+      item?.games?.rating,
       player?.rating,
-      player?.statistics?.rating,
-      player?.player?.rating,
       null
     );
   }
 
   function playerKey(
-    player
+    item
   ) {
     return norm(
       getPlayerName(
-        player
+        item
       )
     );
   }
 
   /* =========================================================
-     BUILD LINEUP
+     EVENTS
   ========================================================= */
 
-  function buildLineup(
-    details,
-    side,
-    team
+  function getName(
+    value
   ) {
-    const raw =
-      first(
-        details?.lineups,
-        details?.lineup,
-        details?.compositions,
-        details?.formations,
-        null
+
+    if (
+      typeof value ===
+      "string"
+    ) {
+      return value;
+    }
+
+    if (
+      value &&
+      typeof value ===
+        "object"
+    ) {
+      return first(
+        value?.name,
+        value?.full_name,
+        value?.fullName,
+        value?.player?.name,
+        ""
       );
-
-    let source = null;
-
-    if (
-      Array.isArray(raw)
-    ) {
-      source =
-        arrayTeamGroup(
-          raw,
-          team,
-          side
-        );
-    }
-    else if (
-      obj(raw)
-    ) {
-      source =
-        sideObject(
-          raw,
-          side
-        );
     }
 
-    /*
-     * إذا ما لقيناش source مباشرة،
-     * كنستعملو raw نفسه فالحالة
-     * اللي فيه home_xi / away_xi.
-     */
-    const sourceRoot =
-      source ||
-      (
-        obj(raw)
-          ? raw
-          : {}
-      );
-
-    let formation =
-      first(
-        source?.formation,
-        source?.tactics?.formation,
-        raw?.[`${side}_formation`],
-        raw?.formation?.[side],
-        raw?.formation?.[
-          `${side}_formation`
-        ],
-        details?.[
-          `${side}_formation`
-        ],
-        details?.formation?.[
-          `${side}_formation`
-        ],
-        "—"
-      );
-
-    formation =
-      normalizeFormation(
-        formation
-      );
-
-    let starters =
-      [];
-
-    let substitutes =
-      [];
-
-    /*
-     * 1. Direct side keys:
-     *
-     * home_xi / away_xi
-     * home_subs / away_subs
-     */
-    if (
-      obj(raw)
-    ) {
-      starters =
-        arr(
-          first(
-            raw?.[
-              `${side}_xi`
-            ],
-            raw?.[
-              `${side}_starting`
-            ],
-            raw?.[
-              `${side}_starting_xi`
-            ],
-            raw?.[
-              `${side}_startingXI`
-            ],
-            []
-          )
-        );
-
-      substitutes =
-        arr(
-          first(
-            raw?.[
-              `${side}_subs`
-            ],
-            raw?.[
-              `${side}_substitutes`
-            ],
-            raw?.[
-              `${side}_bench`
-            ],
-            []
-          )
-        );
-    }
-
-    /*
-     * 2. Source-level keys
-     */
-    if (
-      !starters.length
-    ) {
-      starters =
-        getPlayers(
-          sourceRoot?.startXI ||
-          sourceRoot?.startingXI ||
-          sourceRoot?.starting_xi ||
-          sourceRoot?.starters ||
-          sourceRoot?.xi ||
-          sourceRoot?.players ||
-          [],
-          side
-        );
-    }
-
-    if (
-      !substitutes.length
-    ) {
-      substitutes =
-        arr(
-          first(
-            sourceRoot?.subs,
-            sourceRoot?.substitutes,
-            sourceRoot?.bench,
-            sourceRoot?.backup,
-            []
-          )
-        );
-    }
-
-    /*
-     * 3. lineups is object
-     * وفيه players شاملين الفريقين
-     */
-    if (
-      !starters.length &&
-      obj(raw)
-    ) {
-      const allPlayers =
-        arr(
-          raw?.players ||
-          raw?.lineup_players
-        );
-
-      if (
-        allPlayers.length
-      ) {
-        const teamPlayers =
-          allPlayers.filter(
-            player =>
-              playerBelongsToTeam(
-                player,
-                side,
-                team
-              )
-          );
-
-        const marked =
-          teamPlayers.filter(
-            player =>
-              playerIsStarting(
-                player
-              ) === true
-          );
-
-        if (
-          marked.length
-        ) {
-          starters =
-            marked;
-        }
-        else if (
-          teamPlayers.length >= 11
-        ) {
-          starters =
-            teamPlayers.slice(
-              0,
-              11
-            );
-
-          substitutes =
-            teamPlayers.slice(
-              11
-            );
-        }
-      }
-    }
-
-    /*
-     * 4. lineups array containing players
-     */
-    if (
-      !starters.length &&
-      Array.isArray(raw)
-    ) {
-      const playerObjects =
-        raw.filter(
-          item =>
-            obj(item) &&
-            (
-              item?.name ||
-              item?.player_name ||
-              item?.player
-            )
-        );
-
-      if (
-        playerObjects.length
-      ) {
-        const teamPlayers =
-          playerObjects.filter(
-            player =>
-              playerBelongsToTeam(
-                player,
-                side,
-                team
-              )
-          );
-
-        const marked =
-          teamPlayers.filter(
-            player =>
-              playerIsStarting(
-                player
-              ) === true
-          );
-
-        if (
-          marked.length
-        ) {
-          starters =
-            marked;
-        }
-        else if (
-          teamPlayers.length >= 11
-        ) {
-          starters =
-            teamPlayers.slice(
-              0,
-              11
-            );
-
-          substitutes =
-            teamPlayers.slice(
-              11
-            );
-        }
-      }
-    }
-
-    /*
-     * 5. details home/away direct
-     */
-    if (
-      !starters.length
-    ) {
-      starters =
-        arr(
-          first(
-            details?.[
-              `${side}_xi`
-            ],
-            details?.[
-              `${side}_startingXI`
-            ],
-            []
-          )
-        );
-    }
-
-    /*
-     * 6. If source itself is the XI array.
-     */
-    if (
-      !starters.length &&
-      Array.isArray(source)
-    ) {
-      starters =
-        source.slice(
-          0,
-          11
-        );
-    }
-
-    return {
-      side,
-      team,
-      formation,
-      xi:
-        starters,
-      subs:
-        substitutes
-    };
+    return "";
   }
 
-  function playerBelongsToTeam(
-    player,
-    side,
-    team
+  function normalizeEvent(
+    event,
+    index
   ) {
-    if (!obj(player)) {
-      return false;
-    }
 
-    const sideValue =
-      playerSide(
-        player
-      );
-
-    if (
-      sideValue
-    ) {
-      if (
-        side === "home" &&
-        (
-          sideValue ===
-            "home" ||
-          sideValue ===
-            "host"
-        )
-      ) {
-        return true;
-      }
-
-      if (
-        side === "away" &&
-        (
-          sideValue ===
-            "away" ||
-          sideValue ===
-            "guest"
-        )
-      ) {
-        return true;
-      }
-
-      return false;
-    }
-
-    const playerTeam =
-      player?.team ||
-      player?.club ||
-      {};
-
-    const id =
+    const type =
       first(
-        playerTeam?.id,
-        playerTeam?.team_id,
-        player?.team_id,
-        null
-      );
-
-    if (
-      team?.id &&
-      id &&
-      String(team.id) ===
-        String(id)
-    ) {
-      return true;
-    }
-
-    const name =
-      first(
-        playerTeam?.name,
-        player?.team_name,
+        event?.type,
+        event?.event_type,
+        event?.incidentType,
+        event?.kind,
         ""
       );
 
-    return (
-      name &&
-      team?.name &&
-      norm(name) ===
-        norm(team.name)
+    const detail =
+      first(
+        event?.detail,
+        event?.incidentClass,
+        event?.reason,
+        event?.description,
+        ""
+      );
+
+    const typeNorm =
+      norm(type);
+
+    const detailNorm =
+      norm(detail);
+
+    let kind =
+      "other";
+
+    if (
+      typeNorm.includes(
+        "goal"
+      ) ||
+      detailNorm === "goal" ||
+      event?.goal
+    ) {
+      kind = "goal";
+    }
+
+    else if (
+      typeNorm.includes(
+        "red"
+      ) ||
+      detailNorm.includes(
+        "red"
+      ) ||
+      typeNorm.includes(
+        "second yellow"
+      )
+    ) {
+      kind = "red";
+    }
+
+    else if (
+      typeNorm.includes(
+        "yellow"
+      ) ||
+      detailNorm.includes(
+        "yellow"
+      ) ||
+      typeNorm.includes(
+        "card"
+      )
+    ) {
+      kind = "yellow";
+    }
+
+    else if (
+      typeNorm.includes(
+        "subst"
+      ) ||
+      typeNorm.includes(
+        "change"
+      ) ||
+      event?.player_in ||
+      event?.player_out
+    ) {
+      kind = "substitution";
+    }
+
+    else if (
+      typeNorm.includes(
+        "var"
+      )
+    ) {
+      kind = "var";
+    }
+
+    const player =
+      getName(
+        event?.player
+      ) ||
+      getName(
+        event?.scorer
+      ) ||
+      event?.player_name ||
+      event?.playerName ||
+      "";
+
+    const assist =
+      getName(
+        event?.assist
+      ) ||
+      getName(
+        event?.assist1
+      ) ||
+      event?.assist_name ||
+      event?.assistName ||
+      "";
+
+    const playerIn =
+      getName(
+        event?.player_in
+      ) ||
+      getName(
+        event?.playerIn
+      ) ||
+      getName(
+        event?.incoming
+      ) ||
+      event?.player_in_name ||
+      "";
+
+    const playerOut =
+      getName(
+        event?.player_out
+      ) ||
+      getName(
+        event?.playerOut
+      ) ||
+      getName(
+        event?.outgoing
+      ) ||
+      event?.player_out_name ||
+      "";
+
+    const team =
+      event?.team &&
+      typeof event.team ===
+        "object"
+        ? event.team
+        : {};
+
+    const minute =
+      first(
+        event?.time?.elapsed,
+        typeof event?.time ===
+          "number"
+          ? event.time
+          : null,
+        event?.minute,
+        event?.elapsed,
+        ""
+      );
+
+    const extra =
+      first(
+        event?.time?.extra,
+        event?.extra,
+        event?.addedTime,
+        ""
+      );
+
+    return {
+
+      id:
+        index,
+
+      kind,
+
+      type:
+        String(
+          type
+        ),
+
+      detail:
+        String(
+          detail
+        ),
+
+      minute,
+
+      extra,
+
+      name:
+        player,
+
+      assist,
+
+      playerIn,
+
+      playerOut,
+
+      teamId:
+        first(
+          team?.id,
+          event?.team_id,
+          event?.teamId,
+          null
+        ),
+
+      teamName:
+        first(
+          team?.name,
+          event?.team_name,
+          event?.teamName,
+          ""
+        ),
+
+      side:
+        norm(
+          first(
+            event?.side,
+            event?.team_side,
+            ""
+          )
+        )
+    };
+  }
+
+  function getEvents(
+    details
+  ) {
+
+    const source =
+      first(
+        details?.events,
+        details?.incidents,
+        details?.timeline,
+        details?.match_events,
+        []
+      );
+
+    return arr(
+      source
+    ).map(
+      normalizeEvent
     );
   }
 
   /* =========================================================
-     PITCH POSITION
+     PLAYER EVENT MAP
   ========================================================= */
+
+  function buildEventMap(
+    events
+  ) {
+
+    const map =
+      new Map();
+
+    function data(
+      name
+    ) {
+
+      const key =
+        norm(
+          name
+        );
+
+      if (!key) {
+        return null;
+      }
+
+      if (
+        !map.has(key)
+      ) {
+
+        map.set(
+          key,
+          {
+            goals: 0,
+            assists: 0,
+            yellow: 0,
+            red: 0,
+            in: 0,
+            out: 0
+          }
+        );
+      }
+
+      return map.get(
+        key
+      );
+    }
+
+    events.forEach(
+      event => {
+
+        if (
+          event.kind ===
+          "goal"
+        ) {
+
+          const scorer =
+            data(
+              event.name
+            );
+
+          if (
+            scorer
+          ) {
+            scorer.goals++;
+          }
+
+          if (
+            event.assist
+          ) {
+
+            const assist =
+              data(
+                event.assist
+              );
+
+            if (
+              assist
+            ) {
+              assist.assists++;
+            }
+          }
+        }
+
+        if (
+          event.kind ===
+          "yellow"
+        ) {
+
+          const player =
+            data(
+              event.name
+            );
+
+          if (
+            player
+          ) {
+            player.yellow++;
+          }
+        }
+
+        if (
+          event.kind ===
+          "red"
+        ) {
+
+          const player =
+            data(
+              event.name
+            );
+
+          if (
+            player
+          ) {
+            player.red++;
+          }
+        }
+
+        if (
+          event.kind ===
+          "substitution"
+        ) {
+
+          if (
+            event.playerIn
+          ) {
+
+            const player =
+              data(
+                event.playerIn
+              );
+
+            if (
+              player
+            ) {
+              player.in++;
+            }
+          }
+
+          if (
+            event.playerOut
+          ) {
+
+            const player =
+              data(
+                event.playerOut
+              );
+
+            if (
+              player
+            ) {
+              player.out++;
+            }
+          }
+        }
+      }
+    );
+
+    return map;
+  }
+
+  /* =========================================================
+     FORMATION POSITION
+     ========================================================= */
 
   function formationRows(
     formation
   ) {
+
     const value =
-      normalizeFormation(
-        formation
-      );
+      String(
+        formation || ""
+      )
+        .trim();
 
     const parts =
       value
         .split("-")
-        .map(Number)
+        .map(
+          Number
+        )
         .filter(
-          number =>
-            Number.isFinite(
-              number
-            ) &&
-            number > 0
+          n =>
+            Number.isFinite(n) &&
+            n > 0
         );
 
     return parts.length
@@ -1767,9 +1712,10 @@
       : [4,3,3];
   }
 
-  function category(
+  function playerCategory(
     player
   ) {
+
     const position =
       norm(
         getPlayerPosition(
@@ -1780,9 +1726,8 @@
     if (
       position === "g" ||
       position === "gk" ||
-      position === "1" ||
       position.includes(
-        "goalkeeper"
+        "goal"
       )
     ) {
       return "gk";
@@ -1792,7 +1737,6 @@
       position === "d" ||
       position === "df" ||
       position === "def" ||
-      position === "2" ||
       position.includes(
         "def"
       )
@@ -1804,7 +1748,6 @@
       position === "m" ||
       position === "mf" ||
       position === "mid" ||
-      position === "3" ||
       position.includes(
         "mid"
       )
@@ -1816,15 +1759,14 @@
       position === "f" ||
       position === "fw" ||
       position === "att" ||
-      position === "4" ||
       position.includes(
-        "forw"
+        "attack"
       ) ||
       position.includes(
-        "att"
+        "forward"
       ) ||
       position.includes(
-        "strik"
+        "striker"
       )
     ) {
       return "fwd";
@@ -1837,6 +1779,7 @@
     lineup,
     side
   ) {
+
     const players =
       arr(
         lineup?.xi
@@ -1845,14 +1788,195 @@
         11
       );
 
-    if (!players.length) {
+    if (
+      !players.length
+    ) {
       return [];
     }
 
-    const rows =
-      formationRows(
-        lineup?.formation
+    /*
+     * ------------------------------------------------------
+     * أولاً نحاول نستعمل grid إلا كانت موجودة
+     * ------------------------------------------------------
+     */
+
+    const gridPlayers =
+      players.map(
+        player => {
+
+          const p =
+            getPlayer(
+              player
+            );
+
+          const grid =
+            first(
+              p?.grid,
+              player?.grid,
+              p?.positionGrid,
+              player?.positionGrid,
+              ""
+            );
+
+          const match =
+            String(
+              grid
+            ).match(
+              /(\d+)\s*:\s*(\d+)/
+            );
+
+          return {
+            player,
+            row:
+              match
+                ? Number(
+                    match[1]
+                  )
+                : null,
+            col:
+              match
+                ? Number(
+                    match[2]
+                  )
+                : null
+          };
+        }
       );
+
+    const validGrid =
+      gridPlayers.filter(
+        item =>
+          item.row !== null
+      );
+
+    /*
+     * ------------------------------------------------------
+     * إذا كاين Grid صحيح
+     * ------------------------------------------------------
+     */
+
+    if (
+      validGrid.length >=
+        Math.ceil(
+          players.length *
+          0.6
+        )
+    ) {
+
+      const grouped =
+        {};
+
+      gridPlayers.forEach(
+        item => {
+
+          const row =
+            item.row ??
+            4;
+
+          if (
+            !grouped[row]
+          ) {
+            grouped[row] = [];
+          }
+
+          grouped[row].push(
+            item
+          );
+        }
+      );
+
+      const rowKeys =
+        Object.keys(
+          grouped
+        )
+          .map(
+            Number
+          )
+          .sort(
+            (a,b) =>
+              a - b
+          );
+
+      const maxRow =
+        Math.max(
+          ...rowKeys,
+          4
+        );
+
+      const result =
+        [];
+
+      rowKeys.forEach(
+        row => {
+
+          const group =
+            grouped[row].sort(
+              (a,b) =>
+                (
+                  a.col ?? 999
+                ) -
+                (
+                  b.col ?? 999
+                )
+            );
+
+          group.forEach(
+            (
+              item,
+              index
+            ) => {
+
+              const x =
+                group.length === 1
+                  ? 50
+                  : 12 +
+                    76 *
+                    (
+                      index /
+                      (
+                        group.length -
+                        1
+                      )
+                    );
+
+              let y =
+                8 +
+                84 *
+                (
+                  (row - 1) /
+                  Math.max(
+                    1,
+                    maxRow - 1
+                  )
+                );
+
+              if (
+                side ===
+                "away"
+              ) {
+                y =
+                  100 - y;
+              }
+
+              result.push({
+                player:
+                  item.player,
+                x,
+                y
+              });
+            }
+          );
+        }
+      );
+
+      return result;
+    }
+
+    /*
+     * ------------------------------------------------------
+     * Fallback حسب position + formation
+     * ------------------------------------------------------
+     */
 
     const gk = [];
     const def = [];
@@ -1863,115 +1987,148 @@
     players.forEach(
       player => {
 
-        /*
-         * Grid إذا كان موجود.
-         */
-        const grid =
-          first(
-            player?.grid,
-            player?.position_grid,
-            player?.coordinates,
-            ""
-          );
-
-        if (grid) {
-          return;
-        }
-
         switch (
-          category(
+          playerCategory(
             player
           )
         ) {
+
           case "gk":
-            gk.push(player);
+            gk.push(
+              player
+            );
             break;
 
           case "def":
-            def.push(player);
+            def.push(
+              player
+            );
             break;
 
           case "mid":
-            mid.push(player);
+            mid.push(
+              player
+            );
             break;
 
           case "fwd":
-            fwd.push(player);
+            fwd.push(
+              player
+            );
             break;
 
           default:
-            unknown.push(player);
+            unknown.push(
+              player
+            );
         }
       }
     );
 
-    const groups =
-      [];
-
-    if (
-      gk.length
-    ) {
-      groups.push(
-        gk.slice(
-          0,
-          1
-        )
+    const formation =
+      formationRows(
+        lineup?.formation
       );
-    }
-    else {
-      groups.push([]);
-    }
 
-    const pools =
-      [
-        def,
-        mid,
-        fwd
-      ];
+    const rows = [];
+
+    /*
+     * GK
+     */
+    rows.push(
+      gk.slice(
+        0,
+        1
+      )
+    );
 
     let unknownIndex =
       0;
 
-    rows.forEach(
-      count => {
+    let defIndex =
+      0;
 
-        let pool =
-          pools.shift() ||
-          [];
+    let midIndex =
+      0;
+
+    let fwdIndex =
+      0;
+
+    formation.forEach(
+      (
+        count,
+        index
+      ) => {
+
+        let pool;
 
         if (
-          pool.length <
-          count
+          index === 0
         ) {
-          while (
-            pool.length <
-              count &&
-            unknownIndex <
-              unknown.length
-          ) {
-            pool.push(
-              unknown[
-                unknownIndex++
-              ]
+
+          pool =
+            def.slice(
+              defIndex,
+              defIndex +
+                count
             );
-          }
+
+          defIndex +=
+            pool.length;
         }
 
-        groups.push(
-          pool.slice(
-            0,
-            count
-          )
+        else if (
+          index ===
+          formation.length - 1
+        ) {
+
+          pool =
+            fwd.slice(
+              fwdIndex,
+              fwdIndex +
+                count
+            );
+
+          fwdIndex +=
+            pool.length;
+        }
+
+        else {
+
+          pool =
+            mid.slice(
+              midIndex,
+              midIndex +
+                count
+            );
+
+          midIndex +=
+            pool.length;
+        }
+
+        while (
+          pool.length <
+            count &&
+          unknownIndex <
+            unknown.length
+        ) {
+
+          pool.push(
+            unknown[
+              unknownIndex++
+            ]
+          );
+        }
+
+        rows.push(
+          pool
         );
       }
     );
 
-    /*
-     * باقي اللاعبين
-     */
     const used =
       new Set(
-        groups.flat()
+        rows.flat()
       );
 
     const leftovers =
@@ -1985,57 +2142,57 @@
     if (
       leftovers.length
     ) {
-      const last =
-        groups[
-          groups.length - 1
-        ] || [];
 
-      last.push(
+      rows[
+        rows.length - 1
+      ].push(
         ...leftovers
       );
     }
 
-    const positions =
+    const result =
       [];
 
-    groups.forEach(
-      (row,index) => {
+    rows.forEach(
+      (
+        row,
+        rowIndex
+      ) => {
+
+        if (
+          !row.length
+        ) {
+          return;
+        }
 
         row.forEach(
-          (player,playerIndex) => {
+          (
+            player,
+            index
+          ) => {
 
-            let x;
-
-            if (
-              row.length ===
-              1
-            ) {
-              x = 50;
-            }
-            else {
-              x =
-                12 +
-                (
-                  76 *
+            const x =
+              row.length === 1
+                ? 50
+                : 10 +
+                  80 *
                   (
-                    playerIndex /
+                    index /
                     (
-                      row.length - 1
+                      row.length -
+                      1
                     )
-                  )
-                );
-            }
+                  );
 
             let y =
-              7 +
+              8 +
+              84 *
               (
-                86 *
-                (
-                  index /
-                  Math.max(
-                    1,
-                    groups.length - 1
-                  )
+                rowIndex /
+                Math.max(
+                  1,
+                  rows.length -
+                    1
                 )
               );
 
@@ -2047,7 +2204,7 @@
                 100 - y;
             }
 
-            positions.push({
+            result.push({
               player,
               x,
               y
@@ -2057,7 +2214,7 @@
       }
     );
 
-    return positions;
+    return result;
   }
 
   /* =========================================================
@@ -2067,6 +2224,7 @@
   function playerAvatar(
     player
   ) {
+
     const photo =
       getPlayerPhoto(
         player
@@ -2078,6 +2236,7 @@
       );
 
     if (!photo) {
+
       return `
         <div class="bfmd-number-only">
           ${esc(number)}
@@ -2111,456 +2270,16 @@
   }
 
   /* =========================================================
-     EVENTS NORMALIZATION
-  ========================================================= */
-
-  function eventObjectName(
-    value
-  ) {
-    if (
-      typeof value ===
-      "string"
-    ) {
-      return value;
-    }
-
-    return first(
-      value?.name,
-      value?.player?.name,
-      value?.short_name,
-      ""
-    );
-  }
-
-  function getEventPlayer(
-    event
-  ) {
-    return first(
-      eventObjectName(
-        event?.player
-      ),
-      eventObjectName(
-        event?.scorer
-      ),
-      eventObjectName(
-        event?.goal_scorer
-      ),
-      eventObjectName(
-        event?.goal?.player
-      ),
-      eventObjectName(
-        event?.actor
-      ),
-      event?.player_name,
-      event?.playerName,
-      event?.scorer_name,
-      event?.name,
-      ""
-    );
-  }
-
-  function getEventAssist(
-    event
-  ) {
-    return first(
-      eventObjectName(
-        event?.assist
-      ),
-      eventObjectName(
-        event?.assist1
-      ),
-      eventObjectName(
-        event?.relatedPlayer
-      ),
-      event?.assist_name,
-      event?.assistName,
-      event?.goal?.assist,
-      ""
-    );
-  }
-
-  function getSubIn(
-    event
-  ) {
-    return first(
-      eventObjectName(
-        event?.player_in
-      ),
-      eventObjectName(
-        event?.playerIn
-      ),
-      eventObjectName(
-        event?.incoming
-      ),
-      eventObjectName(
-        event?.in_player
-      ),
-      eventObjectName(
-        event?.substitute
-      ),
-      event?.player_in_name,
-      event?.playerInName,
-      ""
-    );
-  }
-
-  function getSubOut(
-    event
-  ) {
-    return first(
-      eventObjectName(
-        event?.player_out
-      ),
-      eventObjectName(
-        event?.playerOut
-      ),
-      eventObjectName(
-        event?.outgoing
-      ),
-      eventObjectName(
-        event?.out_player
-      ),
-      eventObjectName(
-        event?.replaced
-      ),
-      event?.player_out_name,
-      event?.playerOutName,
-      ""
-    );
-  }
-
-  function getEventTeamId(
-    event
-  ) {
-    return first(
-      event?.team?.id,
-      event?.team_id,
-      event?.teamId,
-      event?.club?.id,
-      null
-    );
-  }
-
-  function getEventTeamName(
-    event
-  ) {
-    return first(
-      event?.team?.name,
-      event?.team_name,
-      event?.teamName,
-      event?.club?.name,
-      ""
-    );
-  }
-
-  function normalizeEvent(
-    event,
-    index
-  ) {
-    const rawType =
-      first(
-        event?.type,
-        event?.event_type,
-        event?.incidentType,
-        event?.kind,
-        ""
-      );
-
-    const rawDetail =
-      first(
-        event?.detail,
-        event?.description,
-        event?.incidentClass,
-        event?.reason,
-        ""
-      );
-
-    const type =
-      norm(
-        rawType
-      );
-
-    const detail =
-      norm(
-        rawDetail
-      );
-
-    let kind =
-      "other";
-
-    if (
-      type.includes("goal") ||
-      detail === "goal" ||
-      obj(event?.goal)
-    ) {
-      kind = "goal";
-    }
-    else if (
-      type.includes("second yellow") ||
-      detail.includes("second yellow") ||
-      type.includes("red") ||
-      detail.includes("red")
-    ) {
-      kind = "red";
-    }
-    else if (
-      type.includes("yellow") ||
-      detail.includes("yellow") ||
-      type.includes("card") ||
-      detail.includes("card")
-    ) {
-      kind = "yellow";
-    }
-    else if (
-      type.includes("subst") ||
-      type.includes("change") ||
-      getSubIn(event) ||
-      getSubOut(event)
-    ) {
-      kind = "substitution";
-    }
-    else if (
-      type.includes("var") ||
-      detail.includes("var")
-    ) {
-      kind = "var";
-    }
-
-    const minute =
-      first(
-        event?.time?.elapsed,
-        typeof event?.time ===
-          "number"
-          ? event.time
-          : null,
-        event?.minute,
-        event?.elapsed,
-        event?.time,
-        ""
-      );
-
-    const extra =
-      first(
-        event?.time?.extra,
-        event?.extra,
-        event?.addedTime,
-        ""
-      );
-
-    const name =
-      getEventPlayer(
-        event
-      );
-
-    const assist =
-      getEventAssist(
-        event
-      );
-
-    return {
-      index,
-      raw: event,
-      kind,
-      type:
-        text(rawType),
-      detail:
-        text(rawDetail),
-      minute,
-      extra,
-      name,
-      assist,
-      playerIn:
-        getSubIn(
-          event
-        ),
-      playerOut:
-        getSubOut(
-          event
-        ),
-      teamId:
-        getEventTeamId(
-          event
-        ),
-      teamName:
-        getEventTeamName(
-          event
-        ),
-      side:
-        norm(
-          first(
-            event?.side,
-            event?.team_side,
-            ""
-          )
-        )
-    };
-  }
-
-  function getEvents(
-    details
-  ) {
-    const raw =
-      first(
-        details?.events,
-        details?.timeline,
-        details?.incidents,
-        details?.match_events,
-        []
-      );
-
-    return arr(
-      raw
-    ).map(
-      normalizeEvent
-    );
-  }
-
-  /* =========================================================
-     EVENT MAP
-  ========================================================= */
-
-  function eventStatsMap(
-    events
-  ) {
-    const map =
-      new Map();
-
-    function data(
-      name
-    ) {
-      const key =
-        norm(name);
-
-      if (!key) {
-        return null;
-      }
-
-      if (
-        !map.has(key)
-      ) {
-        map.set(
-          key,
-          {
-            goals: 0,
-            assists: 0,
-            yellow: 0,
-            red: 0,
-            in: 0,
-            out: 0
-          }
-        );
-      }
-
-      return map.get(
-        key
-      );
-    }
-
-    events.forEach(
-      event => {
-
-        if (
-          event.kind ===
-          "goal"
-        ) {
-          const scorer =
-            data(
-              event.name
-            );
-
-          if (scorer) {
-            scorer.goals++;
-          }
-
-          if (
-            event.assist
-          ) {
-            const assist =
-              data(
-                event.assist
-              );
-
-            if (assist) {
-              assist.assists++;
-            }
-          }
-        }
-
-        if (
-          event.kind ===
-          "yellow"
-        ) {
-          const player =
-            data(
-              event.name
-            );
-
-          if (player) {
-            player.yellow++;
-          }
-        }
-
-        if (
-          event.kind ===
-          "red"
-        ) {
-          const player =
-            data(
-              event.name
-            );
-
-          if (player) {
-            player.red++;
-          }
-        }
-
-        if (
-          event.kind ===
-          "substitution"
-        ) {
-          if (
-            event.playerIn
-          ) {
-            const player =
-              data(
-                event.playerIn
-              );
-
-            if (player) {
-              player.in++;
-            }
-          }
-
-          if (
-            event.playerOut
-          ) {
-            const player =
-              data(
-                event.playerOut
-              );
-
-            if (player) {
-              player.out++;
-            }
-          }
-        }
-
-      }
-    );
-
-    return map;
-  }
-
-  /* =========================================================
-     PITCH EVENT BADGES
+     PLAYER BADGES
   ========================================================= */
 
   function playerBadges(
     player,
-    statsMap
+    eventMap
   ) {
+
     const stats =
-      statsMap.get(
+      eventMap.get(
         playerKey(
           player
         )
@@ -2631,40 +2350,41 @@
   }
 
   /* =========================================================
-     RENDER PITCH
+     PITCH
   ========================================================= */
 
   function renderPitch(
     lineup,
     side,
-    statsMap
+    eventMap
   ) {
-    const team =
-      lineup.team;
 
     if (
-      !lineup.xi.length
+      !lineup?.xi?.length
     ) {
+
       return `
         <div class="bfmd-pitch-card">
 
           <div class="bfmd-pitch-head">
+
             <span>
               ${esc(
-                team.name
+                lineup?.team?.name ||
+                ""
               )}
             </span>
 
             <span class="bfmd-formation">
               ${esc(
-                lineup.formation
+                lineup?.formation ||
+                "—"
               )}
             </span>
+
           </div>
 
-          <div
-            class="bfmd-pitch"
-          >
+          <div class="bfmd-pitch">
 
             <div class="bfmd-border"></div>
             <div class="bfmd-half"></div>
@@ -2672,23 +2392,6 @@
             <div class="bfmd-center-dot"></div>
             <div class="bfmd-box-line top"></div>
             <div class="bfmd-box-line bottom"></div>
-
-            <div
-              style="
-                position:absolute;
-                inset:0;
-                display:flex;
-                align-items:center;
-                justify-content:center;
-                color:#fff;
-                font-size:12px;
-                font-weight:900;
-                text-align:center;
-                padding:20px;
-              "
-            >
-              Composition indisponible
-            </div>
 
           </div>
 
@@ -2731,7 +2434,7 @@
 
                 ${playerBadges(
                   player,
-                  statsMap
+                  eventMap
                 )}
 
                 ${playerAvatar(
@@ -2747,7 +2450,9 @@
                 </div>
 
                 ${
-                  rating !== null
+                  rating !== null &&
+                  rating !== undefined &&
+                  rating !== ""
                     ? `
                       <div class="bfmd-rating">
                         ⭐ ${esc(
@@ -2773,7 +2478,7 @@
 
           <span>
             ${esc(
-              team.name
+              lineup.team.name
             )}
           </span>
 
@@ -2808,15 +2513,16 @@
   }
 
   /* =========================================================
-     PLAYER ROW
+     PLAYER LIST
   ========================================================= */
 
   function renderPlayerRow(
     player,
-    statsMap
+    eventMap
   ) {
+
     const stats =
-      statsMap.get(
+      eventMap.get(
         playerKey(
           player
         )
@@ -2929,7 +2635,7 @@
             stats.yellow
               ? `
                 <span class="bfmd-badge">
-                  🟨 ${stats.yellow}
+                  🟨
                 </span>
               `
               : ""
@@ -2939,7 +2645,7 @@
             stats.red
               ? `
                 <span class="bfmd-badge">
-                  🟥 ${stats.red}
+                  🟥
                 </span>
               `
               : ""
@@ -2973,8 +2679,9 @@
 
   function renderPlayerColumn(
     lineup,
-    statsMap
+    eventMap
   ) {
+
     return `
       <div>
 
@@ -2995,7 +2702,7 @@
                   player =>
                     renderPlayerRow(
                       player,
-                      statsMap
+                      eventMap
                     )
                 )
                 .join("")
@@ -3018,7 +2725,7 @@
                   player =>
                     renderPlayerRow(
                       player,
-                      statsMap
+                      eventMap
                     )
                 )
                 .join("")}
@@ -3031,51 +2738,73 @@
   }
 
   /* =========================================================
-     EVENTS
+     EVENTS RENDER
   ========================================================= */
 
   function eventIcon(
     event
   ) {
-    switch (
-      event.kind
+
+    if (
+      event.kind ===
+      "goal"
     ) {
-      case "goal":
-        return "⚽";
-
-      case "yellow":
-        return "🟨";
-
-      case "red":
-        return "🟥";
-
-      case "substitution":
-        return "🔄";
-
-      case "var":
-        return "🎥";
-
-      default:
-        return "📌";
+      return "⚽";
     }
+
+    if (
+      event.kind ===
+      "yellow"
+    ) {
+      return "🟨";
+    }
+
+    if (
+      event.kind ===
+      "red"
+    ) {
+      return "🟥";
+    }
+
+    if (
+      event.kind ===
+      "substitution"
+    ) {
+      return "🔄";
+    }
+
+    if (
+      event.kind ===
+      "var"
+    ) {
+      return "🎥";
+    }
+
+    return "📌";
   }
 
   function eventMinute(
     event
   ) {
+
     if (
       event.minute === "" ||
-      event.minute === null ||
-      event.minute === undefined
+      event.minute ===
+        null ||
+      event.minute ===
+        undefined
     ) {
       return "";
     }
 
     if (
       event.extra !== "" &&
-      event.extra !== null &&
-      event.extra !== undefined
+      event.extra !==
+        null &&
+      event.extra !==
+        undefined
     ) {
+
       return `
         ${esc(
           event.minute
@@ -3093,10 +2822,13 @@
   }
 
   function renderEvents(
-    events,
-    teams
+    events
   ) {
-    if (!events.length) {
+
+    if (
+      !events.length
+    ) {
+
       return `
         <div class="bfmd-section">
 
@@ -3118,10 +2850,12 @@
         .sort(
           (a,b) =>
             Number(
-              a.minute || 999
+              a.minute ||
+              999
             ) -
             Number(
-              b.minute || 999
+              b.minute ||
+              999
             )
         );
 
@@ -3138,35 +2872,23 @@
             .map(
               event => {
 
-                let playerText =
-                  event.name ||
-                  "";
-
                 let contentHTML =
-                  "";
+                  esc(
+                    event.name ||
+                    event.type ||
+                    "Événement"
+                  );
 
-                /*
-                 * SUBSTITUTION:
-                 * هنا كنستعملو HTML
-                 * مباشرة، بلا ما نهربوه.
-                 */
                 if (
                   event.kind ===
                   "substitution"
                 ) {
 
-                  const outName =
-                    event.playerOut ||
-                    "Inconnu";
-
-                  const inName =
-                    event.playerIn ||
-                    "Inconnu";
-
                   contentHTML = `
                     <span class="bfmd-out">
                       ↓ ${esc(
-                        outName
+                        event.playerOut ||
+                        "—"
                       )}
                     </span>
 
@@ -3176,55 +2898,12 @@
 
                     <span class="bfmd-in">
                       ↑ ${esc(
-                        inName
+                        event.playerIn ||
+                        "—"
                       )}
                     </span>
                   `;
-
                 }
-                else {
-
-                  if (
-                    !playerText
-                  ) {
-                    playerText =
-                      event.type ||
-                      event.detail ||
-                      "Événement";
-                  }
-
-                  contentHTML =
-                    esc(
-                      playerText
-                    );
-                }
-
-                const teamName =
-                  event.teamName ||
-                  (
-                    event.teamId &&
-                    teams.home.id &&
-                    String(
-                      event.teamId
-                    ) ===
-                    String(
-                      teams.home.id
-                    )
-                      ? teams.home.name
-                      : ""
-                  ) ||
-                  (
-                    event.teamId &&
-                    teams.away.id &&
-                    String(
-                      event.teamId
-                    ) ===
-                    String(
-                      teams.away.id
-                    )
-                      ? teams.away.name
-                      : ""
-                  );
 
                 return `
                   <div class="bfmd-event">
@@ -3248,27 +2927,9 @@
                       </div>
 
                       ${
-                        teamName
-                          ? `
-                            <div class="bfmd-event-team">
-                              ${esc(
-                                teamName
-                              )}
-                            </div>
-                          `
-                          : ""
-                      }
-
-                      ${
                         event.detail &&
                         event.kind !==
-                          "substitution" &&
-                        norm(
-                          event.detail
-                        ) !==
-                          norm(
-                            event.type
-                          )
+                          "substitution"
                           ? `
                             <div class="bfmd-event-detail">
                               ${esc(
@@ -3313,9 +2974,9 @@
   ========================================================= */
 
   function renderSubstitutions(
-    events,
-    teams
+    events
   ) {
+
     const list =
       events.filter(
         event =>
@@ -3323,130 +2984,10 @@
           "substitution"
       );
 
-    if (!list.length) {
-      return "";
-    }
-
-    const home =
-      [];
-
-    const away =
-      [];
-
-    const other =
-      [];
-
-    list.forEach(
-      event => {
-
-        const side =
-          norm(
-            event.side
-          );
-
-        if (
-          side === "home" ||
-          side === "host"
-        ) {
-          home.push(
-            event
-          );
-        }
-        else if (
-          side === "away" ||
-          side === "guest"
-        ) {
-          away.push(
-            event
-          );
-        }
-        else if (
-          event.teamId &&
-          teams.home.id &&
-          String(
-            event.teamId
-          ) ===
-          String(
-            teams.home.id
-          )
-        ) {
-          home.push(
-            event
-          );
-        }
-        else if (
-          event.teamId &&
-          teams.away.id &&
-          String(
-            event.teamId
-          ) ===
-          String(
-            teams.away.id
-          )
-        ) {
-          away.push(
-            event
-          );
-        }
-        else {
-          other.push(
-            event
-          );
-        }
-      }
-    );
-
-    function card(
-      title,
-      items
+    if (
+      !list.length
     ) {
-      if (!items.length) {
-        return "";
-      }
-
-      return `
-        <div class="bfmd-sub-card">
-
-          <div class="bfmd-column-title">
-            ${esc(title)}
-          </div>
-
-          ${items
-            .map(
-              event => `
-                <div class="bfmd-sub-line">
-
-                  <div class="bfmd-sub-minute">
-                    ${eventMinute(
-                      event
-                    )}
-                  </div>
-
-                  <div>
-
-                    <div class="bfmd-out">
-                      ↓ ${esc(
-                        event.playerOut ||
-                        "Inconnu"
-                      )}
-                    </div>
-
-                    <div class="bfmd-in">
-                      ↑ ${esc(
-                        event.playerIn ||
-                        "Inconnu"
-                      )}
-                    </div>
-
-                  </div>
-
-                </div>
-              `
-            )
-            .join("")}
-
-        </div>
-      `;
+      return "";
     }
 
     return `
@@ -3458,24 +2999,43 @@
 
         <div class="bfmd-subs">
 
-          ${card(
-            teams.home.name,
-            home
-          )}
+          ${list
+            .map(
+              event => `
+                <div class="bfmd-sub-card">
 
-          ${card(
-            teams.away.name,
-            away
-          )}
+                  <div class="bfmd-sub-line">
 
-          ${
-            other.length
-              ? card(
-                  "Autres",
-                  other
-                )
-              : ""
-          }
+                    <div class="bfmd-sub-minute">
+                      ${eventMinute(
+                        event
+                      )}
+                    </div>
+
+                    <div>
+
+                      <div class="bfmd-out">
+                        ↓ ${esc(
+                          event.playerOut ||
+                          "—"
+                        )}
+                      </div>
+
+                      <div class="bfmd-in">
+                        ↑ ${esc(
+                          event.playerIn ||
+                          "—"
+                        )}
+                      </div>
+
+                    </div>
+
+                  </div>
+
+                </div>
+              `
+            )
+            .join("")}
 
         </div>
 
@@ -3490,6 +3050,7 @@
   function renderSummary(
     events
   ) {
+
     const goals =
       events.filter(
         event =>
@@ -3511,7 +3072,7 @@
           "red"
       ).length;
 
-    const substitutions =
+    const subs =
       events.filter(
         event =>
           event.kind ===
@@ -3559,7 +3120,7 @@
 
           <div class="bfmd-summary-box">
             <div class="bfmd-summary-value">
-              ${substitutions}
+              ${subs}
             </div>
 
             <div class="bfmd-summary-label">
@@ -3574,12 +3135,13 @@
   }
 
   /* =========================================================
-     MAN OF THE MATCH
+     MOTM
   ========================================================= */
 
-  function manOfTheMatch(
+  function renderMOTM(
     details
   ) {
+
     const value =
       first(
         details?.player_of_match,
@@ -3635,7 +3197,9 @@
   function getScore(
     details
   ) {
+
     return {
+
       home:
         first(
           details?.score?.home,
@@ -3653,53 +3217,18 @@
           details?.awayScore,
           "-"
         )
+
     };
   }
 
   /* =========================================================
-     STATUS
-  ========================================================= */
-
-  function getStatus(
-    details
-  ) {
-    return first(
-      details?.status_text,
-      typeof details?.status ===
-        "string"
-        ? details.status
-        : null,
-      details?.fixture?.status?.long,
-      details?.fixture?.status?.short,
-      "MATCH"
-    );
-  }
-
-  /* =========================================================
-     COMPETITION
-  ========================================================= */
-
-  function getCompetition(
-    details
-  ) {
-    return first(
-      details?.league?.name,
-      details?.competition?.name,
-      typeof details?.competition ===
-        "string"
-        ? details.competition
-        : null,
-      "Football"
-    );
-  }
-
-  /* =========================================================
-     OPEN BY IDENTIFIER
+     OPEN DETAILS
   ========================================================= */
 
   async function openDetails(
     identifier
   ) {
+
     if (!identifier) {
       return;
     }
@@ -3740,7 +3269,9 @@
             identifier
           )}`,
           {
-            cache: "no-store",
+            cache:
+              "no-store",
+
             headers: {
               Accept:
                 "application/json"
@@ -3748,43 +3279,22 @@
           }
         );
 
-      const rawText =
-        await response.text();
-
-      if (!response.ok) {
+      if (
+        !response.ok
+      ) {
         throw new Error(
           `API HTTP ${response.status}`
         );
       }
 
-      let payload;
-
-      try {
-        payload =
-          JSON.parse(
-            rawText
-          );
-      }
-      catch {
-        throw new Error(
-          "Réponse JSON invalide"
-        );
-      }
-
-      console.log(
-        "BAKHIRAFOOT DETAILS JSON:",
-        payload
-      );
+      const payload =
+        await response.json();
 
       let details =
         payload?.data ||
         payload?.match ||
         payload;
 
-      /*
-       * بعض responses عندها:
-       * data.match
-       */
       if (
         details?.match &&
         typeof details.match ===
@@ -3804,8 +3314,13 @@
         );
       }
 
+      console.log(
+        "BAKHIRAFOOT DETAILS:",
+        details
+      );
+
       /* =====================================================
-         DATA
+         TEAMS
       ===================================================== */
 
       const teams =
@@ -3813,20 +3328,49 @@
           details
         );
 
+      /* =====================================================
+         SCORE
+      ===================================================== */
+
       const score =
         getScore(
           details
         );
 
+      /* =====================================================
+         STATUS
+      ===================================================== */
+
       const status =
-        getStatus(
-          details
+        first(
+          details?.status_text,
+          typeof details?.status ===
+            "string"
+            ? details.status
+            : null,
+          details?.fixture?.status?.long,
+          details?.fixture?.status?.short,
+          "MATCH"
         );
 
+      /* =====================================================
+         COMPETITION
+      ===================================================== */
+
       const competition =
-        getCompetition(
-          details
+        first(
+          details?.league?.name,
+          details?.competition?.name,
+          typeof details?.competition ===
+            "string"
+            ? details.competition
+            : null,
+          "Football"
         );
+
+      /* =====================================================
+         INFO
+      ===================================================== */
 
       const date =
         first(
@@ -3863,14 +3407,14 @@
       ===================================================== */
 
       const homeLineup =
-        buildLineup(
+        getTeamLineup(
           details,
           "home",
           teams.home
         );
 
       const awayLineup =
-        buildLineup(
+        getTeamLineup(
           details,
           "away",
           teams.away
@@ -3885,25 +3429,10 @@
           details
         );
 
-      const statsMap =
-        eventStatsMap(
+      const eventMap =
+        buildEventMap(
           events
         );
-
-      console.log(
-        "BAKHIRAFOOT HOME LINEUP:",
-        homeLineup
-      );
-
-      console.log(
-        "BAKHIRAFOOT AWAY LINEUP:",
-        awayLineup
-      );
-
-      console.log(
-        "BAKHIRAFOOT EVENTS:",
-        events
-      );
 
       /* =====================================================
          RENDER
@@ -4063,13 +3592,13 @@
             ${renderPitch(
               homeLineup,
               "home",
-              statsMap
+              eventMap
             )}
 
             ${renderPitch(
               awayLineup,
               "away",
-              statsMap
+              eventMap
             )}
 
           </div>
@@ -4086,12 +3615,12 @@
 
             ${renderPlayerColumn(
               homeLineup,
-              statsMap
+              eventMap
             )}
 
             ${renderPlayerColumn(
               awayLineup,
-              statsMap
+              eventMap
             )}
 
           </div>
@@ -4099,16 +3628,14 @@
         </div>
 
         ${renderSubstitutions(
-          events,
-          teams
+          events
         )}
 
         ${renderEvents(
-          events,
-          teams
+          events
         )}
 
-        ${manOfTheMatch(
+        ${renderMOTM(
           details
         )}
 
@@ -4147,24 +3674,7 @@
   }
 
   /* =========================================================
-     GET IDENTIFIER FROM CARD
-  ========================================================= */
-
-  function getCardIdentifier(
-    card
-  ) {
-    return first(
-      card?.dataset?.fixtureId,
-      card?.dataset?.matchSlug,
-      card?.dataset?.slug,
-      card?.dataset?.fixture,
-      null
-    );
-  }
-
-  /* =========================================================
-     GLOBAL OPEN
-     script.js => openMatchDetails(index)
+     GLOBAL
   ========================================================= */
 
   window.bfOpenMatchDetails =
@@ -4187,9 +3697,11 @@
       }
 
       const identifier =
-        getCardIdentifier(
-          card
-        );
+        card.dataset.fixtureId ||
+        card.dataset.matchSlug ||
+        card.dataset.slug ||
+        card.dataset.fixture ||
+        "";
 
       if (!identifier) {
         console.error(
