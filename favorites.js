@@ -5,40 +5,84 @@
     "bakhirafoot_favorite_teams";
 
   let favoritesMode = false;
+  let refreshQueued = false;
+
+  /* =====================================================
+     STORAGE
+  ===================================================== */
 
   function getFavorites() {
+
     try {
+
       const saved =
         localStorage.getItem(
           STORAGE_KEY
         );
 
       const parsed =
-        saved ? JSON.parse(saved) : [];
+        saved
+          ? JSON.parse(saved)
+          : [];
 
       return Array.isArray(parsed)
         ? parsed
         : [];
-    } catch {
+
+    }
+    catch {
       return [];
     }
   }
 
-  function saveFavorites(list) {
-    localStorage.setItem(
-      STORAGE_KEY,
-      JSON.stringify(list)
-    );
+  function saveFavorites(
+    list
+  ) {
+
+    try {
+
+      localStorage.setItem(
+        STORAGE_KEY,
+        JSON.stringify(list)
+      );
+
+    }
+    catch {
+
+      console.warn(
+        "BakhiraFoot: localStorage unavailable"
+      );
+
+    }
   }
 
-  function normalize(value) {
-    return String(value || "")
+  /* =====================================================
+     HELPERS
+  ===================================================== */
+
+  function normalize(
+    value
+  ) {
+
+    return String(
+      value || ""
+    )
       .toLowerCase()
       .replace(/\s+/g, " ")
       .trim();
   }
 
-  function getTeamNames(card) {
+  function getTeamNames(
+    card
+  ) {
+
+    if (!card) {
+      return {
+        home: "",
+        away: ""
+      };
+    }
+
     const teams =
       card.querySelectorAll(
         ".flash-team"
@@ -46,71 +90,126 @@
 
     const names = [];
 
-    teams.forEach(team => {
-      const name =
-        team
-          .querySelector(
-            ".team span:not(.teamLogo)"
-          )
-          ?.textContent
-          .trim();
+    teams.forEach(
+      team => {
 
-      if (name) {
-        names.push(name);
+        const name =
+          team
+            .querySelector(
+              ".team span:not(.teamLogo)"
+            )
+            ?.textContent
+            ?.trim() || "";
+
+        if (name) {
+          names.push(name);
+        }
+
       }
-    });
+    );
 
     return {
-      home: names[0] || "",
-      away: names[1] || ""
+
+      home:
+        names[0] || "",
+
+      away:
+        names[1] || ""
+
     };
   }
 
-  function isFavorite(teamName) {
+  function isFavorite(
+    teamName
+  ) {
+
     const key =
-      normalize(teamName);
+      normalize(
+        teamName
+      );
+
+    if (!key) {
+      return false;
+    }
 
     return getFavorites()
       .some(
         item =>
-          normalize(item) === key
+          normalize(item) ===
+          key
       );
   }
 
-  function toggleFavorite(teamName) {
-    if (!teamName) return;
+  /* =====================================================
+     TOGGLE
+  ===================================================== */
+
+  function toggleFavorite(
+    teamName
+  ) {
+
+    if (!teamName) {
+      return;
+    }
 
     const favorites =
       getFavorites();
 
     const key =
-      normalize(teamName);
+      normalize(
+        teamName
+      );
 
     const index =
       favorites.findIndex(
         item =>
-          normalize(item) === key
+          normalize(item) ===
+          key
       );
 
     if (index >= 0) {
-      favorites.splice(index, 1);
-    } else {
-      favorites.push(teamName);
+
+      favorites.splice(
+        index,
+        1
+      );
+
+    }
+    else {
+
+      favorites.push(
+        teamName
+      );
+
     }
 
-    saveFavorites(favorites);
+    saveFavorites(
+      favorites
+    );
 
+    /*
+     * ما نستعملوش observer refresh بلا نهاية.
+     */
     refreshStars();
     applyFavoritesFilter();
+
   }
+
+  /* =====================================================
+     FAVORITE BUTTON
+  ===================================================== */
 
   function createFavoriteButton(
     teamName
   ) {
-    const button =
-      document.createElement("button");
 
-    button.type = "button";
+    const button =
+      document.createElement(
+        "button"
+      );
+
+    button.type =
+      "button";
 
     button.className =
       "bf-favorite-btn";
@@ -123,117 +222,224 @@
       `Ajouter ${teamName} aux favoris`
     );
 
-    button.innerHTML =
-      isFavorite(teamName)
-        ? "★"
-        : "☆";
-
-    if (isFavorite(teamName)) {
-      button.classList.add("active");
-    }
+    updateFavoriteButton(
+      button
+    );
 
     button.addEventListener(
       "click",
       event => {
+
         event.preventDefault();
         event.stopPropagation();
 
-        toggleFavorite(teamName);
+        toggleFavorite(
+          teamName
+        );
+
       }
     );
 
     return button;
   }
 
+  function updateFavoriteButton(
+    button
+  ) {
+
+    if (!button) {
+      return;
+    }
+
+    const team =
+      button.dataset.team || "";
+
+    if (!team) {
+      return;
+    }
+
+    const active =
+      isFavorite(
+        team
+      );
+
+    const newIcon =
+      active
+        ? "★"
+        : "☆";
+
+    /*
+     * مهم:
+     * ما نبدلوش DOM إلا كان فعلاً تبدل.
+     * هادشي كيمنع MutationObserver loop.
+     */
+    if (
+      button.textContent !==
+      newIcon
+    ) {
+
+      button.textContent =
+        newIcon;
+
+    }
+
+    const alreadyActive =
+      button.classList.contains(
+        "active"
+      );
+
+    if (
+      alreadyActive !==
+      active
+    ) {
+
+      button.classList.toggle(
+        "active",
+        active
+      );
+
+    }
+
+    const aria =
+      active
+        ? `Retirer ${team} des favoris`
+        : `Ajouter ${team} aux favoris`;
+
+    if (
+      button.getAttribute(
+        "aria-label"
+      ) !== aria
+    ) {
+
+      button.setAttribute(
+        "aria-label",
+        aria
+      );
+
+    }
+
+  }
+
+  /* =====================================================
+     ADD STARS
+  ===================================================== */
+
   function addStarsToCards() {
+
     const cards =
       document.querySelectorAll(
         ".match-card"
       );
 
-    cards.forEach(card => {
+    cards.forEach(
+      card => {
 
-      if (
-        card.querySelector(
-          ".bf-favorite-wrap"
-        )
-      ) {
-        return;
-      }
+        if (
+          card.querySelector(
+            ".bf-favorite-wrap"
+          )
+        ) {
+          return;
+        }
 
-      const {
-        home,
-        away
-      } = getTeamNames(card);
+        const {
+          home,
+          away
+        } =
+          getTeamNames(
+            card
+          );
 
-      if (!home && !away) {
-        return;
-      }
+        if (
+          !home &&
+          !away
+        ) {
+          return;
+        }
 
-      const wrapper =
-        document.createElement("div");
+        const wrapper =
+          document.createElement(
+            "div"
+          );
 
-      wrapper.className =
-        "bf-favorite-wrap";
+        wrapper.className =
+          "bf-favorite-wrap";
 
-      if (home) {
-        wrapper.appendChild(
-          createFavoriteButton(home)
+        if (home) {
+
+          wrapper.appendChild(
+            createFavoriteButton(
+              home
+            )
+          );
+
+        }
+
+        if (away) {
+
+          wrapper.appendChild(
+            createFavoriteButton(
+              away
+            )
+          );
+
+        }
+
+        card.appendChild(
+          wrapper
         );
-      }
 
-      if (away) {
-        wrapper.appendChild(
-          createFavoriteButton(away)
-        );
       }
-
-      card.appendChild(wrapper);
-    });
+    );
   }
 
-  
+  /* =====================================================
+     REFRESH STARS
+  ===================================================== */
 
   function refreshStars() {
+
     document
       .querySelectorAll(
         ".bf-favorite-btn"
       )
-      .forEach(button => {
+      .forEach(
+        button => {
 
-        const team =
-          button.dataset.team;
+          updateFavoriteButton(
+            button
+          );
 
-        const active =
-          isFavorite(team);
-
-        button.innerHTML =
-          active ? "★" : "☆";
-
-        button.classList.toggle(
-          "active",
-          active
-        );
-
-        button.setAttribute(
-          "aria-label",
-          active
-            ? `Retirer ${team} des favoris`
-            : `Ajouter ${team} aux favoris`
-        );
-      });
+        }
+      );
   }
 
+  /* =====================================================
+     FAVORITES FILTER
+  ===================================================== */
+
   function applyFavoritesFilter() {
+
     const cards =
       document.querySelectorAll(
         ".match-card"
       );
 
     if (!favoritesMode) {
-      cards.forEach(card => {
-        card.style.display = "";
-      });
+
+      cards.forEach(
+        card => {
+
+          if (
+            card.style.display !==
+            ""
+          ) {
+            card.style.display =
+              "";
+          }
+
+        }
+      );
 
       return;
     }
@@ -241,55 +447,99 @@
     const favorites =
       getFavorites();
 
-    cards.forEach(card => {
+    cards.forEach(
+      card => {
 
-      const {
-        home,
-        away
-      } = getTeamNames(card);
+        const {
+          home,
+          away
+        } =
+          getTeamNames(
+            card
+          );
 
-      const visible =
-        favorites.some(
-          favorite =>
-            normalize(favorite) ===
-              normalize(home) ||
-            normalize(favorite) ===
-              normalize(away)
-        );
+        const visible =
+          favorites.some(
+            favorite =>
+              normalize(
+                favorite
+              ) ===
+                normalize(
+                  home
+                ) ||
 
-      card.style.display =
-        visible ? "" : "none";
-    });
+              normalize(
+                favorite
+              ) ===
+                normalize(
+                  away
+                )
+          );
+
+        const display =
+          visible
+            ? ""
+            : "none";
+
+        if (
+          card.style.display !==
+          display
+        ) {
+
+          card.style.display =
+            display;
+
+        }
+
+      }
+    );
   }
 
+  /* =====================================================
+     FAVORITES BUTTON
+  ===================================================== */
+
   function findFavoritesButton() {
+
     const buttons =
       document.querySelectorAll(
         "aside .filter"
       );
 
-    for (const button of buttons) {
+    for (
+      const button
+      of buttons
+    ) {
 
-      const text =
+      const buttonText =
         button.textContent
           .trim()
           .toLowerCase();
 
       if (
-        text.includes("favoris")
+        buttonText.includes(
+          "favoris"
+        )
       ) {
+
         return button;
+
       }
+
     }
 
     return null;
   }
 
   function setupFavoritesButton() {
+
     const button =
       findFavoritesButton();
 
-    if (!button || button.dataset.bfReady) {
+    if (
+      !button ||
+      button.dataset.bfReady
+    ) {
       return;
     }
 
@@ -311,14 +561,19 @@
           favoritesMode
         );
 
-        if (favoritesMode) {
+        if (
+          favoritesMode
+        ) {
 
           const favorites =
             getFavorites();
 
-          if (!favorites.length) {
+          if (
+            !favorites.length
+          ) {
 
-            favoritesMode = false;
+            favoritesMode =
+              false;
 
             button.classList.remove(
               "active"
@@ -333,10 +588,15 @@
         }
 
         applyFavoritesFilter();
+
       },
       true
     );
   }
+
+  /* =====================================================
+     STYLES
+  ===================================================== */
 
   function addStyles() {
 
@@ -349,7 +609,9 @@
     }
 
     const style =
-      document.createElement("style");
+      document.createElement(
+        "style"
+      );
 
     style.id =
       "bf-favorites-style";
@@ -366,7 +628,7 @@
         right: 10px;
         top: 38px;
 
-        z-index: 5;
+        z-index: 20;
 
         display: flex;
         flex-direction: column;
@@ -389,14 +651,16 @@
 
         border-radius: 7px;
 
-        background: rgba(
-          255,
-          255,
-          255,
-          .92
-        );
+        background:
+          rgba(
+            255,
+            255,
+            255,
+            .92
+          );
 
-        color: #9aa6ae;
+        color:
+          #9aa6ae;
 
         font-size: 15px;
         line-height: 1;
@@ -404,33 +668,53 @@
         cursor: pointer;
 
         transition:
-          .15s ease;
+          transform .15s ease,
+          background .15s ease,
+          color .15s ease;
       }
 
       .bf-favorite-btn:hover {
-        background: #f4f7f8;
-        transform: scale(1.05);
+        background:
+          #f4f7f8;
+
+        transform:
+          scale(1.05);
       }
 
       .bf-favorite-btn.active {
-        color: #e0a400;
-        border-color: #ecd37a;
-        background: #fff9df;
+        color:
+          #e0a400;
+
+        border-color:
+          #ecd37a;
+
+        background:
+          #fff9df;
       }
 
       .dark .bf-favorite-btn {
-        background: #1b252d;
-        border-color: #34414b;
-        color: #8d9aa3;
+        background:
+          #1b252d;
+
+        border-color:
+          #34414b;
+
+        color:
+          #8d9aa3;
       }
 
       .dark .bf-favorite-btn.active {
-        color: #ffd45a;
-        border-color: #6b5a25;
-        background: #302b1c;
+        color:
+          #ffd45a;
+
+        border-color:
+          #6b5a25;
+
+        background:
+          #302b1c;
       }
 
-      @media (max-width: 700px) {
+      @media(max-width:700px) {
 
         .bf-favorite-wrap {
           right: 6px;
@@ -442,31 +726,125 @@
           height: 23px;
           font-size: 13px;
         }
+
       }
+
     `;
 
-    document.head.appendChild(style);
+    document.head.appendChild(
+      style
+    );
   }
+
+  /* =====================================================
+     SAFE REFRESH
+  ===================================================== */
 
   function refresh() {
-    addStarsToCards();
-    setupFavoritesButton();
-    refreshStars();
-    applyFavoritesFilter();
+
+    if (
+      refreshQueued
+    ) {
+      return;
+    }
+
+    refreshQueued =
+      true;
+
+    requestAnimationFrame(
+      () => {
+
+        refreshQueued =
+          false;
+
+        addStarsToCards();
+
+        setupFavoritesButton();
+
+        refreshStars();
+
+        applyFavoritesFilter();
+
+      }
+    );
   }
 
-  addStyles();
-
-  /*
-   * Les cartes des matchs sont générées
-   * dynamiquement par script.js.
-   * On les surveille sans toucher à script.js.
-   */
+  /* =====================================================
+     OBSERVER
+     -----------------------------------------------------
+     كنراقبو غير ظهور match-card جديدة.
+     ماشي كل mutation داخل body.
+  ===================================================== */
 
   const observer =
-    new MutationObserver(() => {
-      refresh();
-    });
+    new MutationObserver(
+      mutations => {
+
+        let needsRefresh =
+          false;
+
+        for (
+          const mutation
+          of mutations
+        ) {
+
+          if (
+            mutation.type !==
+            "childList"
+          ) {
+            continue;
+          }
+
+          for (
+            const node
+            of mutation.addedNodes
+          ) {
+
+            if (
+              node.nodeType !==
+              1
+            ) {
+              continue;
+            }
+
+            if (
+              node.matches?.(
+                ".match-card"
+              ) ||
+              node.querySelector?.(
+                ".match-card"
+              )
+            ) {
+
+              needsRefresh =
+                true;
+
+              break;
+            }
+
+          }
+
+          if (
+            needsRefresh
+          ) {
+            break;
+          }
+        }
+
+        if (
+          needsRefresh
+        ) {
+          refresh();
+        }
+
+      }
+    );
+
+  /* =====================================================
+     START
+  ===================================================== */
+
+  addStyles();
 
   observer.observe(
     document.body,
@@ -475,10 +853,6 @@
       subtree: true
     }
   );
-
-  /*
-   * Première exécution
-   */
 
   setTimeout(
     refresh,
