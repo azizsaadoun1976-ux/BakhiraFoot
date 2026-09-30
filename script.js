@@ -4033,157 +4033,106 @@ function renderMatchInformation(
 async function loadRealMatchDetails(fixtureId) {
 
   const value =
-    String(fixtureId || "").trim();
+    String(
+      fixtureId || ""
+    ).trim();
 
   if (!value) {
-    throw new Error("Fixture manquant");
+    throw new Error(
+      "Fixture manquant"
+    );
   }
 
-  /*
-     بعض الروابط كتكون:
-     team-a-vs-team-b/xxxxx
+  const controller =
+    new AbortController();
 
-     نجربو كذلك:
-     team-a-vs-team-b
-
-     باش ما نبقاوش مربوطين بشكل واحد للـslug.
-  */
-
-  const candidates = [];
-
-  function addCandidate(value) {
-
-    if (
-      value &&
-      !candidates.includes(value)
-    ) {
-      candidates.push(value);
-    }
-
-  }
-
-  addCandidate(value);
-
-  if (value.includes("/")) {
-
-    addCandidate(
-      value.split("/")[0]
+  const timeout =
+    setTimeout(
+      () => {
+        controller.abort();
+      },
+      15000
     );
 
-  }
-
-  /*
-     إذا كان عندنا URL path كامل
-     ناخدو حتى آخر جزء.
-  */
-
-  if (value.includes("/")) {
-
-    const parts =
-      value
-        .split("/")
-        .filter(Boolean);
-
-    addCandidate(
-      parts[parts.length - 1]
-    );
-
-  }
-
-  let lastError = null;
-
-  for (
-    const slug of candidates
-  ) {
-
-    const url =
-      `https://sportscore.com/api/widget/match/?sport=football&slug=${encodeURIComponent(
-        slug
-      )}&src=bakhira-foot`;
+  try {
 
     console.log(
-      "SPORTSCORE DETAILS TRY:",
-      url
+      "BAKHIRAFOOT DETAILS REQUEST:",
+      value
     );
 
-    try {
+    const response =
+      await fetch(
+        `/api?fixture=${encodeURIComponent(
+          value
+        )}`,
+        {
+          method: "GET",
 
-      const response =
-        await fetch(
-          url,
-          {
-            method: "GET",
-            cache: "no-store",
-            headers: {
-              Accept:
-                "application/json"
-            }
-          }
-        );
+          cache:
+            "no-store",
 
-      const text =
-        await response.text();
+          headers: {
+            Accept:
+              "application/json"
+          },
 
-      let data;
-
-      try {
-
-        data =
-          JSON.parse(text);
-
-      } catch {
-
-        data = null;
-
-      }
-
-      if (!response.ok) {
-
-        throw new Error(
-          `HTTP ${response.status}`
-        );
-
-      }
-
-      if (!data) {
-
-        throw new Error(
-          "Réponse JSON invalide"
-        );
-
-      }
-
-      console.log(
-        "SPORTSCORE RAW DETAILS:",
-        data
+          signal:
+            controller.signal
+        }
       );
 
-      return data;
-
-    } catch (error) {
-
-      console.warn(
-        "DETAIL TRY FAILED:",
-        slug,
-        error.message
+    if (
+      !response.ok
+    ) {
+      throw new Error(
+        `API HTTP ${response.status}`
       );
-
-      lastError =
-        error;
-
     }
 
+    const data =
+      await response.json();
+
+    console.log(
+      "BAKHIRAFOOT DETAILS RESPONSE:",
+      data
+    );
+
+    if (
+      !data
+    ) {
+      throw new Error(
+        "Réponse vide"
+      );
+    }
+
+    return data;
+
   }
+  catch (
+    error
+  ) {
 
-  throw (
-    lastError ||
-    new Error(
-      "Match details introuvables"
-    )
-  );
+    if (
+      error?.name ===
+      "AbortError"
+    ) {
+      throw new Error(
+        "Le chargement du match a expiré."
+      );
+    }
+
+    throw error;
+
+  }
+  finally {
+
+    clearTimeout(
+      timeout
+    );
+
+  }
 }
-
-
 /* =========================================================
    ADAPT SPORTScore DATA TO BAKHIRAFOOT
 ========================================================= */
