@@ -1246,80 +1246,128 @@
     );
   }
 
-  function getPlayerNumber(
-    player
-  ) {
-    if (
-      typeof player === "string"
-    ) {
-      return "-";
-    }
+ function getPlayerNumber(
+  player
+) {
 
-    return first(
-      player?.number,
-      player?.shirt_number,
-      player?.shirtNumber,
-      player?.jersey,
-      player?.player?.number,
-      "-"
-    );
-  }
+  const p =
+    player?.player &&
+    typeof player.player ===
+      "object"
+      ? player.player
+      : player;
 
-  function getPlayerPosition(
-    player
-  ) {
-    if (
-      typeof player === "string"
-    ) {
-      return "";
-    }
+  return first(
 
-    return first(
-      player?.position,
-      player?.pos,
-      player?.role,
-      player?.player?.position,
-      ""
-    );
-  }
+    p?.number,
 
-  function getPlayerPhoto(
-    player
-  ) {
-    if (
-      typeof player === "string"
-    ) {
-      return "";
-    }
+    p?.shirt_number,
 
-    return first(
-      player?.photo,
-      player?.image,
-      player?.picture,
-      player?.avatar,
-      player?.player?.photo,
-      player?.player?.image,
-      player?.player?.picture,
-      ""
-    );
-  }
+    p?.shirtNumber,
 
-  function getPlayerRating(
-    player
-  ) {
-    if (
-      typeof player === "string"
-    ) {
-      return null;
-    }
+    p?.jersey,
 
-    return first(
-      player?.rating,
-      player?.statistics?.rating,
-      player?.player?.rating,
-      null
-    );
-  }
+    p?.jersey_number,
+
+    p?.jerseyNumber,
+
+    player?.number,
+
+    player?.shirt_number,
+
+    player?.shirtNumber,
+
+    "-"
+
+  );
+}
+
+
+function getPlayerPosition(
+  player
+) {
+
+  const p =
+    player?.player &&
+    typeof player.player ===
+      "object"
+      ? player.player
+      : player;
+
+  return first(
+
+    p?.position,
+
+    p?.pos,
+
+    p?.role,
+
+    player?.position,
+
+    player?.pos,
+
+    ""
+  );
+}
+
+
+function getPlayerPhoto(
+  player
+) {
+
+  const p =
+    player?.player &&
+    typeof player.player ===
+      "object"
+      ? player.player
+      : player;
+
+  return first(
+
+    p?.photo,
+
+    p?.logo,
+
+    p?.picture,
+
+    p?.image,
+
+    p?.avatar,
+
+    player?.photo,
+
+    player?.logo,
+
+    player?.picture,
+
+    player?.image,
+
+    player?.avatar,
+
+    ""
+  );
+}
+
+
+function getPlayerRating(
+  player
+) {
+
+  return first(
+
+    player?.rating,
+
+    player?.performance?.rating,
+
+    player?.statistics?.rating,
+
+    player?.games?.rating,
+
+    player?.player?.rating,
+
+    null
+  );
+}
 
   function playerKey(
     player
@@ -1833,232 +1881,371 @@
     return "unknown";
   }
 
-  function pitchPositions(
-    lineup,
-    side
-  ) {
-    const players =
-      arr(
-        lineup?.xi
-      ).slice(
-        0,
-        11
-      );
+function playerCoordinates(
+  player
+) {
 
-    if (!players.length) {
-      return [];
-    }
+  const p =
+    player?.player &&
+    typeof player.player ===
+      "object"
+      ? player.player
+      : player;
 
-    const rows =
-      formationRows(
-        lineup?.formation
-      );
-
-    const gk = [];
-    const def = [];
-    const mid = [];
-    const fwd = [];
-    const unknown = [];
-
-    players.forEach(
-      player => {
-
-        /*
-         * Grid إذا كان موجود.
-         */
-        const grid =
-          first(
-            player?.grid,
-            player?.position_grid,
-            player?.coordinates,
-            ""
-          );
-
-        if (grid) {
-          return;
-        }
-
-        switch (
-          category(
-            player
-          )
-        ) {
-          case "gk":
-            gk.push(player);
-            break;
-
-          case "def":
-            def.push(player);
-            break;
-
-          case "mid":
-            mid.push(player);
-            break;
-
-          case "fwd":
-            fwd.push(player);
-            break;
-
-          default:
-            unknown.push(player);
-        }
-      }
+  const x =
+    Number(
+      first(
+        p?.x,
+        player?.x,
+        p?.posX,
+        player?.posX,
+        null
+      )
     );
 
-    const groups =
-      [];
+  const y =
+    Number(
+      first(
+        p?.y,
+        player?.y,
+        p?.posY,
+        player?.posY,
+        null
+      )
+    );
 
-    if (
-      gk.length
-    ) {
-      groups.push(
-        gk.slice(
-          0,
-          1
-        )
-      );
-    }
-    else {
-      groups.push([]);
-    }
+  if (
+    Number.isFinite(x) &&
+    Number.isFinite(y) &&
+    x >= 0 &&
+    x <= 100 &&
+    y >= 0 &&
+    y <= 100
+  ) {
 
-    const pools =
-      [
-        def,
-        mid,
-        fwd
-      ];
+    return {
+      x,
+      y,
+      valid: true
+    };
+  }
 
-    let unknownIndex =
-      0;
+  return {
+    x: null,
+    y: null,
+    valid: false
+  };
+}
 
-    rows.forEach(
-      count => {
 
-        let pool =
-          pools.shift() ||
-          [];
+function pitchPositions(
+  lineup,
+  side
+) {
+
+  const players =
+    arr(
+      lineup?.xi
+    ).slice(
+      0,
+      11
+    );
+
+  if (
+    !players.length
+  ) {
+    return [];
+  }
+
+  /*
+   * =====================================================
+   * أول اختيار:
+   * الإحداثيات الحقيقية x/y ديال SportScore
+   * =====================================================
+   */
+
+  const exact =
+    players.map(
+      player => ({
+        player,
+        coordinates:
+          playerCoordinates(
+            player
+          )
+      })
+    );
+
+  const validCount =
+    exact.filter(
+      item =>
+        item.coordinates.valid
+    ).length;
+
+  /*
+   * إلا كانو عندنا 7 لاعبين أو أكثر بإحداثيات
+   * كنستعملو coordinates الحقيقية.
+   *
+   * فهاد الحالة:
+   * GK غادي يبقى GK
+   * DEF غادي يبقى DEF
+   * MID غادي يبقى MID
+   * FWD غادي يبقى FWD
+   */
+
+  if (
+    validCount >=
+      Math.min(
+        7,
+        players.length
+      )
+  ) {
+
+    return exact.map(
+      item => {
 
         if (
-          pool.length <
-          count
+          !item.coordinates.valid
         ) {
-          while (
-            pool.length <
-              count &&
-            unknownIndex <
-              unknown.length
-          ) {
-            pool.push(
-              unknown[
-                unknownIndex++
-              ]
-            );
-          }
+
+          return {
+            player:
+              item.player,
+
+            x: 50,
+
+            y:
+              side === "away"
+                ? 50
+                : 50
+          };
         }
 
-        groups.push(
-          pool.slice(
-            0,
-            count
-          )
-        );
+        let y =
+          item.coordinates.y;
+
+        /*
+         * Away كنقلبو الاتجاه
+         * باش الحارس يكون فالجهة
+         * المقابلة للمهاجم.
+         */
+
+        if (
+          side ===
+          "away"
+        ) {
+          y =
+            100 - y;
+        }
+
+        return {
+
+          player:
+            item.player,
+
+          x:
+            item.coordinates.x,
+
+          y
+
+        };
       }
     );
+  }
 
-    /*
-     * باقي اللاعبين
-     */
-    const used =
-      new Set(
-        groups.flat()
-      );
+  /*
+   * =====================================================
+   * FALLBACK
+   * إلا ما كانتش x/y
+   * =====================================================
+   */
 
-    const leftovers =
-      players.filter(
-        player =>
-          !used.has(
+  const rows =
+    formationRows(
+      lineup?.formation
+    );
+
+  const gk = [];
+  const def = [];
+  const mid = [];
+  const fwd = [];
+  const unknown = [];
+
+  players.forEach(
+    player => {
+
+      switch (
+        category(
+          player
+        )
+      ) {
+
+        case "gk":
+          gk.push(
             player
-          )
-      );
+          );
+          break;
 
-    if (
-      leftovers.length
-    ) {
-      const last =
-        groups[
-          groups.length - 1
-        ] || [];
+        case "def":
+          def.push(
+            player
+          );
+          break;
 
-      last.push(
-        ...leftovers
-      );
+        case "mid":
+          mid.push(
+            player
+          );
+          break;
+
+        case "fwd":
+          fwd.push(
+            player
+          );
+          break;
+
+        default:
+          unknown.push(
+            player
+          );
+      }
     }
+  );
 
-    const positions =
-      [];
+  const groups =
+    [];
 
-    groups.forEach(
-      (row,index) => {
+  groups.push(
+    gk.slice(
+      0,
+      1
+    )
+  );
 
-        row.forEach(
-          (player,playerIndex) => {
+  const pools = [
+    def,
+    mid,
+    fwd
+  ];
 
-            let x;
+  let unknownIndex =
+    0;
 
-            if (
-              row.length ===
-              1
-            ) {
-              x = 50;
-            }
-            else {
-              x =
-                12 +
-                (
-                  76 *
-                  (
-                    playerIndex /
-                    (
-                      row.length - 1
-                    )
-                  )
-                );
-            }
+  rows.forEach(
+    count => {
 
-            let y =
-              7 +
-              (
-                86 *
+      let pool =
+        pools.shift() ||
+        [];
+
+      while (
+        pool.length <
+          count &&
+        unknownIndex <
+          unknown.length
+      ) {
+
+        pool.push(
+          unknown[
+            unknownIndex++
+          ]
+        );
+      }
+
+      groups.push(
+        pool.slice(
+          0,
+          count
+        )
+      );
+
+    }
+  );
+
+  const used =
+    new Set(
+      groups.flat()
+    );
+
+  const leftovers =
+    players.filter(
+      player =>
+        !used.has(
+          player
+        )
+    );
+
+  if (
+    leftovers.length
+  ) {
+
+    groups[
+      groups.length - 1
+    ].push(
+      ...leftovers
+    );
+  }
+
+  const positions =
+    [];
+
+  groups.forEach(
+    (
+      row,
+      rowIndex
+    ) => {
+
+      row.forEach(
+        (
+          player,
+          index
+        ) => {
+
+          const x =
+            row.length === 1
+              ? 50
+              : 12 +
+                76 *
                 (
                   index /
-                  Math.max(
-                    1,
-                    groups.length - 1
+                  (
+                    row.length -
+                    1
                   )
-                )
-              );
+                );
 
-            if (
-              side ===
-              "away"
-            ) {
-              y =
-                100 - y;
-            }
+          let y =
+            7 +
+            86 *
+            (
+              rowIndex /
+              Math.max(
+                1,
+                groups.length -
+                  1
+              )
+            );
 
-            positions.push({
-              player,
-              x,
-              y
-            });
+          if (
+            side ===
+            "away"
+          ) {
+            y =
+              100 - y;
           }
-        );
-      }
-    );
 
-    return positions;
-  }
+          positions.push({
+            player,
+            x,
+            y
+          });
+
+        }
+      );
+    }
+  );
+
+  return positions;
+}
 
   /* =========================================================
      PLAYER AVATAR
@@ -2554,81 +2741,179 @@
   /* =========================================================
      PITCH EVENT BADGES
   ========================================================= */
+function playerHasInjury(
+  player
+) {
 
-  function playerBadges(
-    player,
-    statsMap
+  const p =
+    player?.player &&
+    typeof player.player ===
+      "object"
+      ? player.player
+      : player;
+
+  const direct =
+    first(
+      player?.injury,
+      player?.injured,
+      p?.injury,
+      p?.injured,
+      null
+    );
+
+  if (
+    direct
   ) {
-    const stats =
-      statsMap.get(
-        playerKey(
-          player
-        )
-      );
-
-    if (!stats) {
-      return "";
-    }
-
-    const badges =
-      [];
-
-    if (
-      stats.goals
-    ) {
-      badges.push(
-        "⚽"
-      );
-    }
-
-    if (
-      stats.assists
-    ) {
-      badges.push(
-        "🅰️"
-      );
-    }
-
-    if (
-      stats.yellow
-    ) {
-      badges.push(
-        "🟨"
-      );
-    }
-
-    if (
-      stats.red
-    ) {
-      badges.push(
-        "🟥"
-      );
-    }
-
-    if (
-      stats.in
-    ) {
-      badges.push(
-        "↗️"
-      );
-    }
-
-    if (
-      stats.out
-    ) {
-      badges.push(
-        "↙️"
-      );
-    }
-
-    return badges.length
-      ? `
-        <div class="bfmd-event-mini">
-          ${badges.join("")}
-        </div>
-      `
-      : "";
+    return true;
   }
+
+  const incidents =
+    first(
+      player?.incidents,
+      p?.incidents,
+      []
+    );
+
+  if (
+    Array.isArray(
+      incidents
+    )
+  ) {
+
+    return incidents.some(
+      incident => {
+
+        const type =
+          norm(
+            first(
+              incident?.type,
+              incident?.event_type,
+              incident?.incidentType,
+              ""
+            )
+          );
+
+        const detail =
+          norm(
+            first(
+              incident?.detail,
+              incident?.description,
+              incident?.reason,
+              ""
+            )
+          );
+
+        return (
+          type.includes(
+            "injur"
+          ) ||
+          detail.includes(
+            "injur"
+          ) ||
+          type.includes(
+            "hurt"
+          ) ||
+          detail.includes(
+            "hurt"
+          )
+        );
+      }
+    );
+  }
+
+  return false;
+}
+  function playerBadges(
+  player,
+  statsMap
+) {
+
+  const stats =
+    statsMap.get(
+      playerKey(
+        player
+      )
+    ) || {
+      goals: 0,
+      assists: 0,
+      yellow: 0,
+      red: 0,
+      in: 0,
+      out: 0
+    };
+
+  const badges =
+    [];
+
+  if (
+    stats.goals
+  ) {
+    badges.push(
+      "⚽"
+    );
+  }
+
+  if (
+    stats.assists
+  ) {
+    badges.push(
+      "🅰️"
+    );
+  }
+
+  if (
+    stats.yellow
+  ) {
+    badges.push(
+      "🟨"
+    );
+  }
+
+  if (
+    stats.red
+  ) {
+    badges.push(
+      "🟥"
+    );
+  }
+
+  if (
+    stats.in
+  ) {
+    badges.push(
+      "↗️"
+    );
+  }
+
+  if (
+    stats.out
+  ) {
+    badges.push(
+      "↙️"
+    );
+  }
+
+  if (
+    playerHasInjury(
+      player
+    )
+  ) {
+    badges.push(
+      "🤕"
+    );
+  }
+
+  return badges.length
+    ? `
+      <div
+        class="bfmd-event-mini"
+        title="Événements du joueur"
+      >
+        ${badges.join("")}
+      </div>
+    `
+    : "";
+}
 
   /* =========================================================
      RENDER PITCH
@@ -2746,19 +3031,19 @@
                   )}
                 </div>
 
-                ${
-                  rating !== null
-                    ? `
-                      <div class="bfmd-rating">
-                        ⭐ ${esc(
-                          Number(
-                            rating
-                          ).toFixed(1)
-                        )}
-                      </div>
-                    `
-                    : ""
-                }
+               <div class="bfmd-rating">
+  ⭐ ${
+    rating !== null &&
+    rating !== undefined &&
+    rating !== ""
+      ? esc(
+          Number(
+            rating
+          ).toFixed(1)
+        )
+      : "—"
+  }
+</div>
 
               </div>
             `;
