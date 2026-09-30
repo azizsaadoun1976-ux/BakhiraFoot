@@ -790,122 +790,180 @@ module.exports = async (req, res) => {
 
 function normalizePlayer(row) {
 
-  if (
-    typeof row === "string"
-  ) {
-    return {
-      player: {
-        id: null,
-        name: row,
-        number: null,
-        pos: "",
-        grid: "",
-        photo: ""
-      },
-
-      rating: null,
-
-      games: {
-        rating: null,
-        minutes: null,
-        position: "",
-        substitute: false,
-        captain: false
-      },
-
-      goals: {
-        total: 0,
-        assists: 0
-      },
-
-      cards: {
-        yellow: 0,
-        red: 0
-      },
-
-      passes: {
-        key: 0
-      },
-
-      shots: {
-        total: 0,
-        on: 0
-      }
-    };
-  }
-
   const source =
     row &&
     typeof row === "object"
       ? row
       : {};
 
-  const player =
+  const raw =
     source?.player &&
     typeof source.player === "object"
       ? source.player
       : source;
+
+  const firstValue =
+    source?.first ??
+    raw?.first ??
+    null;
+
+  const hasFirstFlag =
+    firstValue !== null &&
+    firstValue !== undefined;
+
+  const starter =
+    hasFirstFlag
+      ? (
+          firstValue === 1 ||
+          firstValue === true ||
+          firstValue === "1"
+        )
+      : (
+          source?.starter !== false &&
+          source?.substitute !== true
+        );
+
+  const substitute =
+    source?.substitute === true ||
+    source?.starter === false ||
+    (
+      hasFirstFlag &&
+      (
+        firstValue === 0 ||
+        firstValue === false ||
+        firstValue === "0"
+      )
+    );
 
   return {
 
     player: {
 
       id:
-        player?.id ??
+        raw?.id ??
         source?.player_id ??
         null,
 
       name:
-        player?.name ||
-        player?.full_name ||
-        player?.fullName ||
+        raw?.name ||
+        raw?.full_name ||
+        raw?.fullName ||
         source?.name ||
         source?.player_name ||
         "Joueur",
 
       number:
-        source?.number ??
-        source?.shirtNumber ??
         source?.shirt_number ??
-        source?.jerseyNumber ??
+        source?.shirtNumber ??
         source?.jersey_number ??
-        player?.number ??
-        player?.shirtNumber ??
-        player?.shirt_number ??
+        source?.jerseyNumber ??
+        source?.number ??
+        raw?.shirt_number ??
+        raw?.shirtNumber ??
+        raw?.number ??
         null,
 
       pos:
         source?.position ||
         source?.pos ||
         source?.role ||
-        player?.position ||
-        player?.pos ||
+        raw?.position ||
+        raw?.pos ||
         "",
 
-      grid:
-        source?.grid ||
-        source?.positionGrid ||
-        source?.position_grid ||
-        player?.grid ||
-        player?.positionGrid ||
-        "",
+      /*
+       * IMPORTANT:
+       * TheSports/SportScore donne x/y
+       * directement pour placer le joueur.
+       */
+      x:
+        source?.x ??
+        raw?.x ??
+        null,
 
+      y:
+        source?.y ??
+        raw?.y ??
+        null,
+
+      /*
+       * الصورة الحقيقية ديال اللاعب
+       */
       photo:
         source?.photo ||
+        source?.logo ||
         source?.picture ||
         source?.image ||
         source?.avatar ||
-        player?.photo ||
-        player?.picture ||
-        player?.image ||
-        player?.avatar ||
+        raw?.photo ||
+        raw?.logo ||
+        raw?.picture ||
+        raw?.image ||
+        raw?.avatar ||
+        "",
+
+      logo:
+        source?.logo ||
+        raw?.logo ||
+        source?.photo ||
+        raw?.photo ||
         ""
     },
 
+    /*
+     * Rating ديال المباراة
+     */
     rating:
       source?.rating ??
       source?.performance?.rating ??
-      player?.rating ??
+      raw?.rating ??
+      null,
+
+    /*
+     * Starter / Remplaçant
+     */
+    starter,
+
+    substitute,
+
+    /*
+     * Captain
+     */
+    captain:
+      source?.captain === true ||
+      source?.captain === 1 ||
+      source?.captain === "1",
+
+    /*
+     * Minutes
+     */
+    minutes:
+      source?.minutes ??
+      source?.minutesPlayed ??
+      null,
+
+    /*
+     * Incidents liés باللاعب
+     */
+    incidents:
+      Array.isArray(
+        source?.incidents
+      )
+        ? source.incidents
+        : Array.isArray(
+            raw?.incidents
+          )
+          ? raw.incidents
+          : [],
+
+    /*
+     * إصابة اللاعب إذا كانت موجودة
+     */
+    injury:
+      source?.injury ??
+      source?.injured ??
+      raw?.injury ??
+      raw?.injured ??
       null,
 
     games: {
@@ -913,7 +971,7 @@ function normalizePlayer(row) {
       rating:
         source?.rating ??
         source?.performance?.rating ??
-        player?.rating ??
+        raw?.rating ??
         null,
 
       minutes:
@@ -924,19 +982,20 @@ function normalizePlayer(row) {
       position:
         source?.position ||
         source?.pos ||
-        player?.position ||
-        player?.pos ||
+        raw?.position ||
+        raw?.pos ||
         "",
 
-      substitute:
-        source?.substitute === true ||
-        source?.starter === false,
+      substitute,
 
       captain:
-        source?.captain === true
+        source?.captain === true ||
+        source?.captain === 1 ||
+        source?.captain === "1"
     },
 
     goals: {
+
       total:
         source?.goals?.total ??
         source?.goals ??
@@ -949,6 +1008,7 @@ function normalizePlayer(row) {
     },
 
     cards: {
+
       yellow:
         source?.cards?.yellow ??
         source?.yellow ??
@@ -961,6 +1021,7 @@ function normalizePlayer(row) {
     },
 
     passes: {
+
       key:
         source?.passes?.key ??
         source?.key_passes ??
@@ -968,6 +1029,7 @@ function normalizePlayer(row) {
     },
 
     shots: {
+
       total:
         source?.shots?.total ??
         source?.shots ??
@@ -985,141 +1047,275 @@ function normalizePlayer(row) {
        LINEUP NORMALIZER
     ===================================================== */
 
-    function normalizeLineup(
-      source,
-      team
+   function normalizeLineup(
+  source,
+  team
+) {
+
+  /*
+   * source ممكن تكون:
+   * - object
+   * - أو array ديال players
+   */
+
+  if (
+    !source
+  ) {
+    return null;
+  }
+
+  let players = [];
+
+  let substitutes = [];
+
+  let formation =
+    "—";
+
+  let coach =
+    null;
+
+  /*
+   * -------------------------------------------------------
+   * ARRAY
+   * -------------------------------------------------------
+   */
+
+  if (
+    Array.isArray(
+      source
+    )
+  ) {
+
+    players =
+      source.slice();
+
+  }
+
+  /*
+   * -------------------------------------------------------
+   * OBJECT
+   * -------------------------------------------------------
+   */
+
+  else if (
+    typeof source ===
+      "object"
+  ) {
+
+    players =
+      arr(
+        source?.players
+      );
+
+    if (
+      !players.length
     ) {
-
-      if (
-        !source ||
-        typeof source !==
-          "object"
-      ) {
-        return null;
-      }
-
-      let players =
+      players =
         arr(
-          source?.players
+          source?.startingLineup
         );
-
-      if (
-        !players.length
-      ) {
-
-        players =
-          arr(
-            source?.startingLineup
-          );
-      }
-
-      if (
-        !players.length
-      ) {
-
-        players =
-          arr(
-            source?.startingXI
-          );
-      }
-
-      if (
-        !players.length
-      ) {
-
-        players =
-          arr(
-            source?.starters
-          );
-      }
-
-      let substitutes =
-        arr(
-          source?.substitutes
-        );
-
-      if (
-        !substitutes.length
-      ) {
-
-        substitutes =
-          arr(
-            source?.bench
-          );
-      }
-
-      const startXI =
-        players
-          .filter(
-            player => {
-
-              if (
-                player?.substitute ===
-                true
-              ) {
-                return false;
-              }
-
-              if (
-                player?.starter ===
-                false
-              ) {
-                return false;
-              }
-
-              return true;
-            }
-          )
-          .map(
-            normalizePlayer
-          );
-
-      const bench =
-        substitutes
-          .map(
-            normalizePlayer
-          );
-
-      return {
-
-        team: {
-
-          id:
-            team?.id ||
-            source?.team?.id ||
-            null,
-
-          name:
-            team?.name ||
-            source?.team?.name ||
-            "",
-
-          logo:
-            team?.logo ||
-            source?.team?.logo ||
-            ""
-
-        },
-
-        formation:
-          source?.formation ||
-          source?.tacticalFormation ||
-          source?.formationUsed ||
-          "—",
-
-        coach:
-          source?.coach ||
-          source?.manager ||
-          null,
-
-        startXI,
-
-        substitutes:
-          bench
-
-      };
     }
 
+    if (
+      !players.length
+    ) {
+      players =
+        arr(
+          source?.startingXI
+        );
+    }
+
+    if (
+      !players.length
+    ) {
+      players =
+        arr(
+          source?.starters
+        );
+    }
+
+    substitutes =
+      arr(
+        source?.substitutes
+      );
+
+    if (
+      !substitutes.length
+    ) {
+      substitutes =
+        arr(
+          source?.bench
+        );
+    }
+
+    formation =
+      source?.formation ||
+      source?.tacticalFormation ||
+      source?.formationUsed ||
+      "—";
+
+    coach =
+      source?.coach ||
+      source?.manager ||
+      null;
+  }
+
+  /*
+   * -------------------------------------------------------
+   * formation ممكن تكون من parent
+   * -------------------------------------------------------
+   */
+
+  if (
+    !formation ||
+    formation === "—"
+  ) {
+    formation =
+      source?.formation ||
+      source?.tacticalFormation ||
+      source?.formationUsed ||
+      "—";
+  }
+
+  /*
+   * -------------------------------------------------------
+   * واش source فيه first؟
+   *
+   * 1 = starter
+   * 0 = bench
+   * -------------------------------------------------------
+   */
+
+  const hasFirstFlag =
+    players.some(
+      player =>
+        player &&
+        typeof player ===
+          "object" &&
+        (
+          player.first !==
+            undefined
+        )
+    );
+
+  let startSource = [];
+
+  let benchSource =
+    substitutes.slice();
+
+  if (
+    hasFirstFlag
+  ) {
+
+    startSource =
+      players.filter(
+        player =>
+          player?.first === 1 ||
+          player?.first === true ||
+          player?.first === "1"
+      );
+
+    const autoBench =
+      players.filter(
+        player =>
+          player?.first === 0 ||
+          player?.first === false ||
+          player?.first === "0"
+      );
+
+    if (
+      !benchSource.length
+    ) {
+      benchSource =
+        autoBench;
+    }
+
+  }
+  else {
+
+    startSource =
+      players.filter(
+        player => {
+
+          if (
+            player?.substitute ===
+              true
+          ) {
+            return false;
+          }
+
+          if (
+            player?.starter ===
+              false
+          ) {
+            return false;
+          }
+
+          return true;
+        }
+      );
+  }
+
+  /*
+   * -------------------------------------------------------
+   * Normalize
+   * -------------------------------------------------------
+   */
+
+  const startXI =
+    startSource.map(
+      normalizePlayer
+    );
+
+  const bench =
+    benchSource.map(
+      normalizePlayer
+    );
+
+  /*
+   * -------------------------------------------------------
+   * injury
+   * -------------------------------------------------------
+   */
+
+  const injuries =
+    source?.injury ||
+    source?.injuries ||
+    [];
+
+  return {
+
+    team: {
+
+      id:
+        team?.id ||
+        source?.team?.id ||
+        null,
+
+      name:
+        team?.name ||
+        source?.team?.name ||
+        "",
+
+      logo:
+        team?.logo ||
+        source?.team?.logo ||
+        ""
+    },
+
+    formation,
+
+    coach,
+
+    startXI,
+
+    substitutes:
+      bench,
+
+    injuries:
+      injuries
+  };
+}
     /* =====================================================
        FIND LINEUPS
     ===================================================== */
