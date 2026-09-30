@@ -6329,3 +6329,21 @@ body.dark #scores .bf-match-competition-bar {
 body:has(#home.page.active) aside {
   display: none;
 }
+/* =========================
+   SUPPRIMER SIDEBAR GAUCHE
+   ========================= */
+
+.layout > aside {
+  display: none !important;
+}
+
+.layout {
+  display: block !important;
+  width: 100%;
+  max-width: 1450px;
+}
+
+.layout > main {
+  width: 100%;
+  max-width: none;
+}
