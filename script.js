@@ -4187,7 +4187,108 @@ async function loadRealMatchDetails(fixtureId) {
 /* =========================================================
    ADAPT SPORTScore DATA TO BAKHIRAFOOT
 ========================================================= */
+function normalizeSofaLineup(
+  source,
+  team
+) {
 
+  if (
+    !source ||
+    typeof source !== "object"
+  ) {
+    return null;
+  }
+
+  const players =
+    Array.isArray(source.players)
+      ? source.players
+      : Array.isArray(source.startXI)
+        ? source.startXI
+        : Array.isArray(source.startingXI)
+          ? source.startingXI
+          : Array.isArray(source.starting_xi)
+            ? source.starting_xi
+            : [];
+
+  const substitutes =
+    Array.isArray(source.substitutes)
+      ? source.substitutes
+      : Array.isArray(source.subs)
+        ? source.subs
+        : Array.isArray(source.bench)
+          ? source.bench
+          : [];
+
+  let startXI = [];
+  let bench = substitutes.slice();
+
+  const hasFirst =
+    players.some(
+      player =>
+        player &&
+        typeof player === "object" &&
+        player.first !== undefined
+    );
+
+  if (hasFirst) {
+
+    startXI =
+      players.filter(
+        player =>
+          player?.first === 1 ||
+          player?.first === true ||
+          player?.first === "1"
+      );
+
+    if (!bench.length) {
+
+      bench =
+        players.filter(
+          player =>
+            player?.first === 0 ||
+            player?.first === false ||
+            player?.first === "0"
+        );
+
+    }
+
+  } else {
+
+    startXI =
+      players.filter(
+        player =>
+          player?.substitute !== true &&
+          player?.starter !== false
+      );
+
+  }
+
+  return {
+
+    team:
+      team ||
+      source?.team ||
+      {},
+
+    formation:
+      source?.formation ||
+      source?.tacticalFormation ||
+      source?.tactic ||
+      "—",
+
+    coach:
+      source?.coach ||
+      source?.manager ||
+      null,
+
+    startXI:
+      startXI.slice(0, 11),
+
+    substitutes:
+      bench
+
+  };
+}
 function adaptSportScoreDetails(
   raw,
   fallbackMatch
