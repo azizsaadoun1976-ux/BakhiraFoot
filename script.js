@@ -4043,10 +4043,15 @@ async function loadRealMatchDetails(fixtureId) {
     );
   }
 
+  /*
+   * كنخدمو من API ديال BakhiraFoot
+   * وماشي من SportScore مباشرة.
+   */
+
   const controller =
     new AbortController();
 
-  const timeout =
+  const timer =
     setTimeout(
       () => {
         controller.abort();
@@ -4056,18 +4061,22 @@ async function loadRealMatchDetails(fixtureId) {
 
   try {
 
+    const url =
+      `/api?fixture=${encodeURIComponent(
+        value
+      )}`;
+
     console.log(
       "BAKHIRAFOOT DETAILS REQUEST:",
-      value
+      url
     );
 
     const response =
       await fetch(
-        `/api?fixture=${encodeURIComponent(
-          value
-        )}`,
+        url,
         {
-          method: "GET",
+          method:
+            "GET",
 
           cache:
             "no-store",
@@ -4082,16 +4091,25 @@ async function loadRealMatchDetails(fixtureId) {
         }
       );
 
-    if (
-      !response.ok
-    ) {
-      throw new Error(
-        `API HTTP ${response.status}`
-      );
-    }
+    const rawText =
+      await response.text();
 
-    const data =
-      await response.json();
+    let data;
+
+    try {
+
+      data =
+        JSON.parse(
+          rawText
+        );
+
+    } catch {
+
+      throw new Error(
+        "API a retourné une réponse non JSON"
+      );
+
+    }
 
     console.log(
       "BAKHIRAFOOT DETAILS RESPONSE:",
@@ -4099,11 +4117,35 @@ async function loadRealMatchDetails(fixtureId) {
     );
 
     if (
+      !response.ok
+    ) {
+
+      throw new Error(
+        data?.error ||
+        `API HTTP ${response.status}`
+      );
+
+    }
+
+    /*
+     * API ديالنا كترجع:
+     *
+     * {
+     *   data: {...}
+     * }
+     *
+     * وadaptSportScoreDetails()
+     * ديجا كيعرف data.
+     */
+
+    if (
       !data
     ) {
+
       throw new Error(
         "Réponse vide"
       );
+
     }
 
     return data;
@@ -4113,10 +4155,16 @@ async function loadRealMatchDetails(fixtureId) {
     error
   ) {
 
+    console.error(
+      "BAKHIRAFOOT DETAILS ERROR:",
+      error
+    );
+
     if (
       error?.name ===
       "AbortError"
     ) {
+
       throw new Error(
         "Le chargement du match a expiré."
       );
@@ -4128,7 +4176,7 @@ async function loadRealMatchDetails(fixtureId) {
   finally {
 
     clearTimeout(
-      timeout
+      timer
     );
 
   }
