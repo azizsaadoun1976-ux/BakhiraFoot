@@ -1,7 +1,18 @@
+```javascript
 (function () {
   "use strict";
 
-  const SPORT_SCORE_URL = "https://sportscore.com/api/v1/match/";
+  /*
+   * BakhiraFoot - Match Details
+   * يعتمد على API الداخلي:
+   * /api?fixture=SLUG
+   */
+
+  const DETAILS_API = "/api?fixture=";
+
+  /* =======================================================
+     HELPERS
+  ======================================================= */
 
   function escapeHTML(value) {
     return String(value ?? "")
@@ -21,9 +32,28 @@
       card?.dataset?.matchSlug ||
       card?.dataset?.slug ||
       card?.dataset?.fixtureId ||
+      card?.dataset?.fixture ||
       null
     );
   }
+
+  function firstValue(...values) {
+    for (const value of values) {
+      if (
+        value !== undefined &&
+        value !== null &&
+        value !== ""
+      ) {
+        return value;
+      }
+    }
+
+    return null;
+  }
+
+  /* =======================================================
+     MODAL
+  ======================================================= */
 
   function createModal() {
     let modal = document.getElementById("bfMatchDetailsModal");
@@ -35,8 +65,18 @@
 
     modal.innerHTML = `
       <div class="bfmd-overlay">
-        <div class="bfmd-box" onclick="event.stopPropagation()">
-          <button class="bfmd-close" id="bfmdClose">✕</button>
+        <div
+          class="bfmd-box"
+          onclick="event.stopPropagation()"
+        >
+          <button
+            class="bfmd-close"
+            id="bfmdClose"
+            aria-label="Fermer"
+          >
+            ✕
+          </button>
+
           <div id="bfmdContent"></div>
         </div>
       </div>
@@ -45,7 +85,10 @@
     document.body.appendChild(modal);
 
     document.getElementById("bfmdClose").onclick = closeModal;
-    modal.querySelector(".bfmd-overlay").onclick = closeModal;
+
+    modal
+      .querySelector(".bfmd-overlay")
+      .onclick = closeModal;
 
     addStyles();
 
@@ -53,7 +96,8 @@
   }
 
   function closeModal() {
-    const modal = document.getElementById("bfMatchDetailsModal");
+    const modal =
+      document.getElementById("bfMatchDetailsModal");
 
     if (modal) {
       modal.style.display = "none";
@@ -62,12 +106,17 @@
     document.body.style.overflow = "";
   }
 
+  /* =======================================================
+     STYLES
+  ======================================================= */
+
   function addStyles() {
     if (document.getElementById("bfmdStyle")) {
       return;
     }
 
     const style = document.createElement("style");
+
     style.id = "bfmdStyle";
 
     style.textContent = `
@@ -85,14 +134,14 @@
         align-items: center;
         justify-content: center;
         padding: 18px;
-        background: rgba(0,0,0,.78);
-        backdrop-filter: blur(6px);
+        background: rgba(0,0,0,.80);
+        backdrop-filter: blur(7px);
         overflow-y: auto;
       }
 
       .bfmd-box {
         position: relative;
-        width: min(1150px,100%);
+        width: min(1180px,100%);
         max-height: 94vh;
         overflow-y: auto;
         background: var(--card,#fff);
@@ -115,12 +164,16 @@
         color: inherit;
         font-size: 18px;
         font-weight: 900;
-        z-index: 20;
+        z-index: 30;
+      }
+
+      .bfmd-close:hover {
+        background: rgba(220,38,38,.15);
       }
 
       .bfmd-league {
         text-align: center;
-        opacity: .6;
+        opacity: .65;
         font-size: 13px;
         font-weight: 800;
         margin-bottom: 15px;
@@ -167,9 +220,25 @@
         display: inline-block;
         padding: 6px 12px;
         border-radius: 999px;
-        background: rgba(220,38,38,.1);
+        background: rgba(220,38,38,.10);
         font-size: 11px;
         font-weight: 900;
+      }
+
+      .bfmd-info {
+        margin-top: 14px;
+        display: flex;
+        justify-content: center;
+        flex-wrap: wrap;
+        gap: 7px;
+      }
+
+      .bfmd-info span {
+        padding: 6px 10px;
+        border-radius: 999px;
+        background: rgba(127,127,127,.09);
+        font-size: 10px;
+        font-weight: 800;
       }
 
       .bfmd-section {
@@ -184,7 +253,9 @@
         font-weight: 950;
       }
 
-      /* PITCH */
+      /* ===================================================
+         PITCH
+      =================================================== */
 
       .bfmd-pitches {
         display: grid;
@@ -196,6 +267,7 @@
         overflow: hidden;
         border-radius: 18px;
         border: 1px solid rgba(127,127,127,.15);
+        background: rgba(127,127,127,.025);
       }
 
       .bfmd-pitch-head {
@@ -219,39 +291,69 @@
         width: 100%;
         aspect-ratio: .67;
         overflow: hidden;
-        background: repeating-linear-gradient(
-          90deg,
-          #2d7d42 0%,
-          #2d7d42 10%,
-          #367f47 10%,
-          #367f47 20%
-        );
+
+        background:
+          repeating-linear-gradient(
+            90deg,
+            #26743b 0%,
+            #26743b 10%,
+            #2e8045 10%,
+            #2e8045 20%
+          );
       }
 
       .bfmd-border {
         position: absolute;
-        inset: 0;
-        border: 2px solid rgba(255,255,255,.9);
+        inset: 8px;
+        border: 2px solid rgba(255,255,255,.92);
+        pointer-events: none;
       }
 
       .bfmd-half {
         position: absolute;
-        left: 0;
-        right: 0;
+        left: 8px;
+        right: 8px;
         top: 50%;
         height: 2px;
-        background: rgba(255,255,255,.9);
+        background: rgba(255,255,255,.92);
       }
 
       .bfmd-circle {
         position: absolute;
         left: 50%;
         top: 50%;
-        width: 18%;
+        width: 20%;
         aspect-ratio: 1;
         transform: translate(-50%,-50%);
-        border: 2px solid rgba(255,255,255,.9);
+        border: 2px solid rgba(255,255,255,.92);
         border-radius: 50%;
+      }
+
+      .bfmd-center-dot {
+        position: absolute;
+        left: 50%;
+        top: 50%;
+        width: 7px;
+        height: 7px;
+        transform: translate(-50%,-50%);
+        border-radius: 50%;
+        background: white;
+      }
+
+      .bfmd-box-line {
+        position: absolute;
+        left: 27%;
+        right: 27%;
+        height: 16%;
+        border: 2px solid rgba(255,255,255,.92);
+      }
+
+      .bfmd-box-line.top {
+        top: 8px;
+      }
+
+      .bfmd-box-line.bottom {
+        bottom: 8px;
       }
 
       .bfmd-player {
@@ -264,9 +366,45 @@
         z-index: 5;
       }
 
+      .bfmd-photo-wrap {
+        position: relative;
+        width: 40px;
+        height: 40px;
+        border-radius: 50%;
+        background: rgba(255,255,255,.95);
+        border: 2px solid rgba(255,255,255,.95);
+        box-shadow: 0 4px 12px rgba(0,0,0,.35);
+        overflow: hidden;
+      }
+
+      .bfmd-photo {
+        width: 100%;
+        height: 100%;
+        object-fit: cover;
+        display: block;
+      }
+
       .bfmd-number {
-        width: 35px;
-        height: 35px;
+        position: absolute;
+        right: -7px;
+        bottom: -5px;
+        min-width: 18px;
+        height: 18px;
+        padding: 0 4px;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 999px;
+        background: #fff;
+        color: #111827;
+        border: 1px solid rgba(0,0,0,.15);
+        font-size: 8px;
+        font-weight: 950;
+      }
+
+      .bfmd-number-only {
+        width: 36px;
+        height: 36px;
         display: flex;
         align-items: center;
         justify-content: center;
@@ -279,17 +417,18 @@
       }
 
       .bfmd-name {
-        max-width: 78px;
-        margin-top: 4px;
+        max-width: 82px;
+        margin-top: 5px;
         padding: 3px 5px;
         border-radius: 5px;
-        background: rgba(0,0,0,.68);
+        background: rgba(0,0,0,.72);
         color: #fff;
         font-size: 8px;
         font-weight: 850;
         white-space: nowrap;
         overflow: hidden;
         text-overflow: ellipsis;
+        text-align: center;
       }
 
       .bfmd-rating {
@@ -301,7 +440,19 @@
         font-weight: 900;
       }
 
-      /* PLAYERS */
+      .bfmd-event-mini {
+        position: absolute;
+        top: -7px;
+        left: -8px;
+        display: flex;
+        gap: 2px;
+        z-index: 10;
+        font-size: 10px;
+      }
+
+      /* ===================================================
+         PLAYERS
+      =================================================== */
 
       .bfmd-players {
         display: grid;
@@ -311,13 +462,20 @@
 
       .bfmd-row {
         display: grid;
-        grid-template-columns: 36px 1fr auto;
+        grid-template-columns: 42px 40px 1fr auto;
         gap: 8px;
         align-items: center;
         padding: 9px;
         margin-bottom: 7px;
         border-radius: 10px;
         background: rgba(127,127,127,.07);
+      }
+
+      .bfmd-player-photo {
+        width: 38px;
+        height: 38px;
+        object-fit: cover;
+        border-radius: 50%;
       }
 
       .bfmd-shirt {
@@ -364,7 +522,9 @@
         opacity: .6;
       }
 
-      /* EVENTS */
+      /* ===================================================
+         EVENTS
+      =================================================== */
 
       .bfmd-events {
         display: flex;
@@ -409,7 +569,9 @@
         opacity: .72;
       }
 
-      /* MOBILE */
+      /* ===================================================
+         MOBILE
+      =================================================== */
 
       @media(max-width:800px) {
         .bfmd-pitches,
@@ -442,12 +604,21 @@
         }
 
         .bfmd-row {
-          grid-template-columns: 34px 1fr;
+          grid-template-columns: 34px 35px 1fr;
         }
 
         .bfmd-badges {
-          grid-column: 2;
+          grid-column: 3;
           justify-content: flex-start;
+        }
+
+        .bfmd-player {
+          width: 65px;
+        }
+
+        .bfmd-name {
+          max-width: 65px;
+          font-size: 7px;
         }
       }
     `;
@@ -456,21 +627,36 @@
   }
 
   /* =======================================================
-     FIND TEAM
+     TEAM
   ======================================================= */
 
   function teamFrom(details, side) {
     const teams = details?.teams || {};
-    const source = teams?.[side] || details?.[side] || {};
+    const source =
+      teams?.[side] ||
+      details?.[side] ||
+      {};
 
     return {
-      id: source?.id || details?.[`${side}_id`] || null,
+      id:
+        source?.id ||
+        details?.[`${side}_id`] ||
+        null,
+
       name:
         source?.name ||
         details?.[`${side}_name`] ||
-        details?.[side] ||
-        (side === "home" ? "Domicile" : "Extérieur"),
-      logo: source?.logo || details?.[`${side}_logo`] || ""
+        (typeof details?.[side] === "string"
+          ? details[side]
+          : null) ||
+        (side === "home"
+          ? "Domicile"
+          : "Extérieur"),
+
+      logo:
+        source?.logo ||
+        details?.[`${side}_logo`] ||
+        ""
     };
   }
 
@@ -484,18 +670,32 @@
     }
 
     const exact = lineups.find(lineup => {
-      const id = lineup?.team?.id || lineup?.team_id || null;
+      const id =
+        lineup?.team?.id ||
+        lineup?.team_id ||
+        null;
+
       const name = String(
-        lineup?.team?.name || lineup?.team_name || ""
+        lineup?.team?.name ||
+        lineup?.team_name ||
+        ""
       ).toLowerCase();
 
       return (
-        (team.id && id && String(team.id) === String(id)) ||
-        (name && name === String(team.name).toLowerCase())
+        (team.id &&
+          id &&
+          String(team.id) === String(id)) ||
+        (
+          name &&
+          name ===
+            String(team.name).toLowerCase()
+        )
       );
     });
 
-    return exact || lineups[fallbackIndex] || null;
+    return exact ||
+      lineups[fallbackIndex] ||
+      null;
   }
 
   function lineupPlayers(lineup) {
@@ -509,31 +709,160 @@
   }
 
   /* =======================================================
-     PITCH
+     PLAYER HELPERS
+  ======================================================= */
+
+  function getPlayerObject(item) {
+    return item?.player || item || {};
+  }
+
+  function getPlayerName(item) {
+    const p = getPlayerObject(item);
+
+    return (
+      p?.name ||
+      item?.name ||
+      "Joueur"
+    );
+  }
+
+  function getPlayerNumber(item) {
+    const p = getPlayerObject(item);
+
+    return firstValue(
+      p?.number,
+      item?.number,
+      item?.shirt_number,
+      "-"
+    );
+  }
+
+  function getPlayerPhoto(item) {
+    const p = getPlayerObject(item);
+
+    return firstValue(
+      p?.photo,
+      p?.image,
+      p?.avatar,
+      item?.photo,
+      item?.image,
+      item?.avatar,
+      ""
+    );
+  }
+
+  function getPlayerPosition(item) {
+    const p = getPlayerObject(item);
+
+    return firstValue(
+      p?.pos,
+      p?.position,
+      item?.position,
+      ""
+    );
+  }
+
+  function getPlayerId(item) {
+    const p = getPlayerObject(item);
+
+    return firstValue(
+      p?.id,
+      item?.id,
+      null
+    );
+  }
+
+  /* =======================================================
+     PLAYER IMAGE
+  ======================================================= */
+
+  function playerImageHTML(item) {
+    const photo = getPlayerPhoto(item);
+
+    if (!photo) {
+      return `
+        <div class="bfmd-number-only">
+          ${escapeHTML(getPlayerNumber(item))}
+        </div>
+      `;
+    }
+
+    return `
+      <div class="bfmd-photo-wrap">
+        <img
+          class="bfmd-photo"
+          src="${escapeHTML(photo)}"
+          alt="${escapeHTML(getPlayerName(item))}"
+          loading="lazy"
+          onerror="
+            this.style.display='none';
+            this.parentElement.classList.add('bfmd-photo-error');
+          "
+        >
+
+        <div class="bfmd-number">
+          ${escapeHTML(getPlayerNumber(item))}
+        </div>
+      </div>
+    `;
+  }
+
+  /* =======================================================
+     PITCH POSITION
   ======================================================= */
 
   function pitchPlayers(lineup, side) {
     const players = lineupPlayers(lineup);
+
     const rows = {};
 
     players.forEach(item => {
-      const p = item?.player || item || {};
-      const grid = p?.grid || item?.grid || "";
-      const m = String(grid).match(/(\d+)\s*:\s*(\d+)/);
+      const p = getPlayerObject(item);
 
-      let row = m ? Number(m[1]) : null;
-      let column = m ? Number(m[2]) : null;
+      const grid =
+        p?.grid ||
+        item?.grid ||
+        "";
+
+      const match =
+        String(grid).match(
+          /(\d+)\s*:\s*(\d+)/
+        );
+
+      let row =
+        match
+          ? Number(match[1])
+          : null;
+
+      let column =
+        match
+          ? Number(match[2])
+          : null;
 
       if (!row) {
-        const pos = String(
-          p?.pos || p?.position || item?.position || ""
-        ).toLowerCase();
+        const pos =
+          String(
+            p?.pos ||
+            p?.position ||
+            item?.position ||
+            ""
+          ).toLowerCase();
 
-        if (pos.includes("goal") || pos === "g") {
+        if (
+          pos.includes("goal") ||
+          pos === "g" ||
+          pos === "gk"
+        ) {
           row = 1;
-        } else if (pos.includes("def") || pos === "d") {
+        } else if (
+          pos.includes("def") ||
+          pos === "d"
+        ) {
           row = 2;
-        } else if (pos.includes("mid") || pos === "m") {
+        } else if (
+          pos.includes("mid") ||
+          pos === "m"
+        ) {
           row = 3;
         } else {
           row = 4;
@@ -544,7 +873,9 @@
         rows[row] = [];
       }
 
-      column = column || rows[row].length + 1;
+      column =
+        column ||
+        rows[row].length + 1;
 
       rows[row].push({
         item,
@@ -552,201 +883,568 @@
       });
     });
 
-    const rowKeys = Object.keys(rows)
-      .map(Number)
-      .sort((a, b) => a - b);
+    const rowKeys =
+      Object.keys(rows)
+        .map(Number)
+        .sort(
+          (a,b) => a-b
+        );
 
-    const maxRow = Math.max(...rowKeys, 4);
+    const maxRow =
+      Math.max(
+        ...rowKeys,
+        4
+      );
+
     const result = [];
 
     rowKeys.forEach(row => {
-      const list = rows[row].sort((a, b) => a.column - b.column);
+      const list =
+        rows[row].sort(
+          (a,b) =>
+            a.column -
+            b.column
+        );
 
-      list.forEach((entry, index) => {
-        const x =
-          list.length === 1
-            ? 50
-            : 16 + 68 * (index / (list.length - 1));
+      list.forEach(
+        (entry,index) => {
+          const x =
+            list.length === 1
+              ? 50
+              : 14 +
+                72 *
+                (
+                  index /
+                  (list.length - 1)
+                );
 
-        let y =
-          8 + 82 * ((row - 1) / Math.max(1, maxRow - 1));
+          let y =
+            8 +
+            84 *
+            (
+              (row - 1) /
+              Math.max(
+                1,
+                maxRow - 1
+              )
+            );
 
-        if (side === "away") {
-          y = 100 - y;
+          if (
+            side === "away"
+          ) {
+            y = 100 - y;
+          }
+
+          result.push({
+            player: entry.item,
+            x,
+            y
+          });
         }
-
-        result.push({
-          player: entry.item,
-          x,
-          y
-        });
-      });
+      );
     });
 
     return result;
   }
 
-  function renderPitch(lineup, team, side) {
+  /* =======================================================
+     EVENT MAP
+  ======================================================= */
+
+  function buildPlayerEvents(events) {
+    const map = new Map();
+
+    arrSafe(events).forEach(event => {
+      const player =
+        event?.player ||
+        {};
+
+      const id =
+        player?.id ||
+        event?.player_id ||
+        null;
+
+      const name =
+        player?.name ||
+        event?.player_name ||
+        "";
+
+      const key =
+        id
+          ? `id:${id}`
+          : name
+            ? `name:${String(name).toLowerCase()}`
+            : null;
+
+      if (!key) return;
+
+      if (!map.has(key)) {
+        map.set(key, {
+          goals: 0,
+          assists: 0,
+          yellow: 0,
+          red: 0,
+          substitutionsIn: 0,
+          substitutionsOut: 0
+        });
+      }
+
+      const data =
+        map.get(key);
+
+      const type =
+        String(
+          event?.type ||
+          ""
+        ).toLowerCase();
+
+      const detail =
+        String(
+          event?.detail ||
+          ""
+        ).toLowerCase();
+
+      if (
+        type.includes("goal")
+      ) {
+        data.goals++;
+      }
+
+      if (
+        event?.assist?.id ||
+        event?.assist?.name
+      ) {
+        data.assists++;
+      }
+
+      if (
+        type.includes("card")
+      ) {
+        if (
+          detail.includes("red") ||
+          detail.includes("second yellow")
+        ) {
+          data.red++;
+        } else if (
+          detail.includes("yellow")
+        ) {
+          data.yellow++;
+        }
+      }
+
+      if (
+        type.includes("subst")
+      ) {
+        const assist =
+          event?.assist ||
+          {};
+
+        const playerName =
+          String(
+            player?.name ||
+            ""
+          ).toLowerCase();
+
+        const assistName =
+          String(
+            assist?.name ||
+            ""
+          ).toLowerCase();
+
+        /*
+         * SportScore peut représenter
+         * entrant/sortant différemment.
+         */
+        if (
+          assistName &&
+          playerName &&
+          assistName !== playerName
+        ) {
+          data.substitutionsOut++;
+        }
+      }
+    });
+
+    return map;
+  }
+
+  function getEventStats(item, eventMap) {
+    const id =
+      getPlayerId(item);
+
+    const name =
+      getPlayerName(item);
+
+    return (
+      (id &&
+        eventMap.get(
+          `id:${id}`
+        )) ||
+      eventMap.get(
+        `name:${String(name).toLowerCase()}`
+      ) ||
+      {
+        goals: 0,
+        assists: 0,
+        yellow: 0,
+        red: 0,
+        substitutionsIn: 0,
+        substitutionsOut: 0
+      }
+    );
+  }
+
+  /* =======================================================
+     PITCH
+  ======================================================= */
+
+  function renderPitch(
+    lineup,
+    team,
+    side,
+    eventMap
+  ) {
     if (!lineup) {
       return `
         <div class="bfmd-pitch-card">
           <div class="bfmd-pitch-head">
             ${escapeHTML(team.name)}
           </div>
-          <div style="padding:14px; font-size:11px; opacity:.6;">
-            Formation indisponible.
+
+          <div
+            style="
+              padding:14px;
+              font-size:11px;
+              opacity:.6;
+            "
+          >
+            Composition indisponible.
           </div>
         </div>
       `;
     }
 
-    const formation = lineup?.formation || lineup?.tactics || "—";
-    const players = pitchPlayers(lineup, side);
+    const formation =
+      lineup?.formation ||
+      lineup?.tactics ||
+      "—";
 
-    const html = players
-      .map(item => {
-        const row = item.player;
-        const p = row?.player || row || {};
-        const name = p?.name || row?.name || "Joueur";
-        const number =
-          p?.number ?? row?.number ?? row?.shirt_number ?? "-";
-        const rating =
-          row?.rating ??
-          row?.statistics?.rating ??
-          p?.rating ??
-          null;
+    const players =
+      pitchPlayers(
+        lineup,
+        side
+      );
 
-        return `
-          <div
-            class="bfmd-player"
-            style="left:${item.x}%; top:${item.y}%;"
-          >
-            <div class="bfmd-number">
-              ${escapeHTML(number)}
+    const html =
+      players
+        .map(item => {
+          const row =
+            item.player;
+
+          const name =
+            getPlayerName(row);
+
+          const rating =
+            firstValue(
+              row?.rating,
+              row?.statistics?.rating,
+              getPlayerObject(row)?.rating
+            );
+
+          const stats =
+            getEventStats(
+              row,
+              eventMap
+            );
+
+          const eventBadges = [];
+
+          if (stats.goals > 0) {
+            eventBadges.push("⚽");
+          }
+
+          if (stats.assists > 0) {
+            eventBadges.push("🅰️");
+          }
+
+          if (stats.yellow > 0) {
+            eventBadges.push("🟨");
+          }
+
+          if (stats.red > 0) {
+            eventBadges.push("🟥");
+          }
+
+          if (stats.substitutionsIn > 0) {
+            eventBadges.push("↗️");
+          }
+
+          if (stats.substitutionsOut > 0) {
+            eventBadges.push("↙️");
+          }
+
+          return `
+            <div
+              class="bfmd-player"
+              style="
+                left:${item.x}%;
+                top:${item.y}%;
+              "
+              title="${escapeHTML(name)}"
+            >
+
+              ${
+                eventBadges.length
+                  ? `
+                    <div class="bfmd-event-mini">
+                      ${eventBadges.join("")}
+                    </div>
+                  `
+                  : ""
+              }
+
+              ${playerImageHTML(row)}
+
+              <div class="bfmd-name">
+                ${escapeHTML(name)}
+              </div>
+
+              ${
+                rating !== null &&
+                rating !== undefined &&
+                rating !== ""
+                  ? `
+                    <div class="bfmd-rating">
+                      ⭐ ${escapeHTML(
+                        Number(rating)
+                          .toFixed(1)
+                      )}
+                    </div>
+                  `
+                  : ""
+              }
+
             </div>
-            <div class="bfmd-name">
-              ${escapeHTML(name)}
-            </div>
-            ${
-              rating !== null && rating !== undefined && rating !== ""
-                ? `
-                  <div class="bfmd-rating">
-                    ⭐ ${escapeHTML(Number(rating).toFixed(1))}
-                  </div>
-                `
-                : ""
-            }
-          </div>
-        `;
-      })
-      .join("");
+          `;
+        })
+        .join("");
 
     return `
       <div class="bfmd-pitch-card">
+
         <div class="bfmd-pitch-head">
-          <span>${escapeHTML(team.name)}</span>
-          <span class="bfmd-formation">${escapeHTML(formation)}</span>
+          <span>
+            ${escapeHTML(team.name)}
+          </span>
+
+          <span class="bfmd-formation">
+            ${escapeHTML(formation)}
+          </span>
         </div>
+
         <div class="bfmd-pitch">
+
           <div class="bfmd-border"></div>
+
           <div class="bfmd-half"></div>
+
           <div class="bfmd-circle"></div>
+
+          <div class="bfmd-center-dot"></div>
+
+          <div class="bfmd-box-line top"></div>
+
+          <div class="bfmd-box-line bottom"></div>
+
           ${html}
+
         </div>
       </div>
     `;
   }
 
   /* =======================================================
-     PLAYERS
+     PLAYERS LIST
   ======================================================= */
 
-  function renderPlayers(lineup, team) {
+  function renderPlayers(
+    lineup,
+    team,
+    eventMap
+  ) {
     if (!lineup) {
       return `
         <div>
-          <div style="font-size:13px; font-weight:900; margin-bottom:10px;">
+          <div
+            style="
+              font-size:13px;
+              font-weight:900;
+              margin-bottom:10px;
+            "
+          >
             ${escapeHTML(team.name)}
           </div>
-          <div class="bfmd-empty">Composition indisponible.</div>
+
+          <div class="bfmd-empty">
+            Composition indisponible.
+          </div>
         </div>
       `;
     }
 
-    const list = lineupPlayers(lineup);
+    const list =
+      lineupPlayers(lineup);
 
     return `
       <div>
-        <div style="font-size:13px; font-weight:900; margin-bottom:10px;">
+
+        <div
+          style="
+            font-size:13px;
+            font-weight:900;
+            margin-bottom:10px;
+          "
+        >
           ${escapeHTML(team.name)}
         </div>
+
         ${
           list.length
             ? list
                 .map(item => {
-                  const p = item?.player || item || {};
+                  const p =
+                    getPlayerObject(item);
+
+                  const stats =
+                    getEventStats(
+                      item,
+                      eventMap
+                    );
+
                   const rating =
-                    item?.rating ?? item?.statistics?.rating ?? null;
-                  const goals = item?.goals?.total ?? 0;
-                  const assists = item?.goals?.assists ?? 0;
-                  const yellow = item?.cards?.yellow ?? 0;
-                  const red = item?.cards?.red ?? 0;
+                    firstValue(
+                      item?.rating,
+                      item?.statistics?.rating,
+                      p?.rating
+                    );
+
+                  const photo =
+                    getPlayerPhoto(item);
 
                   return `
                     <div class="bfmd-row">
+
                       <div class="bfmd-shirt">
                         ${escapeHTML(
-                          p?.number ??
-                          item?.number ??
-                          item?.shirt_number ??
-                          "-"
+                          getPlayerNumber(item)
                         )}
                       </div>
+
+                      ${
+                        photo
+                          ? `
+                            <img
+                              class="bfmd-player-photo"
+                              src="${escapeHTML(photo)}"
+                              alt="${escapeHTML(
+                                getPlayerName(item)
+                              )}"
+                              loading="lazy"
+                              onerror="
+                                this.style.display='none';
+                              "
+                            >
+                          `
+                          : `
+                            <div></div>
+                          `
+                      }
+
                       <div>
+
                         <div class="bfmd-player-name">
-                          ${escapeHTML(p?.name || item?.name || "Joueur")}
-                        </div>
-                        <div class="bfmd-position">
                           ${escapeHTML(
-                            p?.pos || p?.position || item?.position || ""
+                            getPlayerName(item)
                           )}
                         </div>
+
+                        <div class="bfmd-position">
+                          ${escapeHTML(
+                            getPlayerPosition(item)
+                          )}
+                        </div>
+
                       </div>
+
                       <div class="bfmd-badges">
+
                         ${
-                          rating !== null && rating !== undefined
-                            ? `<span class="bfmd-badge">⭐ ${escapeHTML(
-                                Number(rating).toFixed(1)
-                              )}</span>`
+                          rating !== null &&
+                          rating !== undefined
+                            ? `
+                              <span class="bfmd-badge">
+                                ⭐ ${escapeHTML(
+                                  Number(rating)
+                                    .toFixed(1)
+                                )}
+                              </span>
+                            `
                             : ""
                         }
+
                         ${
-                          Number(goals) > 0
-                            ? `<span class="bfmd-badge">⚽ ${goals}</span>`
+                          stats.goals > 0
+                            ? `
+                              <span class="bfmd-badge">
+                                ⚽ ${stats.goals}
+                              </span>
+                            `
                             : ""
                         }
+
                         ${
-                          Number(assists) > 0
-                            ? `<span class="bfmd-badge">🅰️ ${assists}</span>`
+                          stats.assists > 0
+                            ? `
+                              <span class="bfmd-badge">
+                                🅰️ ${stats.assists}
+                              </span>
+                            `
                             : ""
                         }
+
                         ${
-                          Number(yellow) > 0
-                            ? `<span class="bfmd-badge">🟨</span>`
+                          stats.yellow > 0
+                            ? `
+                              <span class="bfmd-badge">
+                                🟨
+                              </span>
+                            `
                             : ""
                         }
+
                         ${
-                          Number(red) > 0
-                            ? `<span class="bfmd-badge">🟥</span>`
+                          stats.red > 0
+                            ? `
+                              <span class="bfmd-badge">
+                                🟥
+                              </span>
+                            `
                             : ""
                         }
+
                       </div>
+
                     </div>
                   `;
                 })
                 .join("")
-            : `<div class="bfmd-empty">Aucun joueur disponible.</div>`
+            : `
+              <div class="bfmd-empty">
+                Aucun joueur disponible.
+              </div>
+            `
         }
+
       </div>
     `;
   }
@@ -755,91 +1453,248 @@
      EVENTS
   ======================================================= */
 
-  function renderEvents(events, homeId, awayId) {
+  function eventIcon(event) {
+    const type =
+      String(
+        event?.type ||
+        ""
+      ).toLowerCase();
+
+    const detail =
+      String(
+        event?.detail ||
+        ""
+      ).toLowerCase();
+
+    if (
+      type.includes("goal")
+    ) {
+      return "⚽";
+    }
+
+    if (
+      type.includes("card")
+    ) {
+      if (
+        detail.includes("red") ||
+        detail.includes("second yellow")
+      ) {
+        return "🟥";
+      }
+
+      return "🟨";
+    }
+
+    if (
+      type.includes("subst")
+    ) {
+      return "🔄";
+    }
+
+    if (
+      type.includes("var")
+    ) {
+      return "🎥";
+    }
+
+    return "📌";
+  }
+
+  function renderEvents(
+    events
+  ) {
     if (!events.length) {
       return `
         <div class="bfmd-section">
-          <div class="bfmd-title">⚡ Événements</div>
-          <div style="font-size:11px; opacity:.6;">
+
+          <div class="bfmd-title">
+            ⚡ Événements
+          </div>
+
+          <div
+            style="
+              font-size:11px;
+              opacity:.6;
+            "
+          >
             Aucun événement disponible.
           </div>
+
         </div>
       `;
     }
 
-    const html = events
-      .slice()
-      .sort(
-        (a, b) =>
-          Number(a?.time?.elapsed ?? a?.minute ?? 999) -
-          Number(b?.time?.elapsed ?? b?.minute ?? 999)
-      )
-      .map(event => {
-        const player = event?.player || {};
-        const assist = event?.assist || {};
-        const type = String(event?.type || "").toLowerCase();
-        const detail = String(
-          event?.detail || event?.description || ""
-        ).toLowerCase();
+    const html =
+      events
+        .slice()
+        .sort(
+          (a,b) => {
+            const am =
+              Number(
+                a?.time?.elapsed ??
+                a?.minute ??
+                999
+              );
 
-        let icon = "📌";
+            const bm =
+              Number(
+                b?.time?.elapsed ??
+                b?.minute ??
+                999
+              );
 
-        if (type.includes("goal")) {
-          icon = "⚽";
-        } else if (type.includes("card")) {
-          icon = detail.includes("red") ? "🟥" : "🟨";
-        } else if (type.includes("subst")) {
-          icon = "🔄";
-        } else if (type.includes("var")) {
-          icon = "🎥";
-        }
+            return am - bm;
+          }
+        )
+        .map(event => {
 
-        const minute = event?.time?.elapsed ?? event?.minute ?? "";
-        const extra = event?.time?.extra ?? event?.extra ?? "";
-        const minuteText =
-          minute !== ""
-            ? extra
-              ? `${minute}+${extra}'`
-              : `${minute}'`
-            : "";
+          const player =
+            event?.player ||
+            {};
 
-        return `
-          <div class="bfmd-event">
-            <div class="bfmd-minute">${escapeHTML(minuteText)}</div>
-            <div class="bfmd-event-icon">${icon}</div>
-            <div>
-              <div class="bfmd-event-player">
+          const assist =
+            event?.assist ||
+            {};
+
+          const minute =
+            firstValue(
+              event?.time?.elapsed,
+              event?.minute,
+              ""
+            );
+
+          const extra =
+            firstValue(
+              event?.time?.extra,
+              event?.extra,
+              ""
+            );
+
+          const minuteText =
+            minute !== ""
+              ? extra
+                ? `${minute}+${extra}'`
+                : `${minute}'`
+              : "";
+
+          const playerName =
+            firstValue(
+              player?.name,
+              event?.player_name,
+              event?.detail,
+              "Événement"
+            );
+
+          let detail =
+            event?.detail ||
+            event?.description ||
+            "";
+
+          const type =
+            String(
+              event?.type ||
+              ""
+            ).toLowerCase();
+
+          /*
+           * Substitution
+           */
+          let substitutionText = "";
+
+          if (
+            type.includes("subst")
+          ) {
+            const inPlayer =
+              event?.assist?.name ||
+              event?.player_in?.name ||
+              event?.incoming?.name ||
+              "";
+
+            const outPlayer =
+              event?.player?.name ||
+              event?.player_out?.name ||
+              event?.outgoing?.name ||
+              "";
+
+            if (
+              inPlayer &&
+              outPlayer &&
+              inPlayer !== outPlayer
+            ) {
+              substitutionText =
+                `${escapeHTML(outPlayer)} → ${escapeHTML(inPlayer)}`;
+            }
+          }
+
+          return `
+            <div class="bfmd-event">
+
+              <div class="bfmd-minute">
                 ${escapeHTML(
-                  player?.name ||
-                  event?.player_name ||
-                  event?.detail ||
-                  "Événement"
+                  minuteText
                 )}
               </div>
-              ${
-                event?.detail
-                  ? `<div class="bfmd-event-detail">${escapeHTML(
-                      event.detail
-                    )}</div>`
-                  : ""
-              }
-              ${
-                assist?.name
-                  ? `<div class="bfmd-event-assist">🅰️ Passe décisive : ${escapeHTML(
-                      assist.name
-                    )}</div>`
-                  : ""
-              }
+
+              <div class="bfmd-event-icon">
+                ${eventIcon(event)}
+              </div>
+
+              <div>
+
+                <div class="bfmd-event-player">
+                  ${
+                    substitutionText
+                      ? substitutionText
+                      : escapeHTML(
+                          playerName
+                        )
+                  }
+                </div>
+
+                ${
+                  detail
+                    ? `
+                      <div class="bfmd-event-detail">
+                        ${escapeHTML(
+                          detail
+                        )}
+                      </div>
+                    `
+                    : ""
+                }
+
+                ${
+                  assist?.name &&
+                  !type.includes("subst")
+                    ? `
+                      <div class="bfmd-event-assist">
+                        🅰️ Passe décisive :
+                        ${escapeHTML(
+                          assist.name
+                        )}
+                      </div>
+                    `
+                    : ""
+                }
+
+              </div>
+
             </div>
-          </div>
-        `;
-      })
-      .join("");
+          `;
+        })
+        .join("");
 
     return `
       <div class="bfmd-section">
-        <div class="bfmd-title">⚡ Événements</div>
-        <div class="bfmd-events">${html}</div>
+
+        <div class="bfmd-title">
+          ⚡ Événements
+        </div>
+
+        <div class="bfmd-events">
+          ${html}
+        </div>
+
       </div>
     `;
   }
@@ -849,204 +1704,539 @@
   ======================================================= */
 
   async function openDetails(card) {
-    const slug = getSlug(card);
+    const slug =
+      getSlug(card);
 
     if (!slug) {
-      alert("Slug du match introuvable");
-      console.error("BF DETAILS: no slug", card);
+      alert(
+        "Identifiant du match introuvable"
+      );
+
+      console.error(
+        "BakhiraFoot DETAILS: no slug",
+        card
+      );
+
       return;
     }
 
-    const modal = createModal();
-    const content = document.getElementById("bfmdContent");
+    const modal =
+      createModal();
 
-    modal.style.display = "block";
-    document.body.style.overflow = "hidden";
+    const content =
+      document.getElementById(
+        "bfmdContent"
+      );
+
+    modal.style.display =
+      "block";
+
+    document.body.style.overflow =
+      "hidden";
 
     content.innerHTML = `
       <div class="bfmd-section">
-        <div class="bfmd-title">⚽ Match Details</div>
-        <div style="font-size:12px; opacity:.65;">
+
+        <div class="bfmd-title">
+          ⚽ Match Details
+        </div>
+
+        <div
+          style="
+            font-size:12px;
+            opacity:.65;
+          "
+        >
           جاري تحميل تفاصيل المباراة...
         </div>
+
       </div>
     `;
 
-    console.log("BF DETAILS SLUG:", slug);
+    console.log(
+      "BakhiraFoot DETAILS:",
+      slug
+    );
 
     try {
-      const response = await fetch(
-        `${SPORT_SCORE_URL}?sport=football&slug=${encodeURIComponent(slug)}`,
-        { cache: "no-store" }
+
+      /*
+       * IMPORTANT:
+       * On utilise maintenant le backend BakhiraFoot.
+       */
+      const response =
+        await fetch(
+          `${DETAILS_API}${encodeURIComponent(slug)}`,
+          {
+            cache: "no-store"
+          }
+        );
+
+      const text =
+        await response.text();
+
+      console.log(
+        "BakhiraFoot DETAILS RAW:",
+        text
       );
 
-      const text = await response.text();
-      console.log("BF DETAILS RAW:", text);
-
       if (!response.ok) {
-        throw new Error(`SportScore HTTP ${response.status}`);
+        throw new Error(
+          `API HTTP ${response.status}`
+        );
       }
 
       let payload;
+
       try {
-        payload = JSON.parse(text);
+        payload =
+          JSON.parse(text);
       } catch {
-        throw new Error("SportScore returned invalid JSON");
+        throw new Error(
+          "API a retourné un JSON invalide"
+        );
       }
 
-      console.log("BF DETAILS JSON:", payload);
+      console.log(
+        "BakhiraFoot DETAILS JSON:",
+        payload
+      );
 
-      const details = payload?.data || payload?.match || payload;
+      const details =
+        payload?.data ||
+        payload?.match ||
+        payload;
 
-      const home = teamFrom(details, "home");
-      const away = teamFrom(details, "away");
+      if (!details) {
+        throw new Error(
+          "Données du match introuvables"
+        );
+      }
+
+      /* =================================================
+         TEAM
+      ================================================= */
+
+      const home =
+        teamFrom(
+          details,
+          "home"
+        );
+
+      const away =
+        teamFrom(
+          details,
+          "away"
+        );
+
+      /* =================================================
+         SCORE
+      ================================================= */
 
       const homeScore =
-        details?.score?.home ??
-        details?.home_score ??
-        details?.homeScore ??
-        "-";
+        firstValue(
+          details?.score?.home,
+          details?.home_score,
+          details?.homeScore,
+          "-"
+        );
 
       const awayScore =
-        details?.score?.away ??
-        details?.away_score ??
-        details?.awayScore ??
-        "-";
+        firstValue(
+          details?.score?.away,
+          details?.away_score,
+          details?.awayScore,
+          "-"
+        );
+
+      /* =================================================
+         STATUS
+      ================================================= */
 
       const status =
-        details?.status_text || details?.status || "MATCH";
+        firstValue(
+          details?.status_text,
+          details?.status,
+          details?.fixture?.status?.long,
+          "MATCH"
+        );
+
+      /* =================================================
+         COMPETITION
+      ================================================= */
 
       const competition =
-        details?.competition?.name ||
-        details?.league?.name ||
-        details?.competition ||
-        "Football";
+        firstValue(
+          details?.competition?.name,
+          details?.league?.name,
+          typeof details?.competition ===
+            "string"
+            ? details.competition
+            : null,
+          "Football"
+        );
 
-      const events = Array.isArray(details?.timeline)
-        ? details.timeline
-        : Array.isArray(details?.events)
-        ? details.events
-        : [];
+      /* =================================================
+         EXTRA INFO
+      ================================================= */
 
-      const lineups = Array.isArray(details?.lineups)
-        ? details.lineups
-        : [];
+      const stadium =
+        firstValue(
+          details?.venue?.name,
+          details?.stadium?.name,
+          details?.venue,
+          ""
+        );
 
-      const players = Array.isArray(details?.players)
-        ? details.players
-        : [];
+      const referee =
+        firstValue(
+          details?.referee?.name,
+          details?.referee,
+          ""
+        );
 
-      const homeLineup = getLineup(lineups, home, 0);
-      const awayLineup = getLineup(lineups, away, 1);
+      const date =
+        firstValue(
+          details?.date,
+          details?.fixture?.date,
+          details?.start_at,
+          ""
+        );
 
-      const playerStats = new Map();
+      /* =================================================
+         EVENTS
+      ================================================= */
 
-      players.forEach(group => {
-        arrSafe(group?.players).forEach(row => {
-          const p = row?.player || row || {};
-          const id = p?.id || row?.id || null;
-          const name = p?.name || row?.name || "";
-          const stats =
-            row?.statistics?.[0] || row?.statistics || {};
+      const events =
+        Array.isArray(
+          details?.timeline
+        )
+          ? details.timeline
+          : Array.isArray(
+              details?.events
+            )
+            ? details.events
+            : [];
 
-          const data = {
-            rating:
-              row?.rating ??
-              stats?.games?.rating ??
-              stats?.rating ??
-              null
-          };
+      /* =================================================
+         LINEUPS
+      ================================================= */
 
-          if (id) {
-            playerStats.set(`id:${id}`, data);
-          }
+      const lineups =
+        Array.isArray(
+          details?.lineups
+        )
+          ? details.lineups
+          : [];
 
-          if (name) {
-            playerStats.set(
-              `name:${String(name).toLowerCase()}`,
-              data
-            );
-          }
-        });
-      });
+      /* =================================================
+         PLAYERS
+      ================================================= */
 
-      /* Render HTML Content */
+      const players =
+        Array.isArray(
+          details?.players
+        )
+          ? details.players
+          : [];
+
+      /* =================================================
+         FIND LINEUPS
+      ================================================= */
+
+      const homeLineup =
+        getLineup(
+          lineups,
+          home,
+          0
+        );
+
+      const awayLineup =
+        getLineup(
+          lineups,
+          away,
+          1
+        );
+
+      /* =================================================
+         EVENT MAP
+      ================================================= */
+
+      const eventMap =
+        buildPlayerEvents(
+          events
+        );
+
+      /* =================================================
+         RENDER
+      ================================================= */
+
       content.innerHTML = `
+
         <div class="bfmd-league">
-          🏆 ${escapeHTML(competition)}
+          🏆
+          ${escapeHTML(
+            competition
+          )}
         </div>
 
         <div class="bfmd-header">
+
           <div class="bfmd-team">
+
             ${
               home.logo
-                ? `<img src="${escapeHTML(home.logo)}">`
-                : `<div class="bfmd-fallback">⚽</div>`
+                ? `
+                  <img
+                    src="${escapeHTML(
+                      home.logo
+                    )}"
+                    alt="${escapeHTML(
+                      home.name
+                    )}"
+                  >
+                `
+                : `
+                  <div class="bfmd-fallback">
+                    ⚽
+                  </div>
+                `
             }
-            <span>${escapeHTML(home.name)}</span>
+
+            <span>
+              ${escapeHTML(
+                home.name
+              )}
+            </span>
+
           </div>
 
           <div>
+
             <div class="bfmd-score">
-              ${escapeHTML(homeScore)} - ${escapeHTML(awayScore)}
+              ${escapeHTML(
+                homeScore
+              )}
+              -
+              ${escapeHTML(
+                awayScore
+              )}
             </div>
+
             <div class="bfmd-status">
-              ${escapeHTML(status)}
+              ${escapeHTML(
+                status
+              )}
             </div>
+
           </div>
 
           <div class="bfmd-team">
+
             ${
               away.logo
-                ? `<img src="${escapeHTML(away.logo)}">`
-                : `<div class="bfmd-fallback">⚽</div>`
+                ? `
+                  <img
+                    src="${escapeHTML(
+                      away.logo
+                    )}"
+                    alt="${escapeHTML(
+                      away.name
+                    )}"
+                  >
+                `
+                : `
+                  <div class="bfmd-fallback">
+                    ⚽
+                  </div>
+                `
             }
-            <span>${escapeHTML(away.name)}</span>
+
+            <span>
+              ${escapeHTML(
+                away.name
+              )}
+            </span>
+
           </div>
+
         </div>
 
+        ${
+          stadium ||
+          referee ||
+          date
+            ? `
+              <div class="bfmd-info">
+
+                ${
+                  date
+                    ? `
+                      <span>
+                        📅 ${escapeHTML(
+                          date
+                        )}
+                      </span>
+                    `
+                    : ""
+                }
+
+                ${
+                  stadium
+                    ? `
+                      <span>
+                        🏟️ ${escapeHTML(
+                          stadium
+                        )}
+                      </span>
+                    `
+                    : ""
+                }
+
+                ${
+                  referee
+                    ? `
+                      <span>
+                        👨‍⚖️ ${escapeHTML(
+                          referee
+                        )}
+                      </span>
+                    `
+                    : ""
+                }
+
+              </div>
+            `
+            : ""
+        }
+
         <div class="bfmd-section">
+
           <div class="bfmd-title">
             🧩 Formations & Compositions
           </div>
+
           <div class="bfmd-pitches">
-            ${renderPitch(homeLineup, home, "home")}
-            ${renderPitch(awayLineup, away, "away")}
+
+            ${renderPitch(
+              homeLineup,
+              home,
+              "home",
+              eventMap
+            )}
+
+            ${renderPitch(
+              awayLineup,
+              away,
+              "away",
+              eventMap
+            )}
+
           </div>
+
         </div>
 
         <div class="bfmd-section">
+
           <div class="bfmd-title">
-            👥 Compositions des équipes
+            👥 Joueurs
           </div>
+
           <div class="bfmd-players">
-            ${renderPlayers(homeLineup, home)}
-            ${renderPlayers(awayLineup, away)}
+
+            ${renderPlayers(
+              homeLineup,
+              home,
+              eventMap
+            )}
+
+            ${renderPlayers(
+              awayLineup,
+              away,
+              eventMap
+            )}
+
           </div>
+
         </div>
 
-        ${renderEvents(events, home.id, away.id)}
+        ${renderEvents(
+          events
+        )}
+
       `;
+
     } catch (err) {
-      console.error("BF DETAILS ERROR:", err);
+
+      console.error(
+        "BakhiraFoot DETAILS ERROR:",
+        err
+      );
+
       content.innerHTML = `
+
         <div class="bfmd-section">
-          <div class="bfmd-title">❌ Error</div>
-          <div style="font-size: 12px; opacity: 0.8; color: #ef4444;">
-            ${escapeHTML(err.message || "Erreur lors du chargement des détails.")}
+
+          <div class="bfmd-title">
+            ❌ Erreur
           </div>
+
+          <div
+            style="
+              font-size:12px;
+              color:#ef4444;
+            "
+          >
+            ${escapeHTML(
+              err.message ||
+              "Erreur lors du chargement des détails."
+            )}
+          </div>
+
         </div>
+
       `;
     }
   }
 
-  // Global Function & Click Listener
-  window.bfOpenMatchDetails = openDetails;
+  /* =======================================================
+     GLOBAL
+  ======================================================= */
 
-  document.addEventListener("click", function (e) {
-    const card = e.target.closest("[data-match-slug], [data-slug], [data-fixture-id]");
-    if (card) {
-      openDetails(card);
+  window.bfOpenMatchDetails =
+    openDetails;
+
+  /* =======================================================
+     CLICK MATCH
+  ======================================================= */
+
+  document.addEventListener(
+    "click",
+    function (e) {
+
+      const card =
+        e.target.closest(
+          "[data-match-slug]," +
+          "[data-slug]," +
+          "[data-fixture-id]," +
+          "[data-fixture]"
+        );
+
+      if (!card) {
+        return;
+      }
+
+      /*
+       * ما نفتحووش التفاصيل إلا
+       * إذا فعلاً عندنا identifier.
+       */
+      if (
+        getSlug(card)
+      ) {
+        openDetails(card);
+      }
+
     }
-  });
+  );
+
 })();
