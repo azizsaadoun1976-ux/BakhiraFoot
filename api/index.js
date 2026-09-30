@@ -788,142 +788,150 @@ module.exports = async (req, res) => {
        PLAYER
     ===================================================== */
 
-    function normalizePlayer(
-      row
-    ) {
+   function normalizePlayer(row) {
 
-      const raw =
-        row?.player ||
-        row ||
-        {};
+  const source =
+    row &&
+    typeof row === "object" &&
+    !Array.isArray(row)
+      ? row
+      : {};
 
-      return {
+  const player =
+    source?.player &&
+    typeof source.player === "object"
+      ? source.player
+      : source;
 
-        player: {
+  return {
+    player: {
+      id:
+        player?.id ??
+        source?.player_id ??
+        null,
 
-          id:
-            raw?.id ||
-            row?.player_id ||
-            null,
+      name:
+        player?.name ||
+        player?.full_name ||
+        player?.fullName ||
+        source?.name ||
+        source?.player_name ||
+        "Joueur",
 
-          name:
-            raw?.name ||
-            raw?.short_name ||
-            row?.name ||
-            "Joueur",
+      number:
+        source?.number ??
+        source?.shirtNumber ??
+        source?.shirt_number ??
+        source?.jerseyNumber ??
+        player?.number ??
+        player?.shirtNumber ??
+        player?.shirt_number ??
+        null,
 
-          number:
-            row?.shirtNumber ??
-            row?.jerseyNumber ??
-            raw?.shirtNumber ??
-            raw?.jerseyNumber ??
-            row?.number ??
-            null,
+      pos:
+        source?.position ||
+        source?.pos ||
+        source?.role ||
+        player?.position ||
+        player?.pos ||
+        "",
 
-          pos:
-            row?.position ||
-            raw?.position ||
-            row?.pos ||
-            "",
+      grid:
+        source?.grid ||
+        source?.positionGrid ||
+        source?.position_grid ||
+        player?.grid ||
+        "",
 
-          grid:
-            row?.grid ||
-            row?.positionGrid ||
-            raw?.grid ||
-            "",
+      photo:
+        source?.photo ||
+        source?.picture ||
+        source?.image ||
+        source?.avatar ||
+        player?.photo ||
+        player?.picture ||
+        player?.image ||
+        player?.avatar ||
+        ""
+    },
 
-          photo:
-            raw?.picture ||
-            raw?.image ||
-            row?.photo ||
-            ""
+    rating:
+      source?.rating ??
+      source?.performance?.rating ??
+      player?.rating ??
+      null,
 
-        },
+    games: {
+      rating:
+        source?.rating ??
+        source?.performance?.rating ??
+        player?.rating ??
+        null,
 
-        rating:
-          row?.rating ??
-          row?.performance?.rating ??
-          null,
+      minutes:
+        source?.minutes ??
+        source?.minutesPlayed ??
+        null,
 
-        games: {
+      position:
+        source?.position ||
+        source?.pos ||
+        player?.position ||
+        player?.pos ||
+        "",
 
-          rating:
-            row?.rating ??
-            row?.performance?.rating ??
-            null,
+      substitute:
+        source?.substitute === true ||
+        source?.starter === false,
 
-          minutes:
-            row?.minutes ??
-            row?.minutesPlayed ??
-            null,
+      captain:
+        source?.captain === true
+    },
 
-          position:
-            row?.position ||
-            raw?.position ||
-            "",
+    goals: {
+      total:
+        source?.goals?.total ??
+        source?.goals ??
+        0,
 
-          substitute:
-            row?.substitute === true ||
-            row?.starter === false,
+      assists:
+        source?.goals?.assists ??
+        source?.assists ??
+        0
+    },
 
-          captain:
-            row?.captain === true
+    cards: {
+      yellow:
+        source?.cards?.yellow ??
+        source?.yellow ??
+        0,
 
-        },
+      red:
+        source?.cards?.red ??
+        source?.red ??
+        0
+    },
 
-        goals: {
+    passes: {
+      key:
+        source?.passes?.key ??
+        source?.key_passes ??
+        0
+    },
 
-          total:
-            row?.goals?.total ??
-            row?.goals ??
-            0,
+    shots: {
+      total:
+        source?.shots?.total ??
+        source?.shots ??
+        0,
 
-          assists:
-            row?.goals?.assists ??
-            row?.assists ??
-            0
-
-        },
-
-        cards: {
-
-          yellow:
-            row?.cards?.yellow ??
-            row?.yellow ??
-            0,
-
-          red:
-            row?.cards?.red ??
-            row?.red ??
-            0
-
-        },
-
-        passes: {
-
-          key:
-            row?.passes?.key ??
-            row?.key_passes ??
-            0
-
-        },
-
-        shots: {
-
-          total:
-            row?.shots?.total ??
-            row?.shots ??
-            0,
-
-          on:
-            row?.shots?.on ??
-            row?.shots_on_target ??
-            0
-
-        }
-
-      };
+      on:
+        source?.shots?.on ??
+        source?.shots_on_target ??
+        0
     }
+  };
+}
 
     /* =====================================================
        LINEUP NORMALIZER
