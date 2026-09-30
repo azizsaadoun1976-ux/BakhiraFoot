@@ -470,105 +470,115 @@
         bottom: 8px;
       }
 
-      .bfmd-player {
-        position: absolute;
-        transform:
-          translate(-50%,-50%);
-        width: 82px;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        z-index: 5;
-      }
+.bfmd-player {
+  position: absolute;
+  transform: translate(-50%,-50%);
+  width: 118px;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  z-index: 5;
+}
 
-      .bfmd-photo-wrap {
-        position: relative;
-        width: 40px;
-        height: 40px;
-        overflow: hidden;
-        border-radius: 50%;
-        border:
-          2px solid rgba(255,255,255,.95);
-        background: #fff;
-        box-shadow:
-          0 4px 12px rgba(0,0,0,.35);
-      }
+.bfmd-photo-wrap {
+  position: relative;
+  width: 52px;
+  height: 52px;
+  overflow: hidden;
+  border-radius: 50%;
+  border: 3px solid rgba(255,255,255,.96);
+  background: #fff;
+  box-shadow:
+    0 5px 15px rgba(0,0,0,.40);
+}
 
-      .bfmd-photo {
-        display: block;
-        width: 100%;
-        height: 100%;
-        object-fit: cover;
-      }
+.bfmd-photo {
+  display: block;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+}
 
-      .bfmd-number {
-        position: absolute;
-        right: -7px;
-        bottom: -5px;
-        min-width: 18px;
-        height: 18px;
-        padding: 0 4px;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        border-radius: 999px;
-        background: #fff;
-        color: #111827;
-        border:
-          1px solid rgba(0,0,0,.15);
-        font-size: 8px;
-        font-weight: 950;
-      }
+.bfmd-number {
+  position: absolute;
+  right: -8px;
+  bottom: -5px;
+  min-width: 21px;
+  height: 21px;
+  padding: 0 5px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border-radius: 999px;
+  background: #fff;
+  color: #111827;
+  border: 1px solid rgba(0,0,0,.18);
+  font-size: 10px;
+  font-weight: 950;
+}
 
-      .bfmd-number-only {
-        width: 36px;
-        height: 36px;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        border-radius: 50%;
-        background: #fff;
-        color: #111827;
-        font-size: 11px;
-        font-weight: 950;
-        box-shadow:
-          0 4px 11px rgba(0,0,0,.30);
-      }
+.bfmd-number-only {
+  width: 47px;
+  height: 47px;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  border-radius: 50%;
+  background: #fff;
+  color: #111827;
+  font-size: 13px;
+  font-weight: 950;
+  box-shadow:
+    0 5px 13px rgba(0,0,0,.34);
+}
 
-      .bfmd-name {
-        max-width: 82px;
-        margin-top: 5px;
-        padding: 3px 5px;
-        border-radius: 5px;
-        background: rgba(0,0,0,.72);
-        color: #fff;
-        font-size: 8px;
-        font-weight: 900;
-        text-align: center;
-        white-space: nowrap;
-        overflow: hidden;
-        text-overflow: ellipsis;
-      }
+.bfmd-name {
+  max-width: 118px;
+  margin-top: 6px;
+  padding: 4px 7px;
+  border-radius: 6px;
+  background: rgba(0,0,0,.78);
+  color: #fff;
+  font-size: 11px;
+  font-weight: 950;
+  line-height: 1.15;
+  text-align: center;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
 
-      .bfmd-rating {
-        margin-top: 2px;
-        padding: 2px 5px;
-        border-radius: 5px;
-        background: #fff;
-        color: #111827;
-        font-size: 8px;
-        font-weight: 900;
-      }
+.bfmd-rating {
+  margin-top: 3px;
+  padding: 3px 7px;
+  border-radius: 6px;
+  background: #fff;
+  color: #111827;
+  font-size: 10px;
+  font-weight: 950;
+  box-shadow: 0 2px 7px rgba(0,0,0,.18);
+}
 
-      .bfmd-event-mini {
-        position: absolute;
-        top: -8px;
-        left: -8px;
-        z-index: 10;
-        display: flex;
-        gap: 2px;
-        font-size: 10px;
-      }
+.bfmd-event-mini {
+  position: absolute;
+  top: -17px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 10;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 3px;
+  min-height: 19px;
+  padding: 3px 6px;
+  border-radius: 999px;
+  background: rgba(0,0,0,.72);
+  color: #fff;
+  font-size: 13px;
+  line-height: 1;
+  white-space: nowrap;
+  box-shadow: 0 3px 8px rgba(0,0,0,.25);
+}
 
       /* =====================================================
          PLAYER LIST
@@ -3037,6 +3047,14 @@
       kind = "substitution";
     }
     else if (
+  type.includes("injur") ||
+  detail.includes("injur") ||
+  type.includes("hurt") ||
+  detail.includes("hurt")
+) {
+  kind = "injury";
+}  
+    else if (
       type.includes("var") ||
       detail.includes("var")
     ) {
@@ -3164,6 +3182,7 @@
             red: 0,
             in: 0,
             out: 0
+            injured: false
           }
         );
       }
@@ -3264,7 +3283,18 @@
 
       }
     );
+if (
+  event.kind === "injury"
+) {
+  const player =
+    data(
+      event.name
+    );
 
+  if (player) {
+    player.injured = true;
+  }
+}
     return map;
   }
 
@@ -3272,80 +3302,103 @@
      PITCH EVENT BADGES
   ========================================================= */
 
-  function playerBadges(
-    player,
-    statsMap
-  ) {
-    const stats =
-      statsMap.get(
-        playerKey(
-          player
-        )
-      );
+ function playerBadges(
+  player,
+  statsMap
+) {
+  const stats =
+    statsMap.get(
+      playerKey(
+        player
+      )
+    ) || {
+      goals: 0,
+      assists: 0,
+      yellow: 0,
+      red: 0,
+      in: 0,
+      out: 0,
+      injured: false
+    };
 
-    if (!stats) {
-      return "";
-    }
+  const badges = [];
 
-    const badges =
-      [];
-
-    if (
-      stats.goals
-    ) {
-      badges.push(
-        "⚽"
-      );
-    }
-
-    if (
-      stats.assists
-    ) {
-      badges.push(
-        "🅰️"
-      );
-    }
-
-    if (
-      stats.yellow
-    ) {
-      badges.push(
-        "🟨"
-      );
-    }
-
-    if (
-      stats.red
-    ) {
-      badges.push(
-        "🟥"
-      );
-    }
-
-    if (
-      stats.in
-    ) {
-      badges.push(
-        "↗️"
-      );
-    }
-
-    if (
-      stats.out
-    ) {
-      badges.push(
-        "↙️"
-      );
-    }
-
-    return badges.length
-      ? `
-        <div class="bfmd-event-mini">
-          ${badges.join("")}
-        </div>
-      `
-      : "";
+  if (stats.goals) {
+    badges.push(
+      "⚽"
+    );
   }
+
+  if (stats.assists) {
+    badges.push(
+      "🅰️"
+    );
+  }
+
+  if (stats.yellow) {
+    badges.push(
+      "🟨"
+    );
+  }
+
+  if (stats.red) {
+    badges.push(
+      "🟥"
+    );
+  }
+
+  if (stats.injured) {
+    badges.push(
+      "🤕"
+    );
+  }
+
+  if (stats.in) {
+    badges.push(
+      "↗️"
+    );
+  }
+
+  if (stats.out) {
+    badges.push(
+      "↙️"
+    );
+  }
+
+  /*
+   * Injury fields possible
+   * dans les données joueur
+   */
+
+  const raw =
+    player?.player &&
+    typeof player.player === "object"
+      ? player.player
+      : player;
+
+  const injury =
+    raw?.injured === true ||
+    raw?.injury === true ||
+    raw?.is_injured === true ||
+    !!raw?.injury_status;
+
+  if (
+    injury &&
+    !badges.includes("🤕")
+  ) {
+    badges.push(
+      "🤕"
+    );
+  }
+
+  return badges.length
+    ? `
+      <div class="bfmd-event-mini">
+        ${badges.join(" ")}
+      </div>
+    `
+    : "";
+}
 
   /* =========================================================
      RENDER PITCH
@@ -3463,19 +3516,19 @@
                   )}
                 </div>
 
-                ${
-                  rating !== null
-                    ? `
-                      <div class="bfmd-rating">
-                        ⭐ ${esc(
-                          Number(
-                            rating
-                          ).toFixed(1)
-                        )}
-                      </div>
-                    `
-                    : ""
-                }
+               <div class="bfmd-rating">
+  ⭐ ${
+    rating !== null &&
+    rating !== undefined &&
+    rating !== ""
+      ? esc(
+          Number(
+            rating
+          ).toFixed(1)
+        )
+      : "—"
+  }
+</div>
 
               </div>
             `;
