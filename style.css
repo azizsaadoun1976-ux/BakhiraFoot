@@ -12466,3 +12466,55 @@ body.dark
     font-size: 8px !important;
   }
 }
+/* =========================================================
+   SCORE CARDS - TEAM NAMES + CENTER SCORE
+========================================================= */
+
+/* أسماء الفرق داخل الكروت */
+#scoreList .bf-score-professional-match .bf-score-team strong {
+  font-size: 13px !important;
+  font-weight: 950 !important;
+  line-height: 1.2 !important;
+}
+
+/* السكور اللي فالوسط */
+#scoreList .bf-score-professional-match .bf-score-professional-score span {
+  font-size: 21px !important;
+  font-weight: 950 !important;
+  line-height: 1 !important;
+}
+
+#scoreList .bf-score-professional-match .bf-score-professional-score b {
+  font-size: 14px !important;
+  font-weight: 900 !important;
+}
+
+/* فالـPC */
+@media (min-width: 701px) {
+
+  #scoreList .bf-score-professional-match .bf-score-team strong {
+    font-size: 14px !important;
+  }
+
+  #scoreList .bf-score-professional-match .bf-score-professional-score span {
+    font-size: 22px !important;
+  }
+
+}
+
+/* فالهاتف */
+@media (max-width: 700px) {
+
+  #scoreList .bf-score-professional-match .bf-score-team strong {
+    font-size: 11px !important;
+  }
+
+  #scoreList .bf-score-professional-match .bf-score-professional-score span {
+    font-size: 19px !important;
+  }
+
+  #scoreList .bf-score-professional-match .bf-score-professional-score b {
+    font-size: 12px !important;
+  }
+
+}
