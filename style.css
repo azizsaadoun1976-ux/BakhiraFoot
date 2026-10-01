@@ -12740,3 +12740,203 @@ body.dark #scoreList
     font-size: 16px !important;
   }
 }
+/* =========================================================
+   SCORE CARDS - CENTERED TEAMS + BIGGER DETAILS
+========================================================= */
+
+/* الوسط ديال الكارت */
+#scoreList .bf-score-professional-match
+.bf-score-match-teams {
+  width: 100% !important;
+
+  grid-template-columns:
+    minmax(0, 1fr)
+    78px
+    minmax(0, 1fr) !important;
+
+  align-items: center !important;
+  justify-items: center !important;
+
+  gap: 10px !important;
+}
+
+/* كل فريق يكون متمركز */
+#scoreList .bf-score-professional-match
+.bf-score-team {
+  width: 100% !important;
+
+  display: flex !important;
+  flex-direction: column !important;
+
+  align-items: center !important;
+  justify-content: center !important;
+
+  gap: 5px !important;
+
+  text-align: center !important;
+}
+
+/* الفريق home مايبقاش ملصق لليمين */
+#scoreList .bf-score-professional-match
+.bf-score-team.home {
+  justify-content: center !important;
+  text-align: center !important;
+}
+
+/* الفريق away مايبقاش ملصق لليسار */
+#scoreList .bf-score-professional-match
+.bf-score-team.away {
+  justify-content: center !important;
+  text-align: center !important;
+}
+
+/* اللوجو */
+#scoreList .bf-score-professional-match
+.bf-score-team img,
+#scoreList .bf-score-professional-match
+.bf-score-team-placeholder {
+  width: 36px !important;
+  height: 36px !important;
+
+  min-width: 36px !important;
+
+  flex: 0 0 36px !important;
+
+  object-fit: contain !important;
+}
+
+/* أسماء الفرق */
+#scoreList .bf-score-professional-match
+.bf-score-team strong {
+  display: block !important;
+
+  width: 100% !important;
+  max-width: 125px !important;
+
+  overflow: hidden !important;
+
+  text-overflow: ellipsis !important;
+
+  white-space: nowrap !important;
+
+  text-align: center !important;
+
+  font-size: 13px !important;
+
+  line-height: 1.2 !important;
+
+  font-weight: 950 !important;
+}
+
+/* السكور */
+#scoreList .bf-score-professional-match
+.bf-score-professional-score {
+  display: flex !important;
+
+  align-items: center !important;
+  justify-content: center !important;
+
+  gap: 5px !important;
+}
+
+#scoreList .bf-score-professional-match
+.bf-score-professional-score span {
+  min-width: 22px !important;
+
+  text-align: center !important;
+
+  font-size: 21px !important;
+
+  line-height: 1 !important;
+
+  font-weight: 950 !important;
+}
+
+#scoreList .bf-score-professional-match
+.bf-score-professional-score b {
+  font-size: 13px !important;
+
+  font-weight: 900 !important;
+}
+
+/* DETAILS أكبر وواضحة */
+#scoreList .bf-score-professional-match
+.bf-score-match-arrow {
+  display: flex !important;
+
+  align-items: center !important;
+  justify-content: center !important;
+
+  width: 100% !important;
+
+  gap: 6px !important;
+
+  font-size: 12px !important;
+
+  line-height: 1 !important;
+
+  font-weight: 950 !important;
+
+  color: #65757f !important;
+}
+
+#scoreList .bf-score-professional-match
+.bf-score-match-arrow span {
+  font-size: 19px !important;
+
+  font-weight: 950 !important;
+}
+
+/* الحالة نخليوها واضحة */
+#scoreList .bf-score-professional-match
+.bf-score-match-status {
+  font-size: 10px !important;
+}
+
+/* =========================================================
+   MOBILE
+========================================================= */
+
+@media (max-width: 700px) {
+
+  #scoreList .bf-score-professional-match
+  .bf-score-match-teams {
+    grid-template-columns:
+      minmax(0, 1fr)
+      58px
+      minmax(0, 1fr) !important;
+
+    gap: 5px !important;
+  }
+
+  #scoreList .bf-score-professional-match
+  .bf-score-team img,
+  #scoreList .bf-score-professional-match
+  .bf-score-team-placeholder {
+    width: 30px !important;
+    height: 30px !important;
+    min-width: 30px !important;
+  }
+
+  #scoreList .bf-score-professional-match
+  .bf-score-team strong {
+    max-width: 90px !important;
+
+    font-size: 11px !important;
+  }
+
+  #scoreList .bf-score-professional-match
+  .bf-score-professional-score span {
+    font-size: 18px !important;
+  }
+
+  #scoreList .bf-score-professional-match
+  .bf-score-match-arrow {
+    font-size: 10px !important;
+  }
+
+  #scoreList .bf-score-professional-match
+  .bf-score-match-arrow span {
+    font-size: 17px !important;
+  }
+}
