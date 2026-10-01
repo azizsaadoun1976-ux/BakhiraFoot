@@ -11566,7 +11566,7 @@ main,
 .bf-score-card-body {
   width: 100%;
 
-  min-height: 82px;
+  min-height: 76px;
 
   display: grid;
 
@@ -11610,9 +11610,9 @@ main,
 
 
 .bf-score-card-team-logo {
-  width: 34px !important;
+  width: 32px !important;
 
-  height: 34px !important;
+  height: 32px !important;
 
   min-width: 34px !important;
 
@@ -11687,7 +11687,7 @@ main,
 
 
 .bf-score-card-score span {
-  min-width: 20px;
+  min-width: 19px;
 
   color: #172630;
 
