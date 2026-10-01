@@ -62,22 +62,213 @@ function formatDate(dateString) {
 }
 
 function getStatus(match) {
-  return (
-    match?.fixture?.status?.short ||
-    match?.fixture?.status?.long ||
-    match?.status?.short ||
-    match?.status?.long ||
-    match?.status ||
-    "MATCH"
-  );
+  const short =
+    String(
+      match?.fixture?.status?.short ||
+      match?.status?.short ||
+      ""
+    )
+      .trim()
+      .toUpperCase();
+
+  const long =
+    String(
+      match?.fixture?.status?.long ||
+      match?.status?.long ||
+      match?.status_text ||
+      ""
+    )
+      .trim()
+      .toUpperCase();
+
+  const all =
+    `${short} ${long}`;
+
+  /*
+   * LIVE الحقيقي
+   */
+
+  if (
+    all.includes("IN PROGRESS") ||
+    all.includes("INPLAY") ||
+    all.includes("IN PLAY") ||
+    all.includes("FIRST HALF") ||
+    all.includes("SECOND HALF") ||
+    all.includes("LIVE")
+  ) {
+    return "LIVE";
+  }
+
+  /*
+   * HT الحقيقي
+   */
+
+  if (
+    all === "HT" ||
+    all.includes("HALFTIME") ||
+    all.includes("HALF TIME")
+  ) {
+    return "HT";
+  }
+
+  /*
+   * Match terminé
+   */
+
+  if (
+    short === "FT" ||
+    short === "END" ||
+    short === "FINISHED" ||
+    long.includes("FINISHED") ||
+    long.includes("FULL TIME") ||
+    long.includes("ENDED")
+  ) {
+    return "FT";
+  }
+
+  /*
+   * Match à venir
+   */
+
+  if (
+    short === "NS" ||
+    short === "SCHEDULED" ||
+    short === "UPCOMING" ||
+    long.includes("NOT STARTED") ||
+    long.includes("SCHEDULED")
+  ) {
+    return "NS";
+  }
+
+  /*
+   * Reporté / annulé
+   */
+
+  if (
+    short === "PST" ||
+    long.includes("POSTPON")
+  ) {
+    return "PST";
+  }
+
+  if (
+    short === "CANC" ||
+    long.includes("CANCEL")
+  ) {
+    return "CANC";
+  }
+
+  return short || long || "MATCH";
 }
 
 function getMinute(match) {
-  return (
+  const direct =
     match?.fixture?.status?.elapsed ??
     match?.status?.elapsed ??
     match?.minute ??
-    null
+    match?.elapsed ??
+    null;
+
+  /*
+   * إلا كانت API عطاتو minute
+   * نستعملوها مباشرة.
+   */
+
+  if (
+    direct !== null &&
+    direct !== undefined &&
+    direct !== ""
+  ) {
+    const n =
+      Number(direct);
+
+    if (
+      Number.isFinite(n)
+    ) {
+      return n;
+    }
+  }
+
+  /*
+   * fallback:
+   * نحسبو الدقيقة من kick-off.
+   */
+
+  const status =
+    getStatus(match);
+
+  if (
+    status !== "LIVE"
+  ) {
+    return null;
+  }
+
+  const kickoff =
+    match?.fixture?.date ||
+    match?.date ||
+    match?.fixture?.time ||
+    match?.time ||
+    null;
+
+  if (!kickoff) {
+    return null;
+  }
+
+  const start =
+    new Date(kickoff);
+
+  if (
+    Number.isNaN(
+      start.getTime()
+    )
+  ) {
+    return null;
+  }
+
+  const now =
+    Date.now();
+
+  const diff =
+    Math.floor(
+      (
+        now -
+        start.getTime()
+      ) / 60000
+    );
+
+  if (
+    diff < 0
+  ) {
+    return null;
+  }
+
+  /*
+   * نصف الوقت الأول
+   */
+
+  if (
+    diff <= 45
+  ) {
+    return Math.min(
+      45,
+      diff + 1
+    );
+  }
+
+  /*
+   * الشوط الثاني:
+   * كنطرح تقريباً 15 دقيقة ديال pause.
+   */
+
+  const secondHalf =
+    diff - 15;
+
+  return Math.max(
+    46,
+    Math.min(
+      120,
+      secondHalf + 1
+    )
   );
 }
 
@@ -2030,12 +2221,139 @@ async function loadLive() {
       throw new Error(`HTTP ${response.status}`);
     }
 
-    const data = await response.json();
+   const data =
+  await response.json();
 
-    const matches =
-      sortMatchesByImportance(
-        normalizeMatches(data)
+let matches =
+  normalizeMatches(data);
+
+
+/*
+ * إلا كان التاريخ هو اليوم،
+ * نجيب LIVE من endpoint مخصص
+ * باش status ديال الماتش يكون
+ * أحدث من date endpoint.
+ */
+
+const today =
+  new Date()
+    .toISOString()
+    .split("T")[0];
+
+if (
+  currentDate === today
+) {
+  try {
+
+    const liveResponse =
+      await fetch(
+        `${API_BASE}/api?live=all`,
+        {
+          cache: "no-store"
+        }
       );
+
+    if (
+      liveResponse.ok
+    ) {
+
+      const liveData =
+        await liveResponse.json();
+
+      const liveMatches =
+        normalizeMatches(
+          liveData
+        );
+
+      const liveMap =
+        new Map();
+
+      liveMatches.forEach(
+        live => {
+
+          const id =
+            getFixtureId(
+              live
+            );
+
+          if (id) {
+            liveMap.set(
+              String(id),
+              live
+            );
+          }
+
+        }
+      );
+
+
+      matches =
+        matches.map(
+          match => {
+
+            const id =
+              getFixtureId(
+                match
+              );
+
+            const live =
+              liveMap.get(
+                String(id)
+              );
+
+            /*
+             * إلا نفس الماتش موجود
+             * فـLIVE endpoint،
+             * نعتمدو على النسخة الحية.
+             */
+
+            return live
+              ? {
+                  ...match,
+                  ...live,
+
+                  teams:
+                    live.teams ||
+                    match.teams,
+
+                  goals:
+                    live.goals ||
+                    match.goals,
+
+                  fixture: {
+                    ...match.fixture,
+                    ...live.fixture,
+
+                    status: {
+                      ...match.fixture?.status,
+                      ...live.fixture?.status
+                    }
+                  }
+                }
+              : match;
+
+          }
+        );
+
+    }
+
+  }
+
+  catch (liveError) {
+
+    console.warn(
+      "LIVE MERGE ERROR:",
+      liveError
+    );
+
+  }
+}
+
+
+matches =
+  sortMatchesByImportance(
+    matches
+  );
 
     /*
        مهم:
