@@ -5016,57 +5016,57 @@ function getPlayerRating(
     );
   }
 
-  /* =========================================================
-     GLOBAL OPEN
-     script.js => openMatchDetails(index)
-  ========================================================= */
+/* =========================================================
+   GLOBAL OPEN
+   IMPORTANT:
+   ما نبدلوش openMatchDetails ديال script.js
+========================================================= */
 
-  window.bfOpenMatchDetails =
-    openDetails;
+window.bfOpenMatchDetails = openDetails;
 
-window.openMatchDetails =
-  function (index) {
+/*
+ * script.js عندو أصلاً:
+ *
+ * openMatchDetails(index)
+ *
+ * وهاد الدالة كتجيب الماتش مباشرة من:
+ * currentMatches[index]
+ *
+ * لذلك ما نعوضوهاش هنا.
+ */
 
-    /*
-     * أولاً نقلبو على Card ديال Scores
-     * باش ما ناخدوش Card أخرى من Home
-     */
-    const scoreCard =
-      document.querySelector(
-        `.bf-score-professional-match[data-match-index="${index}"]`
+if (
+  typeof window.openMatchDetails !== "function"
+) {
+  window.openMatchDetails =
+    function (index) {
+
+      const card =
+        document.querySelector(
+          `.match-card[data-match-index="${index}"]`
+        );
+
+      if (!card) {
+        console.error(
+          "BakhiraFoot: match card introuvable",
+          index
+        );
+        return;
+      }
+
+      const identifier =
+        getCardIdentifier(card);
+
+      if (!identifier) {
+        console.error(
+          "BakhiraFoot: fixture introuvable",
+          card
+        );
+        return;
+      }
+
+      openDetails(
+        identifier
       );
-
-    /*
-     * وإذا ما لقاهاش، نستعملو الطريقة القديمة
-     */
-    const card =
-      scoreCard ||
-      document.querySelector(
-        `.match-card[data-match-index="${index}"]`
-      );
-
-    if (!card) {
-      console.error(
-        "BakhiraFoot: match card introuvable",
-        index
-      );
-      return;
-    }
-
-    const identifier =
-      getCardIdentifier(card);
-
-    if (!identifier) {
-      console.error(
-        "BakhiraFoot: fixture introuvable",
-        card
-      );
-      return;
-    }
-
-    openDetails(
-      identifier
-    );
-  };
-
-})();
+    };
+}
