@@ -15,6 +15,8 @@ let currentMatches = [];
 let currentDate = null;
 let currentFilter = "all";
 let currentOpenedFixture = null;
+let selectedCompetitionIndex = 0;
+let scoreCompetitionGroups = [];
 
 /* =========================================================
    HELPERS
@@ -646,6 +648,236 @@ function createMatchHTML(match, index) {
 }
 
 /* =========================================================
+   SCORES - COMPETITION GROUPS
+========================================================= */
+
+function renderScoreCompetitionGroups(matches) {
+  const list = $("scoreList");
+
+  if (!list) return;
+
+  if (!Array.isArray(matches) || !matches.length) {
+    list.innerHTML =
+      emptyCard(
+        "Aucun match trouvé."
+      );
+    return;
+  }
+
+  const groupsMap = new Map();
+
+  matches.forEach(
+    (match, index) => {
+      const name =
+        getLeague(match) ||
+        "Football";
+
+      const key =
+        normalizeText(name);
+
+      if (!groupsMap.has(key)) {
+        groupsMap.set(
+          key,
+          {
+            name,
+            matches: []
+          }
+        );
+      }
+
+      groupsMap
+        .get(key)
+        .matches.push({
+          match,
+          index
+        });
+    }
+  );
+
+  scoreCompetitionGroups =
+    Array.from(
+      groupsMap.values()
+    );
+
+  /*
+   * البطولة الكبيرة أولاً.
+   * الـLIVE ما كيبدلش ترتيب البطولات.
+   */
+  scoreCompetitionGroups.sort(
+    (a, b) => {
+      const pa =
+        getCompetitionPriority(
+          a.matches[0].match
+        );
+
+      const pb =
+        getCompetitionPriority(
+          b.matches[0].match
+        );
+
+      if (pa !== pb) {
+        return pb - pa;
+      }
+
+      return a.name.localeCompare(
+        b.name,
+        "fr"
+      );
+    }
+  );
+
+  if (
+    selectedCompetitionIndex >=
+    scoreCompetitionGroups.length
+  ) {
+    selectedCompetitionIndex = 0;
+  }
+
+  renderSelectedScoreCompetition();
+}
+
+
+function selectScoreCompetition(index) {
+  selectedCompetitionIndex =
+    Number(index);
+
+  if (
+    !Number.isFinite(
+      selectedCompetitionIndex
+    )
+  ) {
+    selectedCompetitionIndex = 0;
+  }
+
+  renderSelectedScoreCompetition();
+}
+
+
+function renderSelectedScoreCompetition() {
+  const list = $("scoreList");
+
+  if (!list) return;
+
+  const group =
+    scoreCompetitionGroups[
+      selectedCompetitionIndex
+    ];
+
+  if (!group) return;
+
+  const competitionButtons =
+    scoreCompetitionGroups
+      .map(
+        (item, index) => {
+
+          const liveCount =
+            item.matches.filter(
+              ({ match }) => {
+                const status =
+                  String(
+                    getStatus(match)
+                  ).toUpperCase();
+
+                return (
+                  [
+                    "1H",
+                    "2H",
+                    "LIVE",
+                    "ET",
+                    "P",
+                    "BT",
+                    "HT"
+                  ].includes(status) ||
+                  status.includes("LIVE")
+                );
+              }
+            ).length;
+
+          return `
+            <button
+              type="button"
+              class="
+                bf-score-competition
+                ${
+                  index ===
+                  selectedCompetitionIndex
+                    ? "active"
+                    : ""
+                }
+              "
+              onclick="
+                selectScoreCompetition(
+                  ${index}
+                )
+              "
+            >
+              <span class="bf-score-comp-name">
+                🏆 ${escapeHTML(item.name)}
+              </span>
+
+              <span class="bf-score-comp-count">
+                ${
+                  liveCount
+                    ? `🔴 ${liveCount} · `
+                    : ""
+                }
+                ${item.matches.length}
+              </span>
+            </button>
+          `;
+        }
+      )
+      .join("");
+
+  const matchesHTML =
+    group.matches
+      .map(
+        ({ match, index }) =>
+          createMatchHTML(
+            match,
+            index
+          )
+      )
+      .join("");
+
+  list.innerHTML = `
+    <div class="bf-score-competitions-layout">
+
+      <aside class="bf-score-competitions">
+        <div class="bf-score-comp-title">
+          COMPÉTITIONS
+        </div>
+
+        <div class="bf-score-comp-list">
+          ${competitionButtons}
+        </div>
+      </aside>
+
+      <section class="bf-score-comp-panel">
+
+        <div class="bf-score-comp-panel-head">
+          <div>
+            <small>COMPÉTITION</small>
+            <h2>
+              🏆 ${escapeHTML(group.name)}
+            </h2>
+            <span>
+              ${group.matches.length} matchs
+            </span>
+          </div>
+        </div>
+
+        <div class="bf-score-comp-matches">
+          ${matchesHTML}
+        </div>
+
+      </section>
+
+    </div>
+  `;
+}
+
+/* =========================================================
    LOAD LIVE
 ========================================================= */
 
@@ -700,13 +932,11 @@ async function loadLive() {
             "Aucun match en direct actuellement."
           );
       } else {
-        list.innerHTML =
-          matches
-            .map((match, index) =>
-              createMatchHTML(match, index)
-            )
-            .join("");
-      }
+selectedCompetitionIndex = 0;
+
+renderScoreCompetitionGroups(
+  matches
+);      }
     }
 
     return matches;
@@ -797,16 +1027,11 @@ async function loadMatches(date) {
       return;
     }
 
-    list.innerHTML =
-      matches
-        .map((match, index) =>
-          createMatchHTML(
-            match,
-            index
-          )
-        )
-        .join("");
+selectedCompetitionIndex = 0;
 
+renderScoreCompetitionGroups(
+  matches
+);
   } catch (error) {
 
     console.error(
