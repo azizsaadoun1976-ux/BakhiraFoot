@@ -2156,14 +2156,11 @@ function renderSelectedCompetition() {
                     : ""
                 }
               "
-              data-match-index="${index}"
-              onclick="
-                window.openMatchDetails(
-                  Number(
-                    this.dataset.matchIndex
-                  )
-                )
-              "
+             onclick="
+  window.bfOpenMatchDetails(
+    this.dataset.fixtureId
+  )
+"
             >
 
               <div
