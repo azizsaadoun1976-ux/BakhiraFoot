@@ -1069,14 +1069,11 @@ if (date) {
       data-fixture-id="${escapeHTML(
         fixtureId || ""
       )}"
-    onclick="
-  window.openMatchDetails(
-    Number(
-      this.dataset.matchIndex
-    )
+onclick="
+  window.bfOpenMatchDetails(
+    this.dataset.fixtureId
   )
-"
-    >
+"    >
 
       <div
         class="bf-score-card-header"
