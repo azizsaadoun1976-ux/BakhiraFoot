@@ -13030,3 +13030,74 @@ body.dark #scoreList
     text-align: center !important;
   }
 }
+/* =========================================================
+   TEAM NAMES - SHOW LONG NAMES
+========================================================= */
+
+#scoreList .bf-score-card-team {
+  min-width: 0 !important;
+  align-items: center !important;
+}
+
+#scoreList .bf-score-card-team strong {
+  min-width: 0 !important;
+  max-width: 125px !important;
+
+  white-space: normal !important;
+
+  overflow: visible !important;
+
+  text-overflow: clip !important;
+
+  word-break: normal !important;
+
+  overflow-wrap: break-word !important;
+
+  text-align: center !important;
+
+  line-height: 1.2 !important;
+
+  font-size: 13px !important;
+
+  font-weight: 900 !important;
+}
+
+
+/* الفريق المستضيف */
+#scoreList .bf-score-card-team.home {
+  justify-content: flex-end !important;
+  text-align: center !important;
+}
+
+
+/* الفريق الضيف */
+#scoreList .bf-score-card-team.away {
+  justify-content: flex-start !important;
+  text-align: center !important;
+}
+
+
+/* الهاتف */
+@media (max-width: 700px) {
+
+  #scoreList .bf-score-card-team strong {
+    max-width: 88px !important;
+
+    white-space: normal !important;
+
+    overflow: visible !important;
+
+    text-overflow: clip !important;
+
+    font-size: 10px !important;
+
+    line-height: 1.2 !important;
+
+    text-align: center !important;
+  }
+
+  #scoreList .bf-score-card-team {
+    align-items: center !important;
+  }
+
+}
