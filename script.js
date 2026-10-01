@@ -3131,8 +3131,7 @@ function createMatchModal() {
 
   document.body.appendChild(modal);
 
-addModalStyles();
-addDetailsProStyles();
+  addModalStyles();
 }
 
 function closeMatchDetails(event) {
@@ -3163,31 +3162,6 @@ function closeMatchDetails(event) {
     null;
 }
 
-function switchMatchDetailsTab(tab) {
-  const buttons =
-    document.querySelectorAll(
-      ".bf-match-tab"
-    );
-
-  const panels =
-    document.querySelectorAll(
-      ".bf-match-tab-panel"
-    );
-
-  buttons.forEach(button => {
-    button.classList.toggle(
-      "active",
-      button.dataset.tab === tab
-    );
-  });
-
-  panels.forEach(panel => {
-    panel.classList.toggle(
-      "active",
-      panel.dataset.panel === tab
-    );
-  });
-}
 /* =========================================================
    MODAL STYLES
 ========================================================= */
@@ -3963,270 +3937,6 @@ function addModalStyles() {
   document.head.appendChild(style);
 }
 
-function addDetailsProStyles() {
-
-  if ($("bakhira-details-pro-style")) {
-    return;
-  }
-
-  const style =
-    document.createElement("style");
-
-  style.id =
-    "bakhira-details-pro-style";
-
-  style.textContent = `
-
-    /* =========================================
-       DETAILS PRO HEADER
-    ========================================= */
-
-    .bf-details-league {
-      margin-top: 6px;
-      font-size: 13px;
-      font-weight: 900;
-      letter-spacing: .2px;
-    }
-
-    .bf-details-status {
-      padding: 8px 15px !important;
-      border: 1px solid rgba(127,127,127,.12);
-      box-shadow:
-        0 4px 14px rgba(0,0,0,.06);
-    }
-
-    .bf-details-teams {
-      margin-top: 12px;
-      padding: 22px 18px;
-      border-radius: 20px;
-
-      background:
-        linear-gradient(
-          180deg,
-          rgba(127,127,127,.05),
-          rgba(127,127,127,.02)
-        );
-
-      border: 1px solid
-        rgba(127,127,127,.10);
-    }
-
-    .bf-details-team {
-      min-width: 0;
-      max-width: 100%;
-    }
-
-    .bf-details-team-name {
-      display: block;
-      width: 100%;
-      max-width: 230px;
-
-      font-size: 15px;
-      font-weight: 950;
-      line-height: 1.25;
-
-      white-space: normal;
-      overflow-wrap: anywhere;
-      word-break: normal;
-
-      text-align: center;
-    }
-
-    .bf-details-logo,
-    .bf-details-team img {
-      width: 88px !important;
-      height: 88px !important;
-
-      object-fit: contain;
-
-      filter:
-        drop-shadow(
-          0 5px 10px rgba(0,0,0,.10)
-        );
-    }
-
-    .bf-details-score {
-      min-width: 120px;
-      padding: 12px 18px;
-
-      border-radius: 16px;
-
-      background: var(--card, #fff);
-
-      box-shadow:
-        0 7px 22px rgba(0,0,0,.08);
-
-      font-size: 40px !important;
-      font-weight: 950;
-      line-height: 1;
-    }
-
-
-    /* =========================================
-       TABS
-    ========================================= */
-
-    .bf-match-tabs {
-      display: flex;
-      align-items: center;
-      gap: 7px;
-
-      margin-top: 24px;
-      padding: 6px;
-
-      overflow-x: auto;
-      scrollbar-width: none;
-
-      border-radius: 14px;
-
-      background:
-        rgba(127,127,127,.07);
-
-      border: 1px solid
-        rgba(127,127,127,.10);
-    }
-
-    .bf-match-tabs::-webkit-scrollbar {
-      display: none;
-    }
-
-    .bf-match-tab {
-      flex: 0 0 auto;
-
-      min-height: 38px;
-      padding: 0 14px;
-
-      border: 0;
-      border-radius: 10px;
-
-      background: transparent;
-      color: inherit;
-
-      font-size: 11px;
-      font-weight: 900;
-
-      cursor: pointer;
-
-      opacity: .62;
-
-      transition:
-        background .18s ease,
-        color .18s ease,
-        opacity .18s ease,
-        transform .18s ease;
-    }
-
-    .bf-match-tab:hover {
-      opacity: 1;
-      transform: translateY(-1px);
-    }
-
-    .bf-match-tab.active {
-      opacity: 1;
-
-      background:
-        var(--text, #16232b);
-
-      color:
-        var(--card, #fff);
-
-      box-shadow:
-        0 4px 12px rgba(0,0,0,.10);
-    }
-
-
-    /* =========================================
-       TAB PANELS
-    ========================================= */
-
-    .bf-match-tab-panel {
-      display: none;
-
-      animation:
-        bfTabIn .18s ease;
-    }
-
-    .bf-match-tab-panel.active {
-      display: block;
-    }
-
-    @keyframes bfTabIn {
-      from {
-        opacity: 0;
-        transform: translateY(5px);
-      }
-
-      to {
-        opacity: 1;
-        transform: translateY(0);
-      }
-    }
-
-
-    /* =========================================
-       SECTION HEADERS
-    ========================================= */
-
-    .bf-match-tab-panel
-    .bf-detail-section {
-      margin-top: 20px;
-    }
-
-    .bf-match-tab-panel
-    .bf-detail-section h3 {
-      display: flex;
-      align-items: center;
-      gap: 8px;
-
-      margin-bottom: 14px;
-
-      font-size: 17px;
-      font-weight: 950;
-    }
-
-
-    /* =========================================
-       MOBILE
-    ========================================= */
-
-    @media (max-width: 600px) {
-
-      .bf-details-teams {
-        padding: 17px 9px;
-        gap: 8px;
-      }
-
-      .bf-details-team-name {
-        max-width: 125px;
-        font-size: 12px;
-      }
-
-      .bf-details-logo,
-      .bf-details-team img {
-        width: 62px !important;
-        height: 62px !important;
-      }
-
-      .bf-details-score {
-        min-width: 82px;
-        padding: 10px 7px;
-        font-size: 28px !important;
-      }
-
-      .bf-match-tabs {
-        margin-top: 18px;
-      }
-
-      .bf-match-tab {
-        padding: 0 11px;
-        font-size: 10px;
-      }
-    }
-
-  `;
-
-  document.head.appendChild(style);
-}
 /* =========================================================
    PLAYER / STATS HELPERS
 ========================================================= */
@@ -8074,221 +7784,88 @@ async function openMatchDetails(index) {
       </div>
 
 
-    <div class="bf-match-tabs">
-
-  <button
-    type="button"
-    class="bf-match-tab active"
-    data-tab="overview"
-    onclick="
-      switchMatchDetailsTab(
-        'overview'
-      )
-    "
-  >
-    📋 Aperçu
-  </button>
-
-  <button
-    type="button"
-    class="bf-match-tab"
-    data-tab="composition"
-    onclick="
-      switchMatchDetailsTab(
-        'composition'
-      )
-    "
-  >
-    🧩 Composition
-  </button>
-
-  <button
-    type="button"
-    class="bf-match-tab"
-    data-tab="events"
-    onclick="
-      switchMatchDetailsTab(
-        'events'
-      )
-    "
-  >
-    ⚡ Événements
-  </button>
-
-  <button
-    type="button"
-    class="bf-match-tab"
-    data-tab="stats"
-    onclick="
-      switchMatchDetailsTab(
-        'stats'
-      )
-    "
-  >
-    📊 Stats
-  </button>
-
-</div>
+      ${renderMatchInformation(
+        details
+      )}
 
 
-<!-- =====================================
-     APERÇU
-===================================== -->
+      ${
+        homeLineup ||
+        awayLineup
+          ? renderFormations(
+              homeLineup,
+              awayLineup,
+              realHome,
+              realAway,
+              realHomeId,
+              realAwayId,
+              performanceMap,
+              eventMap
+            )
+          : `
+            <div class="bf-detail-section">
 
-<div
-  class="
-    bf-match-tab-panel
-    active
-  "
-  data-panel="overview"
->
+              <h3>
+                🧩 Formations & Compositions
+              </h3>
 
-  ${
-    renderMatchInformation(
-      details
-    ) ||
-    `
-      <div class="bf-detail-section">
+              <div class="bf-detail-item">
+                La composition n'est pas encore disponible pour cette rencontre.
+              </div>
 
-        <h3>
-          📋 Informations
-        </h3>
-
-        <div class="bf-detail-item">
-          Informations supplémentaires indisponibles.
-        </div>
-
-      </div>
-    `
-  }
-
-</div>
+            </div>
+          `
+      }
 
 
-<!-- =====================================
-     COMPOSITION
-===================================== -->
-
-<div
-  class="bf-match-tab-panel"
-  data-panel="composition"
->
-
-  ${
-    homeLineup ||
-    awayLineup
-      ? renderFormations(
-          homeLineup,
-          awayLineup,
-          realHome,
-          realAway,
-          realHomeId,
-          realAwayId,
-          performanceMap,
-          eventMap
-        )
-      : `
-        <div class="bf-detail-section">
-
-          <h3>
-            🧩 Formations
-          </h3>
-
-          <div class="bf-detail-item">
-            La composition n'est pas encore disponible.
-          </div>
-
-        </div>
-      `
-  }
+      ${
+        homeLineup ||
+        awayLineup
+          ? renderPlayersSection(
+              homeLineup,
+              awayLineup,
+              realHome,
+              realAway,
+              realHomeId,
+              realAwayId,
+              performanceMap,
+              eventMap
+            )
+          : ""
+      }
 
 
-  ${
-    homeLineup ||
-    awayLineup
-      ? renderPlayersSection(
-          homeLineup,
-          awayLineup,
-          realHome,
-          realAway,
-          realHomeId,
-          realAwayId,
-          performanceMap,
-          eventMap
-        )
-      : ""
-  }
+      ${
+        homeLineup ||
+        awayLineup
+          ? renderBenchSection(
+              homeLineup,
+              awayLineup,
+              realHome,
+              realAway,
+              realHomeId,
+              realAwayId,
+              performanceMap,
+              eventMap
+            )
+          : ""
+      }
 
 
-  ${
-    homeLineup ||
-    awayLineup
-      ? renderBenchSection(
-          homeLineup,
-          awayLineup,
-          realHome,
-          realAway,
-          realHomeId,
-          realAwayId,
-          performanceMap,
-          eventMap
-        )
-      : ""
-  }
-
-</div>
+      ${renderEvents(
+        events,
+        realHomeId,
+        realAwayId,
+        realHome,
+        realAway
+      )}
 
 
-<!-- =====================================
-     EVENTS
-===================================== -->
+      ${
+        statistics.length
+          ? `
+            <div class="bf-detail-section">
 
-<div
-  class="bf-match-tab-panel"
-  data-panel="events"
->
-
-  ${renderEvents(
-    events,
-    realHomeId,
-    realAwayId,
-    realHome,
-    realAway
-  )}
-
-</div>
-
-
-<!-- =====================================
-     STATISTICS
-===================================== -->
-
-<div
-  class="bf-match-tab-panel"
-  data-panel="stats"
->
-
-  <div class="bf-detail-section">
-
-    <h3>
-      📊 Statistiques du match
-    </h3>
-
-    ${
-      statistics.length
-        ? renderStatistics(
-            statistics
-          )
-        : `
-          <div class="bf-detail-item">
-            Aucune statistique disponible.
-          </div>
-        `
-    }
-
-  </div>
-
-</div>
               <h3>
                 📊 Statistiques du match
               </h3>
