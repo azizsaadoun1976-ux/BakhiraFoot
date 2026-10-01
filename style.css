@@ -8009,3 +8009,519 @@ button {
   }
 
 }
+/* =========================================================
+   BAKHIRAFOOT - UNIFIED LIGHT / DARK MODE
+   AJOUTER A LA FIN DE style.css
+   ========================================================= */
+
+/* =========================
+   LIGHT MODE
+   ========================= */
+
+html:not(.dark),
+body:not(.dark) {
+  background: #f3f5f7 !important;
+  color: #172027 !important;
+}
+
+body:not(.dark) main,
+body:not(.dark) .page {
+  background: transparent !important;
+  color: #172027 !important;
+}
+
+body:not(.dark) h1,
+body:not(.dark) h2,
+body:not(.dark) h3,
+body:not(.dark) h4,
+body:not(.dark) h5,
+body:not(.dark) h6 {
+  color: #172027 !important;
+}
+
+body:not(.dark) p,
+body:not(.dark) small {
+  color: #687780 !important;
+}
+
+body:not(.dark) .card,
+body:not(.dark) .league,
+body:not(.dark) .table,
+body:not(.dark) .match-card,
+body:not(.dark) .content-box,
+body:not(.dark) .article-card,
+body:not(.dark) .about-card,
+body:not(.dark) .about-box,
+body:not(.dark) .contact-card,
+body:not(.dark) .contact-box,
+body:not(.dark) .legal-card {
+  background: #ffffff !important;
+  color: #172027 !important;
+  border-color: #e1e7eb !important;
+}
+
+body:not(.dark) input,
+body:not(.dark) textarea,
+body:not(.dark) select {
+  background: #ffffff !important;
+  color: #172027 !important;
+  border-color: #dfe6ea !important;
+}
+
+body:not(.dark) .dates button,
+body:not(.dark) .filter {
+  background: #ffffff !important;
+  color: #53636e !important;
+  border-color: #dfe6ea !important;
+}
+
+body:not(.dark) .dates button.active,
+body:not(.dark) .filter.active {
+  background: #172630 !important;
+  color: #ffffff !important;
+}
+
+
+/* =========================
+   DARK MODE - GLOBAL
+   ========================= */
+
+html.dark,
+body.dark {
+  background: #0d151b !important;
+  color: #edf2f5 !important;
+}
+
+body.dark main,
+body.dark .page,
+body.dark .layout {
+  background: transparent !important;
+  color: #edf2f5 !important;
+}
+
+
+/* =========================
+   HEADER
+   ========================= */
+
+body.dark header,
+body.dark .site-header {
+  background: #11181e !important;
+  color: #edf2f5 !important;
+  border-color: #29343d !important;
+}
+
+body.dark nav button,
+body.dark nav a,
+body.dark .site-nav a {
+  color: #aab6bd !important;
+}
+
+body.dark nav button:hover,
+body.dark nav a:hover,
+body.dark .site-nav a:hover {
+  color: #edf2f5 !important;
+  background: #1b252d !important;
+}
+
+body.dark nav button.active,
+body.dark .site-nav a.active {
+  background: #edf2f5 !important;
+  color: #151d24 !important;
+}
+
+body.dark #search,
+body.dark #theme,
+body.dark .site-theme {
+  background: #1b252d !important;
+  color: #edf2f5 !important;
+  border-color: #34414b !important;
+}
+
+body.dark #search::placeholder {
+  color: #91a0a8 !important;
+}
+
+
+/* =========================
+   SIDEBAR
+   ========================= */
+
+body.dark aside {
+  background: #11181e !important;
+  color: #edf2f5 !important;
+  border-color: #29343d !important;
+}
+
+body.dark aside h4 {
+  color: #8f9ca4 !important;
+}
+
+body.dark .filter {
+  background: transparent !important;
+  color: #aebbc3 !important;
+}
+
+body.dark .filter:hover {
+  background: #1b252d !important;
+  color: #edf2f5 !important;
+}
+
+body.dark .filter.active {
+  background: #17372b !important;
+  color: #67dda5 !important;
+}
+
+
+/* =========================
+   HOME
+   ========================= */
+
+body.dark #home h1,
+body.dark #home h2,
+body.dark #home h3 {
+  color: #edf2f5 !important;
+}
+
+body.dark #home p,
+body.dark #home small {
+  color: #a3b0b8 !important;
+}
+
+body.dark .hero {
+  background:
+    radial-gradient(
+      circle at 85% 20%,
+      rgba(32,212,134,.10),
+      transparent 30%
+    ),
+    radial-gradient(
+      circle at 15% 90%,
+      rgba(23,115,182,.08),
+      transparent 35%
+    ),
+    linear-gradient(
+      135deg,
+      #0e2029 0%,
+      #102b35 52%,
+      #0c2028 100%
+    ) !important;
+
+  border-color:
+    rgba(255,255,255,.08) !important;
+
+  box-shadow:
+    0 18px 45px rgba(0,0,0,.25) !important;
+}
+
+body.dark .hero h1 {
+  color: #f1f5f7 !important;
+}
+
+body.dark .hero h1 span {
+  color: #5ee0a4 !important;
+}
+
+body.dark .hero-content > small {
+  color: #9eafb8 !important;
+}
+
+body.dark .hero p {
+  color: #b5c2c9 !important;
+}
+
+body.dark .hero-badge {
+  color: #70dfac !important;
+  background:
+    rgba(32,212,134,.09) !important;
+  border-color:
+    rgba(32,212,134,.16) !important;
+}
+
+body.dark .hero-more {
+  background:
+    rgba(255,255,255,.06) !important;
+  color: #edf4f7 !important;
+  border-color:
+    rgba(255,255,255,.10) !important;
+}
+
+
+/* =========================
+   CARDS
+   ========================= */
+
+body.dark .card,
+body.dark .league,
+body.dark .table,
+body.dark .match-card,
+body.dark .article-card,
+body.dark .news-card,
+body.dark .content-box,
+body.dark .article-box,
+body.dark .about-card,
+body.dark .about-box,
+body.dark .contact-card,
+body.dark .contact-box,
+body.dark .legal-card {
+  background: #151e25 !important;
+  color: #edf2f5 !important;
+  border-color: #29343d !important;
+  box-shadow:
+    0 7px 25px rgba(0,0,0,.16) !important;
+}
+
+body.dark .card h1,
+body.dark .card h2,
+body.dark .card h3,
+body.dark .card h4,
+body.dark .league h1,
+body.dark .league h2,
+body.dark .league h3,
+body.dark .table h1,
+body.dark .table h2,
+body.dark .table h3 {
+  color: #edf2f5 !important;
+}
+
+body.dark .card p,
+body.dark .league small,
+body.dark .table small {
+  color: #98a6ae !important;
+}
+
+
+/* =========================
+   DATES / FILTERS
+   ========================= */
+
+body.dark .dates,
+body.dark .filters {
+  background: transparent !important;
+}
+
+body.dark .dates button {
+  background: #151e25 !important;
+  color: #aebbc3 !important;
+  border-color: #303b44 !important;
+}
+
+body.dark .dates button:hover {
+  background: #1b252d !important;
+  color: #edf2f5 !important;
+}
+
+body.dark .dates button.active,
+body.dark .dates .selected {
+  background: #edf2f5 !important;
+  color: #151d24 !important;
+  border-color: #edf2f5 !important;
+}
+
+
+/* =========================
+   SCORES
+   ========================= */
+
+body.dark #scores {
+  color: #edf2f5 !important;
+}
+
+body.dark #scores .scores-header-text h1 {
+  color: #edf2f5 !important;
+}
+
+body.dark #scores .scores-header-text p {
+  color: #9caab3 !important;
+}
+
+body.dark #scores .scores-date-section {
+  background: #151e25 !important;
+  border-color: #29343d !important;
+}
+
+body.dark #scores .scores-date-title strong {
+  color: #edf2f5 !important;
+}
+
+body.dark #scores .scores-date-title span {
+  color: #97a5ad !important;
+}
+
+body.dark #scores .bf-ultra-match,
+body.dark #homeMatches .match-card,
+body.dark #scoreList .match-card {
+  background: #13212b !important;
+  color: #edf2f5 !important;
+  border-color: rgba(255,255,255,.08) !important;
+  box-shadow:
+    0 8px 25px rgba(0,0,0,.20) !important;
+}
+
+body.dark .bf-match-competition-bar,
+body.dark .flash-league {
+  background: rgba(255,255,255,.025) !important;
+  color: #b6c1c8 !important;
+  border-color: rgba(255,255,255,.07) !important;
+}
+
+body.dark .bf-match-team,
+body.dark .flash-team {
+  color: #edf2f5 !important;
+}
+
+body.dark .bf-match-team *,
+body.dark .flash-team * {
+  color: inherit;
+}
+
+body.dark .bf-ultra-score,
+body.dark .flash-score strong,
+body.dark .score {
+  color: #f2f6f8 !important;
+}
+
+body.dark .bf-match-state.finished,
+body.dark .bf-ultra-middle,
+body.dark .flash-time span,
+body.dark .flash-time small {
+  color: #9aa7af !important;
+}
+
+
+/* =========================
+   TABLES
+   ========================= */
+
+body.dark table {
+  color: #edf2f5 !important;
+}
+
+body.dark th {
+  color: #aebbc3 !important;
+}
+
+body.dark td {
+  color: #edf2f5 !important;
+  border-color: #29343d !important;
+}
+
+body.dark tr {
+  border-color: #29343d !important;
+}
+
+
+/* =========================
+   FORMS
+   ========================= */
+
+body.dark input,
+body.dark textarea,
+body.dark select {
+  background: #1b252d !important;
+  color: #edf2f5 !important;
+  border-color: #34414b !important;
+}
+
+body.dark input::placeholder,
+body.dark textarea::placeholder {
+  color: #87969f !important;
+}
+
+
+/* =========================
+   ARTICLES / ABOUT / CONTACT
+   ========================= */
+
+body.dark .page-hero,
+body.dark .article-hero,
+body.dark .about-hero,
+body.dark .contact-hero {
+  background:
+    linear-gradient(
+      145deg,
+      #151e25,
+      #10181e
+    ) !important;
+
+  color: #edf2f5 !important;
+  border-color: #29343d !important;
+}
+
+body.dark .page-content,
+body.dark .article-page,
+body.dark .about-page,
+body.dark .contact-page,
+body.dark .legal-page {
+  color: #edf2f5 !important;
+}
+
+body.dark .page-content h1,
+body.dark .page-content h2,
+body.dark .article-page h1,
+body.dark .article-page h2,
+body.dark .about-page h1,
+body.dark .about-page h2,
+body.dark .contact-page h1,
+body.dark .contact-page h2,
+body.dark .legal-page h1,
+body.dark .legal-page h2 {
+  color: #edf2f5 !important;
+}
+
+body.dark .page-content p,
+body.dark .article-page p,
+body.dark .about-page p,
+body.dark .contact-page p,
+body.dark .legal-page p {
+  color: #98a6ae !important;
+}
+
+body.dark footer,
+body.dark .about-footer {
+  background: #11181e !important;
+  color: #98a6ae !important;
+  border-color: #29343d !important;
+}
+
+body.dark footer a,
+body.dark .about-footer a {
+  color: #b7c3ca !important;
+}
+
+
+/* =========================
+   TOAST
+   ========================= */
+
+body.dark #toast {
+  background: #edf2f5 !important;
+  color: #11181e !important;
+}
+
+
+/* =========================
+   TRANSITIONS
+   ========================= */
+
+html,
+body,
+header,
+main,
+.page,
+.card,
+.match-card,
+.league,
+.table,
+aside,
+footer,
+input,
+textarea,
+select,
+button {
+  transition:
+    background-color .20s ease,
+    color .20s ease,
+    border-color .20s ease,
+    box-shadow .20s ease;
+}
