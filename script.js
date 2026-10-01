@@ -2156,13 +2156,9 @@ return `
           : ""
       }
     "
-    data-fixture-id="${escapeHTML(
-      getFixtureId(match) || ""
-    )}"
+    data-match-index="${index}"
     onclick="
-      window.bfOpenMatchDetails(
-        this.dataset.fixtureId
-      )
+      openMatchDetails(${index})
     "
   >
 
