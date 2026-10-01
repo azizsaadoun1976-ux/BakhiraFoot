@@ -11358,3 +11358,8 @@ main,
     height: 36px;
   }
 }
+
+.bf-score-professional-match {
+  cursor: pointer !important;
+  pointer-events: auto !important;
+}
