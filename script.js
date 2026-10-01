@@ -17,6 +17,7 @@ let currentFilter = "all";
 let currentOpenedFixture = null;
 let selectedCompetitionIndex = 0;
 let scoreCompetitionGroups = [];
+let scoreStatusFilter = "all";
 
 /* =========================================================
    HELPERS
@@ -1302,191 +1303,211 @@ if (date) {
 }
 
 /* =========================================================
-   SCORES - COMPETITION GROUPS
+   BAKHIRAFOOT PRO SCORES
+   Structure:
+   Date -> Competitions -> Matches
 ========================================================= */
 
-function renderScoreCompetitionGroups(matches) {
-  const list = $("scoreList");
-
-  if (!list) return;
-
-  if (!Array.isArray(matches) || !matches.length) {
-    list.innerHTML =
-      emptyCard(
-        "Aucun match trouvé."
-      );
-    return;
-  }
-
-  const groupsMap = new Map();
-
-  matches.forEach(
-    (match, index) => {
-      const name =
-        getLeague(match) ||
-        "Football";
-
-      const key =
-        normalizeText(name);
-
-      if (!groupsMap.has(key)) {
-        groupsMap.set(
-          key,
-          {
-            name,
-            matches: []
-          }
-        );
-      }
-
-      groupsMap
-        .get(key)
-        .matches.push({
-          match,
-          index
-        });
-    }
-  );
-
-  scoreCompetitionGroups =
-    Array.from(
-      groupsMap.values()
-    );
-
-  /*
-   * البطولة الكبيرة أولاً.
-   * الـLIVE ما كيبدلش ترتيب البطولات.
-   */
-  scoreCompetitionGroups.sort(
-    (a, b) => {
-      const pa =
-        getCompetitionPriority(
-          a.matches[0].match
-        );
-
-      const pb =
-        getCompetitionPriority(
-          b.matches[0].match
-        );
-
-      if (pa !== pb) {
-        return pb - pa;
-      }
-
-      return a.name.localeCompare(
-        b.name,
-        "fr"
-      );
-    }
-  );
+function getScoreState(match) {
+  const status = String(
+    getStatus(match)
+  ).toUpperCase();
 
   if (
-    selectedCompetitionIndex >=
-    scoreCompetitionGroups.length
+    status === "LIVE" ||
+    status === "1H" ||
+    status === "2H" ||
+    status === "ET" ||
+    status === "P" ||
+    status === "BT" ||
+    status.includes("IN PLAY") ||
+    status.includes("INPLAY") ||
+    status.includes("IN PROGRESS") ||
+    status.includes("FIRST HALF") ||
+    status.includes("SECOND HALF") ||
+    status.includes("1ST HALF") ||
+    status.includes("2ND HALF")
   ) {
-    selectedCompetitionIndex = 0;
+    return "live";
   }
 
-  renderSelectedScoreCompetition();
+  if (
+    status === "HT" ||
+    status.includes("HALFTIME") ||
+    status.includes("HALF TIME") ||
+    status.includes("HALF-TIME")
+  ) {
+    return "halftime";
+  }
+
+  if (
+    status === "NS" ||
+    status.includes("NOT STARTED") ||
+    status.includes("SCHEDULED") ||
+    status.includes("UPCOMING")
+  ) {
+    return "upcoming";
+  }
+
+  if (
+    status === "FT" ||
+    status.includes("FINISHED") ||
+    status.includes("FULL TIME") ||
+    status.includes("ENDED") ||
+    status.includes("MATCH FINISHED")
+  ) {
+    return "finished";
+  }
+
+  if (
+    status === "PST" ||
+    status.includes("POSTPON")
+  ) {
+    return "postponed";
+  }
+
+  if (
+    status === "CANC" ||
+    status.includes("CANCEL")
+  ) {
+    return "cancelled";
+  }
+
+  return "other";
 }
 
 
-function selectScoreCompetition(index) {
-  selectedCompetitionIndex = Number(index);
+/* =========================================================
+   COMPETITION KEY
+   ID أولاً باش Premier League ما تخلطش
+   مع India / Jordan Premier League
+========================================================= */
 
-  if (!Number.isFinite(selectedCompetitionIndex)) {
-    selectedCompetitionIndex = 0;
+function getCompetitionGroupKey(match) {
+  const leagueId =
+    match?.league?.id ??
+    match?.competition?.id ??
+    match?.league_id ??
+    match?.competition_id ??
+    "";
+
+  const leagueName =
+    normalizeText(
+      getLeague(match)
+    );
+
+  if (leagueId !== "") {
+    return `${leagueId}__${leagueName}`;
   }
 
-  if (selectedCompetitionIndex < 0) {
-    selectedCompetitionIndex = 0;
-  }
+  return leagueName;
+}
 
-  if (selectedCompetitionIndex >= scoreCompetitionGroups.length) {
-    selectedCompetitionIndex =
-      scoreCompetitionGroups.length - 1;
-  }
 
-  const group = scoreCompetitionGroups[selectedCompetitionIndex];
+/* =========================================================
+   SORT MATCHES
+   LIVE -> HT -> UPCOMING -> POSTPONED -> FINISHED
+========================================================= */
 
-  if (group && Array.isArray(group.matches)) {
-    group.matches.sort((a, b) => {
-      const statusA = getStatus(a.match);
-      const statusB = getStatus(b.match);
+function getScoreStateOrder(match) {
+  const state =
+    getScoreState(match);
 
-      const liveA =
-        statusA === "LIVE" ||
-        statusA === "HT";
+  const order = {
+    live: 1,
+    halftime: 2,
+    upcoming: 3,
+    postponed: 4,
+    cancelled: 5,
+    finished: 6,
+    other: 7
+  };
 
-      const liveB =
-        statusB === "LIVE" ||
-        statusB === "HT";
+  return order[state] ?? 7;
+}
 
-      if (liveA !== liveB) {
-        return liveB ? 1 : -1;
+
+function sortScoreMatches(matches) {
+  return [...matches].sort(
+    (a, b) => {
+
+      const stateA =
+        getScoreStateOrder(a.match);
+
+      const stateB =
+        getScoreStateOrder(b.match);
+
+      if (stateA !== stateB) {
+        return stateA - stateB;
+      }
+
+      const dateA =
+        new Date(
+          a.match?.fixture?.date ||
+          a.match?.date ||
+          0
+        ).getTime();
+
+      const dateB =
+        new Date(
+          b.match?.fixture?.date ||
+          b.match?.date ||
+          0
+        ).getTime();
+
+      /* القادم: الأقرب أولاً */
+      if (stateA === 3) {
+        return dateA - dateB;
+      }
+
+      /* المنتهي: الأحدث أولاً */
+      if (stateA === 6) {
+        return dateB - dateA;
       }
 
       return (
         getMatchPriority(b.match) -
         getMatchPriority(a.match)
       );
-    });
-  }
-
-  renderSelectedCompetition();
-}
-/* =========================================================
-   SCORES - COMPETITION GROUPING
-========================================================= */
-
-function isLiveMatch(match) {
-  const status =
-    String(
-      getStatus(match)
-    ).toUpperCase();
-
-  return (
-    [
-      "1H",
-      "2H",
-      "LIVE",
-      "ET",
-      "P",
-      "BT",
-      "HT"
-    ].includes(status) ||
-    status.includes("LIVE")
+    }
   );
 }
 
 
+/* =========================================================
+   BUILD COMPETITIONS
+========================================================= */
+
 function buildCompetitionGroups(matches) {
 
-  const groups = new Map();
+  const groupsMap =
+    new Map();
 
   matches.forEach(
     (match, index) => {
 
-      const name =
-        getLeague(match) ||
-        "Football";
-
       const key =
-        normalizeText(name);
+        getCompetitionGroupKey(
+          match
+        );
 
-      if (!groups.has(key)) {
-        groups.set(
+      if (!groupsMap.has(key)) {
+        groupsMap.set(
           key,
           {
-            name,
+            name:
+              getLeague(match) ||
+              "Football",
+
             logo:
               getLeagueLogo(match),
+
             matches: []
           }
         );
       }
 
-      groups
+      groupsMap
         .get(key)
         .matches
         .push({
@@ -1499,32 +1520,32 @@ function buildCompetitionGroups(matches) {
 
   const result =
     Array.from(
-      groups.values()
+      groupsMap.values()
     );
 
 
-  /*
-   * COMPÉTITIONS GRANDES D'ABORD
-   *
-   * LIVE ne change pas l'ordre
-   * des compétitions.
-   */
-
+  /* ترتيب المنافسات */
   result.sort(
     (a, b) => {
 
-      const pa =
+      const priorityA =
         getCompetitionPriority(
           a.matches[0].match
         );
 
-      const pb =
+      const priorityB =
         getCompetitionPriority(
           b.matches[0].match
         );
 
-      if (pa !== pb) {
-        return pb - pa;
+      if (
+        priorityA !==
+        priorityB
+      ) {
+        return (
+          priorityB -
+          priorityA
+        );
       }
 
       return a.name.localeCompare(
@@ -1535,57 +1556,25 @@ function buildCompetitionGroups(matches) {
   );
 
 
-  /*
-   * MATCHS À L'INTÉRIEUR
-   *
-   * LIVE → HT → à venir → terminé
-   */
-
+  /* ترتيب الماتشات داخل كل Competition */
   result.forEach(
     group => {
 
-      group.matches.sort(
-        (a, b) => {
-
-          const liveA =
-            isLiveMatch(
-              a.match
-            );
-
-          const liveB =
-            isLiveMatch(
-              b.match
-            );
-
-          if (
-            liveA !==
-            liveB
-          ) {
-            return liveB
-              ? -1
-              : 1;
-          }
-
-          return (
-            getMatchPriority(
-              b.match
-            ) -
-            getMatchPriority(
-              a.match
-            )
-          );
-        }
-      );
+      group.matches =
+        sortScoreMatches(
+          group.matches
+        );
 
     }
   );
+
 
   return result;
 }
 
 
 /* =========================================================
-   RENDER COMPETITIONS
+   RENDER SCORES
 ========================================================= */
 
 function renderScoreCompetitions(
@@ -1598,6 +1587,7 @@ function renderScoreCompetitions(
   if (!list) {
     return;
   }
+
 
   if (
     !Array.isArray(matches) ||
@@ -1650,11 +1640,13 @@ function selectScoreCompetition(
     selectedCompetitionIndex = 0;
   }
 
+
   if (
     selectedCompetitionIndex < 0
   ) {
     selectedCompetitionIndex = 0;
   }
+
 
   if (
     selectedCompetitionIndex >=
@@ -1664,12 +1656,146 @@ function selectScoreCompetition(
       scoreCompetitionGroups.length - 1;
   }
 
+
   renderSelectedCompetition();
 }
 
 
 /* =========================================================
-   DISPLAY SELECTED COMPETITION
+   STATUS FILTER
+========================================================= */
+
+function setScoreStatusFilter(
+  filter
+) {
+
+  scoreStatusFilter =
+    filter || "all";
+
+  renderSelectedCompetition();
+}
+
+
+/* =========================================================
+   FORMAT TIME
+========================================================= */
+
+function getScoreKickoffTime(
+  match
+) {
+
+  const date =
+    match?.fixture?.date ||
+    match?.date ||
+    null;
+
+  if (!date) {
+    return "";
+  }
+
+  const d =
+    new Date(date);
+
+  if (
+    Number.isNaN(
+      d.getTime()
+    )
+  ) {
+    return "";
+  }
+
+  return d.toLocaleTimeString(
+    "fr-FR",
+    {
+      hour: "2-digit",
+      minute: "2-digit"
+    }
+  );
+}
+
+
+/* =========================================================
+   STATUS DISPLAY
+========================================================= */
+
+function getScoreStatusDisplay(
+  match
+) {
+
+  const state =
+    getScoreState(match);
+
+  const minute =
+    getMinute(match);
+
+  if (state === "live") {
+
+    return {
+      className: "live",
+      text:
+        minute !== null &&
+        minute !== undefined
+          ? `🔴 LIVE ${minute}'`
+          : "🔴 LIVE"
+    };
+  }
+
+
+  if (state === "halftime") {
+
+    return {
+      className: "halftime",
+      text: "⏸ MI-TEMPS"
+    };
+  }
+
+
+  if (state === "finished") {
+
+    return {
+      className: "finished",
+      text: "✅ TERMINÉ"
+    };
+  }
+
+
+  if (state === "upcoming") {
+
+    return {
+      className: "upcoming",
+      text: "🕒 À VENIR"
+    };
+  }
+
+
+  if (state === "postponed") {
+
+    return {
+      className: "postponed",
+      text: "⏸ REPORTÉ"
+    };
+  }
+
+
+  if (state === "cancelled") {
+
+    return {
+      className: "cancelled",
+      text: "❌ ANNULÉ"
+    };
+  }
+
+
+  return {
+    className: "upcoming",
+    text:
+      statusLabel(match)
+  };
+}
+
+
+/* =========================================================
+   SELECTED COMPETITION
 ========================================================= */
 
 function renderSelectedCompetition() {
@@ -1681,6 +1807,7 @@ function renderSelectedCompetition() {
     return;
   }
 
+
   const group =
     scoreCompetitionGroups[
       selectedCompetitionIndex
@@ -1691,20 +1818,54 @@ function renderSelectedCompetition() {
   }
 
 
-  /*
-   * LEFT COMPETITIONS
-   */
+  /* =====================================
+     COUNTERS
+  ===================================== */
+
+  const liveCount =
+    group.matches.filter(
+      ({ match }) =>
+        getScoreState(match) ===
+          "live" ||
+        getScoreState(match) ===
+          "halftime"
+    ).length;
+
+
+  const upcomingCount =
+    group.matches.filter(
+      ({ match }) =>
+        getScoreState(match) ===
+        "upcoming"
+    ).length;
+
+
+  const finishedCount =
+    group.matches.filter(
+      ({ match }) =>
+        getScoreState(match) ===
+        "finished"
+    ).length;
+
+
+  /* =====================================
+     COMPETITIONS LEFT
+  ===================================== */
 
   const competitionsHTML =
     scoreCompetitionGroups
       .map(
         (item, index) => {
 
-          const liveCount =
+          const itemLive =
             item.matches.filter(
               ({ match }) =>
-                isLiveMatch(match)
+                getScoreState(match) ===
+                  "live" ||
+                getScoreState(match) ===
+                  "halftime"
             ).length;
+
 
           return `
             <button
@@ -1726,16 +1887,17 @@ function renderSelectedCompetition() {
             >
 
               <span
-                class="bf-score-comp-left"
+                class="
+                  bf-score-comp-left
+                  bf-score-pro-comp-left
+                "
               >
 
                 ${
                   item.logo
                     ? `
                       <img
-                        class="
-                          bf-score-comp-logo
-                        "
+                        class="bf-score-comp-logo"
                         src="${escapeHTML(
                           item.logo
                         )}"
@@ -1768,24 +1930,29 @@ function renderSelectedCompetition() {
 
 
               <span
-                class="bf-score-comp-meta"
+                class="
+                  bf-score-comp-meta
+                  bf-score-pro-comp-meta
+                "
               >
 
                 ${
-                  liveCount
+                  itemLive
                     ? `
                       <span
                         class="
                           bf-score-live-count
                         "
                       >
-                        🔴 ${liveCount}
+                        ${itemLive}
                       </span>
                     `
                     : ""
                 }
 
-                <span>
+                <span
+                  class="bf-score-pro-match-count"
+                >
                   ${item.matches.length}
                 </span>
 
@@ -1798,303 +1965,418 @@ function renderSelectedCompetition() {
       .join("");
 
 
-  /*
-   * RIGHT MATCHES
-   *
-   * نفس index ديال currentMatches
-   * باش openMatchDetails يبقى خدام.
-   */
+  /* =====================================
+     STATUS FILTERS
+  ===================================== */
 
-const matchesHTML =
-  group.matches
-    .map(
-      ({ match, index }) => {
+  const filtersHTML = `
+    <div
+      class="
+        bf-score-pro-filters
+      "
+    >
 
-        const date =
-          match?.fixture?.date ||
-          match?.date ||
-          null;
+      <button
+        type="button"
+        class="${
+          scoreStatusFilter ===
+          "all"
+            ? "active"
+            : ""
+        }"
+        onclick="
+          setScoreStatusFilter(
+            'all'
+          )
+        "
+      >
+        Tous
+      </button>
 
-        let kickoffTime = "";
+      <button
+        type="button"
+        class="${
+          scoreStatusFilter ===
+          "live"
+            ? "active"
+            : ""
+        }"
+        onclick="
+          setScoreStatusFilter(
+            'live'
+          )
+        "
+      >
+        <span class="bf-score-dot">
+          ●
+        </span>
+        Live
+      </button>
 
-        if (date) {
-          const d =
-            new Date(date);
+      <button
+        type="button"
+        class="${
+          scoreStatusFilter ===
+          "upcoming"
+            ? "active"
+            : ""
+        }"
+        onclick="
+          setScoreStatusFilter(
+            'upcoming'
+          )
+        "
+      >
+        À venir
+      </button>
 
-          if (!Number.isNaN(d.getTime())) {
-            kickoffTime =
-              d.toLocaleTimeString(
-                "fr-FR",
-                {
-                  hour: "2-digit",
-                  minute: "2-digit"
-                }
-              );
+      <button
+        type="button"
+        class="${
+          scoreStatusFilter ===
+          "finished"
+            ? "active"
+            : ""
+        }"
+        onclick="
+          setScoreStatusFilter(
+            'finished'
+          )
+        "
+      >
+        Terminés
+      </button>
+
+    </div>
+  `;
+
+
+  /* =====================================
+     FILTER CURRENT COMPETITION
+  ===================================== */
+
+  let visibleMatches =
+    group.matches;
+
+
+  if (
+    scoreStatusFilter !==
+    "all"
+  ) {
+
+    visibleMatches =
+      group.matches.filter(
+        ({ match }) => {
+
+          const state =
+            getScoreState(
+              match
+            );
+
+          if (
+            scoreStatusFilter ===
+            "live"
+          ) {
+            return (
+              state === "live" ||
+              state === "halftime"
+            );
           }
+
+          return (
+            state ===
+            scoreStatusFilter
+          );
         }
-
-        const rawStatus =
-          String(
-            getStatus(match)
-          ).toUpperCase();
-
-        const minute =
-          getMinute(match);
-
-        let statusText =
-          "MATCH";
-
-        let statusClass =
-          "upcoming";
-
-        if (
-          [
-            "1H",
-            "2H",
-            "LIVE",
-            "ET",
-            "P",
-            "BT"
-          ].includes(rawStatus) ||
-          rawStatus.includes("LIVE")
-        ) {
-          statusClass = "live";
-
-          statusText =
-            minute !== null &&
-            minute !== undefined
-              ? `🔴 LIVE ${minute}'`
-              : "🔴 LIVE";
-        }
-
-        else if (
-          rawStatus === "HT" ||
-          rawStatus.includes("HALF")
-        ) {
-          statusClass =
-            "halftime";
-
-          statusText =
-            "⏸ MI-TEMPS";
-        }
-
-        else if (
-          rawStatus === "FT" ||
-          rawStatus.includes("FINISHED") ||
-          rawStatus.includes("FINISH")
-        ) {
-          statusClass =
-            "finished";
-
-          statusText =
-            "✅ TERMINÉ";
-        }
-
-        else if (
-          rawStatus === "PST" ||
-          rawStatus.includes("POSTPONED")
-        ) {
-          statusClass =
-            "postponed";
-
-          statusText =
-            "⏸ REPORTÉ";
-        }
-
-        else if (
-          rawStatus === "CANC" ||
-          rawStatus.includes("CANCEL")
-        ) {
-          statusClass =
-            "cancelled";
-
-          statusText =
-            "❌ ANNULÉ";
-        }
-
-        else {
-          statusText =
-            statusLabel(match);
-        }
+      );
+  }
 
 
-        return `
-          <div
-            class="
-              match-card
-              bf-score-professional-match
-            "
-            data-match-index="${index}"
-            data-fixture-id="${escapeHTML(
-              getFixtureId(match) || ""
-            )}"
-            onclick="
-              window.openMatchDetails(
-                Number(
-                  this.dataset.matchIndex
-                )
-              )
-            "
-          >
+  visibleMatches =
+    sortScoreMatches(
+      visibleMatches
+    );
 
-            <div
+
+  /* =====================================
+     MATCH CARDS
+  ===================================== */
+
+  const matchesHTML =
+    visibleMatches
+      .map(
+        ({
+          match,
+          index
+        }) => {
+
+          const status =
+            getScoreStatusDisplay(
+              match
+            );
+
+          const kickoff =
+            getScoreKickoffTime(
+              match
+            );
+
+          const home =
+            getHome(match);
+
+          const away =
+            getAway(match);
+
+          const homeLogo =
+            getHomeLogo(match);
+
+          const awayLogo =
+            getAwayLogo(match);
+
+          const homeScore =
+            getHomeScore(match);
+
+          const awayScore =
+            getAwayScore(match);
+
+          const state =
+            getScoreState(
+              match
+            );
+
+          const isLive =
+            state === "live" ||
+            state === "halftime";
+
+
+          return `
+            <article
               class="
-                bf-score-match-status
-                ${statusClass}
+                bf-score-professional-match
+                bf-score-pro-card
+                ${
+                  isLive
+                    ? "bf-score-pro-live"
+                    : ""
+                }
               "
-            >
-
-              <strong>
-                ${escapeHTML(
-                  statusText
-                )}
-              </strong>
-
-              ${
-                kickoffTime
-                  ? `
-                    <small
-                      class="
-                        bf-score-kickoff-time
-                      "
-                    >
-                      🕐 ${escapeHTML(
-                        kickoffTime
-                      )}
-                    </small>
-                  `
-                  : ""
-              }
-
-            </div>
-
-
-            <div
-              class="
-                bf-score-match-teams
+              data-match-index="${index}"
+              onclick="
+                window.openMatchDetails(
+                  Number(
+                    this.dataset.matchIndex
+                  )
+                )
               "
             >
 
               <div
-                class="bf-score-team home"
+                class="
+                  bf-score-match-status
+                  ${status.className}
+                  bf-score-pro-status
+                "
               >
-
-                ${
-                  getHomeLogo(match)
-                    ? `
-                      <img
-                        src="${escapeHTML(
-                          getHomeLogo(match)
-                        )}"
-                        alt="${escapeHTML(
-                          getHome(match)
-                        )}"
-                        loading="lazy"
-                      >
-                    `
-                    : `
-                      <span
-                        class="
-                          bf-score-team-placeholder
-                        "
-                      >
-                        ⚽
-                      </span>
-                    `
-                }
 
                 <strong>
                   ${escapeHTML(
-                    getHome(match)
+                    status.text
                   )}
                 </strong>
+
+                ${
+                  kickoff
+                    ? `
+                      <small
+                        class="
+                          bf-score-kickoff-time
+                        "
+                      >
+                        ${escapeHTML(
+                          kickoff
+                        )}
+                      </small>
+                    `
+                    : ""
+                }
 
               </div>
 
 
               <div
                 class="
-                  bf-score-professional-score
+                  bf-score-match-teams
+                  bf-score-pro-teams
                 "
               >
 
-                <span>
-                  ${escapeHTML(
-                    getHomeScore(match)
-                  )}
-                </span>
+                <div
+                  class="
+                    bf-score-team
+                    home
+                    bf-score-pro-team
+                  "
+                >
 
-                <b>
-                  -
-                </b>
+                  <strong>
+                    ${escapeHTML(
+                      home
+                    )}
+                  </strong>
 
-                <span>
-                  ${escapeHTML(
-                    getAwayScore(match)
-                  )}
-                </span>
+                  ${
+                    homeLogo
+                      ? `
+                        <img
+                          src="${escapeHTML(
+                            homeLogo
+                          )}"
+                          alt="${escapeHTML(
+                            home
+                          )}"
+                          loading="lazy"
+                        >
+                      `
+                      : `
+                        <span
+                          class="
+                            bf-score-team-placeholder
+                          "
+                        >
+                          ⚽
+                        </span>
+                      `
+                  }
+
+                </div>
+
+
+                <div
+                  class="
+                    bf-score-professional-score
+                    bf-score-pro-score
+                    ${
+                      isLive
+                        ? "live"
+                        : ""
+                    }
+                  "
+                >
+
+                  <span>
+                    ${escapeHTML(
+                      homeScore
+                    )}
+                  </span>
+
+                  <b>
+                    -
+                  </b>
+
+                  <span>
+                    ${escapeHTML(
+                      awayScore
+                    )}
+                  </span>
+
+                </div>
+
+
+                <div
+                  class="
+                    bf-score-team
+                    away
+                    bf-score-pro-team
+                  "
+                >
+
+                  ${
+                    awayLogo
+                      ? `
+                        <img
+                          src="${escapeHTML(
+                            awayLogo
+                          )}"
+                          alt="${escapeHTML(
+                            away
+                          )}"
+                          loading="lazy"
+                        >
+                      `
+                      : `
+                        <span
+                          class="
+                            bf-score-team-placeholder
+                          "
+                        >
+                          ⚽
+                        </span>
+                      `
+                  }
+
+                  <strong>
+                    ${escapeHTML(
+                      away
+                    )}
+                  </strong>
+
+                </div>
 
               </div>
 
 
               <div
-                class="bf-score-team away"
+                class="
+                  bf-score-match-arrow
+                  bf-score-pro-details
+                "
               >
-
-                ${
-                  getAwayLogo(match)
-                    ? `
-                      <img
-                        src="${escapeHTML(
-                          getAwayLogo(match)
-                        )}"
-                        alt="${escapeHTML(
-                          getAway(match)
-                        )}"
-                        loading="lazy"
-                      >
-                    `
-                    : `
-                      <span
-                        class="
-                          bf-score-team-placeholder
-                        "
-                      >
-                        ⚽
-                      </span>
-                    `
-                }
-
-                <strong>
-                  ${escapeHTML(
-                    getAway(match)
-                  )}
-                </strong>
-
+                <span>
+                  Détails
+                </span>
+                <b>
+                  →
+                </b>
               </div>
 
-            </div>
+            </article>
+          `;
+        }
+      )
+      .join("");
 
 
-            <div
-              class="
-                bf-score-match-arrow
-              "
-            >
-              Détails
-              <span>
-                ›
-              </span>
-            </div>
+  /* =====================================
+     EMPTY FILTER
+  ===================================== */
 
-          </div>
-        `;
-      }
-    )
-    .join("");
+  const matchesContent =
+    matchesHTML ||
+    `
+      <div
+        class="
+          bf-score-pro-no-matches
+        "
+      >
+        <div>
+          ⚽
+        </div>
+
+        <strong>
+          Aucun match
+        </strong>
+
+        <span>
+          Aucun match dans ce filtre.
+        </span>
+      </div>
+    `;
+
+
+  /* =====================================
+     FINAL SCORE LAYOUT
+  ===================================== */
 
   list.innerHTML = `
-
     <div
       class="bf-score-layout"
     >
@@ -2102,12 +2384,17 @@ const matchesHTML =
       <aside
         class="
           bf-score-competition-list
+          bf-score-pro-sidebar
         "
       >
 
         <div
-          class="bf-score-side-title"
+          class="
+            bf-score-side-title
+            bf-score-pro-side-title
+          "
         >
+
           <span>
             🏆 COMPÉTITIONS
           </span>
@@ -2115,6 +2402,7 @@ const matchesHTML =
           <small>
             ${scoreCompetitionGroups.length}
           </small>
+
         </div>
 
 
@@ -2123,9 +2411,7 @@ const matchesHTML =
             bf-score-competition-items
           "
         >
-
           ${competitionsHTML}
-
         </div>
 
       </aside>
@@ -2134,18 +2420,21 @@ const matchesHTML =
       <section
         class="
           bf-score-details-panel
+          bf-score-pro-panel
         "
       >
 
         <div
           class="
             bf-score-details-head
+            bf-score-pro-head
           "
         >
 
           <div
             class="
               bf-score-selected-competition
+              bf-score-pro-selected
             "
           >
 
@@ -2168,7 +2457,12 @@ const matchesHTML =
                 `
             }
 
-            <div>
+
+            <div
+              class="
+                bf-score-pro-title
+              "
+            >
 
               <small>
                 COMPÉTITION
@@ -2180,14 +2474,50 @@ const matchesHTML =
                 )}
               </h2>
 
-              <span>
-                ${group.matches.length}
-                matchs
-              </span>
+              <div
+                class="
+                  bf-score-pro-stats
+                "
+              >
+
+                <span>
+                  ${group.matches.length}
+                  matchs
+                </span>
+
+                ${
+                  liveCount
+                    ? `
+                      <span
+                        class="
+                          bf-score-pro-live-total
+                        "
+                      >
+                        ● ${liveCount}
+                        LIVE
+                      </span>
+                    `
+                    : ""
+                }
+
+                <span>
+                  ${upcomingCount}
+                  à venir
+                </span>
+
+                <span>
+                  ${finishedCount}
+                  terminés
+                </span>
+
+              </div>
 
             </div>
 
           </div>
+
+
+          ${filtersHTML}
 
         </div>
 
@@ -2195,10 +2525,11 @@ const matchesHTML =
         <div
           class="
             bf-score-professional-matches
+            bf-score-pro-matches
           "
         >
 
-          ${matchesHTML}
+          ${matchesContent}
 
         </div>
 
@@ -2207,7 +2538,6 @@ const matchesHTML =
     </div>
   `;
 }
-
 /* =========================================================
    LOAD LIVE
 ========================================================= */
