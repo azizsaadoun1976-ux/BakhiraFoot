@@ -12408,3 +12408,61 @@ body.dark
   }
 
 }
+/* =========================================================
+   SCORE CARDS - TEAM & CENTER TEXT
+========================================================= */
+
+/* أسماء الفرق */
+#scoreList .bf-score-card-team strong {
+  font-size: 15px !important;
+  font-weight: 950 !important;
+  line-height: 1.2 !important;
+}
+
+/* الكتابة اللي فالوسط */
+#scoreList .bf-score-card-center {
+  font-size: 15px !important;
+  font-weight: 950 !important;
+  color: inherit !important;
+}
+
+/* السكور */
+#scoreList .bf-score-card-score span {
+  font-size: 23px !important;
+  font-weight: 950 !important;
+}
+
+#scoreList .bf-score-card-score b {
+  font-size: 15px !important;
+  font-weight: 900 !important;
+}
+
+/* الكلمة الصغيرة تحت السكور */
+#scoreList .bf-score-card-center small {
+  font-size: 10px !important;
+  font-weight: 850 !important;
+}
+
+/* الهاتف */
+@media (max-width: 700px) {
+
+  #scoreList .bf-score-card-team strong {
+    font-size: 12px !important;
+  }
+
+  #scoreList .bf-score-card-center {
+    font-size: 12px !important;
+  }
+
+  #scoreList .bf-score-card-score span {
+    font-size: 20px !important;
+  }
+
+  #scoreList .bf-score-card-score b {
+    font-size: 12px !important;
+  }
+
+  #scoreList .bf-score-card-center small {
+    font-size: 8px !important;
+  }
+}
