@@ -336,7 +336,6 @@ const competitions = [
   `;
 }
 
-
 async function loadTodayMatches() {
 
   const homeContainer =
@@ -408,7 +407,8 @@ async function loadTodayMatches() {
     `;
   }
 }
-  /* =========================================================
+   
+   /* =========================================================
      EXTRACTION DES CLASSEMENTS
      ========================================================= */
 
