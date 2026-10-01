@@ -8525,3 +8525,641 @@ button {
     border-color .20s ease,
     box-shadow .20s ease;
 }
+/* =========================================================
+   BAKHIRAFOOT - FINAL THEME FIX
+   ACCUEIL / SCORES / CLASSEMENTS / ÉQUIPES / ACTUALITÉS
+   ========================================================= */
+
+
+/* =========================================================
+   LIGHT MODE
+   ========================================================= */
+
+body:not(.dark) {
+  background: #f3f5f7 !important;
+  color: #172027 !important;
+}
+
+body:not(.dark) main,
+body:not(.dark) .page {
+  color: #172027 !important;
+}
+
+
+/* ---------- ACCUEIL ---------- */
+
+body:not(.dark) #home {
+  color: #172027 !important;
+}
+
+body:not(.dark) #home h1,
+body:not(.dark) #home h2,
+body:not(.dark) #home h3 {
+  color: #14212b !important;
+}
+
+body:not(.dark) #home h1 span {
+  color: #16a56d !important;
+}
+
+body:not(.dark) #home p {
+  color: #687780 !important;
+}
+
+body:not(.dark) #home .card {
+  background: #ffffff !important;
+  color: #172027 !important;
+  border-color: #e1e6e9 !important;
+}
+
+body:not(.dark) #home .card h3 {
+  color: #172027 !important;
+}
+
+body:not(.dark) #home .card p {
+  color: #73808a !important;
+}
+
+
+/* ---------- SCORES ---------- */
+
+body:not(.dark) #scores {
+  color: #172027 !important;
+}
+
+body:not(.dark) #scores .scores-header-text h1 {
+  color: #14212b !important;
+}
+
+body:not(.dark) #scores .scores-header-text p,
+body:not(.dark) #scores .scores-date-title span {
+  color: #687780 !important;
+}
+
+body:not(.dark) #scores .scores-date-section {
+  background: #ffffff !important;
+  border-color: #e1e6e9 !important;
+}
+
+body:not(.dark) #scores .bf-ultra-match,
+body:not(.dark) #scores .bf-pro-match-card {
+  background: #ffffff !important;
+  color: #172027 !important;
+  border-color: #e1e6e9 !important;
+}
+
+body:not(.dark) #scores .bf-match-team,
+body:not(.dark) #scores .bf-match-team strong,
+body:not(.dark) #scores .bf-ultra-team-name {
+  color: #172027 !important;
+}
+
+body:not(.dark) #scores .bf-ultra-score,
+body:not(.dark) #scores .bf-score-numbers {
+  color: #14212b !important;
+}
+
+
+/* ---------- CLASSEMENTS ---------- */
+
+body:not(.dark) #leagues {
+  color: #172027 !important;
+}
+
+body:not(.dark) #leagues h1,
+body:not(.dark) #leagues h2,
+body:not(.dark) #leagues h3 {
+  color: #14212b !important;
+}
+
+body:not(.dark) #leagues p,
+body:not(.dark) #leagues small {
+  color: #6f7e89 !important;
+}
+
+body:not(.dark) #leagues .bf-competition {
+  background: #ffffff !important;
+  color: #172027 !important;
+  border-color: #e1e6e9 !important;
+}
+
+body:not(.dark) #leagues .bf-competition-summary {
+  background: #ffffff !important;
+  color: #172027 !important;
+}
+
+body:not(.dark) #leagues .bf-competition-content,
+body:not(.dark) #leagues .ss-table,
+body:not(.dark) #leagues .ss-table-header,
+body:not(.dark) #leagues .ss-standing-row,
+body:not(.dark) #leagues .ss-player-card {
+  background: #ffffff !important;
+  color: #172027 !important;
+}
+
+body:not(.dark) #leagues .ss-standing-row {
+  border-color: #e5e9ec !important;
+}
+
+body:not(.dark) #leagues .ss-club strong,
+body:not(.dark) #leagues .ss-position,
+body:not(.dark) #leagues .ss-points,
+body:not(.dark) #leagues .ss-player strong,
+body:not(.dark) #leagues .ss-player-value {
+  color: #172027 !important;
+}
+
+body:not(.dark) #leagues .ss-player-card-head {
+  color: #172027 !important;
+}
+
+body:not(.dark) #leagues .ss-club,
+body:not(.dark) #leagues .ss-player {
+  color: #172027 !important;
+}
+
+
+/* ---------- ÉQUIPES ---------- */
+
+body:not(.dark) #teams {
+  color: #172027 !important;
+}
+
+body:not(.dark) #teams h1,
+body:not(.dark) #teams h2,
+body:not(.dark) #teams h3 {
+  color: #14212b !important;
+}
+
+body:not(.dark) #teams p,
+body:not(.dark) #teams small {
+  color: #687780 !important;
+}
+
+body:not(.dark) #teams .card {
+  background: #ffffff !important;
+  color: #172027 !important;
+  border-color: #e1e6e9 !important;
+}
+
+body:not(.dark) #teams .card h3,
+body:not(.dark) #teams .card h2 {
+  color: #172027 !important;
+}
+
+body:not(.dark) #teams .card p {
+  color: #73808a !important;
+}
+
+body:not(.dark) #teams .stat {
+  background: #f4f7f8 !important;
+  color: #172027 !important;
+}
+
+
+/* ---------- ACTUALITÉS ---------- */
+
+body:not(.dark) #news {
+  color: #172027 !important;
+}
+
+body:not(.dark) #news h1,
+body:not(.dark) #news h2,
+body:not(.dark) #news h3 {
+  color: #14212b !important;
+}
+
+body:not(.dark) #news p,
+body:not(.dark) #news small {
+  color: #687780 !important;
+}
+
+body:not(.dark) #news .card {
+  background: #ffffff !important;
+  color: #172027 !important;
+  border-color: #e1e6e9 !important;
+}
+
+body:not(.dark) #news .card h3 {
+  color: #172027 !important;
+}
+
+body:not(.dark) #news .card p {
+  color: #73808a !important;
+}
+
+body:not(.dark) #news .newsImg {
+  background:
+    linear-gradient(
+      135deg,
+      #17392e,
+      #779184
+    ) !important;
+}
+
+
+/* =========================================================
+   DARK MODE
+   ========================================================= */
+
+html.dark,
+body.dark {
+  background: #0d151b !important;
+  color: #edf2f5 !important;
+}
+
+body.dark main,
+body.dark .page {
+  background: transparent !important;
+  color: #edf2f5 !important;
+}
+
+
+/* ---------- ACCUEIL ---------- */
+
+body.dark #home {
+  color: #edf2f5 !important;
+}
+
+body.dark #home .hero {
+  background:
+    radial-gradient(
+      circle at 85% 20%,
+      rgba(32,212,134,.10),
+      transparent 30%
+    ),
+    radial-gradient(
+      circle at 15% 90%,
+      rgba(23,115,182,.08),
+      transparent 35%
+    ),
+    linear-gradient(
+      135deg,
+      #0e2029,
+      #102b35 52%,
+      #0c2028
+    ) !important;
+
+  border-color: rgba(255,255,255,.08) !important;
+  box-shadow:
+    0 18px 45px rgba(0,0,0,.25) !important;
+}
+
+
+/*
+ * مهم:
+ * ID #home كان عندو قواعد light بـ !important
+ * كتغلب dark.
+ */
+
+body.dark #home .hero-content h1,
+body.dark #home .hero h1,
+body.dark #home h1 {
+  color: #f1f5f7 !important;
+  text-shadow: none !important;
+}
+
+body.dark #home .hero-content h1 span,
+body.dark #home .hero h1 span,
+body.dark #home h1 span {
+  color: #5ee0a4 !important;
+
+  background:
+    linear-gradient(
+      90deg,
+      #5ee0a4,
+      #54b9df
+    ) !important;
+
+  -webkit-background-clip: text !important;
+  background-clip: text !important;
+  -webkit-text-fill-color: transparent !important;
+}
+
+body.dark #home p,
+body.dark #home small {
+  color: #aebbc3 !important;
+}
+
+body.dark #home .head h2 {
+  color: #edf2f5 !important;
+}
+
+body.dark #home .head button {
+  color: #5ee0a4 !important;
+}
+
+body.dark #home .card {
+  background: #151e25 !important;
+  color: #edf2f5 !important;
+  border-color: #29343d !important;
+}
+
+body.dark #home .card h3 {
+  color: #edf2f5 !important;
+}
+
+body.dark #home .card p {
+  color: #9ba8b1 !important;
+}
+
+
+/* ---------- SCORES ---------- */
+
+body.dark #scores {
+  color: #edf2f5 !important;
+}
+
+body.dark #scores h1,
+body.dark #scores h2,
+body.dark #scores h3 {
+  color: #edf2f5 !important;
+}
+
+body.dark #scores p,
+body.dark #scores small {
+  color: #9daab2 !important;
+}
+
+body.dark #scores .scores-date-section {
+  background: #151e25 !important;
+  border-color: #29343d !important;
+  box-shadow: none !important;
+}
+
+body.dark #scores .scores-date-title strong {
+  color: #edf2f5 !important;
+}
+
+body.dark #scores .scores-date-title span {
+  color: #9ba8b1 !important;
+}
+
+body.dark #scores .dates button {
+  background: #151e25 !important;
+  color: #b5c0c7 !important;
+  border-color: #303b44 !important;
+}
+
+body.dark #scores .dates button.selected,
+body.dark #scores .dates button.active {
+  background: #edf2f5 !important;
+  color: #151e25 !important;
+}
+
+body.dark #scores .bf-ultra-match,
+body.dark #scores .bf-pro-match-card {
+  background: #13212b !important;
+  color: #edf2f5 !important;
+  border-color: rgba(255,255,255,.08) !important;
+  box-shadow:
+    0 8px 25px rgba(0,0,0,.20) !important;
+}
+
+body.dark #scores .bf-match-top,
+body.dark #scores .bf-match-body,
+body.dark #scores .bf-match-bottom {
+  background: transparent !important;
+}
+
+body.dark #scores .bf-match-team,
+body.dark #scores .bf-match-team *,
+body.dark #scores .bf-team-name,
+body.dark #scores .bf-ultra-team-name {
+  color: #edf2f5 !important;
+}
+
+body.dark #scores .bf-ultra-score,
+body.dark #scores .bf-score-numbers,
+body.dark #scores .score {
+  color: #f2f6f8 !important;
+}
+
+body.dark #scores .bf-match-status,
+body.dark #scores .bf-ultra-middle,
+body.dark #scores .bf-match-bottom {
+  color: #9caab3 !important;
+}
+
+body.dark #scores .bf-match-competition-bar,
+body.dark #scores .competition-header,
+body.dark #scores .leagueHead {
+  background: #18242c !important;
+  color: #dce4e8 !important;
+  border-color: #303c45 !important;
+}
+
+
+/* ---------- CLASSEMENTS ---------- */
+
+body.dark #leagues {
+  color: #edf2f5 !important;
+}
+
+body.dark #leagues h1,
+body.dark #leagues h2,
+body.dark #leagues h3 {
+  color: #edf2f5 !important;
+}
+
+body.dark #leagues p,
+body.dark #leagues small {
+  color: #9eabb3 !important;
+}
+
+body.dark #leagues .bf-competition {
+  background: #13212b !important;
+  color: #edf2f5 !important;
+  border-color: rgba(255,255,255,.08) !important;
+  box-shadow:
+    0 8px 25px rgba(0,0,0,.20) !important;
+}
+
+body.dark #leagues .bf-competition-summary {
+  background: transparent !important;
+  color: #edf2f5 !important;
+}
+
+body.dark #leagues .bf-competition-summary:hover {
+  background: rgba(255,255,255,.035) !important;
+}
+
+body.dark #leagues .bf-competition-content {
+  background: #13212b !important;
+  color: #edf2f5 !important;
+}
+
+body.dark #leagues .ss-table,
+body.dark #leagues .ss-table-header,
+body.dark #leagues .ss-standing-row {
+  background: #151e25 !important;
+  color: #edf2f5 !important;
+}
+
+body.dark #leagues .ss-table-header {
+  background: #1c2931 !important;
+}
+
+body.dark #leagues .ss-standing-row {
+  border-color: #2c3840 !important;
+}
+
+body.dark #leagues .ss-standing-row > span,
+body.dark #leagues .ss-position,
+body.dark #leagues .ss-club,
+body.dark #leagues .ss-club strong,
+body.dark #leagues .ss-points {
+  color: #edf2f5 !important;
+}
+
+body.dark #leagues .ss-player-card {
+  background: #151e25 !important;
+  color: #edf2f5 !important;
+  border-color: #29343d !important;
+}
+
+body.dark #leagues .ss-player-card-head,
+body.dark #leagues .ss-player-card-head strong,
+body.dark #leagues .ss-player,
+body.dark #leagues .ss-player strong,
+body.dark #leagues .ss-player-value {
+  color: #edf2f5 !important;
+}
+
+body.dark #leagues .ss-club-fallback,
+body.dark #leagues .ss-player-fallback {
+  background: #202d35 !important;
+  color: #edf2f5 !important;
+}
+
+
+/* ---------- ÉQUIPES ---------- */
+
+body.dark #teams {
+  color: #edf2f5 !important;
+}
+
+body.dark #teams h1,
+body.dark #teams h2,
+body.dark #teams h3 {
+  color: #edf2f5 !important;
+}
+
+body.dark #teams p,
+body.dark #teams small {
+  color: #9eabb3 !important;
+}
+
+body.dark #teams .card {
+  background: #151e25 !important;
+  color: #edf2f5 !important;
+  border-color: #29343d !important;
+  box-shadow:
+    0 8px 24px rgba(0,0,0,.18) !important;
+}
+
+body.dark #teams .card h2,
+body.dark #teams .card h3 {
+  color: #edf2f5 !important;
+}
+
+body.dark #teams .card p {
+  color: #9aa8b0 !important;
+}
+
+body.dark #teams .stat {
+  background: #1c2730 !important;
+  color: #edf2f5 !important;
+}
+
+body.dark #teams .detail .card {
+  background: #151e25 !important;
+}
+
+
+/* ---------- ACTUALITÉS ---------- */
+
+body.dark #news {
+  color: #edf2f5 !important;
+}
+
+body.dark #news h1,
+body.dark #news h2,
+body.dark #news h3 {
+  color: #edf2f5 !important;
+}
+
+body.dark #news p,
+body.dark #news small {
+  color: #9eabb3 !important;
+}
+
+body.dark #news .card {
+  background: #151e25 !important;
+  color: #edf2f5 !important;
+  border-color: #29343d !important;
+  box-shadow:
+    0 8px 24px rgba(0,0,0,.18) !important;
+}
+
+body.dark #news .card h3 {
+  color: #edf2f5 !important;
+}
+
+body.dark #news .card p {
+  color: #9aa8b0 !important;
+}
+
+body.dark #news .newsImg {
+  background:
+    linear-gradient(
+      135deg,
+      #132d26,
+      #29453b
+    ) !important;
+}
+
+
+/* =========================================================
+   GLOBAL TEXT / LINKS
+   ========================================================= */
+
+body.dark #home a,
+body.dark #scores a,
+body.dark #leagues a,
+body.dark #teams a,
+body.dark #news a {
+  color: #b8c5cc !important;
+}
+
+body.dark button {
+  color: inherit;
+}
+
+
+/* =========================================================
+   THEME TRANSITION
+   ========================================================= */
+
+body,
+main,
+.page,
+.card,
+.league,
+.table,
+.match-card,
+.bf-pro-match-card,
+.bf-ultra-match,
+.bf-competition,
+.bf-competition-summary,
+.ss-table,
+.ss-standing-row,
+.ss-player-card,
+.stat,
+.newsImg {
+  transition:
+    background-color .2s ease,
+    color .2s ease,
+    border-color .2s ease,
+    box-shadow .2s ease;
+}
