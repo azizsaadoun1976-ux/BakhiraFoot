@@ -337,116 +337,77 @@ const competitions = [
 }
 
 
-  async function loadTodayMatches() {
+async function loadTodayMatches() {
 
-    const homeContainer =
-      document.getElementById("homeMatches");
+  const homeContainer =
+    document.getElementById(
+      "homeMatches"
+    );
 
-    const scoreContainer =
-      document.getElementById("scoreList");
+  /*
+   * BakhiraFoot:
+   * scoreList كيتحكم فيه script.js
+   * فقط.
+   *
+   * sportscore-data.js ممنوع
+   * يكتب فيه باش ما يرجعش
+   * الـlayout القديم.
+   */
 
+  if (!homeContainer) {
+    return;
+  }
 
-    if (!homeContainer && !scoreContainer) {
-      return;
-    }
+  try {
 
+    const date =
+      todayUTC();
 
-    try {
-
-      const date =
-        todayUTC();
-
-      const data =
-        await fetchJSON(
-          `${API}/v1/fixtures/?sport=football&date=${date}&limit=200&src=${SRC}`
-        );
-
-
-      const matches =
-        Array.isArray(data?.matches)
-          ? data.matches
-          : [];
-
-
-      if (!matches.length) {
-
-        const empty = `
-          <div class="ss-empty">
-            Aucun match trouvé aujourd'hui.
-          </div>
-        `;
-
-        if (homeContainer) {
-          homeContainer.innerHTML = empty;
-        }
-
-        if (scoreContainer) {
-          scoreContainer.innerHTML = empty;
-        }
-
-        return;
-      }
-
-
-      if (homeContainer) {
-
-        homeContainer.innerHTML =
-          matches
-            .slice(0, 12)
-            .map(renderMatch)
-            .join("");
-
-      }
-
-
-      if (scoreContainer) {
-
-        scoreContainer.innerHTML = `
-
-          <div class="ss-day-count">
-
-            <strong>
-              ${matches.length}
-            </strong>
-
-            matchs aujourd'hui
-
-          </div>
-
-          ${matches
-            .map(renderMatch)
-            .join("")}
-
-        `;
-
-      }
-
-    } catch (error) {
-
-      console.error(
-        "SportScore fixtures:",
-        error
+    const data =
+      await fetchJSON(
+        `${API}/v1/fixtures/?sport=football&date=${date}&limit=200&src=${SRC}`
       );
 
-      const errorHTML = `
-        <div class="ss-error">
-          Impossible de charger les matchs actuellement.
+    const matches =
+      Array.isArray(
+        data?.matches
+      )
+        ? data.matches
+        : [];
+
+    if (!matches.length) {
+
+      homeContainer.innerHTML = `
+        <div class="ss-empty">
+          Aucun match trouvé aujourd'hui.
         </div>
       `;
 
-      if (homeContainer) {
-        homeContainer.innerHTML =
-          errorHTML;
-      }
-
-      if (scoreContainer) {
-        scoreContainer.innerHTML =
-          errorHTML;
-      }
+      return;
     }
+
+    homeContainer.innerHTML =
+      matches
+        .slice(0, 12)
+        .map(renderMatch)
+        .join("");
+
   }
 
+  catch (error) {
 
+    console.error(
+      "SportScore fixtures:",
+      error
+    );
+
+    homeContainer.innerHTML = `
+      <div class="ss-error">
+        Impossible de charger les matchs actuellement.
+      </div>
+    `;
+  }
+}
   /* =========================================================
      EXTRACTION DES CLASSEMENTS
      ========================================================= */
