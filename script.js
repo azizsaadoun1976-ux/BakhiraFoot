@@ -605,66 +605,386 @@ function createMatchHTML(match, index) {
   const awayScore = getAwayScore(match);
 
   const league = getLeague(match);
-  const status = statusLabel(match);
+  const leagueLogo = getLeagueLogo(match);
+
+  const fixtureId =
+    getFixtureId(match);
+
+  const rawStatus =
+    String(
+      getStatus(match)
+    ).toUpperCase();
+
+  const minute =
+    getMinute(match);
 
   const date =
     match?.fixture?.date ||
     match?.date ||
     null;
 
-  const fixtureId = getFixtureId(match);
+  let statusText = "MATCH";
+  let statusClass = "upcoming";
+  let timeText = "";
+
+  const liveStatuses = [
+    "1H",
+    "2H",
+    "LIVE",
+    "ET",
+    "P",
+    "BT"
+  ];
+
+  if (
+    liveStatuses.includes(rawStatus) ||
+    rawStatus.includes("LIVE")
+  ) {
+    statusClass = "live";
+
+    statusText =
+      minute !== null &&
+      minute !== undefined
+        ? `🔴 LIVE ${minute}'`
+        : "🔴 LIVE";
+  }
+
+  else if (
+    rawStatus === "HT" ||
+    rawStatus.includes("HALF")
+  ) {
+    statusClass = "halftime";
+    statusText = "⏸ MI-TEMPS";
+
+    if (minute !== null) {
+      timeText = `${minute}'`;
+    }
+  }
+
+  else if (
+    rawStatus === "FT" ||
+    rawStatus.includes("FINISHED") ||
+    rawStatus.includes("FINISH")
+  ) {
+    statusClass = "finished";
+    statusText = "✅ TERMINÉ";
+
+    if (date) {
+      const d =
+        new Date(date);
+
+      if (!Number.isNaN(d.getTime())) {
+        timeText =
+          d.toLocaleTimeString(
+            "fr-FR",
+            {
+              hour: "2-digit",
+              minute: "2-digit"
+            }
+          );
+      }
+    }
+  }
+
+  else if (
+    rawStatus === "NS" ||
+    rawStatus.includes("NOT STARTED")
+  ) {
+    statusClass = "upcoming";
+    statusText = "🕒 À VENIR";
+
+    if (date) {
+      const d =
+        new Date(date);
+
+      if (!Number.isNaN(d.getTime())) {
+        timeText =
+          d.toLocaleTimeString(
+            "fr-FR",
+            {
+              hour: "2-digit",
+              minute: "2-digit"
+            }
+          );
+      }
+    }
+  }
+
+  else if (
+    rawStatus === "PST" ||
+    rawStatus.includes("POSTPONED")
+  ) {
+    statusClass = "postponed";
+    statusText = "⏸ REPORTÉ";
+  }
+
+  else if (
+    rawStatus === "CANC" ||
+    rawStatus.includes("CANCEL")
+  ) {
+    statusClass = "cancelled";
+    statusText = "❌ ANNULÉ";
+  }
+
+  else {
+    statusText =
+      statusLabel(match);
+
+    if (date) {
+      const d =
+        new Date(date);
+
+      if (!Number.isNaN(d.getTime())) {
+        timeText =
+          d.toLocaleTimeString(
+            "fr-FR",
+            {
+              hour: "2-digit",
+              minute: "2-digit"
+            }
+          );
+      }
+    }
+  }
 
   return `
-   <div
-  class="match-card"
-  data-match-index="${index}"
-  data-fixture-id="${escapeHTML(fixtureId || "")}"
-  onclick="
-    if (window.bfOpenMatchDetails) {
-      window.bfOpenMatchDetails(
-        this.dataset.fixtureId
-      );
-    } else {
-      window.openMatchDetails(
-        Number(this.dataset.matchIndex)
-      );
-    }
-  "
->
+    <div
+      class="match-card bf-score-clean-card"
+      data-match-index="${index}"
+      data-fixture-id="${escapeHTML(
+        fixtureId || ""
+      )}"
+      onclick="
+        if (
+          window.bfOpenMatchDetails
+        ) {
+          window.bfOpenMatchDetails(
+            this.dataset.fixtureId
+          );
+        } else {
+          window.openMatchDetails(
+            Number(
+              this.dataset.matchIndex
+            )
+          );
+        }
+      "
+    >
 
-      <div class="flash-league">
-        <span>🏆 ${escapeHTML(league)}</span>
-      </div>
+      <div
+        class="bf-score-card-header"
+      >
 
-      <div class="flash-match">
-
-        <div class="flash-time">
-          <span>${escapeHTML(status)}</span>
+        <div
+          class="bf-score-card-league"
+        >
 
           ${
-            date
-              ? `<small>${escapeHTML(formatDate(date))}</small>`
+            leagueLogo
+              ? `
+                <img
+                  src="${escapeHTML(
+                    leagueLogo
+                  )}"
+                  alt=""
+                  class="bf-score-card-league-logo"
+                >
+              `
+              : `
+                <span
+                  class="
+                    bf-score-card-league-icon
+                  "
+                >
+                  🏆
+                </span>
+              `
+          }
+
+          <span>
+            ${escapeHTML(
+              league
+            )}
+          </span>
+
+        </div>
+
+
+        <div
+          class="
+            bf-score-card-status
+            ${statusClass}
+          "
+        >
+          ${escapeHTML(
+            statusText
+          )}
+
+          ${
+            timeText
+              ? `
+                <span
+                  class="
+                    bf-score-card-time
+                  "
+                >
+                  ${escapeHTML(
+                    timeText
+                  )}
+                </span>
+              `
               : ""
           }
         </div>
 
-        <div class="flash-teams">
+      </div>
 
-          <div class="flash-team">
-            ${teamHTML(home, homeLogo)}
-          </div>
 
-          <div class="flash-team">
-            ${teamHTML(away, awayLogo)}
-          </div>
+      <div
+        class="bf-score-card-body"
+      >
+
+        <div
+          class="bf-score-card-team home"
+        >
+
+          ${
+            homeLogo
+              ? `
+                <img
+                  src="${escapeHTML(
+                    homeLogo
+                  )}"
+                  alt="${escapeHTML(
+                    home
+                  )}"
+                  class="
+                    bf-score-card-team-logo
+                  "
+                  loading="lazy"
+                >
+              `
+              : `
+                <div
+                  class="
+                    bf-score-card-team-logo
+                    placeholder
+                  "
+                >
+                  ⚽
+                </div>
+              `
+          }
+
+          <strong>
+            ${escapeHTML(
+              home
+            )}
+          </strong>
 
         </div>
 
-        <div class="flash-score">
-          <strong>${escapeHTML(homeScore)}</strong>
-          <strong>${escapeHTML(awayScore)}</strong>
+
+        <div
+          class="bf-score-card-center"
+        >
+
+          <div
+            class="
+              bf-score-card-score
+            "
+          >
+
+            <span>
+              ${escapeHTML(
+                homeScore
+              )}
+            </span>
+
+            <b>-</b>
+
+            <span>
+              ${escapeHTML(
+                awayScore
+              )}
+            </span>
+
+          </div>
+
+          ${
+            statusClass === "upcoming"
+              ? `
+                <small>
+                  Coup d'envoi
+                </small>
+              `
+              : ""
+          }
+
         </div>
 
+
+        <div
+          class="
+            bf-score-card-team away
+          "
+        >
+
+          ${
+            awayLogo
+              ? `
+                <img
+                  src="${escapeHTML(
+                    awayLogo
+                  )}"
+                  alt="${escapeHTML(
+                    away
+                  )}"
+                  class="
+                    bf-score-card-team-logo
+                  "
+                  loading="lazy"
+                >
+              `
+              : `
+                <div
+                  class="
+                    bf-score-card-team-logo
+                    placeholder
+                  "
+                >
+                  ⚽
+                </div>
+              `
+          }
+
+          <strong>
+            ${escapeHTML(
+              away
+            )}
+          </strong>
+
+        </div>
+
+      </div>
+
+
+      <div
+        class="
+          bf-score-card-footer
+        "
+      >
+        <span>
+          Voir les détails
+        </span>
+
+        <span
+          class="
+            bf-score-card-arrow
+          "
+        >
+          ›
+        </span>
       </div>
 
     </div>
