@@ -2145,23 +2145,26 @@ function renderSelectedCompetition() {
             state === "halftime";
 
 
-          return `
-            <article
-              class="
-                bf-score-professional-match
-                bf-score-pro-card
-                ${
-                  isLive
-                    ? "bf-score-pro-live"
-                    : ""
-                }
-              "
-             onclick="
-  window.bfOpenMatchDetails(
-    this.dataset.fixtureId
-  )
-"
-            >
+return `
+  <article
+    class="
+      bf-score-professional-match
+      bf-score-pro-card
+      ${
+        isLive
+          ? "bf-score-pro-live"
+          : ""
+      }
+    "
+    data-fixture-id="${escapeHTML(
+      getFixtureId(match) || ""
+    )}"
+    onclick="
+      window.bfOpenMatchDetails(
+        this.dataset.fixtureId
+      )
+    "
+  >
 
               <div
                 class="
