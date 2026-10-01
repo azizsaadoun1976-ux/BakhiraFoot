@@ -12940,3 +12940,93 @@ body.dark #scoreList
     font-size: 17px !important;
   }
 }
+/* =========================================================
+   SCORE CARDS - FULL TEAM NAMES
+========================================================= */
+
+#scoreList .bf-score-card-team {
+  min-width: 0 !important;
+}
+
+#scoreList .bf-score-card-team strong {
+  max-width: 115px !important;
+
+  white-space: normal !important;
+
+  overflow: visible !important;
+
+  text-overflow: clip !important;
+
+  word-break: normal !important;
+
+  overflow-wrap: break-word !important;
+
+  line-height: 1.15 !important;
+
+  text-align: center !important;
+
+  display: -webkit-box !important;
+
+  -webkit-box-orient: vertical !important;
+
+  -webkit-line-clamp: 2 !important;
+
+  line-clamp: 2 !important;
+}
+
+
+/* الفريق HOME */
+#scoreList .bf-score-card-team.home {
+  justify-content: flex-end !important;
+
+  text-align: center !important;
+}
+
+
+/* الفريق AWAY */
+#scoreList .bf-score-card-team.away {
+  justify-content: flex-start !important;
+
+  text-align: center !important;
+}
+
+
+/* الصور تبقى ثابتة */
+#scoreList .bf-score-card-team-logo {
+  flex: 0 0 32px !important;
+}
+
+
+/* ---------------------------------------------------------
+   MOBILE
+--------------------------------------------------------- */
+
+@media (max-width: 700px) {
+
+  #scoreList .bf-score-card-team strong {
+    max-width: 82px !important;
+
+    white-space: normal !important;
+
+    overflow: visible !important;
+
+    text-overflow: clip !important;
+
+    font-size: 10px !important;
+
+    line-height: 1.15 !important;
+
+    text-align: center !important;
+
+    -webkit-line-clamp: 2 !important;
+
+    line-clamp: 2 !important;
+  }
+
+  #scoreList .bf-score-card-team.home,
+  #scoreList .bf-score-card-team.away {
+    justify-content: center !important;
+
+    text-align: center !important;
+  }
+}
