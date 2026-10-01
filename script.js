@@ -62,117 +62,149 @@ function formatDate(dateString) {
 }
 
 function getStatus(match) {
-  const short =
-    String(
-      match?.fixture?.status?.short ||
-      match?.status?.short ||
-      ""
+  const values = [
+    match?.fixture?.status?.short,
+    match?.fixture?.status?.long,
+    match?.status?.short,
+    match?.status?.long,
+    match?.status_text,
+    typeof match?.status === "string"
+      ? match.status
+      : "",
+    match?.status_code
+  ]
+    .filter(
+      value =>
+        value !== undefined &&
+        value !== null &&
+        value !== ""
     )
-      .trim()
-      .toUpperCase();
+    .map(
+      value =>
+        String(value)
+          .trim()
+          .toUpperCase()
+    );
 
-  const long =
-    String(
-      match?.fixture?.status?.long ||
-      match?.status?.long ||
-      match?.status_text ||
-      ""
-    )
-      .trim()
-      .toUpperCase();
+  const joined =
+    values.join(" ");
 
-  const all =
-    `${short} ${long}`;
-
-  /*
-   * LIVE الحقيقي
-   */
-
+  /* LIVE / FIRST HALF / SECOND HALF */
   if (
-    all.includes("IN PROGRESS") ||
-    all.includes("INPLAY") ||
-    all.includes("IN PLAY") ||
-    all.includes("FIRST HALF") ||
-    all.includes("SECOND HALF") ||
-    all.includes("LIVE")
+    joined.includes("LIVE") ||
+    joined.includes("IN PLAY") ||
+    joined.includes("INPLAY") ||
+    joined.includes("IN PROGRESS") ||
+    joined.includes("FIRST HALF") ||
+    joined.includes("SECOND HALF") ||
+    joined.includes("1ST HALF") ||
+    joined.includes("2ND HALF")
   ) {
     return "LIVE";
   }
 
-  /*
-   * HT الحقيقي
-   */
+  /* Codes numériques de status */
+  const numeric =
+    values.find(
+      value =>
+        /^-?\d+$/.test(value)
+    );
 
+  if (numeric) {
+    const code =
+      Number(numeric);
+
+    if (
+      code === 1 ||
+      code === 3 ||
+      code === 4 ||
+      code === 5
+    ) {
+      return "LIVE";
+    }
+
+    if (code === 2) {
+      return "HT";
+    }
+
+    if (code === 0) {
+      return "NS";
+    }
+
+    if (code === -1) {
+      return "FT";
+    }
+
+    if (code === -10) {
+      return "CANC";
+    }
+
+    if (code === -13) {
+      return "PST";
+    }
+
+    if (code === -14) {
+      return "INT";
+    }
+  }
+
+  /* MI-TEMPS */
   if (
-    all === "HT" ||
-    all.includes("HALFTIME") ||
-    all.includes("HALF TIME")
+    joined === "HT" ||
+    joined.includes("HALFTIME") ||
+    joined.includes("HALF TIME") ||
+    joined.includes("HALF-TIME")
   ) {
     return "HT";
   }
 
-  /*
-   * Match terminé
-   */
-
+  /* TERMINÉ */
   if (
-    short === "FT" ||
-    short === "END" ||
-    short === "FINISHED" ||
-    long.includes("FINISHED") ||
-    long.includes("FULL TIME") ||
-    long.includes("ENDED")
+    joined === "FT" ||
+    joined.includes("FINISHED") ||
+    joined.includes("FULL TIME") ||
+    joined.includes("ENDED") ||
+    joined.includes("MATCH FINISHED")
   ) {
     return "FT";
   }
 
-  /*
-   * Match à venir
-   */
-
+  /* À VENIR */
   if (
-    short === "NS" ||
-    short === "SCHEDULED" ||
-    short === "UPCOMING" ||
-    long.includes("NOT STARTED") ||
-    long.includes("SCHEDULED")
+    joined === "NS" ||
+    joined.includes("NOT STARTED") ||
+    joined.includes("SCHEDULED") ||
+    joined.includes("UPCOMING")
   ) {
     return "NS";
   }
 
-  /*
-   * Reporté / annulé
-   */
-
   if (
-    short === "PST" ||
-    long.includes("POSTPON")
+    joined.includes("POSTPON")
   ) {
     return "PST";
   }
 
   if (
-    short === "CANC" ||
-    long.includes("CANCEL")
+    joined.includes("CANCEL")
   ) {
     return "CANC";
   }
 
-  return short || long || "MATCH";
+  return (
+    values[0] ||
+    "MATCH"
+  );
 }
 
 function getMinute(match) {
+
   const direct =
     match?.fixture?.status?.elapsed ??
     match?.status?.elapsed ??
-    match?.minute ??
     match?.elapsed ??
+    match?.minute ??
     null;
-
-  /*
-   * إلا كانت API عطاتو minute
-   * نستعملوها مباشرة.
-   */
 
   if (
     direct !== null &&
@@ -185,29 +217,61 @@ function getMinute(match) {
     if (
       Number.isFinite(n)
     ) {
-      return n;
+      return Math.max(
+        0,
+        Math.min(
+          120,
+          n
+        )
+      );
     }
   }
 
-  /*
-   * fallback:
-   * نحسبو الدقيقة من kick-off.
-   */
+  const statusText =
+    String(
+      match?.fixture?.status?.long ||
+      match?.status?.long ||
+      match?.status_text ||
+      ""
+    );
 
-  const status =
-    getStatus(match);
+  /* إذا كان المصدر كيعطي 67' داخل النص */
+  const minuteMatch =
+    statusText.match(
+      /(\d{1,3})\s*['′]|(\d{1,3})\s*(?:MIN|MINUTE)/i
+    );
+
+  if (minuteMatch) {
+    const n =
+      Number(
+        minuteMatch[1] ||
+        minuteMatch[2]
+      );
+
+    if (
+      Number.isFinite(n)
+    ) {
+      return Math.min(
+        120,
+        n
+      );
+    }
+  }
 
   if (
-    status !== "LIVE"
+    getStatus(match) !== "LIVE"
   ) {
     return null;
   }
 
+  /*
+   * Fallback تقريبي من وقت البداية.
+   * ما كنستعملوه غير إلا المصدر ما عطاش elapsed.
+   */
+
   const kickoff =
     match?.fixture?.date ||
     match?.date ||
-    match?.fixture?.time ||
-    match?.time ||
     null;
 
   if (!kickoff) {
@@ -225,49 +289,41 @@ function getMinute(match) {
     return null;
   }
 
-  const now =
-    Date.now();
-
-  const diff =
+  const minutes =
     Math.floor(
       (
-        now -
+        Date.now() -
         start.getTime()
       ) / 60000
     );
 
   if (
-    diff < 0
+    minutes < 0
   ) {
     return null;
   }
 
   /*
-   * نصف الوقت الأول
+   * الشوط الأول
    */
-
   if (
-    diff <= 45
+    minutes <= 45
   ) {
-    return Math.min(
-      45,
-      diff + 1
+    return Math.max(
+      1,
+      minutes
     );
   }
 
   /*
-   * الشوط الثاني:
-   * كنطرح تقريباً 15 دقيقة ديال pause.
+   * بعد الاستراحة:
+   * تقريباً 15 دقيقة pause.
    */
-
-  const secondHalf =
-    diff - 15;
-
-  return Math.max(
-    46,
-    Math.min(
-      120,
-      secondHalf + 1
+  return Math.min(
+    120,
+    Math.max(
+      46,
+      minutes - 14
     )
   );
 }
@@ -2407,9 +2463,12 @@ renderScoreCompetitions(
 
 async function loadMatches(date) {
 
-  const list = $("scoreList");
+  const list =
+    $("scoreList");
 
-  if (!list) return;
+  if (!list) {
+    return;
+  }
 
   currentDate =
     date ||
@@ -2426,7 +2485,9 @@ async function loadMatches(date) {
 
     const response =
       await fetch(
-        `${API_BASE}/api?date=${encodeURIComponent(currentDate)}`,
+        `${API_BASE}/api?date=${encodeURIComponent(
+          currentDate
+        )}`,
         {
           cache: "no-store"
         }
@@ -2442,30 +2503,255 @@ async function loadMatches(date) {
       await response.json();
 
     let matches =
-      sortMatchesByImportance(
-        normalizeMatches(data)
-      );
+      normalizeMatches(data);
+
+
+    /* =====================================================
+       IMPORTANT :
+       إذا كان اليوم هو اليوم الحالي،
+       نجيب LIVE مباشرة فـأول تحميل.
+    ===================================================== */
+
+    const today =
+      new Date()
+        .toISOString()
+        .split("T")[0];
+
+    if (
+      currentDate === today
+    ) {
+
+      try {
+
+        const liveResponse =
+          await fetch(
+            `${API_BASE}/api?live=all`,
+            {
+              cache: "no-store"
+            }
+          );
+
+        if (
+          liveResponse.ok
+        ) {
+
+          const liveData =
+            await liveResponse.json();
+
+          const liveMatches =
+            normalizeMatches(
+              liveData
+            );
+
+          /*
+           * indexes بالـID
+           */
+
+          const liveById =
+            new Map();
+
+          liveMatches.forEach(
+            live => {
+
+              const id =
+                getFixtureId(
+                  live
+                );
+
+              if (id) {
+                liveById.set(
+                  String(id),
+                  live
+                );
+              }
+
+            }
+          );
+
+
+          /*
+           * indexes باسم الفريقين
+           * كـfallback إلا اختلف الـID
+           */
+
+          const liveByTeams =
+            new Map();
+
+          liveMatches.forEach(
+            live => {
+
+              const home =
+                normalizeText(
+                  getHome(live)
+                );
+
+              const away =
+                normalizeText(
+                  getAway(live)
+                );
+
+              const key =
+                `${home}__${away}`;
+
+              liveByTeams.set(
+                key,
+                live
+              );
+
+            }
+          );
+
+
+          /*
+           * Merge live data
+           */
+
+          matches =
+            matches.map(
+              match => {
+
+                const id =
+                  getFixtureId(
+                    match
+                  );
+
+                const home =
+                  normalizeText(
+                    getHome(match)
+                  );
+
+                const away =
+                  normalizeText(
+                    getAway(match)
+                  );
+
+                const teamKey =
+                  `${home}__${away}`;
+
+                const live =
+                  (
+                    id &&
+                    liveById.get(
+                      String(id)
+                    )
+                  ) ||
+                  liveByTeams.get(
+                    teamKey
+                  );
+
+
+                if (
+                  !live
+                ) {
+                  return match;
+                }
+
+
+                return {
+                  ...match,
+
+                  teams:
+                    live.teams ||
+                    match.teams,
+
+                  goals:
+                    live.goals ||
+                    match.goals,
+
+                  score:
+                    live.score ||
+                    match.score,
+
+                  league:
+                    live.league ||
+                    match.league,
+
+                  fixture: {
+
+                    ...match.fixture,
+
+                    ...live.fixture,
+
+                    status: {
+
+                      ...match.fixture?.status,
+
+                      ...live.fixture?.status
+
+                    }
+
+                  }
+
+                };
+
+              }
+            );
+
+        }
+
+      }
+
+      catch (
+        liveError
+      ) {
+
+        console.warn(
+          "LIVE MERGE:",
+          liveError
+        );
+
+      }
+
+    }
+
+
+    /*
+     * FILTER
+     */
 
     if (
       currentFilter &&
       currentFilter !== "all"
     ) {
+
       matches =
-        matches.filter(match =>
-          normalizeText(getLeague(match))
-            .includes(
-              normalizeText(currentFilter)
+        matches.filter(
+          match =>
+            normalizeText(
+              getLeague(match)
             )
+              .includes(
+                normalizeText(
+                  currentFilter
+                )
+              )
         );
+
     }
 
-    /*
-       كنخزنو غير الماتشات اللي فعلا
-       باينين للمستخدم.
-    */
-    currentMatches = matches;
 
-    if (!matches.length) {
+    /*
+     * ترتيب نهائي
+     */
+
+    matches =
+      sortMatchesByImportance(
+        matches
+      );
+
+
+    /*
+     * نخزنو نفس الماتشات
+     * اللي غادي يبانوا.
+     */
+
+    currentMatches =
+      matches;
+
+
+    if (
+      !matches.length
+    ) {
 
       list.innerHTML =
         emptyCard(
@@ -2475,12 +2761,17 @@ async function loadMatches(date) {
       return;
     }
 
-selectedCompetitionIndex = 0;
 
-renderScoreCompetitions(
-  matches
-);
-  } catch (error) {
+    selectedCompetitionIndex =
+      0;
+
+    renderScoreCompetitions(
+      matches
+    );
+
+  }
+
+  catch (error) {
 
     console.error(
       "MATCHES ERROR:",
@@ -2491,9 +2782,10 @@ renderScoreCompetitions(
       emptyCard(
         "Impossible de charger les matchs."
       );
-  }
-}
 
+  }
+
+}
 /* =========================================================
    EMPTY CARD
 ========================================================= */
