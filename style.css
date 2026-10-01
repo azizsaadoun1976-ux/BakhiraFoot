@@ -13101,3 +13101,71 @@ body.dark #scoreList
   }
 
 }
+/* =========================================================
+   NOMS DES ÉQUIPES - AFFICHER LES NOMS COMPLETS
+========================================================= */
+
+#scoreList .bf-score-card-team {
+  min-width: 0 !important;
+}
+
+#scoreList .bf-score-card-team strong {
+  min-width: 0 !important;
+
+  max-width: 135px !important;
+
+  display: block !important;
+
+  overflow: visible !important;
+
+  text-overflow: clip !important;
+
+  white-space: normal !important;
+
+  overflow-wrap: break-word !important;
+
+  word-break: normal !important;
+
+  line-height: 1.25 !important;
+
+  font-size: 13px !important;
+
+  font-weight: 950 !important;
+}
+
+
+/* الفريق فاليسار */
+
+#scoreList .bf-score-card-team.home {
+  text-align: right !important;
+}
+
+
+/* الفريق فاليمين */
+
+#scoreList .bf-score-card-team.away {
+  text-align: left !important;
+}
+
+
+/* =========================================================
+   MOBILE
+========================================================= */
+
+@media (max-width: 700px) {
+
+  #scoreList .bf-score-card-team strong {
+    max-width: 82px !important;
+
+    white-space: normal !important;
+
+    overflow: visible !important;
+
+    text-overflow: clip !important;
+
+    font-size: 10px !important;
+
+    line-height: 1.2 !important;
+  }
+
+}
