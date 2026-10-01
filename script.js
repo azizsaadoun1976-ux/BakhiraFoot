@@ -1603,151 +1603,293 @@ function renderSelectedCompetition() {
    * باش openMatchDetails يبقى خدام.
    */
 
-  const matchesHTML =
-    group.matches
-      .map(
-        ({ match, index }) =>
+const matchesHTML =
+  group.matches
+    .map(
+      ({ match, index }) => {
 
-          `
-           <div
-  class="match-card bf-score-professional-match"
-  data-match-index="${index}"
-  data-fixture-id="${escapeHTML(
-    getFixtureId(match) || ""
-  )}"
-  onclick="
-    window.openMatchDetails(
-      Number(this.dataset.matchIndex)
-    )
-  "
->
+        const date =
+          match?.fixture?.date ||
+          match?.date ||
+          null;
 
-              <div
-                class="bf-score-match-status"
-              >
+        let kickoffTime = "";
+
+        if (date) {
+          const d =
+            new Date(date);
+
+          if (!Number.isNaN(d.getTime())) {
+            kickoffTime =
+              d.toLocaleTimeString(
+                "fr-FR",
+                {
+                  hour: "2-digit",
+                  minute: "2-digit"
+                }
+              );
+          }
+        }
+
+        const rawStatus =
+          String(
+            getStatus(match)
+          ).toUpperCase();
+
+        const minute =
+          getMinute(match);
+
+        let statusText =
+          "MATCH";
+
+        let statusClass =
+          "upcoming";
+
+        if (
+          [
+            "1H",
+            "2H",
+            "LIVE",
+            "ET",
+            "P",
+            "BT"
+          ].includes(rawStatus) ||
+          rawStatus.includes("LIVE")
+        ) {
+          statusClass = "live";
+
+          statusText =
+            minute !== null &&
+            minute !== undefined
+              ? `🔴 LIVE ${minute}'`
+              : "🔴 LIVE";
+        }
+
+        else if (
+          rawStatus === "HT" ||
+          rawStatus.includes("HALF")
+        ) {
+          statusClass =
+            "halftime";
+
+          statusText =
+            "⏸ MI-TEMPS";
+        }
+
+        else if (
+          rawStatus === "FT" ||
+          rawStatus.includes("FINISHED") ||
+          rawStatus.includes("FINISH")
+        ) {
+          statusClass =
+            "finished";
+
+          statusText =
+            "✅ TERMINÉ";
+        }
+
+        else if (
+          rawStatus === "PST" ||
+          rawStatus.includes("POSTPONED")
+        ) {
+          statusClass =
+            "postponed";
+
+          statusText =
+            "⏸ REPORTÉ";
+        }
+
+        else if (
+          rawStatus === "CANC" ||
+          rawStatus.includes("CANCEL")
+        ) {
+          statusClass =
+            "cancelled";
+
+          statusText =
+            "❌ ANNULÉ";
+        }
+
+        else {
+          statusText =
+            statusLabel(match);
+        }
+
+
+        return `
+          <div
+            class="
+              match-card
+              bf-score-professional-match
+            "
+            data-match-index="${index}"
+            data-fixture-id="${escapeHTML(
+              getFixtureId(match) || ""
+            )}"
+            onclick="
+              window.openMatchDetails(
+                Number(
+                  this.dataset.matchIndex
+                )
+              )
+            "
+          >
+
+            <div
+              class="
+                bf-score-match-status
+                ${statusClass}
+              "
+            >
+
+              <strong>
                 ${escapeHTML(
-                  statusLabel(match)
+                  statusText
                 )}
-              </div>
+              </strong>
 
+              ${
+                kickoffTime
+                  ? `
+                    <small
+                      class="
+                        bf-score-kickoff-time
+                      "
+                    >
+                      🕐 ${escapeHTML(
+                        kickoffTime
+                      )}
+                    </small>
+                  `
+                  : ""
+              }
+
+            </div>
+
+
+            <div
+              class="
+                bf-score-match-teams
+              "
+            >
 
               <div
-                class="bf-score-match-teams"
+                class="bf-score-team home"
               >
 
-                <div
-                  class="bf-score-team"
-                >
+                ${
+                  getHomeLogo(match)
+                    ? `
+                      <img
+                        src="${escapeHTML(
+                          getHomeLogo(match)
+                        )}"
+                        alt="${escapeHTML(
+                          getHome(match)
+                        )}"
+                        loading="lazy"
+                      >
+                    `
+                    : `
+                      <span
+                        class="
+                          bf-score-team-placeholder
+                        "
+                      >
+                        ⚽
+                      </span>
+                    `
+                }
 
-                  ${
-                    getHomeLogo(match)
-                      ? `
-                        <img
-                          src="${escapeHTML(
-                            getHomeLogo(
-                              match
-                            )
-                          )}"
-                          alt="${escapeHTML(
-                            getHome(match)
-                          )}"
-                          loading="lazy"
-                        >
-                      `
-                      : `
-                        <span
-                          class="
-                            bf-score-team-placeholder
-                          "
-                        >
-                          ⚽
-                        </span>
-                      `
-                  }
-
-                  <strong>
-                    ${escapeHTML(
-                      getHome(match)
-                    )}
-                  </strong>
-
-                </div>
-
-
-                <div
-                  class="bf-score-professional-score"
-                >
-
-                  <span>
-                    ${escapeHTML(
-                      getHomeScore(match)
-                    )}
-                  </span>
-
-                  <b>:</b>
-
-                  <span>
-                    ${escapeHTML(
-                      getAwayScore(match)
-                    )}
-                  </span>
-
-                </div>
-
-
-                <div
-                  class="bf-score-team"
-                >
-
-                  ${
-                    getAwayLogo(match)
-                      ? `
-                        <img
-                          src="${escapeHTML(
-                            getAwayLogo(
-                              match
-                            )
-                          )}"
-                          alt="${escapeHTML(
-                            getAway(match)
-                          )}"
-                          loading="lazy"
-                        >
-                      `
-                      : `
-                        <span
-                          class="
-                            bf-score-team-placeholder
-                          "
-                        >
-                          ⚽
-                        </span>
-                      `
-                  }
-
-                  <strong>
-                    ${escapeHTML(
-                      getAway(match)
-                    )}
-                  </strong>
-
-                </div>
+                <strong>
+                  ${escapeHTML(
+                    getHome(match)
+                  )}
+                </strong>
 
               </div>
 
 
               <div
-                class="bf-score-match-arrow"
+                class="
+                  bf-score-professional-score
+                "
               >
-                Voir le match
-                <span>›</span>
+
+                <span>
+                  ${escapeHTML(
+                    getHomeScore(match)
+                  )}
+                </span>
+
+                <b>
+                  -
+                </b>
+
+                <span>
+                  ${escapeHTML(
+                    getAwayScore(match)
+                  )}
+                </span>
+
+              </div>
+
+
+              <div
+                class="bf-score-team away"
+              >
+
+                ${
+                  getAwayLogo(match)
+                    ? `
+                      <img
+                        src="${escapeHTML(
+                          getAwayLogo(match)
+                        )}"
+                        alt="${escapeHTML(
+                          getAway(match)
+                        )}"
+                        loading="lazy"
+                      >
+                    `
+                    : `
+                      <span
+                        class="
+                          bf-score-team-placeholder
+                        "
+                      >
+                        ⚽
+                      </span>
+                    `
+                }
+
+                <strong>
+                  ${escapeHTML(
+                    getAway(match)
+                  )}
+                </strong>
+
               </div>
 
             </div>
-          `
-      )
-      .join("");
 
+
+            <div
+              class="
+                bf-score-match-arrow
+              "
+            >
+              Détails
+              <span>
+                ›
+              </span>
+            </div>
+
+          </div>
+        `;
+      }
+    )
+    .join("");
 
   list.innerHTML = `
 
