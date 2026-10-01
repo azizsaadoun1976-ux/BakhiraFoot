@@ -1392,145 +1392,101 @@ function renderScoreCompetitionGroups(matches) {
 
 
 function selectScoreCompetition(index) {
-  selectedCompetitionIndex =
-    Number(index);
+  selectedCompetitionIndex = Number(index);
 
-  if (
-    !Number.isFinite(
-      selectedCompetitionIndex
-    )
-  ) {
+  if (!Number.isFinite(selectedCompetitionIndex)) {
     selectedCompetitionIndex = 0;
   }
 
-  renderSelectedScoreCompetition();
-}
+  if (selectedCompetitionIndex < 0) {
+    selectedCompetitionIndex = 0;
+  }
 
+  if (
+    selectedCompetitionIndex >=
+    scoreCompetitionGroups.length
+  ) {
+    selectedCompetitionIndex =
+      scoreCompetitionGroups.length - 1;
+  }
 
-function renderSelectedScoreCompetition() {
-  const list = $("scoreList");
-
-  if (!list) return;
+  /*
+   * =========================================
+   * ترتيب الماتشات داخل Competition
+   * LIVE أولاً دائماً
+   * ثم MI-TEMPS
+   * ثم À VENIR
+   * ثم TERMINÉ
+   * =========================================
+   */
 
   const group =
     scoreCompetitionGroups[
       selectedCompetitionIndex
     ];
 
-  if (!group) return;
+  if (group && Array.isArray(group.matches)) {
+    group.matches.sort(
+      (a, b) => {
 
-  const competitionButtons =
-    scoreCompetitionGroups
-      .map(
-        (item, index) => {
+        const statusA =
+          String(
+            getStatus(a.match)
+          ).toUpperCase();
 
-          const liveCount =
-            item.matches.filter(
-              ({ match }) => {
-                const status =
-                  String(
-                    getStatus(match)
-                  ).toUpperCase();
+        const statusB =
+          String(
+            getStatus(b.match)
+          ).toUpperCase();
 
-                return (
-                  [
-                    "1H",
-                    "2H",
-                    "LIVE",
-                    "ET",
-                    "P",
-                    "BT",
-                    "HT"
-                  ].includes(status) ||
-                  status.includes("LIVE")
-                );
-              }
-            ).length;
+        const liveA =
+          [
+            "1H",
+            "2H",
+            "LIVE",
+            "ET",
+            "P",
+            "BT"
+          ].includes(statusA) ||
+          statusA.includes("LIVE");
 
-          return `
-            <button
-              type="button"
-              class="
-                bf-score-competition
-                ${
-                  index ===
-                  selectedCompetitionIndex
-                    ? "active"
-                    : ""
-                }
-              "
-              onclick="
-                selectScoreCompetition(
-                  ${index}
-                )
-              "
-            >
-              <span class="bf-score-comp-name">
-                🏆 ${escapeHTML(item.name)}
-              </span>
+        const liveB =
+          [
+            "1H",
+            "2H",
+            "LIVE",
+            "ET",
+            "P",
+            "BT"
+          ].includes(statusB) ||
+          statusB.includes("LIVE");
 
-              <span class="bf-score-comp-count">
-                ${
-                  liveCount
-                    ? `🔴 ${liveCount} · `
-                    : ""
-                }
-                ${item.matches.length}
-              </span>
-            </button>
-          `;
+        if (liveA !== liveB) {
+          return liveB ? 1 : -1;
         }
-      )
-      .join("");
 
-  const matchesHTML =
-    group.matches
-      .map(
-        ({ match, index }) =>
-          createMatchHTML(
-            match,
-            index
-          )
-      )
-      .join("");
+        const htA =
+          statusA === "HT" ||
+          statusA.includes("HALF");
 
-  list.innerHTML = `
-    <div class="bf-score-competitions-layout">
+        const htB =
+          statusB === "HT" ||
+          statusB.includes("HALF");
 
-      <aside class="bf-score-competitions">
-        <div class="bf-score-comp-title">
-          COMPÉTITIONS
-        </div>
+        if (htA !== htB) {
+          return htB ? 1 : -1;
+        }
 
-        <div class="bf-score-comp-list">
-          ${competitionButtons}
-        </div>
-      </aside>
+        return (
+          getMatchPriority(b.match) -
+          getMatchPriority(a.match)
+        );
+      }
+    );
+  }
 
-      <section class="bf-score-comp-panel">
-
-        <div class="bf-score-comp-panel-head">
-          <div>
-            <small>COMPÉTITION</small>
-            <h2>
-              🏆 ${escapeHTML(group.name)}
-            </h2>
-            <span>
-              ${group.matches.length} matchs
-            </span>
-          </div>
-        </div>
-
-        <div class="bf-score-comp-matches">
-          ${matchesHTML}
-        </div>
-
-      </section>
-
-    </div>
-  `;
+  renderSelectedCompetition();
 }
-
 /* =========================================================
    SCORES - COMPETITION GROUPING
 ========================================================= */
