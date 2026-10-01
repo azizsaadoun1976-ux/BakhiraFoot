@@ -13295,3 +13295,516 @@ body.dark #scoreList
   line-height: 1.25 !important;
   text-align: center !important;
 }
+/* =========================================================
+   BAKHIRAFOOT PRO SCORES UI
+========================================================= */
+
+#scoreList .bf-score-pro-sidebar {
+  overflow: hidden;
+  border-radius: 16px !important;
+  box-shadow:
+    0 8px 25px rgba(15,23,42,.05);
+}
+
+#scoreList .bf-score-pro-side-title {
+  min-height: 54px;
+  padding: 12px 14px !important;
+  background:
+    linear-gradient(
+      180deg,
+      #ffffff,
+      #f8fafb
+    );
+}
+
+#scoreList .bf-score-pro-comp-left {
+  min-width: 0;
+  display: flex;
+  align-items: center;
+  gap: 9px;
+}
+
+#scoreList .bf-score-pro-comp-meta {
+  flex: 0 0 auto;
+  display: flex;
+  align-items: center;
+  gap: 6px;
+}
+
+#scoreList .bf-score-pro-match-count,
+#scoreList .bf-score-live-count {
+  min-width: 24px;
+  height: 22px;
+  padding: 0 7px;
+  border-radius: 999px;
+
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  font-size: 9px;
+  font-weight: 950;
+}
+
+#scoreList .bf-score-pro-match-count {
+  background: #f1f4f6;
+  color: #687781;
+}
+
+#scoreList .bf-score-live-count {
+  background: #fff0f0;
+  color: #d72f2f;
+}
+
+
+/* =========================================
+   HEADER
+========================================= */
+
+#scoreList .bf-score-pro-panel {
+  border-radius: 16px !important;
+  box-shadow:
+    0 8px 25px rgba(15,23,42,.05);
+}
+
+#scoreList .bf-score-pro-head {
+  padding: 15px 17px !important;
+  background:
+    linear-gradient(
+      180deg,
+      #ffffff,
+      #fafcfd
+    ) !important;
+}
+
+#scoreList .bf-score-pro-selected {
+  min-width: 0;
+}
+
+#scoreList .bf-score-pro-title {
+  min-width: 0;
+}
+
+#scoreList .bf-score-pro-title h2 {
+  margin: 2px 0 5px !important;
+  font-size: 19px !important;
+  line-height: 1.2;
+}
+
+#scoreList .bf-score-pro-stats {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 6px;
+}
+
+#scoreList .bf-score-pro-stats span {
+  display: inline-flex !important;
+  align-items: center;
+  width: auto !important;
+
+  margin: 0 !important;
+  padding: 4px 8px;
+
+  border-radius: 999px;
+  background: #f2f5f7;
+
+  color: #6d7b83;
+  font-size: 8px;
+  font-weight: 900;
+}
+
+#scoreList .bf-score-pro-stats
+.bf-score-pro-live-total {
+  background: #fff0f0;
+  color: #d72f2f;
+}
+
+
+/* =========================================
+   FILTERS
+========================================= */
+
+#scoreList .bf-score-pro-filters {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  flex-wrap: wrap;
+}
+
+#scoreList .bf-score-pro-filters button {
+  min-height: 32px;
+  padding: 0 11px;
+
+  border: 1px solid #e1e7ea;
+  border-radius: 999px;
+
+  background: #fff;
+  color: #687781;
+
+  font-size: 9px;
+  font-weight: 900;
+
+  cursor: pointer;
+
+  transition:
+    .15s ease;
+}
+
+#scoreList .bf-score-pro-filters
+button:hover {
+  border-color: #cbd5da;
+  background: #f7f9fa;
+}
+
+#scoreList .bf-score-pro-filters
+button.active {
+  background: #15252d;
+  border-color: #15252d;
+  color: #fff;
+}
+
+#scoreList .bf-score-pro-filters
+.bf-score-dot {
+  color: #e33434;
+  margin-right: 3px;
+}
+
+
+/* =========================================
+   MATCHES AREA
+========================================= */
+
+#scoreList .bf-score-pro-matches {
+  padding: 9px !important;
+  gap: 8px !important;
+}
+
+#scoreList .bf-score-pro-card {
+  min-height: 96px !important;
+
+  border-radius: 14px !important;
+
+  box-shadow:
+    0 3px 12px rgba(15,23,42,.035);
+
+  position: relative;
+}
+
+#scoreList .bf-score-pro-card:hover {
+  transform: translateY(-2px);
+  box-shadow:
+    0 9px 24px rgba(15,23,42,.08);
+}
+
+
+/* =========================================
+   LIVE CARD
+========================================= */
+
+#scoreList .bf-score-pro-card.bf-score-pro-live {
+  border-color: #f0caca !important;
+
+  box-shadow:
+    0 4px 18px
+    rgba(215,47,47,.08);
+}
+
+#scoreList .bf-score-pro-card.bf-score-pro-live::before {
+  content: "";
+  position: absolute;
+
+  left: 0;
+  top: 9px;
+  bottom: 9px;
+
+  width: 3px;
+
+  border-radius: 0 4px 4px 0;
+  background: #df3434;
+}
+
+
+/* =========================================
+   STATUS
+========================================= */
+
+#scoreList .bf-score-pro-status {
+  padding-left: 3px;
+}
+
+#scoreList .bf-score-pro-status strong {
+  display: block;
+  font-size: 10px !important;
+  letter-spacing: .1px;
+}
+
+#scoreList .bf-score-pro-status.live strong {
+  font-size: 11px !important;
+}
+
+#scoreList .bf-score-pro-status
+.bf-score-kickoff-time {
+  margin-top: 5px;
+  opacity: .7;
+}
+
+
+/* =========================================
+   TEAM AREA
+========================================= */
+
+#scoreList .bf-score-pro-teams {
+  min-width: 0;
+}
+
+#scoreList .bf-score-pro-team {
+  min-width: 0;
+}
+
+#scoreList .bf-score-pro-team strong {
+  min-width: 0 !important;
+  max-width: 145px !important;
+
+  overflow: visible !important;
+  text-overflow: clip !important;
+  white-space: normal !important;
+
+  overflow-wrap: break-word !important;
+  word-break: normal !important;
+
+  line-height: 1.22 !important;
+  font-size: 12px !important;
+  font-weight: 950 !important;
+}
+
+#scoreList .bf-score-pro-team img,
+#scoreList .bf-score-pro-team
+.bf-score-team-placeholder {
+  width: 36px !important;
+  height: 36px !important;
+  min-width: 36px !important;
+  flex: 0 0 36px !important;
+}
+
+
+/* =========================================
+   SCORE
+========================================= */
+
+#scoreList .bf-score-pro-score {
+  min-width: 70px;
+  padding: 7px 5px;
+
+  border-radius: 11px;
+  background: #f7f9fa;
+
+  gap: 5px !important;
+}
+
+#scoreList .bf-score-pro-score span {
+  font-size: 21px !important;
+  font-weight: 950 !important;
+}
+
+#scoreList .bf-score-pro-score.live {
+  background: #fff2f2;
+}
+
+#scoreList .bf-score-pro-score.live span {
+  color: #d32f2f !important;
+}
+
+#scoreList .bf-score-pro-score b {
+  font-size: 12px !important;
+  color: #93a0a7 !important;
+}
+
+
+/* =========================================
+   DETAILS
+========================================= */
+
+#scoreList .bf-score-pro-details {
+  color: #72808a !important;
+  opacity: .85;
+}
+
+#scoreList .bf-score-pro-details b {
+  font-size: 17px;
+}
+
+
+/* =========================================
+   EMPTY FILTER
+========================================= */
+
+#scoreList .bf-score-pro-no-matches {
+  min-height: 220px;
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+
+  gap: 7px;
+
+  border: 1px dashed #d9e1e5;
+  border-radius: 13px;
+
+  color: #71808a;
+}
+
+#scoreList .bf-score-pro-no-matches div {
+  font-size: 32px;
+  opacity: .6;
+}
+
+#scoreList .bf-score-pro-no-matches strong {
+  color: #384852;
+  font-size: 13px;
+}
+
+#scoreList .bf-score-pro-no-matches span {
+  font-size: 10px;
+}
+
+
+/* =========================================
+   DARK MODE
+========================================= */
+
+body.dark #scoreList .bf-score-pro-side-title,
+body.dark #scoreList .bf-score-pro-head {
+  background:
+    linear-gradient(
+      180deg,
+      #151e25,
+      #121a20
+    ) !important;
+}
+
+body.dark #scoreList .bf-score-pro-match-count,
+body.dark #scoreList .bf-score-pro-stats span {
+  background: #202a31;
+  color: #aab6bd;
+}
+
+body.dark #scoreList .bf-score-pro-filters
+button {
+  background: #151e25;
+  border-color: #303b44;
+  color: #aebbc3;
+}
+
+body.dark #scoreList .bf-score-pro-filters
+button.active {
+  background: #edf2f5;
+  border-color: #edf2f5;
+  color: #151d24;
+}
+
+body.dark #scoreList .bf-score-pro-card {
+  background: #13212b !important;
+}
+
+body.dark #scoreList .bf-score-pro-score {
+  background: #1b2830;
+}
+
+body.dark #scoreList .bf-score-pro-score.live {
+  background: #352327;
+}
+
+body.dark #scoreList .bf-score-pro-no-matches {
+  border-color: #34424b;
+}
+
+body.dark #scoreList .bf-score-pro-no-matches strong {
+  color: #dbe3e8;
+}
+
+
+/* =========================================
+   MOBILE
+========================================= */
+
+@media (max-width: 700px) {
+
+  #scoreList .bf-score-pro-head {
+    gap: 10px;
+  }
+
+  #scoreList .bf-score-pro-title h2 {
+    font-size: 15px !important;
+  }
+
+  #scoreList .bf-score-pro-stats span {
+    font-size: 7px;
+    padding: 4px 7px;
+  }
+
+  #scoreList .bf-score-pro-filters {
+    width: 100%;
+    overflow-x: auto;
+    flex-wrap: nowrap;
+    scrollbar-width: none;
+  }
+
+  #scoreList .bf-score-pro-filters::-webkit-scrollbar {
+    display: none;
+  }
+
+  #scoreList .bf-score-pro-filters button {
+    flex: 0 0 auto;
+  }
+
+  #scoreList .bf-score-pro-card {
+    min-height: 88px !important;
+    grid-template-columns:
+      58px
+      minmax(0, 1fr) !important;
+
+    gap: 7px !important;
+    padding: 8px !important;
+  }
+
+  #scoreList .bf-score-pro-teams {
+    grid-template-columns:
+      minmax(0, 1fr)
+      58px
+      minmax(0, 1fr) !important;
+
+    gap: 5px !important;
+  }
+
+  #scoreList .bf-score-pro-team strong {
+    max-width: 95px !important;
+    font-size: 10px !important;
+  }
+
+  #scoreList .bf-score-pro-team img,
+  #scoreList .bf-score-pro-team
+  .bf-score-team-placeholder {
+    width: 29px !important;
+    height: 29px !important;
+    min-width: 29px !important;
+    flex-basis: 29px !important;
+  }
+
+  #scoreList .bf-score-pro-score {
+    min-width: 58px;
+  }
+
+  #scoreList .bf-score-pro-score span {
+    font-size: 18px !important;
+  }
+
+  #scoreList .bf-score-pro-details {
+    display: none !important;
+  }
+
+  #scoreList .bf-score-pro-selected {
+    align-items: flex-start;
+  }
+}
