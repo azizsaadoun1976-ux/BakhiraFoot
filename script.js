@@ -616,15 +616,19 @@ function createMatchHTML(match, index) {
 
   return `
    <div
-  class="bf-score-professional-match"
+  class="match-card"
   data-match-index="${index}"
-  data-fixture-id="${escapeHTML(
-    getFixtureId(match) || ""
-  )}"
+  data-fixture-id="${escapeHTML(fixtureId || "")}"
   onclick="
-    window.openMatchDetails(
-      Number(this.dataset.matchIndex)
-    )
+    if (window.bfOpenMatchDetails) {
+      window.bfOpenMatchDetails(
+        this.dataset.fixtureId
+      );
+    } else {
+      window.openMatchDetails(
+        Number(this.dataset.matchIndex)
+      );
+    }
   "
 >
 
