@@ -436,90 +436,141 @@ function getFixtureId(match) {
 ========================================================= */
 
 function getCompetitionPriority(match) {
+  const leagueId = Number(
+    match?.league?.id ??
+    match?.competition?.id ??
+    match?.league_id ??
+    match?.competition_id ??
+    0
+  );
+
   const league = normalizeText(getLeague(match));
 
-  if (
-    league.includes("world cup") ||
-    league.includes("coupe du monde") ||
-    league.includes("mundial")
-  ) return 150;
+  /*
+   * =========================================
+   * PRIORITY PAR ID
+   * API-Football League IDs
+   * =========================================
+   */
+
+  const priorityById = {
+    /* Coupes du monde */
+    1: 150,   // FIFA World Cup
+
+    /* Euro */
+    4: 140,   // UEFA Euro
+
+    /* Champions League */
+    2: 130,   // UEFA Champions League
+
+    /* Europa League */
+    3: 120,   // UEFA Europa League
+
+    /* Conference League */
+    848: 110, // UEFA Conference League
+
+    /* Angleterre */
+    39: 100,  // Premier League
+
+    /* Espagne */
+    140: 95,  // La Liga
+
+    /* Italie */
+    135: 90,  // Serie A
+
+    /* Allemagne */
+    78: 70,   // Bundesliga
+
+    /* France */
+    61: 65,   // Ligue 1
+
+    /* Maroc */
+    200: 55   // Botola Pro
+  };
 
   if (
-    league === "euro" ||
-    league.includes("european championship") ||
-    league.includes("uefa euro")
-  ) return 140;
+    leagueId &&
+    Object.prototype.hasOwnProperty.call(
+      priorityById,
+      leagueId
+    )
+  ) {
+    return priorityById[leagueId];
+  }
+
+  /*
+   * =========================================
+   * FALLBACK PAR NOM EXACT
+   * مهم:
+   * ما نستعملوش includes() هنا للبطولات
+   * باش ما نخلطوش البطولات المتشابهة.
+   * =========================================
+   */
+
+  const exactPriority = {
+    "world cup": 150,
+    "fifa world cup": 150,
+    "coupe du monde": 150,
+
+    "euro": 140,
+    "uefa euro": 140,
+    "european championship": 140,
+
+    "champions league": 130,
+    "uefa champions league": 130,
+
+    "europa league": 120,
+    "uefa europa league": 120,
+
+    "conference league": 110,
+    "uefa conference league": 110,
+
+    "premier league": 100,
+    "english premier league": 100,
+
+    "la liga": 95,
+    "laliga": 95,
+
+    "serie a": 90,
+    "italian serie a": 90,
+
+    "afcon": 85,
+    "africa cup of nations": 85,
+    "african cup of nations": 85,
+
+    "copa america": 80,
+
+    "nations league": 75,
+    "uefa nations league": 75,
+
+    "bundesliga": 70,
+    "german bundesliga": 70,
+
+    "ligue 1": 65,
+    "french ligue 1": 65,
+
+    "world cup qualifier": 60,
+    "world cup qualifiers": 60,
+    "world cup qualification": 60,
+
+    "botola": 55,
+    "botola pro": 55,
+    "botola pro maroc": 55
+  };
 
   if (
-    league.includes("champions league") ||
-    league.includes("uefa champions")
-  ) return 130;
+    Object.prototype.hasOwnProperty.call(
+      exactPriority,
+      league
+    )
+  ) {
+    return exactPriority[league];
+  }
 
-  if (
-    league.includes("europa league") ||
-    league.includes("uefa europa")
-  ) return 120;
-
-  if (
-    league.includes("conference league") ||
-    league.includes("uefa conference")
-  ) return 110;
-
-  if (
-    league.includes("premier league") ||
-    league.includes("english premier")
-  ) return 100;
-
-  if (
-    league.includes("la liga") ||
-    league.includes("laliga")
-  ) return 95;
-
-  if (
-    league === "serie a" ||
-    league.includes("italian serie")
-  ) return 90;
-
-  if (
-    league.includes("afcon") ||
-    league.includes("africa cup") ||
-    league.includes("african cup") ||
-    league.includes("coupe d'afrique") ||
-    league.includes("cup of nations")
-  ) return 85;
-
-  if (
-    league.includes("copa america") ||
-    league.includes("copa america")
-  ) return 80;
-
-  if (
-    league.includes("nations league") ||
-    league.includes("uefa nations")
-  ) return 75;
-
-  if (
-    league.includes("bundesliga") ||
-    league.includes("german bundesliga")
-  ) return 70;
-
-  if (
-    league === "ligue 1" ||
-    league.includes("ligue 1")
-  ) return 65;
-
-  if (
-    league.includes("world cup qualifier") ||
-    league.includes("world cup qualification") ||
-    league.includes("coupe du monde qualification")
-  ) return 60;
-
-  if (
-    league.includes("botola") ||
-    league.includes("botola pro") ||
-    league.includes("morocco")
-  ) return 55;
-
+  /*
+   * أي بطولة أخرى:
+   * ما تاخد حتى أولوية ديال بطولة كبيرة
+   */
   return 10;
 }
 
