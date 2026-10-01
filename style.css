@@ -12126,3 +12126,110 @@ body.dark
 .bf-score-match-status.upcoming {
   color: #85b4d7 !important;
 }
+
+/* =========================================================
+   SCORE STATUS - PLUS VISIBLE
+========================================================= */
+
+.bf-score-card-status {
+  min-width: 100px !important;
+
+  padding: 7px 10px !important;
+
+  border-radius: 9px !important;
+
+  gap: 5px !important;
+
+  font-size: 11px !important;
+
+  line-height: 1.2 !important;
+}
+
+.bf-score-card-status strong {
+  font-size: 11px !important;
+
+  line-height: 1.15 !important;
+
+  font-weight: 950 !important;
+}
+
+.bf-score-card-time {
+  font-size: 10px !important;
+
+  line-height: 1.1 !important;
+
+  font-weight: 900 !important;
+
+  opacity: .9 !important;
+}
+
+
+/* LIVE */
+
+.bf-score-card-status.live strong {
+  font-size: 12px !important;
+}
+
+
+/* MI-TEMPS */
+
+.bf-score-card-status.halftime strong {
+  font-size: 11px !important;
+}
+
+
+/* TERMINÉ */
+
+.bf-score-card-status.finished strong {
+  font-size: 11px !important;
+}
+
+
+/* À VENIR */
+
+.bf-score-card-status.upcoming strong {
+  font-size: 11px !important;
+}
+
+
+/* REPORTÉ */
+
+.bf-score-card-status.postponed strong {
+  font-size: 11px !important;
+}
+
+
+/* ANNULÉ */
+
+.bf-score-card-status.cancelled strong {
+  font-size: 11px !important;
+}
+
+
+/* =========================================================
+   MOBILE
+========================================================= */
+
+@media (max-width: 700px) {
+
+  .bf-score-card-status {
+    min-width: 82px !important;
+
+    padding: 6px 8px !important;
+
+    border-radius: 8px !important;
+  }
+
+  .bf-score-card-status strong {
+    font-size: 9px !important;
+  }
+
+  .bf-score-card-status.live strong {
+    font-size: 10px !important;
+  }
+
+  .bf-score-card-time {
+    font-size: 9px !important;
+  }
+
+}
