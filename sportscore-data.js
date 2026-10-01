@@ -344,13 +344,12 @@ async function loadTodayMatches() {
     );
 
   /*
-   * BakhiraFoot:
-   * scoreList كيتحكم فيه script.js
-   * فقط.
+   * مهم:
+   * sportscore-data.js مسؤول هنا
+   * غير على Home.
    *
-   * sportscore-data.js ممنوع
-   * يكتب فيه باش ما يرجعش
-   * الـlayout القديم.
+   * scoreList كتتحكم فيه script.js
+   * باش ما يقعش conflit بيناتهم.
    */
 
   if (!homeContainer) {
@@ -385,6 +384,7 @@ async function loadTodayMatches() {
       return;
     }
 
+
     homeContainer.innerHTML =
       matches
         .slice(0, 12)
@@ -405,6 +405,7 @@ async function loadTodayMatches() {
         Impossible de charger les matchs actuellement.
       </div>
     `;
+
   }
 }
    
@@ -2188,12 +2189,5 @@ body.dark .ss-club-fallback {
     init();
 
   }
-
-
-  /* تحديث Matchs فقط كل دقيقة */
-  setInterval(
-    loadTodayMatches,
-    60000
-  );
 
 })();
