@@ -12314,3 +12314,97 @@ body.dark
     font-size: 8px !important;
   }
 }
+/* =========================================================
+   REAL SCORE CARDS - TEXT SIZE
+========================================================= */
+
+/* LIVE / MI-TEMPS / TERMINÉ / À VENIR / REPORTÉ */
+#scoreList .bf-score-professional-match
+.bf-score-match-status strong {
+  font-size: 13px !important;
+  font-weight: 950 !important;
+  line-height: 1.15 !important;
+}
+
+/* الوقت */
+#scoreList .bf-score-professional-match
+.bf-score-kickoff-time {
+  display: block !important;
+  margin-top: 4px !important;
+
+  font-size: 11px !important;
+  font-weight: 900 !important;
+
+  line-height: 1.1 !important;
+  opacity: 1 !important;
+}
+
+/* أسماء الفرق */
+#scoreList .bf-score-professional-match
+.bf-score-team strong {
+  font-size: 13px !important;
+  font-weight: 900 !important;
+  line-height: 1.2 !important;
+}
+
+/* السكور */
+#scoreList .bf-score-professional-match
+.bf-score-professional-score span {
+  font-size: 22px !important;
+  font-weight: 950 !important;
+}
+
+/* - بين السكورات */
+#scoreList .bf-score-professional-match
+.bf-score-professional-score b {
+  font-size: 14px !important;
+}
+
+
+/* =========================
+   LIVE
+========================= */
+
+#scoreList .bf-score-professional-match
+.bf-score-match-status.live strong {
+  font-size: 14px !important;
+}
+
+
+/* =========================
+   MOBILE
+========================= */
+
+@media (max-width: 700px) {
+
+  #scoreList .bf-score-professional-match
+  .bf-score-match-status strong {
+    font-size: 10px !important;
+  }
+
+  #scoreList .bf-score-professional-match
+  .bf-score-kickoff-time {
+    font-size: 9px !important;
+  }
+
+  #scoreList .bf-score-professional-match
+  .bf-score-team strong {
+    font-size: 10px !important;
+  }
+
+  #scoreList .bf-score-professional-match
+  .bf-score-professional-score span {
+    font-size: 18px !important;
+  }
+
+  #scoreList .bf-score-professional-match
+  .bf-score-professional-score b {
+    font-size: 11px !important;
+  }
+
+  #scoreList .bf-score-professional-match
+  .bf-score-match-status.live strong {
+    font-size: 11px !important;
+  }
+
+}
