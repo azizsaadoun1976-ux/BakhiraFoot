@@ -260,20 +260,44 @@
 
       .bfmd-header {
         display: grid;
-        grid-template-columns: 1fr auto 1fr;
+        grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
         gap: 20px;
         align-items: center;
         text-align: center;
       }
 
-      .bfmd-team {
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        gap: 8px;
-        font-size: 14px;
-        font-weight: 950;
-      }
+     .bfmd-team {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 8px;
+
+  min-width: 0;
+  width: 100%;
+  max-width: 100%;
+
+  font-size: 14px;
+  font-weight: 950;
+  text-align: center;
+}
+
+.bfmd-team > span {
+  display: block;
+
+  width: 100%;
+  max-width: 100%;
+
+  white-space: normal;
+  overflow: visible;
+  text-overflow: clip;
+
+  overflow-wrap: anywhere;
+  word-break: normal;
+
+  line-height: 1.25;
+  text-align: center;
+}
 
       .bfmd-team img {
         width: 78px;
@@ -808,8 +832,12 @@
         }
 
         .bfmd-header {
-          gap: 7px;
-        }
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto minmax(0, 1fr);
+  gap: 20px;
+  align-items: center;
+  text-align: center;
+}
 
         .bfmd-team img,
         .bfmd-fallback {
