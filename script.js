@@ -623,6 +623,22 @@ function createMatchHTML(match, index) {
     match?.date ||
     null;
 
+   let kickoffTime = "";
+
+if (date) {
+  const d = new Date(date);
+
+  if (!Number.isNaN(d.getTime())) {
+    kickoffTime =
+      d.toLocaleTimeString(
+        "fr-FR",
+        {
+          hour: "2-digit",
+          minute: "2-digit"
+        }
+      );
+  }
+}
   let statusText = "MATCH";
   let statusClass = "upcoming";
   let timeText = "";
@@ -802,32 +818,36 @@ function createMatchHTML(match, index) {
         </div>
 
 
-        <div
+<div
+  class="
+    bf-score-card-status
+    ${statusClass}
+  "
+>
+
+  <strong>
+    ${escapeHTML(
+      statusText
+    )}
+  </strong>
+
+  ${
+    kickoffTime
+      ? `
+        <span
           class="
-            bf-score-card-status
-            ${statusClass}
+            bf-score-card-time
           "
         >
-          ${escapeHTML(
-            statusText
+          🕐 ${escapeHTML(
+            kickoffTime
           )}
+        </span>
+      `
+      : ""
+  }
 
-          ${
-            timeText
-              ? `
-                <span
-                  class="
-                    bf-score-card-time
-                  "
-                >
-                  ${escapeHTML(
-                    timeText
-                  )}
-                </span>
-              `
-              : ""
-          }
-        </div>
+</div>
 
       </div>
 
