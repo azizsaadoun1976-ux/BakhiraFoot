@@ -1402,87 +1402,35 @@ function selectScoreCompetition(index) {
     selectedCompetitionIndex = 0;
   }
 
-  if (
-    selectedCompetitionIndex >=
-    scoreCompetitionGroups.length
-  ) {
+  if (selectedCompetitionIndex >= scoreCompetitionGroups.length) {
     selectedCompetitionIndex =
       scoreCompetitionGroups.length - 1;
   }
 
-  /*
-   * =========================================
-   * ترتيب الماتشات داخل Competition
-   * LIVE أولاً دائماً
-   * ثم MI-TEMPS
-   * ثم À VENIR
-   * ثم TERMINÉ
-   * =========================================
-   */
-
-  const group =
-    scoreCompetitionGroups[
-      selectedCompetitionIndex
-    ];
+  const group = scoreCompetitionGroups[selectedCompetitionIndex];
 
   if (group && Array.isArray(group.matches)) {
-    group.matches.sort(
-      (a, b) => {
+    group.matches.sort((a, b) => {
+      const statusA = getStatus(a.match);
+      const statusB = getStatus(b.match);
 
-        const statusA =
-          String(
-            getStatus(a.match)
-          ).toUpperCase();
+      const liveA =
+        statusA === "LIVE" ||
+        statusA === "HT";
 
-        const statusB =
-          String(
-            getStatus(b.match)
-          ).toUpperCase();
+      const liveB =
+        statusB === "LIVE" ||
+        statusB === "HT";
 
-        const liveA =
-          [
-            "1H",
-            "2H",
-            "LIVE",
-            "ET",
-            "P",
-            "BT"
-          ].includes(statusA) ||
-          statusA.includes("LIVE");
-
-        const liveB =
-          [
-            "1H",
-            "2H",
-            "LIVE",
-            "ET",
-            "P",
-            "BT"
-          ].includes(statusB) ||
-          statusB.includes("LIVE");
-
-        if (liveA !== liveB) {
-          return liveB ? 1 : -1;
-        }
-
-        const htA =
-          statusA === "HT" ||
-          statusA.includes("HALF");
-
-        const htB =
-          statusB === "HT" ||
-          statusB.includes("HALF");
-
-        if (htA !== htB) {
-          return htB ? 1 : -1;
-        }
-
-        return (
-          getMatchPriority(b.match) -
-          getMatchPriority(a.match)
-        );
+      if (liveA !== liveB) {
+        return liveB ? 1 : -1;
       }
-    );
+
+      return (
+        getMatchPriority(b.match) -
+        getMatchPriority(a.match)
+      );
+    });
   }
 
   renderSelectedCompetition();
