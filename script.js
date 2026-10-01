@@ -1277,13 +1277,18 @@ function renderSelectedCompetition() {
         ({ match, index }) =>
 
           `
-            <div
-              class="bf-score-professional-match"
-              data-match-index="${index}"
-              onclick="
-                openMatchDetails(${index})
-              "
-            >
+           <div
+  class="match-card bf-score-professional-match"
+  data-match-index="${index}"
+  data-fixture-id="${escapeHTML(
+    getFixtureId(match) || ""
+  )}"
+  onclick="
+    window.openMatchDetails(
+      Number(this.dataset.matchIndex)
+    )
+  "
+>
 
               <div
                 class="bf-score-match-status"
