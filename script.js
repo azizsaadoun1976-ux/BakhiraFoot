@@ -160,6 +160,20 @@ function getLeague(match) {
   );
 }
 
+function getLeagueLogo(match) {
+  return (
+    match?.league?.logo ||
+    match?.league?.image ||
+    match?.league?.icon ||
+    match?.league?.logo_url ||
+    match?.competition?.logo ||
+    match?.competition?.image ||
+    match?.competition?.icon ||
+    match?.competition?.logo_url ||
+    ""
+  );
+}
+
 function getFixtureId(match) {
   return (
     match?.fixture?.slug ||
@@ -878,6 +892,632 @@ function renderSelectedScoreCompetition() {
 }
 
 /* =========================================================
+   SCORES - COMPETITION GROUPING
+========================================================= */
+
+function isLiveMatch(match) {
+  const status =
+    String(
+      getStatus(match)
+    ).toUpperCase();
+
+  return (
+    [
+      "1H",
+      "2H",
+      "LIVE",
+      "ET",
+      "P",
+      "BT",
+      "HT"
+    ].includes(status) ||
+    status.includes("LIVE")
+  );
+}
+
+
+function buildCompetitionGroups(matches) {
+
+  const groups = new Map();
+
+  matches.forEach(
+    (match, index) => {
+
+      const name =
+        getLeague(match) ||
+        "Football";
+
+      const key =
+        normalizeText(name);
+
+      if (!groups.has(key)) {
+        groups.set(
+          key,
+          {
+            name,
+            logo:
+              getLeagueLogo(match),
+            matches: []
+          }
+        );
+      }
+
+      groups
+        .get(key)
+        .matches
+        .push({
+          match,
+          index
+        });
+    }
+  );
+
+
+  const result =
+    Array.from(
+      groups.values()
+    );
+
+
+  /*
+   * COMPÉTITIONS GRANDES D'ABORD
+   *
+   * LIVE ne change pas l'ordre
+   * des compétitions.
+   */
+
+  result.sort(
+    (a, b) => {
+
+      const pa =
+        getCompetitionPriority(
+          a.matches[0].match
+        );
+
+      const pb =
+        getCompetitionPriority(
+          b.matches[0].match
+        );
+
+      if (pa !== pb) {
+        return pb - pa;
+      }
+
+      return a.name.localeCompare(
+        b.name,
+        "fr"
+      );
+    }
+  );
+
+
+  /*
+   * MATCHS À L'INTÉRIEUR
+   *
+   * LIVE → HT → à venir → terminé
+   */
+
+  result.forEach(
+    group => {
+
+      group.matches.sort(
+        (a, b) => {
+
+          const liveA =
+            isLiveMatch(
+              a.match
+            );
+
+          const liveB =
+            isLiveMatch(
+              b.match
+            );
+
+          if (
+            liveA !==
+            liveB
+          ) {
+            return liveB
+              ? -1
+              : 1;
+          }
+
+          return (
+            getMatchPriority(
+              b.match
+            ) -
+            getMatchPriority(
+              a.match
+            )
+          );
+        }
+      );
+
+    }
+  );
+
+  return result;
+}
+
+
+/* =========================================================
+   RENDER COMPETITIONS
+========================================================= */
+
+function renderScoreCompetitions(
+  matches
+) {
+
+  const list =
+    $("scoreList");
+
+  if (!list) {
+    return;
+  }
+
+  if (
+    !Array.isArray(matches) ||
+    !matches.length
+  ) {
+
+    list.innerHTML =
+      emptyCard(
+        "Aucun match trouvé."
+      );
+
+    return;
+  }
+
+
+  scoreCompetitionGroups =
+    buildCompetitionGroups(
+      matches
+    );
+
+
+  if (
+    selectedCompetitionIndex >=
+    scoreCompetitionGroups.length
+  ) {
+    selectedCompetitionIndex = 0;
+  }
+
+
+  renderSelectedCompetition();
+}
+
+
+/* =========================================================
+   SELECT COMPETITION
+========================================================= */
+
+function selectScoreCompetition(
+  index
+) {
+
+  selectedCompetitionIndex =
+    Number(index);
+
+  if (
+    !Number.isFinite(
+      selectedCompetitionIndex
+    )
+  ) {
+    selectedCompetitionIndex = 0;
+  }
+
+  if (
+    selectedCompetitionIndex < 0
+  ) {
+    selectedCompetitionIndex = 0;
+  }
+
+  if (
+    selectedCompetitionIndex >=
+    scoreCompetitionGroups.length
+  ) {
+    selectedCompetitionIndex =
+      scoreCompetitionGroups.length - 1;
+  }
+
+  renderSelectedCompetition();
+}
+
+
+/* =========================================================
+   DISPLAY SELECTED COMPETITION
+========================================================= */
+
+function renderSelectedCompetition() {
+
+  const list =
+    $("scoreList");
+
+  if (!list) {
+    return;
+  }
+
+  const group =
+    scoreCompetitionGroups[
+      selectedCompetitionIndex
+    ];
+
+  if (!group) {
+    return;
+  }
+
+
+  /*
+   * LEFT COMPETITIONS
+   */
+
+  const competitionsHTML =
+    scoreCompetitionGroups
+      .map(
+        (item, index) => {
+
+          const liveCount =
+            item.matches.filter(
+              ({ match }) =>
+                isLiveMatch(match)
+            ).length;
+
+          return `
+            <button
+              type="button"
+              class="
+                bf-score-competition
+                ${
+                  index ===
+                  selectedCompetitionIndex
+                    ? "active"
+                    : ""
+                }
+              "
+              onclick="
+                selectScoreCompetition(
+                  ${index}
+                )
+              "
+            >
+
+              <span
+                class="bf-score-comp-left"
+              >
+
+                ${
+                  item.logo
+                    ? `
+                      <img
+                        class="
+                          bf-score-comp-logo
+                        "
+                        src="${escapeHTML(
+                          item.logo
+                        )}"
+                        alt="${escapeHTML(
+                          item.name
+                        )}"
+                        loading="lazy"
+                      >
+                    `
+                    : `
+                      <span
+                        class="
+                          bf-score-comp-icon
+                        "
+                      >
+                        🏆
+                      </span>
+                    `
+                }
+
+                <span
+                  class="bf-score-comp-name"
+                >
+                  ${escapeHTML(
+                    item.name
+                  )}
+                </span>
+
+              </span>
+
+
+              <span
+                class="bf-score-comp-meta"
+              >
+
+                ${
+                  liveCount
+                    ? `
+                      <span
+                        class="
+                          bf-score-live-count
+                        "
+                      >
+                        🔴 ${liveCount}
+                      </span>
+                    `
+                    : ""
+                }
+
+                <span>
+                  ${item.matches.length}
+                </span>
+
+              </span>
+
+            </button>
+          `;
+        }
+      )
+      .join("");
+
+
+  /*
+   * RIGHT MATCHES
+   *
+   * نفس index ديال currentMatches
+   * باش openMatchDetails يبقى خدام.
+   */
+
+  const matchesHTML =
+    group.matches
+      .map(
+        ({ match, index }) =>
+
+          `
+            <div
+              class="bf-score-professional-match"
+              data-match-index="${index}"
+              onclick="
+                openMatchDetails(${index})
+              "
+            >
+
+              <div
+                class="bf-score-match-status"
+              >
+                ${escapeHTML(
+                  statusLabel(match)
+                )}
+              </div>
+
+
+              <div
+                class="bf-score-match-teams"
+              >
+
+                <div
+                  class="bf-score-team"
+                >
+
+                  ${
+                    getHomeLogo(match)
+                      ? `
+                        <img
+                          src="${escapeHTML(
+                            getHomeLogo(
+                              match
+                            )
+                          )}"
+                          alt="${escapeHTML(
+                            getHome(match)
+                          )}"
+                          loading="lazy"
+                        >
+                      `
+                      : `
+                        <span
+                          class="
+                            bf-score-team-placeholder
+                          "
+                        >
+                          ⚽
+                        </span>
+                      `
+                  }
+
+                  <strong>
+                    ${escapeHTML(
+                      getHome(match)
+                    )}
+                  </strong>
+
+                </div>
+
+
+                <div
+                  class="bf-score-professional-score"
+                >
+
+                  <span>
+                    ${escapeHTML(
+                      getHomeScore(match)
+                    )}
+                  </span>
+
+                  <b>:</b>
+
+                  <span>
+                    ${escapeHTML(
+                      getAwayScore(match)
+                    )}
+                  </span>
+
+                </div>
+
+
+                <div
+                  class="bf-score-team"
+                >
+
+                  ${
+                    getAwayLogo(match)
+                      ? `
+                        <img
+                          src="${escapeHTML(
+                            getAwayLogo(
+                              match
+                            )
+                          )}"
+                          alt="${escapeHTML(
+                            getAway(match)
+                          )}"
+                          loading="lazy"
+                        >
+                      `
+                      : `
+                        <span
+                          class="
+                            bf-score-team-placeholder
+                          "
+                        >
+                          ⚽
+                        </span>
+                      `
+                  }
+
+                  <strong>
+                    ${escapeHTML(
+                      getAway(match)
+                    )}
+                  </strong>
+
+                </div>
+
+              </div>
+
+
+              <div
+                class="bf-score-match-arrow"
+              >
+                Voir le match
+                <span>›</span>
+              </div>
+
+            </div>
+          `
+      )
+      .join("");
+
+
+  list.innerHTML = `
+
+    <div
+      class="bf-score-layout"
+    >
+
+      <aside
+        class="
+          bf-score-competition-list
+        "
+      >
+
+        <div
+          class="bf-score-side-title"
+        >
+          <span>
+            🏆 COMPÉTITIONS
+          </span>
+
+          <small>
+            ${scoreCompetitionGroups.length}
+          </small>
+        </div>
+
+
+        <div
+          class="
+            bf-score-competition-items
+          "
+        >
+
+          ${competitionsHTML}
+
+        </div>
+
+      </aside>
+
+
+      <section
+        class="
+          bf-score-details-panel
+        "
+      >
+
+        <div
+          class="
+            bf-score-details-head
+          "
+        >
+
+          <div
+            class="
+              bf-score-selected-competition
+            "
+          >
+
+            ${
+              group.logo
+                ? `
+                  <img
+                    src="${escapeHTML(
+                      group.logo
+                    )}"
+                    alt="${escapeHTML(
+                      group.name
+                    )}"
+                  >
+                `
+                : `
+                  <span>
+                    🏆
+                  </span>
+                `
+            }
+
+            <div>
+
+              <small>
+                COMPÉTITION
+              </small>
+
+              <h2>
+                ${escapeHTML(
+                  group.name
+                )}
+              </h2>
+
+              <span>
+                ${group.matches.length}
+                matchs
+              </span>
+
+            </div>
+
+          </div>
+
+        </div>
+
+
+        <div
+          class="
+            bf-score-professional-matches
+          "
+        >
+
+          ${matchesHTML}
+
+        </div>
+
+      </section>
+
+    </div>
+  `;
+}
+
+/* =========================================================
    LOAD LIVE
 ========================================================= */
 
@@ -934,9 +1574,10 @@ async function loadLive() {
       } else {
 selectedCompetitionIndex = 0;
 
-renderScoreCompetitionGroups(
+renderScoreCompetitions(
   matches
-);      }
+);
+      }
     }
 
     return matches;
@@ -1029,7 +1670,7 @@ async function loadMatches(date) {
 
 selectedCompetitionIndex = 0;
 
-renderScoreCompetitionGroups(
+renderScoreCompetitions(
   matches
 );
   } catch (error) {
