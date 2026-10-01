@@ -3931,7 +3931,145 @@ function addModalStyles() {
         font-size: 8px;
       }
     }
+    /* ========================================
+       BAKHIRAFOOT PRO - MATCH HEADER
+    ======================================== */
 
+    .bf-details-league {
+      margin: 2px 0 14px;
+      text-align: center;
+      font-size: 14px;
+      font-weight: 900;
+      letter-spacing: .2px;
+    }
+
+    .bf-details-status-wrap {
+      margin-bottom: 18px;
+      text-align: center;
+    }
+
+    .bf-details-status {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      min-height: 34px;
+      padding: 7px 14px;
+      border-radius: 999px;
+      font-size: 12px;
+      font-weight: 950;
+      background: rgba(127,127,127,.09);
+      border: 1px solid rgba(127,127,127,.12);
+      box-shadow: 0 4px 14px rgba(0,0,0,.06);
+    }
+
+    .bf-details-teams {
+      display: grid;
+      grid-template-columns: minmax(0,1fr) auto minmax(0,1fr);
+      align-items: center;
+      gap: 24px;
+      padding: 24px 18px;
+      border-radius: 20px;
+      background: linear-gradient(
+        180deg,
+        rgba(127,127,127,.06),
+        rgba(127,127,127,.025)
+      );
+      border: 1px solid rgba(127,127,127,.11);
+    }
+
+    .bf-details-team {
+      min-width: 0;
+      width: 100%;
+      display: flex;
+      flex-direction: column;
+      align-items: center;
+      justify-content: center;
+      gap: 10px;
+      text-align: center;
+    }
+
+    .bf-details-logo,
+    .bf-details-team img {
+      width: 82px;
+      height: 82px;
+      object-fit: contain;
+      filter: drop-shadow(
+        0 5px 10px rgba(0,0,0,.10)
+      );
+    }
+
+    .bf-details-fallback-logo {
+      width: 82px;
+      height: 82px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 42px;
+    }
+
+    .bf-details-team-name {
+      display: block;
+      width: 100%;
+      max-width: 220px;
+      font-size: 15px;
+      font-weight: 950;
+      line-height: 1.3;
+      text-align: center;
+      white-space: normal;
+      overflow-wrap: anywhere;
+    }
+
+    .bf-details-score {
+      min-width: 120px;
+      padding: 13px 16px;
+      border-radius: 16px;
+      background: var(--card, #fff);
+      box-shadow: 0 7px 22px rgba(0,0,0,.08);
+      text-align: center;
+      font-size: 38px;
+      font-weight: 950;
+      line-height: 1;
+      white-space: nowrap;
+    }
+
+    body.dark .bf-details-teams {
+      background: linear-gradient(
+        180deg,
+        rgba(255,255,255,.045),
+        rgba(255,255,255,.02)
+      );
+      border-color: rgba(255,255,255,.08);
+    }
+
+    body.dark .bf-details-score {
+      background: #18232b;
+    }
+
+    @media (max-width: 600px) {
+
+      .bf-details-teams {
+        gap: 8px;
+        padding: 18px 8px;
+      }
+
+      .bf-details-logo,
+      .bf-details-team img,
+      .bf-details-fallback-logo {
+        width: 60px;
+        height: 60px;
+      }
+
+      .bf-details-team-name {
+        max-width: 125px;
+        font-size: 12px;
+      }
+
+      .bf-details-score {
+        min-width: 78px;
+        padding: 10px 6px;
+        font-size: 28px;
+      }
+    }
   `;
 
   document.head.appendChild(style);
