@@ -11363,3 +11363,541 @@ main,
   cursor: pointer !important;
   pointer-events: auto !important;
 }
+
+/* =========================================================
+   BAKHIRAFOOT - CLEAN PROFESSIONAL SCORE CARDS
+========================================================= */
+
+#scoreList .bf-score-clean-card {
+  width: 100% !important;
+
+  display: block !important;
+
+  min-height: 0 !important;
+
+  padding: 0 !important;
+
+  margin: 0 0 8px !important;
+
+  overflow: hidden !important;
+
+  border-radius: 13px !important;
+
+  background: #ffffff !important;
+
+  border: 1px solid #e3e8eb !important;
+
+  box-shadow:
+    0 3px 12px
+    rgba(15,23,42,.045) !important;
+
+  cursor: pointer !important;
+
+  transition:
+    transform .15s ease,
+    box-shadow .15s ease,
+    border-color .15s ease !important;
+}
+
+
+#scoreList .bf-score-clean-card:hover {
+  transform: translateY(-1px) !important;
+
+  border-color: #cfd8dd !important;
+
+  box-shadow:
+    0 7px 18px
+    rgba(15,23,42,.08) !important;
+}
+
+
+/* =========================
+   HEADER
+========================= */
+
+.bf-score-card-header {
+  min-height: 38px;
+
+  display: flex;
+
+  align-items: center;
+
+  justify-content: space-between;
+
+  gap: 10px;
+
+  padding:
+    7px 11px;
+
+  border-bottom:
+    1px solid #edf1f3;
+}
+
+
+.bf-score-card-league {
+  min-width: 0;
+
+  display: flex;
+
+  align-items: center;
+
+  gap: 7px;
+
+  color: #4f606b;
+
+  font-size: 10px;
+
+  font-weight: 900;
+}
+
+
+.bf-score-card-league
+> span:last-child {
+  overflow: hidden;
+
+  text-overflow: ellipsis;
+
+  white-space: nowrap;
+}
+
+
+.bf-score-card-league-logo,
+.bf-score-card-league-icon {
+  width: 24px;
+
+  height: 24px;
+
+  flex: 0 0 24px;
+
+  object-fit: contain;
+
+  border-radius: 6px;
+
+  background: #f5f7f8;
+}
+
+
+.bf-score-card-league-icon {
+  display: flex;
+
+  align-items: center;
+
+  justify-content: center;
+
+  font-size: 13px;
+}
+
+
+.bf-score-card-status {
+  flex: 0 0 auto;
+
+  display: flex;
+
+  align-items: center;
+
+  gap: 5px;
+
+  padding:
+    4px 7px;
+
+  border-radius: 999px;
+
+  font-size: 8px;
+
+  font-weight: 950;
+
+  white-space: nowrap;
+}
+
+
+.bf-score-card-status.live {
+  background: #fff0f0;
+
+  color: #dc3030;
+}
+
+
+.bf-score-card-status.halftime {
+  background: #fff7df;
+
+  color: #a87500;
+}
+
+
+.bf-score-card-status.finished {
+  background: #edf6ef;
+
+  color: #398050;
+}
+
+
+.bf-score-card-status.upcoming {
+  background: #eef4fa;
+
+  color: #52718e;
+}
+
+
+.bf-score-card-status.postponed {
+  background: #fff4e5;
+
+  color: #ad711d;
+}
+
+
+.bf-score-card-status.cancelled {
+  background: #fbecec;
+
+  color: #a72f2f;
+}
+
+
+.bf-score-card-time {
+  opacity: .8;
+
+  font-size: 8px;
+}
+
+
+/* =========================
+   BODY
+========================= */
+
+.bf-score-card-body {
+  width: 100%;
+
+  min-height: 82px;
+
+  display: grid;
+
+  grid-template-columns:
+    minmax(0, 1fr)
+    80px
+    minmax(0, 1fr);
+
+  align-items: center;
+
+  gap: 8px;
+
+  padding:
+    12px 14px;
+}
+
+
+.bf-score-card-team {
+  min-width: 0;
+
+  display: flex;
+
+  align-items: center;
+
+  gap: 9px;
+}
+
+
+.bf-score-card-team.home {
+  justify-content: flex-end;
+
+  text-align: right;
+}
+
+
+.bf-score-card-team.away {
+  justify-content: flex-start;
+
+  text-align: left;
+}
+
+
+.bf-score-card-team-logo {
+  width: 34px !important;
+
+  height: 34px !important;
+
+  min-width: 34px !important;
+
+  flex: 0 0 34px;
+
+  object-fit: contain;
+
+  border-radius: 50%;
+
+  background: #f5f7f8;
+
+  padding: 3px;
+}
+
+
+.bf-score-card-team-logo.placeholder {
+  display: flex;
+
+  align-items: center;
+
+  justify-content: center;
+
+  font-size: 16px;
+}
+
+
+.bf-score-card-team strong {
+  min-width: 0;
+
+  overflow: hidden;
+
+  text-overflow: ellipsis;
+
+  white-space: nowrap;
+
+  color: #1c2a33;
+
+  font-size: 11px;
+
+  line-height: 1.25;
+
+  font-weight: 900;
+}
+
+
+/* =========================
+   SCORE
+========================= */
+
+.bf-score-card-center {
+  display: flex;
+
+  flex-direction: column;
+
+  align-items: center;
+
+  justify-content: center;
+
+  text-align: center;
+}
+
+
+.bf-score-card-score {
+  display: flex;
+
+  align-items: center;
+
+  justify-content: center;
+
+  gap: 6px;
+}
+
+
+.bf-score-card-score span {
+  min-width: 20px;
+
+  color: #172630;
+
+  font-size: 20px;
+
+  line-height: 1;
+
+  font-weight: 950;
+
+  text-align: center;
+}
+
+
+.bf-score-card-score b {
+  color: #8b969d;
+
+  font-size: 13px;
+
+  font-weight: 700;
+}
+
+
+.bf-score-card-center small {
+  margin-top: 5px;
+
+  color: #9aa5ac;
+
+  font-size: 7px;
+
+  font-weight: 850;
+}
+
+
+/* =========================
+   FOOTER
+========================= */
+
+.bf-score-card-footer {
+  min-height: 29px;
+
+  display: flex;
+
+  align-items: center;
+
+  justify-content: flex-end;
+
+  gap: 4px;
+
+  padding:
+    5px 11px;
+
+  border-top:
+    1px solid #edf1f3;
+
+  color: #8a979f;
+
+  font-size: 8px;
+
+  font-weight: 850;
+}
+
+
+.bf-score-card-arrow {
+  font-size: 15px;
+
+  line-height: 1;
+
+  color: #6c7b84;
+}
+
+
+/* =========================
+   DARK
+========================= */
+
+body.dark #scoreList
+.bf-score-clean-card {
+  background: #13212b !important;
+
+  border-color: #2c3840 !important;
+}
+
+
+body.dark #scoreList
+.bf-score-card-header {
+  border-color: #29353d !important;
+}
+
+
+body.dark #scoreList
+.bf-score-card-league {
+  color: #aab7bf !important;
+}
+
+
+body.dark #scoreList
+.bf-score-card-league-logo,
+body.dark #scoreList
+.bf-score-card-league-icon,
+body.dark #scoreList
+.bf-score-card-team-logo {
+  background: #202d35 !important;
+}
+
+
+body.dark #scoreList
+.bf-score-card-team strong,
+body.dark #scoreList
+.bf-score-card-score span {
+  color: #edf2f5 !important;
+}
+
+
+body.dark #scoreList
+.bf-score-card-footer {
+  border-color: #29353d !important;
+
+  color: #8f9da5 !important;
+}
+
+
+/* =========================
+   MOBILE
+========================= */
+
+@media (max-width: 700px) {
+
+  #scoreList .bf-score-clean-card {
+    border-radius: 11px !important;
+  }
+
+  .bf-score-card-header {
+    min-height: 35px;
+
+    padding:
+      6px 8px;
+  }
+
+  .bf-score-card-league {
+    font-size: 9px;
+  }
+
+  .bf-score-card-league-logo,
+  .bf-score-card-league-icon {
+    width: 21px;
+
+    height: 21px;
+
+    flex-basis: 21px;
+  }
+
+  .bf-score-card-status {
+    font-size: 7px;
+
+    padding:
+      4px 6px;
+  }
+
+  .bf-score-card-body {
+    min-height: 74px;
+
+    grid-template-columns:
+      minmax(0, 1fr)
+      57px
+      minmax(0, 1fr);
+
+    padding:
+      10px 7px;
+
+    gap: 4px;
+  }
+
+  .bf-score-card-team {
+    gap: 5px;
+  }
+
+  .bf-score-card-team-logo {
+    width: 28px !important;
+
+    height: 28px !important;
+
+    min-width: 28px !important;
+
+    flex-basis: 28px;
+  }
+
+  .bf-score-card-team strong {
+    font-size: 9px;
+  }
+
+  .bf-score-card-score {
+    gap: 4px;
+  }
+
+  .bf-score-card-score span {
+    min-width: 17px;
+
+    font-size: 17px;
+  }
+
+  .bf-score-card-score b {
+    font-size: 10px;
+  }
+
+  .bf-score-card-footer {
+    min-height: 25px;
+
+    padding:
+      4px 8px;
+
+    font-size: 7px;
+  }
+}
