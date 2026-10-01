@@ -5024,38 +5024,49 @@ function getPlayerRating(
   window.bfOpenMatchDetails =
     openDetails;
 
-  window.openMatchDetails =
-    function (index) {
+window.openMatchDetails =
+  function (index) {
 
-      const card =
-        document.querySelector(
-          `.match-card[data-match-index="${index}"]`
-        );
-
-      if (!card) {
-        console.error(
-          "BakhiraFoot: match card introuvable",
-          index
-        );
-        return;
-      }
-
-      const identifier =
-        getCardIdentifier(
-          card
-        );
-
-      if (!identifier) {
-        console.error(
-          "BakhiraFoot: fixture introuvable",
-          card
-        );
-        return;
-      }
-
-      openDetails(
-        identifier
+    /*
+     * أولاً نقلبو على Card ديال Scores
+     * باش ما ناخدوش Card أخرى من Home
+     */
+    const scoreCard =
+      document.querySelector(
+        `.bf-score-professional-match[data-match-index="${index}"]`
       );
-    };
+
+    /*
+     * وإذا ما لقاهاش، نستعملو الطريقة القديمة
+     */
+    const card =
+      scoreCard ||
+      document.querySelector(
+        `.match-card[data-match-index="${index}"]`
+      );
+
+    if (!card) {
+      console.error(
+        "BakhiraFoot: match card introuvable",
+        index
+      );
+      return;
+    }
+
+    const identifier =
+      getCardIdentifier(card);
+
+    if (!identifier) {
+      console.error(
+        "BakhiraFoot: fixture introuvable",
+        card
+      );
+      return;
+    }
+
+    openDetails(
+      identifier
+    );
+  };
 
 })();
