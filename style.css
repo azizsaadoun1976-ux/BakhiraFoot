@@ -12059,3 +12059,70 @@ body.dark .bf-score-card-status.cancelled {
     font-size: 7px;
   }
 }
+
+.bf-score-professional-match
+.bf-score-match-status {
+  display: flex !important;
+  flex-direction: column !important;
+  align-items: flex-start !important;
+  justify-content: center !important;
+  gap: 3px !important;
+}
+
+.bf-score-professional-match
+.bf-score-match-status strong {
+  font-size: 9px !important;
+  font-weight: 950 !important;
+  line-height: 1.1 !important;
+}
+
+.bf-score-kickoff-time {
+  display: block !important;
+  font-size: 8px !important;
+  font-weight: 800 !important;
+  opacity: .72 !important;
+}
+
+.bf-score-professional-match
+.bf-score-match-status.live {
+  color: #d92f2f !important;
+}
+
+.bf-score-professional-match
+.bf-score-match-status.halftime {
+  color: #a47300 !important;
+}
+
+.bf-score-professional-match
+.bf-score-match-status.finished {
+  color: #397b4e !important;
+}
+
+.bf-score-professional-match
+.bf-score-match-status.upcoming {
+  color: #52718e !important;
+}
+
+body.dark
+.bf-score-professional-match
+.bf-score-match-status {
+  color: #aebbc3 !important;
+}
+
+body.dark
+.bf-score-professional-match
+.bf-score-match-status.live {
+  color: #ff7777 !important;
+}
+
+body.dark
+.bf-score-professional-match
+.bf-score-match-status.finished {
+  color: #75d39a !important;
+}
+
+body.dark
+.bf-score-professional-match
+.bf-score-match-status.upcoming {
+  color: #85b4d7 !important;
+}
