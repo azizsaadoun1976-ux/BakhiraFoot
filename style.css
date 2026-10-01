@@ -10556,3 +10556,443 @@ main,
     font-size: 8px !important;
   }
 }
+/* =========================================================
+   SCORES - COMPETITIONS LEFT / MATCHES RIGHT
+========================================================= */
+
+.bf-score-competitions-layout {
+  width: 100%;
+
+  display: grid;
+
+  grid-template-columns:
+    265px
+    minmax(0, 1fr);
+
+  gap: 12px;
+
+  align-items: start;
+}
+
+
+.bf-score-competitions {
+  background: #fff;
+
+  border:
+    1px solid #e1e7eb;
+
+  border-radius: 12px;
+
+  overflow: hidden;
+
+  position: sticky;
+  top: 12px;
+}
+
+
+.bf-score-comp-title {
+  padding:
+    12px 14px;
+
+  font-size: 11px;
+  font-weight: 950;
+
+  color: #51616b;
+
+  border-bottom:
+    1px solid #e8edef;
+}
+
+
+.bf-score-comp-list {
+  display: flex;
+
+  flex-direction: column;
+}
+
+
+.bf-score-competition {
+  width: 100%;
+
+  min-height: 52px;
+
+  padding:
+    8px 12px;
+
+  display: flex;
+
+  align-items: center;
+
+  justify-content: space-between;
+
+  gap: 8px;
+
+  border: 0;
+
+  border-bottom:
+    1px solid #edf1f3;
+
+  background: #fff;
+
+  color: #25333c;
+
+  cursor: pointer;
+
+  text-align: left;
+}
+
+
+.bf-score-competition:last-child {
+  border-bottom: 0;
+}
+
+
+.bf-score-competition:hover {
+  background: #f7f9fa;
+}
+
+
+.bf-score-competition.active {
+  background: #edf8f3;
+
+  color: #08774f;
+
+  box-shadow:
+    inset 3px 0 0 #19a875;
+}
+
+
+.bf-score-comp-name {
+  min-width: 0;
+
+  overflow: hidden;
+
+  text-overflow: ellipsis;
+
+  white-space: nowrap;
+
+  font-size: 11px;
+  font-weight: 850;
+}
+
+
+.bf-score-comp-count {
+  flex: 0 0 auto;
+
+  color: #89959d;
+
+  font-size: 9px;
+  font-weight: 900;
+}
+
+
+/* =========================
+   RIGHT PANEL
+========================= */
+
+.bf-score-comp-panel {
+  min-width: 0;
+
+  background: #fff;
+
+  border:
+    1px solid #e1e7eb;
+
+  border-radius: 12px;
+
+  overflow: hidden;
+}
+
+
+.bf-score-comp-panel-head {
+  padding:
+    12px 15px;
+
+  border-bottom:
+    1px solid #e8edef;
+
+  background:
+    linear-gradient(
+      180deg,
+      #fff,
+      #fafcfd
+    );
+}
+
+
+.bf-score-comp-panel-head small {
+  display: block;
+
+  margin-bottom: 3px;
+
+  color: #8b98a0;
+
+  font-size: 8px;
+  font-weight: 900;
+
+  letter-spacing: .7px;
+}
+
+
+.bf-score-comp-panel-head h2 {
+  margin: 0;
+
+  color: #1c2a33;
+
+  font-size: 16px;
+  font-weight: 950;
+}
+
+
+.bf-score-comp-panel-head span {
+  display: block;
+
+  margin-top: 3px;
+
+  color: #8b98a0;
+
+  font-size: 9px;
+}
+
+
+.bf-score-comp-matches {
+  padding: 7px;
+
+  display: flex;
+
+  flex-direction: column;
+
+  gap: 6px;
+}
+
+
+/* =========================
+   SMALLER MATCH CARDS
+========================= */
+
+.bf-score-comp-matches .match-card {
+  margin: 0 !important;
+
+  border-radius: 9px !important;
+}
+
+
+.bf-score-comp-matches
+.flash-league {
+  display: none !important;
+}
+
+
+.bf-score-comp-matches
+.flash-match {
+  min-height: 64px !important;
+
+  padding:
+    7px 9px !important;
+
+  grid-template-columns:
+    75px
+    minmax(0, 1fr)
+    52px !important;
+
+  gap: 7px !important;
+}
+
+
+.bf-score-comp-matches
+.flash-team
+.teamLogo {
+  width: 26px !important;
+  height: 26px !important;
+
+  min-width: 26px !important;
+}
+
+
+.bf-score-comp-matches
+.flash-team
+.team span:not(.teamLogo) {
+  font-size: 10px !important;
+
+  font-weight: 800 !important;
+}
+
+
+.bf-score-comp-matches
+.flash-score strong {
+  font-size: 15px !important;
+
+  font-weight: 950 !important;
+}
+
+
+.bf-score-comp-matches
+.flash-time span {
+  font-size: 8px !important;
+}
+
+
+/* =========================
+   DARK MODE
+========================= */
+
+.dark .bf-score-competitions,
+.dark .bf-score-comp-panel {
+  background: #151e25 !important;
+
+  border-color: #2b3740 !important;
+}
+
+
+.dark .bf-score-comp-title,
+.dark .bf-score-comp-panel-head {
+  background: #18232b !important;
+
+  border-color: #2b3740 !important;
+}
+
+
+.dark .bf-score-comp-title,
+.dark .bf-score-comp-panel-head small,
+.dark .bf-score-comp-panel-head span {
+  color: #98a6ae !important;
+}
+
+
+.dark .bf-score-comp-panel-head h2 {
+  color: #edf2f5 !important;
+}
+
+
+.dark .bf-score-competition {
+  background: #151e25 !important;
+
+  color: #c5d0d6 !important;
+
+  border-color: #28343c !important;
+}
+
+
+.dark .bf-score-competition:hover {
+  background: #1b262e !important;
+}
+
+
+.dark .bf-score-competition.active {
+  background: #16352a !important;
+
+  color: #65dda4 !important;
+}
+
+
+.dark .bf-score-comp-matches
+.match-card {
+  background: #13212b !important;
+
+  border-color: #2b3740 !important;
+}
+
+
+/* =========================
+   MOBILE
+========================= */
+
+@media (max-width: 700px) {
+
+  .bf-score-competitions-layout {
+    display: flex;
+
+    flex-direction: column;
+
+    gap: 8px;
+  }
+
+
+  .bf-score-competitions {
+    position: static;
+
+    width: 100%;
+  }
+
+
+  .bf-score-comp-list {
+    flex-direction: row;
+
+    overflow-x: auto;
+
+    scrollbar-width: none;
+  }
+
+
+  .bf-score-comp-list::-webkit-scrollbar {
+    display: none;
+  }
+
+
+  .bf-score-competition {
+    flex: 0 0 auto;
+
+    width: auto;
+
+    min-width: 135px;
+
+    min-height: 48px;
+
+    border-bottom: 0;
+
+    border-right:
+      1px solid #edf1f3;
+  }
+
+
+  .bf-score-comp-panel {
+    width: 100%;
+  }
+
+
+  .bf-score-comp-panel-head {
+    padding: 10px 11px;
+  }
+
+
+  .bf-score-comp-panel-head h2 {
+    font-size: 14px;
+  }
+
+
+  .bf-score-comp-matches
+  .flash-match {
+    min-height: 60px !important;
+
+    grid-template-columns:
+      58px
+      minmax(0, 1fr)
+      45px !important;
+
+    padding:
+      6px !important;
+  }
+
+
+  .bf-score-comp-matches
+  .flash-team
+  .teamLogo {
+    width: 24px !important;
+    height: 24px !important;
+
+    min-width: 24px !important;
+  }
+
+
+  .bf-score-comp-matches
+  .flash-team
+  .team span:not(.teamLogo) {
+    font-size: 9px !important;
+  }
+
+
+  .bf-score-comp-matches
+  .flash-score strong {
+    font-size: 14px !important;
+  }
+}
