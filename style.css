@@ -12231,5 +12231,86 @@ body.dark
   .bf-score-card-time {
     font-size: 9px !important;
   }
+}
 
+/* =========================================================
+   SCORES - TEXT A LITTLE BIGGER
+========================================================= */
+
+/* الحالة */
+#scoreList .bf-score-card-status {
+  min-width: 108px !important;
+  padding: 8px 11px !important;
+  gap: 5px !important;
+}
+
+#scoreList .bf-score-card-status strong {
+  font-size: 13px !important;
+  line-height: 1.15 !important;
+  font-weight: 950 !important;
+}
+
+/* الساعة */
+#scoreList .bf-score-card-time {
+  font-size: 11px !important;
+  line-height: 1.1 !important;
+  font-weight: 900 !important;
+  opacity: 1 !important;
+}
+
+/* أسماء الفرق */
+#scoreList .bf-score-card-team strong {
+  font-size: 13px !important;
+  line-height: 1.25 !important;
+  font-weight: 900 !important;
+}
+
+/* السكور اللي فوسط الكارت */
+#scoreList .bf-score-card-score span {
+  font-size: 22px !important;
+  font-weight: 950 !important;
+}
+
+#scoreList .bf-score-card-score b {
+  font-size: 14px !important;
+  font-weight: 800 !important;
+}
+
+/* كلمة Coup d'envoi */
+#scoreList .bf-score-card-center small {
+  font-size: 9px !important;
+  margin-top: 5px !important;
+}
+
+/* على الهاتف */
+@media (max-width: 700px) {
+
+  #scoreList .bf-score-card-status {
+    min-width: 90px !important;
+    padding: 7px 8px !important;
+  }
+
+  #scoreList .bf-score-card-status strong {
+    font-size: 10px !important;
+  }
+
+  #scoreList .bf-score-card-time {
+    font-size: 9px !important;
+  }
+
+  #scoreList .bf-score-card-team strong {
+    font-size: 10px !important;
+  }
+
+  #scoreList .bf-score-card-score span {
+    font-size: 19px !important;
+  }
+
+  #scoreList .bf-score-card-score b {
+    font-size: 11px !important;
+  }
+
+  #scoreList .bf-score-card-center small {
+    font-size: 8px !important;
+  }
 }
