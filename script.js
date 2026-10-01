@@ -1391,14 +1391,24 @@ function renderScoreCompetitionGroups(matches) {
 }
 
 
-function selectScoreCompetition(index) {
-  selectedCompetitionIndex = Number(index);
+function selectScoreCompetition(
+  index
+) {
 
-  if (!Number.isFinite(selectedCompetitionIndex)) {
+  selectedCompetitionIndex =
+    Number(index);
+
+  if (
+    !Number.isFinite(
+      selectedCompetitionIndex
+    )
+  ) {
     selectedCompetitionIndex = 0;
   }
 
-  if (selectedCompetitionIndex < 0) {
+  if (
+    selectedCompetitionIndex < 0
+  ) {
     selectedCompetitionIndex = 0;
   }
 
@@ -1409,6 +1419,127 @@ function selectScoreCompetition(index) {
     selectedCompetitionIndex =
       scoreCompetitionGroups.length - 1;
   }
+
+  const group =
+    scoreCompetitionGroups[
+      selectedCompetitionIndex
+    ];
+
+  /*
+   * ترتيب الماتشات داخل البطولة
+   *
+   * LIVE
+   * ↓
+   * MI-TEMPS
+   * ↓
+   * À VENIR
+   * ↓
+   * TERMINÉ
+   */
+
+  if (
+    group &&
+    Array.isArray(group.matches)
+  ) {
+
+    group.matches.sort(
+      (a, b) => {
+
+        const getStatusOrder =
+          (match) => {
+
+            const status =
+              String(
+                getStatus(match)
+              ).toUpperCase();
+
+            /*
+             * LIVE الحقيقي
+             */
+            if (
+              status === "LIVE" ||
+              status.includes("IN PLAY") ||
+              status.includes("INPLAY") ||
+              status.includes("IN PROGRESS") ||
+              status.includes("FIRST HALF") ||
+              status.includes("SECOND HALF") ||
+              status.includes("1ST HALF") ||
+              status.includes("2ND HALF") ||
+              status === "1H" ||
+              status === "2H" ||
+              status === "ET" ||
+              status === "P" ||
+              status === "BT"
+            ) {
+              return 1;
+            }
+
+            /*
+             * MI-TEMPS
+             */
+            if (
+              status === "HT" ||
+              status.includes("HALFTIME") ||
+              status.includes("HALF TIME") ||
+              status.includes("HALF-TIME")
+            ) {
+              return 2;
+            }
+
+            /*
+             * À VENIR
+             */
+            if (
+              status === "NS" ||
+              status.includes("NOT STARTED") ||
+              status.includes("SCHEDULED") ||
+              status.includes("UPCOMING")
+            ) {
+              return 3;
+            }
+
+            /*
+             * TERMINÉ
+             */
+            if (
+              status === "FT" ||
+              status.includes("FINISHED") ||
+              status.includes("FULL TIME") ||
+              status.includes("ENDED") ||
+              status.includes("MATCH FINISHED")
+            ) {
+              return 4;
+            }
+
+            /*
+             * باقي الحالات
+             */
+            return 5;
+          };
+
+        const orderA =
+          getStatusOrder(a.match);
+
+        const orderB =
+          getStatusOrder(b.match);
+
+        if (
+          orderA !== orderB
+        ) {
+          return orderA - orderB;
+        }
+
+        /*
+         * إلا كانو من نفس الحالة،
+         * نخلي الترتيب الداخلي الموجود.
+         */
+        return 0;
+      }
+    );
+  }
+
+  renderSelectedCompetition();
+}
 
   /*
    * =========================================
