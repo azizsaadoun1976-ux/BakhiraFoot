@@ -6480,38 +6480,3 @@ document.addEventListener(
 
   }
 );
-/* =========================================================
-   START APP
-========================================================= */
-
-document.addEventListener(
-  "DOMContentLoaded",
-  () => {
-
-    console.log(
-      "⚽ BakhiraFoot Pro chargé"
-    );
-
-    createMatchModal();
-
-    initNavigation();
-    initFilters();
-    initSearch();
-    initTheme();
-
-    currentDate =
-      new Date()
-        .toISOString()
-        .split("T")[0];
-
-    createDateBar();
-
-    renderHome();
-    renderLeagues();
-    renderTeams();
-    renderNews();
-
-    startLiveRefresh();
-
-  }
-);
