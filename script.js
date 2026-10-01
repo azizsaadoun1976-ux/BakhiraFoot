@@ -1394,11 +1394,10 @@ function renderScoreCompetitionGroups(matches) {
 function selectScoreCompetition(index) {
   selectedCompetitionIndex = Number(index);
 
-  if (!Number.isFinite(selectedCompetitionIndex)) {
-    selectedCompetitionIndex = 0;
-  }
-
-  if (selectedCompetitionIndex < 0) {
+  if (
+    !Number.isFinite(selectedCompetitionIndex) ||
+    selectedCompetitionIndex < 0
+  ) {
     selectedCompetitionIndex = 0;
   }
 
@@ -1410,6 +1409,24 @@ function selectScoreCompetition(index) {
       scoreCompetitionGroups.length - 1;
   }
 
+  const group =
+    scoreCompetitionGroups[selectedCompetitionIndex];
+
+  if (group && Array.isArray(group.matches)) {
+    group.matches.sort((a, b) => {
+      const aLive = isLiveMatch(a.match);
+      const bLive = isLiveMatch(b.match);
+
+      if (aLive !== bLive) {
+        return bLive ? 1 : -1;
+      }
+
+      return 0;
+    });
+  }
+
+  renderSelectedCompetition();
+}
   /*
    * =========================================
    * ترتيب الماتشات داخل Competition
