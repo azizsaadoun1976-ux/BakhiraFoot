@@ -1564,10 +1564,87 @@ function renderSelectedScoreCompetition() {
       )
       .join("");
 
-  const matchesHTML =
-    group.matches
-      .map(
-        ({ match, index }) =>
+  const sortedGroupMatches = [
+  ...group.matches
+].sort((a, b) => {
+
+  const getLiveOrder = (match) => {
+    const status =
+      String(
+        getStatus(match)
+      ).toUpperCase();
+
+    // LIVE
+    if (
+      [
+        "1H",
+        "2H",
+        "LIVE",
+        "ET",
+        "P",
+        "BT"
+      ].includes(status) ||
+      status.includes("LIVE")
+    ) {
+      return 1;
+    }
+
+    // MI-TEMPS
+    if (
+      status === "HT" ||
+      status.includes("HALF")
+    ) {
+      return 2;
+    }
+
+    // À VENIR
+    if (
+      status === "NS" ||
+      status.includes("NOT STARTED") ||
+      status.includes("SCHEDULED") ||
+      status.includes("UPCOMING")
+    ) {
+      return 3;
+    }
+
+    // TERMINÉ
+    if (
+      status === "FT" ||
+      status.includes("FINISHED") ||
+      status.includes("ENDED") ||
+      status.includes("FINISH")
+    ) {
+      return 4;
+    }
+
+    // باقي الحالات
+    return 5;
+  };
+
+  const orderA =
+    getLiveOrder(a.match);
+
+  const orderB =
+    getLiveOrder(b.match);
+
+  if (
+    orderA !== orderB
+  ) {
+    return orderA - orderB;
+  }
+
+  // إذا كانوا من نفس النوع،
+  // نخلي الترتيب الموجود أصلاً
+  return (
+    getMatchPriority(b.match) -
+    getMatchPriority(a.match)
+  );
+});
+
+const matchesHTML =
+  sortedGroupMatches
+    .map(
+      ({ match, index }) => {
           createMatchHTML(
             match,
             index
