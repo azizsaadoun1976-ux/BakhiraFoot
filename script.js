@@ -6899,36 +6899,115 @@ function adaptSportScoreDetails(
     );
 
   }
-  else if (
+   else if (
     lineupSource &&
-    typeof lineupSource ===
-      "object"
+    typeof lineupSource === "object"
   ) {
 
-    const homeSource =
-      lineupSource?.home ||
-      lineupSource?.homeTeam ||
-      lineupSource?.host ||
-      null;
+    /*
+     * SportScore:
+     *
+     * home_formation
+     * away_formation
+     * home_xi
+     * away_xi
+     * home_subs
+     * away_subs
+     */
 
-    const awaySource =
-      lineupSource?.away ||
-      lineupSource?.awayTeam ||
-      lineupSource?.guest ||
-      null;
+    const hasDirectSportScoreLineups =
+      Array.isArray(
+        lineupSource?.home_xi
+      ) ||
+      Array.isArray(
+        lineupSource?.away_xi
+      ) ||
+      Array.isArray(
+        lineupSource?.home_subs
+      ) ||
+      Array.isArray(
+        lineupSource?.away_subs
+      );
 
-    addLineup(
-      homeSource,
-      homeTeam
-    );
+    if (
+      hasDirectSportScoreLineups
+    ) {
 
-    addLineup(
-      awaySource,
-      awayTeam
-    );
+      addLineup(
+        {
+          formation:
+            lineupSource?.home_formation ||
+            "—",
+
+          players:
+            lineupSource?.home_xi ||
+            [],
+
+          substitutes:
+            lineupSource?.home_subs ||
+            [],
+
+          coach:
+            lineupSource?.home_coach ||
+            lineupSource?.home_manager ||
+            null
+        },
+        homeTeam
+      );
+
+      addLineup(
+        {
+          formation:
+            lineupSource?.away_formation ||
+            "—",
+
+          players:
+            lineupSource?.away_xi ||
+            [],
+
+          substitutes:
+            lineupSource?.away_subs ||
+            [],
+
+          coach:
+            lineupSource?.away_coach ||
+            lineupSource?.away_manager ||
+            null
+        },
+        awayTeam
+      );
+
+    } else {
+
+      /*
+       * Fallback pour autres formats
+       */
+
+      const homeSource =
+        lineupSource?.home ||
+        lineupSource?.homeTeam ||
+        lineupSource?.host ||
+        null;
+
+      const awaySource =
+        lineupSource?.away ||
+        lineupSource?.awayTeam ||
+        lineupSource?.guest ||
+        null;
+
+      addLineup(
+        homeSource,
+        homeTeam
+      );
+
+      addLineup(
+        awaySource,
+        awayTeam
+      );
+
+    }
 
   }
-
 
   /* =======================================================
      EVENTS
@@ -7077,9 +7156,31 @@ function adaptSportScoreDetails(
      PLAYERS
   ======================================================= */
 
-  const players =
-    buildPlayerGroups(
-      lineups
+   const players =
+    lineups.map(
+      lineup => ({
+        team:
+          lineup?.team ||
+          {},
+
+        players: [
+          ...(
+            Array.isArray(
+              lineup?.startXI
+            )
+              ? lineup.startXI
+              : []
+          ),
+
+          ...(
+            Array.isArray(
+              lineup?.substitutes
+            )
+              ? lineup.substitutes
+              : []
+          )
+        ]
+      })
     );
 
 
