@@ -13245,3 +13245,53 @@ body.dark #scoreList
   }
 
 }
+/* =========================================
+   BAKHIRAFOOT - TEAM NAMES FULL
+   ما تقطعش أسماء الفرق الطويلة
+   ========================================= */
+
+#homeMatches .team strong,
+#scoreList .team strong,
+.team-name,
+.bf-team-name,
+.bf-ultra-team-name,
+.bf-score-team strong,
+.bf-score-card-team strong {
+  width: 100% !important;
+  max-width: 100% !important;
+
+  overflow: visible !important;
+  text-overflow: clip !important;
+
+  white-space: normal !important;
+
+  overflow-wrap: break-word !important;
+  word-break: normal !important;
+
+  line-height: 1.25 !important;
+  height: auto !important;
+
+  display: block !important;
+}
+
+/* Match Details */
+.bfmd-team {
+  min-width: 0 !important;
+  width: 100% !important;
+}
+
+.bfmd-team > span {
+  width: 100% !important;
+  max-width: 100% !important;
+
+  overflow: visible !important;
+  text-overflow: clip !important;
+
+  white-space: normal !important;
+
+  overflow-wrap: break-word !important;
+  word-break: normal !important;
+
+  line-height: 1.25 !important;
+  text-align: center !important;
+}
