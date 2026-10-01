@@ -3134,6 +3134,34 @@ function createMatchModal() {
   addModalStyles();
 }
 
+function closeMatchDetails(event) {
+  if (
+    event &&
+    event.target &&
+    !event.target.classList.contains(
+      "bf-modal-overlay"
+    )
+  ) {
+    return;
+  }
+
+  const modal =
+    $("matchModal");
+
+  if (!modal) {
+    return;
+  }
+
+  modal.style.display =
+    "none";
+
+  document.body.style.overflow =
+    "";
+
+  currentOpenedFixture =
+    null;
+}
+
 /* =========================================================
    MODAL STYLES
 ========================================================= */
