@@ -11901,3 +11901,161 @@ body.dark #scoreList
     font-size: 7px;
   }
 }
+
+/* =========================================================
+   SCORE CARD - PROFESSIONAL STATUS
+========================================================= */
+
+.bf-score-card-status {
+  min-width: 72px;
+
+  display: flex;
+  flex-direction: column;
+
+  align-items: flex-end;
+  justify-content: center;
+
+  gap: 3px;
+
+  padding: 4px 7px;
+
+  border-radius: 8px;
+
+  font-size: 8px;
+  line-height: 1.15;
+
+  white-space: nowrap;
+}
+
+.bf-score-card-status strong {
+  font-size: 8px;
+  font-weight: 950;
+}
+
+.bf-score-card-time {
+  display: block;
+
+  font-size: 8px;
+
+  font-weight: 850;
+
+  opacity: .78;
+}
+
+
+/* LIVE */
+
+.bf-score-card-status.live {
+  background: #fff0f0 !important;
+  color: #d92f2f !important;
+}
+
+.bf-score-card-status.live strong {
+  animation: bfLivePulse 1.5s infinite;
+}
+
+@keyframes bfLivePulse {
+  0%, 100% {
+    opacity: 1;
+  }
+
+  50% {
+    opacity: .62;
+  }
+}
+
+
+/* HALF TIME */
+
+.bf-score-card-status.halftime {
+  background: #fff6df !important;
+  color: #a47300 !important;
+}
+
+
+/* FINISHED */
+
+.bf-score-card-status.finished {
+  background: #edf7f0 !important;
+  color: #397b4e !important;
+}
+
+
+/* UPCOMING */
+
+.bf-score-card-status.upcoming {
+  background: #edf4fa !important;
+  color: #4f708c !important;
+}
+
+
+/* POSTPONED */
+
+.bf-score-card-status.postponed {
+  background: #fff3e3 !important;
+  color: #aa701b !important;
+}
+
+
+/* CANCELLED */
+
+.bf-score-card-status.cancelled {
+  background: #faeded !important;
+  color: #a42f2f !important;
+}
+
+
+/* DARK */
+
+body.dark .bf-score-card-status.live {
+  background: #3a2024 !important;
+  color: #ff7777 !important;
+}
+
+body.dark .bf-score-card-status.halftime {
+  background: #3a3120 !important;
+  color: #e7bc59 !important;
+}
+
+body.dark .bf-score-card-status.finished {
+  background: #1d3427 !important;
+  color: #75d39a !important;
+}
+
+body.dark .bf-score-card-status.upcoming {
+  background: #1d303d !important;
+  color: #85b4d7 !important;
+}
+
+body.dark .bf-score-card-status.postponed {
+  background: #3a3020 !important;
+  color: #dfad5e !important;
+}
+
+body.dark .bf-score-card-status.cancelled {
+  background: #382225 !important;
+  color: #ed7777 !important;
+}
+
+
+/* MOBILE */
+
+@media (max-width: 700px) {
+
+  .bf-score-card-status {
+    min-width: 62px;
+
+    padding:
+      4px 6px;
+
+    border-radius: 7px;
+  }
+
+  .bf-score-card-status strong {
+    font-size: 7px;
+  }
+
+  .bf-score-card-time {
+    font-size: 7px;
+  }
+}
