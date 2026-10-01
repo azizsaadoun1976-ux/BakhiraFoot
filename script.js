@@ -754,21 +754,13 @@ function createMatchHTML(match, index) {
       data-fixture-id="${escapeHTML(
         fixtureId || ""
       )}"
-      onclick="
-        if (
-          window.bfOpenMatchDetails
-        ) {
-          window.bfOpenMatchDetails(
-            this.dataset.fixtureId
-          );
-        } else {
-          window.openMatchDetails(
-            Number(
-              this.dataset.matchIndex
-            )
-          );
-        }
-      "
+    onclick="
+  window.openMatchDetails(
+    Number(
+      this.dataset.matchIndex
+    )
+  )
+"
     >
 
       <div
