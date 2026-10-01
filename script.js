@@ -615,12 +615,18 @@ function createMatchHTML(match, index) {
   const fixtureId = getFixtureId(match);
 
   return `
-    <div
-      class="match-card"
-      data-match-index="${index}"
-      data-fixture-id="${escapeHTML(fixtureId || "")}"
-      onclick="openMatchDetails(${index})"
-    >
+   <div
+  class="bf-score-professional-match"
+  data-match-index="${index}"
+  data-fixture-id="${escapeHTML(
+    getFixtureId(match) || ""
+  )}"
+  onclick="
+    window.openMatchDetails(
+      Number(this.dataset.matchIndex)
+    )
+  "
+>
 
       <div class="flash-league">
         <span>🏆 ${escapeHTML(league)}</span>
