@@ -469,10 +469,13 @@ const sofaUrls = [
               national:
                 !!home?.team?.isNational,
 
- logo:
+logo:
   home?.team?.logo ||
-  home?.team?.logos?.[0]?.href ||
-  ""
+  (
+    home?.team?.id
+      ? `https://a.espncdn.com/i/teamlogos/soccer/500/${home.team.id}.png`
+      : ""
+  )
 
             },
 
@@ -494,10 +497,13 @@ const sofaUrls = [
               national:
                 !!away?.team?.isNational,
 
-           logo:
+ logo:
   away?.team?.logo ||
-  away?.team?.logos?.[0]?.href ||
-  ""
+  (
+    away?.team?.id
+      ? `https://a.espncdn.com/i/teamlogos/soccer/500/${away.team.id}.png`
+      : ""
+  )
 
             },
 
