@@ -3917,12 +3917,19 @@ catch (error) {
 }
 /* =========================================
    FINAL DEDUPE
-   نفس الماتش = نفس الفريقين + نفس التاريخ
+   نحيدو غير duplicate الحقيقي
+   وما نضيعوش matches من competitions مختلفة
 ========================================= */
 
 const finalUnique = new Map();
 
 for (const match of matches) {
+
+  const id =
+    match?.fixture?.id ||
+    match?.fixture?.slug ||
+    match?.id ||
+    "";
 
   const home =
     norm(
@@ -3939,23 +3946,74 @@ for (const match of matches) {
     match?.time ||
     "";
 
-  const matchDay =
-    toISODate(
-      dateValue
-    ) || matchDate;
+  const timestamp =
+    dateValue
+      ? new Date(
+          dateValue
+        ).getTime()
+      : 0;
 
-  if (!home || !away) {
+  /*
+    ID معروف:
+    نستعملوه مباشرة.
+  */
+  if (id) {
+
+    const idKey =
+      `id:${String(id)}`;
+
+    if (
+      !finalUnique.has(
+        idKey
+      )
+    ) {
+      finalUnique.set(
+        idKey,
+        match
+      );
+    }
+
     continue;
   }
 
-  const key =
-    `${home}__${away}__${matchDay}`;
+  /*
+    بلا ID:
+    نستعملو الفرق + وقت الماتش
+    بدل الفرق + اليوم فقط.
+  */
 
-  if (!finalUnique.has(key)) {
-    finalUnique.set(
-      key,
-      match
-    );
+  if (
+    home &&
+    away &&
+    timestamp
+  ) {
+
+    /*
+      كنقربو الوقت لـ 15 دقيقة
+      باش نفس الماتش من مصدرين
+      يبقى duplicate حتى إلا كان
+      فرق صغير فالوقت.
+    */
+    const roundedTime =
+      Math.round(
+        timestamp /
+        (15 * 60 * 1000)
+      );
+
+    const key =
+      `${home}__${away}__${roundedTime}`;
+
+    if (
+      !finalUnique.has(
+        key
+      )
+    ) {
+      finalUnique.set(
+        key,
+        match
+      );
+    }
+
   }
 
 }
