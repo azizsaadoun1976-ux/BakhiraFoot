@@ -2578,11 +2578,14 @@ async function loadLive() {
       );
     }
 
-    const data =
-      await response.json();
+ const data =
+  await response.json();
 
-    const liveMatches =
-      normalizeMatches(data);
+let matches =
+  Array.isArray(currentMatches) &&
+  currentMatches.length
+    ? [...currentMatches]
+    : normalizeMatches(data);
 
     /*
      * Index LIVE par fixture ID
