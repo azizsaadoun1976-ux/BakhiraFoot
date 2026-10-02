@@ -5407,7 +5407,7 @@ function renderPitchPlayer(
     ) > 0
   ) {
     badges += `
-      <span class="bf-pitch-marker">
+      <span class="bf-pitch-marker goal">
         ⚽
       </span>
     `;
@@ -5420,7 +5420,7 @@ function renderPitchPlayer(
     ) > 0
   ) {
     badges += `
-      <span class="bf-pitch-marker">
+      <span class="bf-pitch-marker assist">
         🅰️
       </span>
     `;
@@ -5433,7 +5433,7 @@ function renderPitchPlayer(
     ) > 0
   ) {
     badges += `
-      <span class="bf-pitch-marker">
+      <span class="bf-pitch-marker yellow">
         🟨
       </span>
     `;
@@ -5446,7 +5446,7 @@ function renderPitchPlayer(
     ) > 0
   ) {
     badges += `
-      <span class="bf-pitch-marker">
+      <span class="bf-pitch-marker red">
         🟥
       </span>
     `;
