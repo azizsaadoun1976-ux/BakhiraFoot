@@ -469,9 +469,11 @@ const sofaUrls = [
               national:
                 !!home?.team?.isNational,
 
-              logo:
-                home?.team?.logo ||
-                ""
+             logo:
+  home?.team?.logo ||
+  home?.team?.logos?.[0]?.href ||
+  home?.logo ||
+  ""
 
             },
 
@@ -494,8 +496,10 @@ const sofaUrls = [
                 !!away?.team?.isNational,
 
               logo:
-                away?.team?.logo ||
-                ""
+  away?.team?.logo ||
+  away?.team?.logos?.[0]?.href ||
+  away?.logo ||
+  ""
 
             },
 
