@@ -371,6 +371,74 @@ function adaptSofaWorldMatch(event) {
 
 }
 
+         /* =====================================================
+       TheSportsDB - EVENT DETAILS
+       مصدر احتياطي لبيانات المباراة
+    ===================================================== */
+
+    async function getTheSportsDBEvent(
+      eventId
+    ) {
+
+      const id =
+        String(
+          eventId || ""
+        ).trim();
+
+      if (!id) {
+        return null;
+      }
+
+      try {
+
+        const response =
+          await fetch(
+            `https://www.thesportsdb.com/api/v1/json/123/lookupevent.php?id=${encodeURIComponent(
+              id
+            )}`,
+            {
+              method: "GET",
+
+              headers: {
+                Accept:
+                  "application/json"
+              },
+
+              cache:
+                "no-store"
+            }
+          );
+
+        if (!response.ok) {
+          throw new Error(
+            `TheSportsDB HTTP ${response.status}`
+          );
+        }
+
+        const data =
+          await response.json();
+
+        return (
+          Array.isArray(
+            data?.events
+          ) &&
+          data.events.length
+            ? data.events[0]
+            : null
+        );
+
+      }
+      catch (error) {
+
+        console.warn(
+          "THESPORTSDB EVENT ERROR:",
+          error.message
+        );
+
+        return null;
+      }
+
+    }
     function arr(value) {
       return Array.isArray(value) ? value : [];
     }
