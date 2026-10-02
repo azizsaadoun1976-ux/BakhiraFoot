@@ -203,7 +203,7 @@ module.exports = async (req, res) => {
       "THESPORTSDB SEARCH ERROR:",
       error.message
     );
-
+     
     return null;
   }
 }
