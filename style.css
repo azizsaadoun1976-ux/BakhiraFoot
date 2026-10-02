@@ -13808,3 +13808,64 @@ body.dark #scoreList .bf-score-pro-no-matches strong {
     align-items: flex-start;
   }
 }
+/* =========================================
+   BAKHIRAFOOT - FORCE SCORES VISIBILITY
+========================================= */
+
+#scoreList .bf-score-layout {
+  display: grid !important;
+  grid-template-columns: 285px minmax(0, 1fr) !important;
+  width: 100% !important;
+  gap: 14px !important;
+  align-items: start !important;
+}
+
+#scoreList .bf-score-competition-list {
+  display: block !important;
+  visibility: visible !important;
+  width: 100% !important;
+}
+
+#scoreList .bf-score-competition-items {
+  display: flex !important;
+  flex-direction: column !important;
+  width: 100% !important;
+}
+
+#scoreList .bf-score-details-panel {
+  display: block !important;
+  visibility: visible !important;
+  width: 100% !important;
+  min-width: 0 !important;
+}
+
+#scoreList .bf-score-pro-matches {
+  display: flex !important;
+  flex-direction: column !important;
+  width: 100% !important;
+  gap: 8px !important;
+}
+
+#scoreList .bf-score-pro-card {
+  display: grid !important;
+  visibility: visible !important;
+  width: 100% !important;
+}
+
+@media (max-width: 700px) {
+
+  #scoreList .bf-score-layout {
+    display: flex !important;
+    flex-direction: column !important;
+    width: 100% !important;
+  }
+
+  #scoreList .bf-score-competition-items {
+    flex-direction: row !important;
+    overflow-x: auto !important;
+  }
+
+  #scoreList .bf-score-competition {
+    flex: 0 0 auto !important;
+  }
+}
