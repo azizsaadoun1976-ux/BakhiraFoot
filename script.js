@@ -4178,8 +4178,95 @@ function addModalStyles() {
       .bf-event-team {
         font-size: 7px;
       }
+   }
+
+       /* ========================================
+       MATCH DETAILS - STATISTICS PRO
+    ======================================== */
+
+    .bf-stat-table {
+      display: flex;
+      flex-direction: column;
+      gap: 10px;
+      margin-top: 8px;
+    }
+
+    .bf-stat-row {
+      display: grid;
+      grid-template-columns:
+        55px
+        minmax(0, 1fr)
+        55px;
+
+      align-items: center;
+      gap: 8px;
+
+      padding: 9px 10px;
+      border-radius: 10px;
+
+      background: rgba(127,127,127,.055);
+      border: 1px solid rgba(127,127,127,.08);
+    }
+
+    .bf-stat-value-home,
+    .bf-stat-value-away {
+      font-size: 11px;
+      font-weight: 950;
+    }
+
+    .bf-stat-value-home {
+      text-align: right;
+    }
+
+    .bf-stat-value-away {
+      text-align: left;
+    }
+
+    .bf-stat-name {
+      min-width: 0;
+
+      text-align: center;
+
+      font-size: 9px;
+      font-weight: 800;
+
+      opacity: .58;
+
+      white-space: normal;
+      overflow-wrap: anywhere;
+    }
+
+    .bf-stat-row:hover {
+      background: rgba(127,127,127,.09);
+    }
+
+    @media (max-width: 600px) {
+
+      .bf-stat-table {
+        gap: 7px;
+      }
+
+      .bf-stat-row {
+        grid-template-columns:
+          45px
+          minmax(0,1fr)
+          45px;
+
+        gap: 6px;
+        padding: 8px;
+      }
+
+      .bf-stat-value-home,
+      .bf-stat-value-away {
+        font-size: 10px;
+      }
+
+      .bf-stat-name {
+        font-size: 8px;
+      }
     }
   `;
+   
 
   document.head.appendChild(style);
 }
