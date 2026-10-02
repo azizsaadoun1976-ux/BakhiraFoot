@@ -272,10 +272,13 @@ async function getTheSportsDBDayMatches(date) {
 
 async function getSofaWorldMatches(date) {
 
-  const sofaUrls = [
-    `https://api.sofascore.com/api/v1/sport/football/scheduled-events/${encodeURIComponent(date)}/inverse`,
-    `https://api.sofascore.com/api/v1/sport/football/scheduled-events/${encodeURIComponent(date)}`
-  ];
+const sofaUrls = [
+  `https://api.sofascore.com/api/v1/sport/football/scheduled-events/${encodeURIComponent(date)}/inverse`,
+  `https://api.sofascore.com/api/v1/sport/football/scheduled-events/${encodeURIComponent(date)}`,
+
+  `https://www.sofascore.com/api/v1/sport/football/scheduled-events/${encodeURIComponent(date)}/inverse`,
+  `https://www.sofascore.com/api/v1/sport/football/scheduled-events/${encodeURIComponent(date)}`
+];
 
   /* =========================================
      1. SOFASCORE
