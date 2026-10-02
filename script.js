@@ -2920,318 +2920,338 @@ async function loadMatches(date) {
               liveData
             );
 
-const liveById =
-  new Map();
+          /*
+           * indexes بالـID
+           */
 
-const liveByTeams =
-  new Map();
+          const liveById =
+            new Map();
 
-const liveByTeamIds =
-  new Map();
+          liveMatches.forEach(
+            live => {
 
+              const id =
+                getFixtureId(
+                  live
+                );
 
-liveMatches.forEach(
-  live => {
+              if (id) {
+                liveById.set(
+                  String(id),
+                  live
+                );
+              }
 
-    /* ID ديال الماتش */
-    const fixtureId =
-      getFixtureId(
-        live
-      );
-
-    if (fixtureId) {
-      liveById.set(
-        String(fixtureId),
-        live
-      );
-    }
-
-
-    /* IDs ديال الفرق */
-    const homeId =
-      getHomeId(
-        live
-      );
-
-    const awayId =
-      getAwayId(
-        live
-      );
-
-    if (
-      homeId &&
-      awayId
-    ) {
-
-      liveByTeamIds.set(
-        `${homeId}__${awayId}`,
-        live
-      );
-
-    }
+            }
+          );
 
 
-    /* أسماء الفرق */
-    const home =
-      normalizeText(
-        getHome(live)
-      );
+          /*
+           * indexes باسم الفريقين
+           * كـfallback إلا اختلف الـID
+           */
 
-    const away =
-      normalizeText(
-        getAway(live)
-      );
+          const liveByTeams =
+            new Map();
 
-    if (
-      home &&
-      away
-    ) {
+          liveMatches.forEach(
+            live => {
 
-      liveByTeams.set(
-        `${home}__${away}`,
-        live
-      );
+              const home =
+                normalizeText(
+                  getHome(live)
+                );
 
-    }
+              const away =
+                normalizeText(
+                  getAway(live)
+                );
 
-  }
-);
+              const key =
+                `${home}__${away}`;
 
+              liveByTeams.set(
+                key,
+                live
+              );
 
-/*
- * تحديث الماتشات الموجودة
- */
-matches =
-  matches.map(
-    match => {
-
-      const fixtureId =
-        getFixtureId(
-          match
-        );
-
-      const homeId =
-        getHomeId(
-          match
-        );
-
-      const awayId =
-        getAwayId(
-          match
-        );
-
-      const home =
-        normalizeText(
-          getHome(match)
-        );
-
-      const away =
-        normalizeText(
-          getAway(match)
-        );
+            }
+          );
 
 
-      const liveByFixture =
-        fixtureId
-          ? liveById.get(
-              String(fixtureId)
-            )
-          : null;
+          /*
+           * Merge live data
+           */
+
+          matches =
+            matches.map(
+              match => {
+
+                const id =
+                  getFixtureId(
+                    match
+                  );
+
+                           /*
+           * إضافة LIVE اللي ما كانش موجود
+           * أصلاً فـ date endpoint
+           */
+
+          const existingMatches =
+            new Set();
+
+          matches.forEach(
+            match => {
+
+              const id =
+                getFixtureId(
+                  match
+                );
+
+              if (id) {
+                existingMatches.add(
+                  `id:${String(id)}`
+                );
+              }
+
+              const home =
+                normalizeText(
+                  getHome(match)
+                );
+
+              const away =
+                normalizeText(
+                  getAway(match)
+                );
+
+              if (home && away) {
+                existingMatches.add(
+                  `teams:${home}__${away}`
+                );
+              }
+
+            }
+          );
 
 
-      const liveByTeamId =
-        homeId &&
-        awayId
-          ? liveByTeamIds.get(
-              `${homeId}__${awayId}`
-            )
-          : null;
+          liveMatches.forEach(
+            live => {
+
+              const id =
+                getFixtureId(
+                  live
+                );
+
+              const home =
+                normalizeText(
+                  getHome(live)
+                );
+
+              const away =
+                normalizeText(
+                  getAway(live)
+                );
 
 
-      const liveByTeamName =
-        liveByTeams.get(
-          `${home}__${away}`
-        );
+              const existsById =
+                id &&
+                existingMatches.has(
+                  `id:${String(id)}`
+                );
+
+              const existsByTeams =
+                home &&
+                away &&
+                existingMatches.has(
+                  `teams:${home}__${away}`
+                );
 
 
-      const live =
-        liveByFixture ||
-        liveByTeamId ||
-        liveByTeamName;
+              if (
+                !existsById &&
+                !existsByTeams
+              ) {
+
+                matches.push(
+                  live
+                );
+
+              }
+
+            }
+          );
+
+                const home =
+                  normalizeText(
+                    getHome(match)
+                  );
+
+                const away =
+                  normalizeText(
+                    getAway(match)
+                  );
+
+                const teamKey =
+                  `${home}__${away}`;
+
+                const live =
+                  (
+                    id &&
+                    liveById.get(
+                      String(id)
+                    )
+                  ) ||
+                  liveByTeams.get(
+                    teamKey
+                  );
 
 
-      if (!live) {
-        return match;
-      }
+                if (
+                  !live
+                ) {
+                  return match;
+                }
 
 
-      return {
+                return {
+                  ...match,
 
-        ...match,
+                  teams:
+                    live.teams ||
+                    match.teams,
 
-        teams:
-          live.teams ||
-          match.teams,
+                  goals:
+                    live.goals ||
+                    match.goals,
 
-        goals:
-          live.goals ||
-          match.goals,
+                  score:
+                    live.score ||
+                    match.score,
 
-        score:
-          live.score ||
-          match.score,
+                  league:
+                    live.league ||
+                    match.league,
 
-        fixture: {
+                  fixture: {
 
-          ...match.fixture,
+                    ...match.fixture,
 
-          ...live.fixture,
+                    ...live.fixture,
 
-          status: {
+                    status: {
 
-            ...match.fixture?.status,
+                      ...match.fixture?.status,
 
-            ...live.fixture?.status
+                      ...live.fixture?.status
 
-          }
+                    }
+
+                  }
+
+                };
+
+              }
+            );
 
         }
 
-      };
+      }
+
+      catch (
+        liveError
+      ) {
+
+        console.warn(
+          "LIVE MERGE:",
+          liveError
+        );
+
+      }
 
     }
-  );
 
 
-/*
- * إضافة LIVE اللي ما كانتش أصلاً
- * فـ date endpoint
- */
-const existingKeys =
-  new Set();
-
-matches.forEach(
-  match => {
-
-    const fixtureId =
-      getFixtureId(
-        match
-      );
-
-    const homeId =
-      getHomeId(
-        match
-      );
-
-    const awayId =
-      getAwayId(
-        match
-      );
-
-    const home =
-      normalizeText(
-        getHome(match)
-      );
-
-    const away =
-      normalizeText(
-        getAway(match)
-      );
-
-
-    if (fixtureId) {
-      existingKeys.add(
-        `fixture:${String(fixtureId)}`
-      );
-    }
+    /*
+     * FILTER
+     */
 
     if (
-      homeId &&
-      awayId
+      currentFilter &&
+      currentFilter !== "all"
     ) {
-      existingKeys.add(
-        `teams-id:${homeId}__${awayId}`
-      );
+
+      matches =
+        matches.filter(
+          match =>
+            normalizeText(
+              getLeague(match)
+            )
+              .includes(
+                normalizeText(
+                  currentFilter
+                )
+              )
+        );
+
     }
 
-    if (
-      home &&
-      away
-    ) {
-      existingKeys.add(
-        `teams:${home}__${away}`
+
+    /*
+     * ترتيب نهائي
+     */
+
+    matches =
+      sortMatchesByImportance(
+        matches
       );
+
+
+    /*
+     * نخزنو نفس الماتشات
+     * اللي غادي يبانوا.
+     */
+
+    currentMatches =
+      matches;
+
+
+    if (
+      !matches.length
+    ) {
+
+      list.innerHTML =
+        emptyCard(
+          "Aucun match trouvé pour cette date."
+        );
+
+      return;
     }
+
+
+    selectedCompetitionIndex =
+      0;
+
+    renderScoreCompetitions(
+      matches
+    );
 
   }
-);
 
+  catch (error) {
 
-liveMatches.forEach(
-  live => {
+    console.error(
+      "MATCHES ERROR:",
+      error
+    );
 
-    const fixtureId =
-      getFixtureId(
-        live
+    list.innerHTML =
+      emptyCard(
+        "Impossible de charger les matchs."
       );
-
-    const homeId =
-      getHomeId(
-        live
-      );
-
-    const awayId =
-      getAwayId(
-        live
-      );
-
-    const home =
-      normalizeText(
-        getHome(live)
-      );
-
-    const away =
-      normalizeText(
-        getAway(live)
-      );
-
-
-    const exists =
-      (
-        fixtureId &&
-        existingKeys.has(
-          `fixture:${String(fixtureId)}`
-        )
-      ) ||
-      (
-        homeId &&
-        awayId &&
-        existingKeys.has(
-          `teams-id:${homeId}__${awayId}`
-        )
-      ) ||
-      (
-        home &&
-        away &&
-        existingKeys.has(
-          `teams:${home}__${away}`
-        )
-      );
-
-
-    if (
-      !exists
-    ) {
-
-      matches.push(
-        live
-      );
-
-    }
 
   }
-);
-           
+
+}
 /* =========================================================
    EMPTY CARD
 ========================================================= */
