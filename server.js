@@ -381,7 +381,514 @@ function adaptFixture(match) {
 /* =========================================================
    MATCHES BY DATE
 ========================================================= */
+/* =========================================================
+   SOFASCORE - EXTRA MATCHES
+   كيكمّل غير الماتشات اللي ناقصة من SportScore
+========================================================= */
 
+async function sofaScoreFetch(
+  date
+) {
+
+  const urls = [
+    `https://api.sofascore.com/api/v1/sport/football/scheduled-events/${encodeURIComponent(date)}/inverse`,
+    `https://api.sofascore.com/api/v1/sport/football/scheduled-events/${encodeURIComponent(date)}`
+  ];
+
+  for (
+    const url of urls
+  ) {
+
+    try {
+
+      const response =
+        await fetch(
+          url,
+          {
+            headers: {
+              Accept:
+                "application/json",
+              "User-Agent":
+                "Mozilla/5.0"
+            },
+            cache:
+              "no-store"
+          }
+        );
+
+      if (!response.ok) {
+        continue;
+      }
+
+      const data =
+        await response.json();
+
+      if (
+        Array.isArray(
+          data?.events
+        )
+      ) {
+        return data.events;
+      }
+
+    }
+    catch (error) {
+
+      console.warn(
+        "SOFASCORE FETCH:",
+        error.message
+      );
+
+    }
+
+  }
+
+  return [];
+}
+
+
+/* =========================================================
+   ADAPT SOFASCORE EVENT
+   نفس structure ديال BakhiraFoot
+========================================================= */
+
+function adaptSofaScoreFixture(
+  event
+) {
+
+  if (
+    !event ||
+    typeof event !== "object"
+  ) {
+    return null;
+  }
+
+
+  const home =
+    event?.homeTeam ||
+    {};
+
+  const away =
+    event?.awayTeam ||
+    {};
+
+  const tournament =
+    event?.tournament ||
+    {};
+
+  const uniqueTournament =
+    event?.tournament?.uniqueTournament ||
+    event?.uniqueTournament ||
+    {};
+
+
+  const statusType =
+    String(
+      event?.status?.type ||
+      ""
+    ).toLowerCase();
+
+  let status =
+    "NS";
+
+  if (
+    statusType === "inprogress" ||
+    statusType === "live"
+  ) {
+    status = "LIVE";
+  }
+
+  else if (
+    statusType === "finished"
+  ) {
+    status = "FT";
+  }
+
+  else if (
+    statusType === "postponed"
+  ) {
+    status = "PST";
+  }
+
+  else if (
+    statusType === "canceled" ||
+    statusType === "cancelled"
+  ) {
+    status = "CANC";
+  }
+
+  else if (
+    statusType === "interrupted" ||
+    statusType === "suspended"
+  ) {
+    status = "INT";
+  }
+
+  else if (
+    statusType === "halftime"
+  ) {
+    status = "HT";
+  }
+
+  else {
+    status = "NS";
+  }
+
+
+  const startTimestamp =
+    event?.startTimestamp;
+
+  let matchDate =
+    null;
+
+  if (
+    startTimestamp !==
+      undefined &&
+    startTimestamp !== null
+  ) {
+
+    const timestamp =
+      Number(
+        startTimestamp
+      );
+
+    if (
+      Number.isFinite(
+        timestamp
+      )
+    ) {
+
+      matchDate =
+        new Date(
+          timestamp * 1000
+        ).toISOString();
+
+    }
+
+  }
+
+
+  const homeScore =
+    event?.homeScore?.normaltime ??
+    event?.homeScore?.current ??
+    event?.homeScore?.display ??
+    null;
+
+  const awayScore =
+    event?.awayScore?.normaltime ??
+    event?.awayScore?.current ??
+    event?.awayScore?.display ??
+    null;
+
+
+  return {
+
+    fixture: {
+
+      id:
+        event?.id ??
+        null,
+
+      slug:
+        event?.slug ??
+        null,
+
+      date:
+        matchDate,
+
+      timezone:
+        "UTC",
+
+      status: {
+
+        short:
+          status,
+
+        long:
+          event?.status?.description ||
+          status,
+
+        elapsed:
+          event?.status?.period1Elapsed ||
+          event?.time?.currentPeriodStartTimestamp
+            ? (
+                event?.time?.currentPeriodStartTimestamp
+                  ? Math.max(
+                      0,
+                      Math.floor(
+                        (
+                          Date.now() -
+                          (
+                            event.time.currentPeriodStartTimestamp *
+                            1000
+                          )
+                        ) / 60000
+                      )
+                    )
+                  : null
+              )
+            : null
+
+      },
+
+      venue:
+        null,
+
+      referee:
+        null
+
+    },
+
+
+    league: {
+
+      id:
+        uniqueTournament?.id ??
+        tournament?.id ??
+        null,
+
+      name:
+        uniqueTournament?.name ||
+        tournament?.name ||
+        "Football",
+
+      country:
+        tournament?.category?.name ||
+        event?.category?.name ||
+        "",
+
+      logo:
+        "",
+
+      round:
+        event?.roundInfo?.name ||
+        null,
+
+      season:
+        event?.season?.name ||
+        null
+
+    },
+
+
+    teams: {
+
+      home: {
+
+        id:
+          home?.id ??
+          null,
+
+        name:
+          home?.name ||
+          home?.shortName ||
+          "Domicile",
+
+        logo:
+          home?.image?.path
+            ? (
+                home.image.path.startsWith(
+                  "http"
+                )
+                  ? home.image.path
+                  : `https://api.sofascore.com/api/v1/${home.image.path}`
+              )
+            : ""
+
+      },
+
+      away: {
+
+        id:
+          away?.id ??
+          null,
+
+        name:
+          away?.name ||
+          away?.shortName ||
+          "Extérieur",
+
+        logo:
+          away?.image?.path
+            ? (
+                away.image.path.startsWith(
+                  "http"
+                )
+                  ? away.image.path
+                  : `https://api.sofascore.com/api/v1/${away.image.path}`
+              )
+            : ""
+
+      }
+
+    },
+
+
+    goals: {
+
+      home:
+        homeScore,
+
+      away:
+        awayScore
+
+    },
+
+
+    score: {
+
+      home:
+        homeScore,
+
+      away:
+        awayScore,
+
+      halftime: {
+
+        home:
+          event?.homeScore?.period1 ??
+          null,
+
+        away:
+          event?.awayScore?.period1 ??
+          null
+
+      },
+
+      fulltime: {
+
+        home:
+          homeScore,
+
+        away:
+          awayScore
+
+      }
+
+    }
+
+  };
+}
+
+
+/* =========================================================
+   MERGE MATCHES
+   SportScore أولاً
+   SofaScore غير كيكمل الناقص
+========================================================= */
+
+function mergeMatchLists(
+  primary,
+  secondary
+) {
+
+  const result =
+    [...primary];
+
+  const ids =
+    new Set();
+
+  const teamKeys =
+    new Set();
+
+
+  result.forEach(
+    match => {
+
+      const id =
+        match?.fixture?.id;
+
+      if (id) {
+        ids.add(
+          String(id)
+        );
+      }
+
+      const homeId =
+        match?.teams?.home?.id;
+
+      const awayId =
+        match?.teams?.away?.id;
+
+      if (
+        homeId &&
+        awayId
+      ) {
+
+        teamKeys.add(
+          `${homeId}__${awayId}`
+        );
+
+      }
+
+    }
+  );
+
+
+  secondary.forEach(
+    match => {
+
+      const id =
+        match?.fixture?.id;
+
+      const homeId =
+        match?.teams?.home?.id;
+
+      const awayId =
+        match?.teams?.away?.id;
+
+
+      const existsById =
+        id &&
+        ids.has(
+          String(id)
+        );
+
+
+      const existsByTeams =
+        homeId &&
+        awayId &&
+        teamKeys.has(
+          `${homeId}__${awayId}`
+        );
+
+
+      if (
+        !existsById &&
+        !existsByTeams
+      ) {
+
+        result.push(
+          match
+        );
+
+
+        if (id) {
+          ids.add(
+            String(id)
+          );
+        }
+
+
+        if (
+          homeId &&
+          awayId
+        ) {
+
+          teamKeys.add(
+            `${homeId}__${awayId}`
+          );
+
+        }
+
+      }
+
+    }
+  );
+
+
+  return result;
+}
 async function getMatchesByDate(
   date
 ) {
@@ -402,22 +909,97 @@ async function getMatchesByDate(
 
   }
 
+
   try {
 
-    const data =
+    /* =========================================
+       1. المصدر الأساسي: SportScore
+    ========================================= */
+
+    const sportScoreData =
       await sportScoreFetch(
         `/fixtures/?sport=football&date=${encodeURIComponent(
           date
         )}&limit=200`
       );
 
-    const raw =
-      extractMatches(data);
+
+    const sportScoreRaw =
+      extractMatches(
+        sportScoreData
+      );
+
+
+    const sportScoreMatches =
+      sportScoreRaw
+        .map(
+          adaptFixture
+        )
+        .filter(Boolean);
+
+
+    /* =========================================
+       2. المصدر الإضافي: SofaScore
+    ========================================= */
+
+    let sofaMatches = [];
+
+    try {
+
+      const sofaRaw =
+        await sofaScoreFetch(
+          date
+        );
+
+      sofaMatches =
+        sofaRaw
+          .map(
+            adaptSofaScoreFixture
+          )
+          .filter(Boolean);
+
+    }
+
+    catch (
+      sofaError
+    ) {
+
+      console.warn(
+        "SOFASCORE EXTRA ERROR:",
+        sofaError.message
+      );
+
+    }
+
+
+    /* =========================================
+       3. دمج وحذف duplicates
+    ========================================= */
 
     const matches =
-      raw
-        .map(adaptFixture)
-        .filter(Boolean);
+      mergeMatchLists(
+        sportScoreMatches,
+        sofaMatches
+      );
+
+
+    console.log(
+      "BAKHIRAFOOT MATCH COVERAGE:",
+      {
+        date,
+        sportScore:
+          sportScoreMatches.length,
+        sofaScore:
+          sofaMatches.length,
+        final:
+          matches.length
+      }
+    );
+
+
+    /* =========================================
+       4. Cache
+    ========================================= */
 
     setCached(
       matchesCache,
@@ -425,12 +1007,17 @@ async function getMatchesByDate(
       matches
     );
 
+
     return {
-      data: matches,
-      cached: false
+      data:
+        matches,
+
+      cached:
+        false
     };
 
   }
+
   catch (error) {
 
     const old =
@@ -441,9 +1028,14 @@ async function getMatchesByDate(
     if (old) {
 
       return {
-        data: old.data,
-        cached: true,
-        stale: true
+        data:
+          old.data,
+
+        cached:
+          true,
+
+        stale:
+          true
       };
 
     }
