@@ -208,6 +208,113 @@ module.exports = async (req, res) => {
   }
 }
      /* =====================================================
+   THE SPORTS DB - FIND MATCH
+===================================================== */
+
+async function findTheSportsDBEvent(
+  homeName,
+  awayName,
+  matchDate
+) {
+  const home = String(
+    homeName || ""
+  )
+    .trim()
+    .replace(/\s+/g, "_");
+
+  const away = String(
+    awayName || ""
+  )
+    .trim()
+    .replace(/\s+/g, "_");
+
+  let date = "";
+
+  if (
+    typeof matchDate === "number" ||
+    /^\d+$/.test(
+      String(matchDate || "").trim()
+    )
+  ) {
+    const n = Number(matchDate);
+
+    const ms =
+      n < 10000000000
+        ? n * 1000
+        : n;
+
+    const d = new Date(ms);
+
+    if (!Number.isNaN(d.getTime())) {
+      date =
+        d.toISOString().split("T")[0];
+    }
+  } else {
+    date = String(
+      matchDate || ""
+    ).slice(0, 10);
+  }
+
+  if (
+    !home ||
+    !away ||
+    !date
+  ) {
+    return null;
+  }
+
+  const eventName =
+    `${home}_vs_${away}`;
+
+  const url =
+    `https://www.thesportsdb.com/api/v1/json/123/searchevents.php` +
+    `?e=${encodeURIComponent(eventName)}` +
+    `&d=${encodeURIComponent(date)}`;
+
+  try {
+    const response = await fetch(
+      url,
+      {
+        method: "GET",
+        headers: {
+          Accept:
+            "application/json"
+        },
+        cache: "no-store"
+      }
+    );
+
+    if (!response.ok) {
+      return null;
+    }
+
+    const data =
+      await response.json();
+
+    if (
+      !Array.isArray(
+        data?.event
+      )
+    ) {
+      return null;
+    }
+
+    return (
+      data.event[0] || null
+    );
+
+  } catch (error) {
+
+    console.warn(
+      "THESPORTSDB SEARCH ERROR:",
+      error.message
+    );
+
+    return null;
+  }
+}
+     
+     /* =====================================================
    SOFASCORE - WORLD FOOTBALL BY DATE
 ===================================================== */
 
