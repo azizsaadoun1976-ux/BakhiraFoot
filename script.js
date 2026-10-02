@@ -1381,25 +1381,27 @@ function getScoreState(match) {
 ========================================================= */
 
 function getCompetitionGroupKey(match) {
-  const leagueId =
-    match?.league?.id ??
-    match?.competition?.id ??
-    match?.league_id ??
-    match?.competition_id ??
-    "";
-
   const leagueName =
     normalizeText(
       getLeague(match)
     );
 
-  if (leagueId !== "") {
-    return `${leagueId}__${leagueName}`;
+  const leagueCountry =
+    normalizeText(
+      match?.league?.country ||
+      match?.competition?.country ||
+      ""
+    );
+
+  if (
+    leagueCountry &&
+    leagueName
+  ) {
+    return `${leagueCountry}__${leagueName}`;
   }
 
   return leagueName;
 }
-
 
 /* =========================================================
    SORT MATCHES
