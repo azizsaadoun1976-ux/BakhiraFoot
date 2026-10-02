@@ -2269,304 +2269,167 @@ module.exports = async (req, res) => {
       );
     }
 
-    /* =====================================================
-       LIVE
+      /* =====================================================
+       LIVE + HALF-TIME
        ===================================================== */
 
     if (live === "all") {
-      let body;
+
+      const allLiveMatches = [];
+
+      /* =========================================
+         1. Fixtures LIVE
+      ========================================= */
 
       try {
-        body = await getJSON(
-          `${SPORTSCORE}/fixtures/?sport=football&status=live&limit=200`
+
+        const liveBody =
+          await getJSON(
+            `${SPORTSCORE}/fixtures/?sport=football&status=live&limit=200`
+          );
+
+        allLiveMatches.push(
+          ...getMatches(liveBody)
+            .map(normalizeMatch)
+            .filter(Boolean)
         );
-      }
 
+      }
       catch (error) {
-        try {
-          body = await getJSON(
-            `${SPORTSCORE}/matches/?sport=football&status=live&limit=100`
-          );
-        }
 
-        catch (fallbackError) {
-          return output(
-            fallbackError?.status ||
-              error?.status ||
-              502,
-
-            {
-              error:
-                fallbackError?.message ||
-                error?.message ||
-                "API request failed",
-
-              details:
-                fallbackError?.data ||
-                error?.data ||
-                null,
-
-              data: []
-            }
-          );
-        }
-      }
-
-    let matches =
-  getMatches(body)
-    .map(normalizeMatch)
-    .filter(Boolean);
-
-
-/* =========================================
-   TODAY: ندمجو LIVE مع مباريات اليوم
-   بلا ما نحيدو أي ماتش
-========================================= */
-
-if (matchDate === today) {
-
-  try {
-
-    const liveBody =
-      await getJSON(
-        `${SPORTSCORE}/fixtures/?sport=football&status=live&limit=200`
-      );
-
-    const liveMatches =
-      getMatches(liveBody)
-        .map(normalizeMatch)
-        .filter(Boolean);
-
-
-    const byId =
-      new Map();
-
-    const byTeams =
-      new Map();
-
-
-    /*
-     * نحفظو مباريات التاريخ
-     */
-    matches.forEach(
-      match => {
-
-        const id =
-          match?.fixture?.id ||
-          match?.fixture?.slug ||
-          match?.id ||
-          null;
-
-        if (id) {
-          byId.set(
-            String(id),
-            match
-          );
-        }
-
-        const home =
-          norm(
-            match?.teams?.home?.name
-          );
-
-        const away =
-          norm(
-            match?.teams?.away?.name
-          );
-
-        if (
-          home &&
-          away
-        ) {
-          byTeams.set(
-            `${home}__${away}`,
-            match
-          );
-        }
+        console.warn(
+          "FIXTURES LIVE ERROR:",
+          error.message
+        );
 
       }
-    );
 
 
-    /*
-     * نضيفو / نحدّثو LIVE
-     */
-    liveMatches.forEach(
-      live => {
+      /* =========================================
+         2. Widget matches
+         باش نلقاو HT كذلك
+      ========================================= */
 
-        const id =
-          live?.fixture?.id ||
-          live?.fixture?.slug ||
-          live?.id ||
-          null;
+      try {
 
-        const home =
-          norm(
-            live?.teams?.home?.name
+        const widgetBody =
+          await getJSON(
+            `${WIDGET}/matches/?sport=football&limit=50`
           );
 
-        const away =
-          norm(
-            live?.teams?.away?.name
-          );
+        const widgetMatches =
+          getMatches(widgetBody)
+            .map(normalizeMatch)
+            .filter(Boolean);
+
+        allLiveMatches.push(
+          ...widgetMatches
+        );
+
+      }
+      catch (error) {
+
+        console.warn(
+          "WIDGET LIVE ERROR:",
+          error.message
+        );
+
+      }
 
 
-        const oldById =
-          id
-            ? byId.get(
-                String(id)
-              )
-            : null;
+      /* =========================================
+         3. غير LIVE و HT
+      ========================================= */
 
-        const oldByTeams =
-          (
-            home &&
-            away
-          )
-            ? byTeams.get(
-                `${home}__${away}`
-              )
-            : null;
+      const filtered =
+        allLiveMatches.filter(
+          match => {
+
+            const status =
+              String(
+                match?.fixture?.status?.short ||
+                ""
+              ).toUpperCase();
+
+            return (
+              status === "LIVE" ||
+              status === "HT" ||
+              status === "1H" ||
+              status === "2H" ||
+              status === "ET" ||
+              status === "P" ||
+              status === "BT" ||
+              status.includes("LIVE") ||
+              status.includes("HALF")
+            );
+
+          }
+        );
 
 
-        /*
-         * نفس الماتش موجود:
-         * نعوضو النسخة القديمة
-         * بالنسخة LIVE
-         */
-        if (
-          oldById ||
-          oldByTeams
-        ) {
+      /* =========================================
+         4. حذف التكرار
+      ========================================= */
 
-          const old =
-            oldById ||
-            oldByTeams;
+      const unique =
+        new Map();
 
-          const oldId =
-            old?.fixture?.id ||
-            old?.fixture?.slug ||
-            old?.id ||
+      filtered.forEach(
+        match => {
+
+          const id =
+            match?.fixture?.id ||
+            match?.fixture?.slug ||
+            match?.id ||
             null;
 
-          if (oldId) {
-            byId.delete(
-              String(oldId)
-            );
-          }
+          const key =
+            id
+              ? String(id)
+              : `${normalizeText(
+                  getHome(match)
+                )}__${normalizeText(
+                  getAway(match)
+                )}`;
 
           if (
-            old?.teams?.home?.name &&
-            old?.teams?.away?.name
+            !unique.has(key)
           ) {
 
-            byTeams.delete(
-              `${norm(
-                old.teams.home.name
-              )}__${norm(
-                old.teams.away.name
-              )}`
+            unique.set(
+              key,
+              match
             );
 
           }
 
         }
-
-
-        /*
-         * نحطو LIVE
-         */
-        if (id) {
-          byId.set(
-            String(id),
-            live
-          );
-        }
-
-        if (
-          home &&
-          away
-        ) {
-          byTeams.set(
-            `${home}__${away}`,
-            live
-          );
-        }
-
-      }
-    );
-
-
-    /*
-     * نرجعو لائحة موحدة
-     */
-    const merged =
-      new Map();
-
-
-    byId.forEach(
-      (match, key) => {
-        merged.set(
-          key,
-          match
-        );
-      }
-    );
-
-
-    /*
-     * مباريات بلا ID
-     */
-    byTeams.forEach(
-      match => {
-
-        const key =
-          `teams:${norm(
-            match?.teams?.home?.name
-          )}__${norm(
-            match?.teams?.away?.name
-          )}`;
-
-        if (
-          !merged.has(key)
-        ) {
-          merged.set(
-            key,
-            match
-          );
-        }
-
-      }
-    );
-
-
-    matches =
-      Array.from(
-        merged.values()
       );
 
-  }
-  catch (liveError) {
 
-    console.warn(
-      "DATE LIVE MERGE ERROR:",
-      liveError.message
-    );
-
-  }
-
-}
+      const matches =
+        Array.from(
+          unique.values()
+        );
 
 
-return output(
-  200,
-  {
-    data: matches,
+      console.log(
+        "BAKHIRAFOOT LIVE:",
+        matches.length
+      );
 
-    provider:
-      "SportScore"
-  }
-);
+
+      return output(
+        200,
+        {
+          data:
+            matches,
+
+          provider:
+            "SportScore"
+        }
+      );
+
     }
 
     /* =====================================================
