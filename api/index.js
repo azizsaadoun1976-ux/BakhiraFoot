@@ -777,10 +777,13 @@ function adaptSofaWorldMatch(event) {
         home?.shortName ||
         "Domicile",
 
-      logo:
-        home?.id
-          ? `https://api.sofascore.com/api/v1/team/${home.id}/image`
-          : ""
+     logo:
+  home?.logo ||
+  (
+    home?.id
+      ? `https://api.sofascore.com/api/v1/team/${home.id}/image`
+      : ""
+  )
 
     },
 
@@ -795,10 +798,13 @@ function adaptSofaWorldMatch(event) {
         away?.shortName ||
         "Extérieur",
 
-      logo:
-        away?.id
-          ? `https://api.sofascore.com/api/v1/team/${away.id}/image`
-          : ""
+   logo:
+  away?.logo ||
+  (
+    away?.id
+      ? `https://api.sofascore.com/api/v1/team/${away.id}/image`
+      : ""
+  )
 
     },
 
