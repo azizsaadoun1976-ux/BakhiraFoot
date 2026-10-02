@@ -2312,20 +2312,261 @@ module.exports = async (req, res) => {
         }
       }
 
-      const matches =
-        getMatches(body)
-          .map(normalizeMatch)
-          .filter(Boolean);
+    let matches =
+  getMatches(body)
+    .map(normalizeMatch)
+    .filter(Boolean);
 
-      return output(
-        200,
-        {
-          data: matches,
 
-          provider:
-            "SportScore"
-        }
+/* =========================================
+   TODAY: ندمجو LIVE مع مباريات اليوم
+   بلا ما نحيدو أي ماتش
+========================================= */
+
+if (matchDate === today) {
+
+  try {
+
+    const liveBody =
+      await getJSON(
+        `${SPORTSCORE}/fixtures/?sport=football&status=live&limit=200`
       );
+
+    const liveMatches =
+      getMatches(liveBody)
+        .map(normalizeMatch)
+        .filter(Boolean);
+
+
+    const byId =
+      new Map();
+
+    const byTeams =
+      new Map();
+
+
+    /*
+     * نحفظو مباريات التاريخ
+     */
+    matches.forEach(
+      match => {
+
+        const id =
+          match?.fixture?.id ||
+          match?.fixture?.slug ||
+          match?.id ||
+          null;
+
+        if (id) {
+          byId.set(
+            String(id),
+            match
+          );
+        }
+
+        const home =
+          norm(
+            match?.teams?.home?.name
+          );
+
+        const away =
+          norm(
+            match?.teams?.away?.name
+          );
+
+        if (
+          home &&
+          away
+        ) {
+          byTeams.set(
+            `${home}__${away}`,
+            match
+          );
+        }
+
+      }
+    );
+
+
+    /*
+     * نضيفو / نحدّثو LIVE
+     */
+    liveMatches.forEach(
+      live => {
+
+        const id =
+          live?.fixture?.id ||
+          live?.fixture?.slug ||
+          live?.id ||
+          null;
+
+        const home =
+          norm(
+            live?.teams?.home?.name
+          );
+
+        const away =
+          norm(
+            live?.teams?.away?.name
+          );
+
+
+        const oldById =
+          id
+            ? byId.get(
+                String(id)
+              )
+            : null;
+
+        const oldByTeams =
+          (
+            home &&
+            away
+          )
+            ? byTeams.get(
+                `${home}__${away}`
+              )
+            : null;
+
+
+        /*
+         * نفس الماتش موجود:
+         * نعوضو النسخة القديمة
+         * بالنسخة LIVE
+         */
+        if (
+          oldById ||
+          oldByTeams
+        ) {
+
+          const old =
+            oldById ||
+            oldByTeams;
+
+          const oldId =
+            old?.fixture?.id ||
+            old?.fixture?.slug ||
+            old?.id ||
+            null;
+
+          if (oldId) {
+            byId.delete(
+              String(oldId)
+            );
+          }
+
+          if (
+            old?.teams?.home?.name &&
+            old?.teams?.away?.name
+          ) {
+
+            byTeams.delete(
+              `${norm(
+                old.teams.home.name
+              )}__${norm(
+                old.teams.away.name
+              )}`
+            );
+
+          }
+
+        }
+
+
+        /*
+         * نحطو LIVE
+         */
+        if (id) {
+          byId.set(
+            String(id),
+            live
+          );
+        }
+
+        if (
+          home &&
+          away
+        ) {
+          byTeams.set(
+            `${home}__${away}`,
+            live
+          );
+        }
+
+      }
+    );
+
+
+    /*
+     * نرجعو لائحة موحدة
+     */
+    const merged =
+      new Map();
+
+
+    byId.forEach(
+      (match, key) => {
+        merged.set(
+          key,
+          match
+        );
+      }
+    );
+
+
+    /*
+     * مباريات بلا ID
+     */
+    byTeams.forEach(
+      match => {
+
+        const key =
+          `teams:${norm(
+            match?.teams?.home?.name
+          )}__${norm(
+            match?.teams?.away?.name
+          )}`;
+
+        if (
+          !merged.has(key)
+        ) {
+          merged.set(
+            key,
+            match
+          );
+        }
+
+      }
+    );
+
+
+    matches =
+      Array.from(
+        merged.values()
+      );
+
+  }
+  catch (liveError) {
+
+    console.warn(
+      "DATE LIVE MERGE ERROR:",
+      liveError.message
+    );
+
+  }
+
+}
+
+
+return output(
+  200,
+  {
+    data: matches,
+
+    provider:
+      "SportScore"
+  }
+);
     }
 
     /* =====================================================
