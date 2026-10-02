@@ -3041,6 +3041,333 @@ try {
     .map(normalizeMatch)
     .filter(Boolean);
 
+/* =====================================================
+   THE SPORTS DB - AJOUT DES MATCHES DU JOUR
+===================================================== */
+
+try {
+
+  const tsdbEvents =
+    await getTheSportsDBDayMatches(
+      matchDate
+    );
+
+  const tsdbMatches =
+    tsdbEvents
+      .map(event => {
+
+        if (!event) {
+          return null;
+        }
+
+        const eventId =
+          event?.idEvent ||
+          "";
+
+        const homeName =
+          event?.strHomeTeam ||
+          "Domicile";
+
+        const awayName =
+          event?.strAwayTeam ||
+          "Extérieur";
+
+        let homeScore =
+          event?.intHomeScore;
+
+        let awayScore =
+          event?.intAwayScore;
+
+        if (
+          homeScore === "" ||
+          homeScore === null ||
+          homeScore === undefined
+        ) {
+          homeScore = null;
+        } else {
+          homeScore =
+            Number(homeScore);
+        }
+
+        if (
+          awayScore === "" ||
+          awayScore === null ||
+          awayScore === undefined
+        ) {
+          awayScore = null;
+        } else {
+          awayScore =
+            Number(awayScore);
+        }
+
+        const rawStatus =
+          String(
+            event?.strStatus ||
+            event?.strProgress ||
+            ""
+          ).toLowerCase();
+
+        let status = "NS";
+
+        if (
+          rawStatus.includes("finished") ||
+          rawStatus === "ft"
+        ) {
+          status = "FT";
+        }
+
+        else if (
+          rawStatus.includes("half") ||
+          rawStatus === "ht"
+        ) {
+          status = "HT";
+        }
+
+        else if (
+          rawStatus.includes("live") ||
+          rawStatus.includes("progress")
+        ) {
+          status = "LIVE";
+        }
+
+        return {
+
+          id:
+            `tsdb-${eventId}`,
+
+          slug:
+            `tsdb-${eventId}`,
+
+          fixture: {
+
+            id:
+              `tsdb-${eventId}`,
+
+            slug:
+              `tsdb-${eventId}`,
+
+            date:
+              event?.dateEvent &&
+              event?.strTime
+                ? `${event.dateEvent}T${event.strTime}`
+                : event?.dateEvent ||
+                  null,
+
+            status: {
+
+              short:
+                status,
+
+              long:
+                event?.strStatus ||
+                status,
+
+              elapsed:
+                null
+
+            }
+
+          },
+
+          league: {
+
+            id:
+              event?.idLeague ||
+              null,
+
+            name:
+              event?.strLeague ||
+              "Football",
+
+            country:
+              event?.strCountry ||
+              "",
+
+            logo:
+              event?.strLeagueBadge ||
+              "",
+
+            round:
+              null,
+
+            season:
+              event?.strSeason ||
+              null
+
+          },
+
+          teams: {
+
+            home: {
+
+              id:
+                null,
+
+              name:
+                homeName,
+
+              logo:
+                event?.strHomeTeamBadge ||
+                ""
+
+            },
+
+            away: {
+
+              id:
+                null,
+
+              name:
+                awayName,
+
+              logo:
+                event?.strAwayTeamBadge ||
+                ""
+
+            }
+
+          },
+
+          goals: {
+
+            home:
+              homeScore,
+
+            away:
+              awayScore
+
+          },
+
+          score: {
+
+            home:
+              homeScore,
+
+            away:
+              awayScore,
+
+            halftime: {
+
+              home:
+                null,
+
+              away:
+                null
+
+            },
+
+            fulltime: {
+
+              home:
+                homeScore,
+
+              away:
+                awayScore
+
+            }
+
+          },
+
+          status:
+            status,
+
+          status_text:
+            event?.strStatus ||
+            status,
+
+          time:
+            event?.dateEvent &&
+            event?.strTime
+              ? `${event.dateEvent}T${event.strTime}`
+              : event?.dateEvent ||
+                null
+
+        };
+
+      })
+      .filter(Boolean);
+
+
+  const existing =
+    new Set();
+
+  matches.forEach(
+    match => {
+
+      const home =
+        norm(
+          match?.teams?.home?.name
+        );
+
+      const away =
+        norm(
+          match?.teams?.away?.name
+        );
+
+      if (
+        home &&
+        away
+      ) {
+        existing.add(
+          `teams:${home}__${away}`
+        );
+      }
+
+    }
+  );
+
+
+  tsdbMatches.forEach(
+    match => {
+
+      const home =
+        norm(
+          match?.teams?.home?.name
+        );
+
+      const away =
+        norm(
+          match?.teams?.away?.name
+        );
+
+      const key =
+        `teams:${home}__${away}`;
+
+      if (
+        home &&
+        away &&
+        !existing.has(key)
+      ) {
+
+        matches.push(
+          match
+        );
+
+        existing.add(
+          key
+        );
+
+      }
+
+    }
+  );
+
+
+  console.log(
+    "THE SPORTS DB MATCHES:",
+    tsdbMatches.length
+  );
+
+}
+catch (error) {
+
+  console.warn(
+    "THE SPORTS DB MERGE ERROR:",
+    error.message
+  );
+
+}
+     
      /* =====================================================
    AJOUT DES MATCHES DU MONDE
 ===================================================== */
