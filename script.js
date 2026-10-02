@@ -4265,8 +4265,50 @@ function addModalStyles() {
         font-size: 8px;
       }
     }
+
+        /* ========================================
+       PLAYER MATCH MARKERS
+    ======================================== */
+
+    .bf-pitch-markers {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 2px;
+      min-height: 16px;
+      margin-bottom: 2px;
+    }
+
+    .bf-pitch-marker {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+
+      min-width: 17px;
+      height: 17px;
+      padding: 0 2px;
+
+      border-radius: 5px;
+      background: rgba(0,0,0,.65);
+
+      font-size: 9px;
+      line-height: 1;
+    }
+
+    @media (max-width: 600px) {
+
+      .bf-pitch-markers {
+        min-height: 14px;
+      }
+
+      .bf-pitch-marker {
+        min-width: 15px;
+        height: 15px;
+        font-size: 8px;
+      }
+
+    }
   `;
-   
 
   document.head.appendChild(style);
 }
@@ -5356,6 +5398,60 @@ function renderPitchPlayer(
   const rating =
     playerData?.rating;
 
+  let badges = "";
+
+  /* ⚽ Goals */
+  if (
+    numberOrZero(
+      playerData?.goals
+    ) > 0
+  ) {
+    badges += `
+      <span class="bf-pitch-marker">
+        ⚽
+      </span>
+    `;
+  }
+
+  /* 🅰️ Assists */
+  if (
+    numberOrZero(
+      playerData?.assists
+    ) > 0
+  ) {
+    badges += `
+      <span class="bf-pitch-marker">
+        🅰️
+      </span>
+    `;
+  }
+
+  /* 🟨 Yellow */
+  if (
+    numberOrZero(
+      playerData?.yellow
+    ) > 0
+  ) {
+    badges += `
+      <span class="bf-pitch-marker">
+        🟨
+      </span>
+    `;
+  }
+
+  /* 🟥 Red */
+  if (
+    numberOrZero(
+      playerData?.red
+    ) > 0
+  ) {
+    badges += `
+      <span class="bf-pitch-marker">
+        🟥
+      </span>
+    `;
+  }
+
   const ratingHTML =
     rating !== null &&
     rating !== undefined &&
@@ -5380,6 +5476,16 @@ function renderPitchPlayer(
         playerData?.name || ""
       )}"
     >
+
+      ${
+        badges
+          ? `
+            <span class="bf-pitch-markers">
+              ${badges}
+            </span>
+          `
+          : ""
+      }
 
       <span class="bf-shirt">
         ${escapeHTML(number)}
