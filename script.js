@@ -2684,19 +2684,206 @@ if (
 }
 
 
-matches =
+/* =====================================================
+   LIVE REFRESH
+   ما نمسحوش ماتشات النهار.
+   غير نحدّثو الحالات ديال LIVE.
+===================================================== */
+
+const today =
+  new Date()
+    .toISOString()
+    .split("T")[0];
+
+/*
+ * ما نحدثوش LIVE إلا كنت فاليوم الحالي
+ */
+if (currentDate !== today) {
+  return currentMatches;
+}
+
+const liveMatches =
   sortMatchesByImportance(
     matches
   );
 
-    /*
-       مهم:
-       currentMatches دابا كيمثل بالضبط
-       الماتشات اللي معروضة، باش click/index
-       يبقى صحيح حتى مع filter.
-    */
-    currentMatches = matches;
+/*
+ * إلا عندنا أصلاً ماتشات ديال النهار،
+ * ندمجو معاها البيانات الجديدة ديال LIVE.
+ */
+if (
+  Array.isArray(currentMatches) &&
+  currentMatches.length
+) {
 
+  const liveById =
+    new Map();
+
+  const liveByTeams =
+    new Map();
+
+  liveMatches.forEach(
+    live => {
+
+      const id =
+        getFixtureId(
+          live
+        );
+
+      if (id) {
+        liveById.set(
+          String(id),
+          live
+        );
+      }
+
+      const home =
+        normalizeText(
+          getHome(live)
+        );
+
+      const away =
+        normalizeText(
+          getAway(live)
+        );
+
+      liveByTeams.set(
+        `${home}__${away}`,
+        live
+      );
+
+    }
+  );
+
+
+  const updatedMatches =
+    currentMatches.map(
+      match => {
+
+        const id =
+          getFixtureId(
+            match
+          );
+
+        const home =
+          normalizeText(
+            getHome(match)
+          );
+
+        const away =
+          normalizeText(
+            getAway(match)
+          );
+
+        const live =
+          (
+            id &&
+            liveById.get(
+              String(id)
+            )
+          ) ||
+          liveByTeams.get(
+            `${home}__${away}`
+          );
+
+        if (!live) {
+          return match;
+        }
+
+        return {
+          ...match,
+
+          teams:
+            live.teams ||
+            match.teams,
+
+          goals:
+            live.goals ||
+            match.goals,
+
+          score:
+            live.score ||
+            match.score,
+
+          league:
+            live.league ||
+            match.league,
+
+          fixture: {
+            ...match.fixture,
+            ...live.fixture,
+
+            status: {
+              ...match.fixture?.status,
+              ...live.fixture?.status
+            }
+          }
+        };
+
+      }
+    );
+
+
+  /*
+   * إلا ظهر LIVE جديد وما كانش موجود
+   * فالقائمة القديمة، نزيدوه.
+   */
+  const existingIds =
+    new Set(
+      updatedMatches
+        .map(
+          match =>
+            getFixtureId(
+              match
+            )
+        )
+        .filter(Boolean)
+        .map(String)
+    );
+
+
+  liveMatches.forEach(
+    live => {
+
+      const id =
+        getFixtureId(
+          live
+        );
+
+      if (
+        id &&
+        !existingIds.has(
+          String(id)
+        )
+      ) {
+        updatedMatches.push(
+          live
+        );
+      }
+
+    }
+  );
+
+
+  matches =
+    sortMatchesByImportance(
+      updatedMatches
+    );
+
+} else {
+
+  matches =
+    liveMatches;
+
+}
+
+
+/*
+ * currentMatches كيبقى فيه
+ * جميع ماتشات النهار.
+ */
+currentMatches =
+  matches;
     if (liveElement) {
       liveElement.textContent =
         matches.length
