@@ -3160,6 +3160,279 @@ function closeMatchDetails(event) {
 
   currentOpenedFixture =
     null;
+}/* =========================================
+   SIMPLE + RESPONSIVE MATCH DETAILS
+========================================= */
+
+.bf-pitches {
+  align-items: start;
+}
+
+.bf-pitch-box {
+  min-width: 0;
+}
+
+.bf-pitch {
+  min-width: 0;
+}
+
+.bf-pitch-player {
+  width: 78px;
+}
+
+.bf-pitch-name {
+  max-width: 74px;
+  text-align: center;
+}
+
+.bf-pitch-badges {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 3px;
+  margin-top: 3px;
+}
+
+.bf-pitch-badge {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+
+  min-width: 18px;
+  height: 17px;
+  padding: 0 4px;
+
+  border-radius: 999px;
+
+  background: rgba(0,0,0,.68);
+  color: #fff;
+
+  font-size: 8px;
+  font-weight: 900;
+
+  box-shadow:
+    0 2px 5px rgba(0,0,0,.2);
+}
+
+.bf-pitch-badge.goal {
+  background: rgba(20,120,55,.92);
+}
+
+.bf-pitch-badge.assist {
+  background: rgba(35,95,170,.92);
+}
+
+.bf-pitch-badge.subin {
+  background: rgba(18,145,80,.92);
+}
+
+.bf-pitch-badge.subout {
+  background: rgba(185,70,45,.92);
+}
+
+.bf-pitch-badge.motm {
+  background: rgba(220,160,20,.95);
+  color: #111;
+}
+
+.bf-pitch-player-motm .bf-shirt {
+  box-shadow:
+    0 0 0 3px rgba(225,180,35,.45),
+    0 5px 12px rgba(0,0,0,.28);
+}
+
+.bf-pitch-legend {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+
+  gap: 7px;
+
+  margin-top: 12px;
+  padding: 9px;
+
+  border-radius: 10px;
+
+  background: rgba(127,127,127,.07);
+
+  font-size: 9px;
+  font-weight: 800;
+
+  opacity: .8;
+}
+
+
+/* =========================================
+   MODERN STATISTICS
+========================================= */
+
+.bf-stat-modern-head {
+  display: grid;
+  grid-template-columns: 1fr auto 1fr;
+
+  gap: 10px;
+
+  align-items: center;
+
+  margin-bottom: 14px;
+
+  font-size: 11px;
+  font-weight: 900;
+}
+
+.bf-stat-modern-head strong:first-child {
+  text-align: right;
+}
+
+.bf-stat-modern-head strong:last-child {
+  text-align: left;
+}
+
+.bf-stat-modern-head span {
+  opacity: .45;
+}
+
+.bf-stat-modern-list {
+  display: flex;
+  flex-direction: column;
+  gap: 11px;
+}
+
+.bf-stat-modern-row {
+  display: flex;
+  flex-direction: column;
+  gap: 5px;
+}
+
+.bf-stat-modern-values {
+  display: grid;
+  grid-template-columns: 60px 1fr 60px;
+
+  align-items: center;
+
+  gap: 8px;
+
+  font-size: 11px;
+}
+
+.bf-stat-modern-values strong:first-child {
+  text-align: right;
+}
+
+.bf-stat-modern-values strong:last-child {
+  text-align: left;
+}
+
+.bf-stat-modern-values span {
+  text-align: center;
+  font-size: 9px;
+  font-weight: 800;
+  opacity: .58;
+}
+
+.bf-stat-modern-bar {
+  display: flex;
+  gap: 3px;
+
+  height: 5px;
+
+  overflow: hidden;
+
+  border-radius: 999px;
+}
+
+.bf-stat-modern-bar span {
+  display: block;
+  min-width: 2px;
+
+  transition:
+    width .3s ease;
+}
+
+.bf-stat-modern-bar .home {
+  background: rgba(65,105,180,.82);
+}
+
+.bf-stat-modern-bar .away {
+  background: rgba(210,75,70,.82);
+}
+
+
+/* =========================================
+   MOBILE
+========================================= */
+
+@media (max-width: 700px) {
+
+  .bf-modal-overlay {
+    align-items: flex-start;
+    padding: 8px;
+  }
+
+  .bf-modal {
+    width: 100%;
+    max-height: 97vh;
+
+    padding: 18px 10px;
+
+    border-radius: 16px;
+  }
+
+  .bf-details-teams {
+    grid-template-columns:
+      minmax(0,1fr)
+      76px
+      minmax(0,1fr);
+
+    gap: 5px;
+  }
+
+  .bf-details-team-name {
+    max-width: 110px;
+    font-size: 11px;
+  }
+
+  .bf-details-logo,
+  .bf-details-team img {
+    width: 56px;
+    height: 56px;
+  }
+
+  .bf-details-score {
+    min-width: 70px;
+    font-size: 25px;
+  }
+
+  .bf-pitches {
+    grid-template-columns: 1fr;
+    gap: 12px;
+  }
+
+  .bf-pitch-player {
+    width: 66px;
+  }
+
+  .bf-pitch-name {
+    max-width: 63px;
+    font-size: 8px;
+  }
+
+  .bf-pitch-badge {
+    min-width: 16px;
+    height: 15px;
+    padding: 0 3px;
+    font-size: 7px;
+  }
+
+  .bf-stat-modern-values {
+    grid-template-columns:
+      48px
+      1fr
+      48px;
+  }
+
 }
 
 /* =========================================================
@@ -5008,11 +5281,131 @@ function renderPlayerRow(
 /* =========================================================
    PITCH PLAYER
 ========================================================= */
+function getPlayerMatchMarkers(
+  player,
+  events,
+  eventMap,
+  motmKey
+) {
+  const playerId =
+    getPlayerId(player);
+
+  const playerName =
+    normalizeText(
+      getPlayerName(player)
+    );
+
+  const data =
+    getEventContribution(
+      player,
+      eventMap
+    );
+
+  let subIn = false;
+  let subOut = false;
+
+  if (Array.isArray(events)) {
+
+    events.forEach(event => {
+
+      const type =
+        normalizeText(
+          event?.type
+        );
+
+      if (!type.includes("subst")) {
+        return;
+      }
+
+      const outId =
+        event?.player?.id ||
+        event?.player_out?.id ||
+        event?.substitution?.out?.id ||
+        null;
+
+      const outName =
+        normalizeText(
+          event?.player?.name ||
+          event?.player_out?.name ||
+          event?.substitution?.out?.name ||
+          ""
+        );
+
+      const inId =
+        event?.assist?.id ||
+        event?.player_in?.id ||
+        event?.substitution?.in?.id ||
+        null;
+
+      const inName =
+        normalizeText(
+          event?.assist?.name ||
+          event?.player_in?.name ||
+          event?.substitution?.in?.name ||
+          ""
+        );
+
+      if (
+        (
+          playerId &&
+          outId &&
+          String(playerId) === String(outId)
+        ) ||
+        (
+          playerName &&
+          outName &&
+          playerName === outName
+        )
+      ) {
+        subOut = true;
+      }
+
+      if (
+        (
+          playerId &&
+          inId &&
+          String(playerId) === String(inId)
+        ) ||
+        (
+          playerName &&
+          inName &&
+          playerName === inName
+        )
+      ) {
+        subIn = true;
+      }
+
+    });
+
+  }
+
+  const ownKey =
+    playerId
+      ? `id-${playerId}`
+      : `name-${playerName}`;
+
+  const isMotm =
+    !!motmKey &&
+    ownKey === motmKey;
+
+  return {
+    goals:
+      numberOrZero(data?.goals),
+
+    assists:
+      numberOrZero(data?.assists),
+
+    subIn,
+    subOut,
+    isMotm
+  };
+}
 
 function renderPitchPlayer(
   playerData,
   x,
-  y
+  y,
+  markers = {}
 ) {
 
   const number =
@@ -5021,6 +5414,56 @@ function renderPitchPlayer(
 
   const rating =
     playerData?.rating;
+
+  let badges = "";
+
+  if (
+    markers.goals > 0
+  ) {
+    badges += `
+      <span class="bf-pitch-badge goal">
+        ⚽${markers.goals > 1
+          ? ` ${markers.goals}`
+          : ""}
+      </span>
+    `;
+  }
+
+  if (
+    markers.assists > 0
+  ) {
+    badges += `
+      <span class="bf-pitch-badge assist">
+        🅰️${markers.assists > 1
+          ? ` ${markers.assists}`
+          : ""}
+      </span>
+    `;
+  }
+
+  if (markers.subIn) {
+    badges += `
+      <span class="bf-pitch-badge subin">
+        ↗
+      </span>
+    `;
+  }
+
+  if (markers.subOut) {
+    badges += `
+      <span class="bf-pitch-badge subout">
+        ↘
+      </span>
+    `;
+  }
+
+  if (markers.isMotm) {
+    badges += `
+      <span class="bf-pitch-badge motm">
+        ⭐
+      </span>
+    `;
+  }
 
   const ratingHTML =
     rating !== null &&
@@ -5037,7 +5480,14 @@ function renderPitchPlayer(
 
   return `
     <div
-      class="bf-pitch-player"
+      class="
+        bf-pitch-player
+        ${
+          markers.isMotm
+            ? "bf-pitch-player-motm"
+            : ""
+        }
+      "
       style="
         left:${x}%;
         top:${y}%;
@@ -5061,112 +5511,182 @@ function renderPitchPlayer(
 
       ${ratingHTML}
 
+      ${
+        badges
+          ? `
+            <span class="bf-pitch-badges">
+              ${badges}
+            </span>
+          `
+          : ""
+      }
+
     </div>
   `;
 }
-
 /* =========================================================
    PITCH
 ========================================================= */
 
-function renderPitch(
-  lineup,
-  teamName,
-  side,
-  teamId,
+function renderFormations(
+  homeLineup,
+  awayLineup,
+  homeName,
+  awayName,
+  homeId,
+  awayId,
   performanceMap,
-  eventMap
+  eventMap,
+  events = []
 ) {
 
-  const formation =
-    lineup?.formation ||
-    "Formation";
+  const homeFormation =
+    homeLineup?.formation ||
+    "—";
 
-  const rawPlayers =
-    getPitchPlayers(
-      lineup
+  const awayFormation =
+    awayLineup?.formation ||
+    "—";
+
+  const motmKey =
+    getManOfTheMatchKey(
+      homeLineup,
+      awayLineup,
+      homeId,
+      awayId,
+      performanceMap,
+      eventMap
     );
-
-  const positioned =
-    makePitchCoordinates(
-      rawPlayers,
-      side
-    );
-
-  const pitchPlayers =
-    positioned.map(item => {
-
-      const data =
-        getPlayerData(
-          item,
-          teamId,
-          performanceMap,
-          eventMap
-        );
-
-      return {
-        data,
-        x: item._x,
-        y: item._y
-      };
-
-    });
-
-  const playersHTML =
-    pitchPlayers
-      .map(item =>
-        renderPitchPlayer(
-          item.data,
-          item.x,
-          item.y
-        )
-      )
-      .join("");
-
-  const coach =
-    lineup?.coach?.name ||
-    "";
 
   return `
-    <div class="bf-pitch-box">
 
-      <div class="bf-pitch-title">
+    <div class="bf-detail-section">
+
+      <h3>
+        🧩 Formations
+      </h3>
+
+      <div class="bf-formation-summary">
+
+        <div class="bf-formation-team">
+
+          ${escapeHTML(
+            homeName
+          )}
+
+          <small>
+            ${escapeHTML(
+              homeFormation
+            )}
+          </small>
+
+        </div>
+
+        <div class="bf-formation-vs">
+          VS
+        </div>
+
+        <div class="bf-formation-team">
+
+          ${escapeHTML(
+            awayName
+          )}
+
+          <small>
+            ${escapeHTML(
+              awayFormation
+            )}
+          </small>
+
+        </div>
+
+      </div>
+
+      <div class="bf-pitches">
+
+        ${
+          homeLineup
+            ? renderPitch(
+                homeLineup,
+                homeName,
+                "home",
+                homeId,
+                performanceMap,
+                eventMap,
+                events,
+                motmKey
+              )
+            : `
+              <div class="bf-pitch-box">
+
+                <div class="bf-pitch-title">
+                  ${escapeHTML(
+                    homeName
+                  )}
+                </div>
+
+                <div class="bf-detail-item">
+                  Formation indisponible.
+                </div>
+
+              </div>
+            `
+        }
+
+        ${
+          awayLineup
+            ? renderPitch(
+                awayLineup,
+                awayName,
+                "away",
+                awayId,
+                performanceMap,
+                eventMap,
+                events,
+                motmKey
+              )
+            : `
+              <div class="bf-pitch-box">
+
+                <div class="bf-pitch-title">
+                  ${escapeHTML(
+                    awayName
+                  )}
+                </div>
+
+                <div class="bf-detail-item">
+                  Formation indisponible.
+                </div>
+
+              </div>
+            `
+        }
+
+      </div>
+
+      <div class="bf-pitch-legend">
 
         <span>
-          ${escapeHTML(teamName)}
+          ⚽ But
         </span>
 
-        <span class="bf-pitch-formation">
-          ${escapeHTML(formation)}
+        <span>
+          🅰️ Passe décisive
+        </span>
+
+        <span>
+          ↗ Entrée
+        </span>
+
+        <span>
+          ↘ Sortie
+        </span>
+
+        <span>
+          ⭐ Homme du match
         </span>
 
       </div>
-
-      <div class="bf-pitch">
-
-        <div class="bf-pitch-line-half"></div>
-        <div class="bf-pitch-center-circle"></div>
-        <div class="bf-pitch-center-dot"></div>
-
-        <div class="bf-pitch-box-area top"></div>
-        <div class="bf-pitch-box-area bottom"></div>
-
-        <div class="bf-pitch-goal-area top"></div>
-        <div class="bf-pitch-goal-area bottom"></div>
-
-        ${playersHTML}
-
-      </div>
-
-      ${
-        coach
-          ? `
-            <div class="bf-coach">
-              👔 ${escapeHTML(coach)}
-            </div>
-          `
-          : ""
-      }
 
     </div>
   `;
@@ -5257,6 +5777,85 @@ function renderBench(
 /* =========================================================
    FORMATION SECTION
 ========================================================= */
+
+function getManOfTheMatchKey(
+  homeLineup,
+  awayLineup,
+  homeId,
+  awayId,
+  performanceMap,
+  eventMap
+) {
+  const players = [];
+
+  [
+    {
+      lineup: homeLineup,
+      teamId: homeId
+    },
+    {
+      lineup: awayLineup,
+      teamId: awayId
+    }
+  ].forEach(item => {
+
+    const starters =
+      Array.isArray(
+        item?.lineup?.startXI
+      )
+        ? item.lineup.startXI
+        : [];
+
+    starters.forEach(player => {
+
+      const data =
+        getPlayerData(
+          player,
+          item.teamId,
+          performanceMap,
+          eventMap
+        );
+
+      const rating =
+        Number(data?.rating);
+
+      if (
+        Number.isFinite(rating)
+      ) {
+        players.push({
+          data,
+          rating
+        });
+      }
+
+    });
+
+  });
+
+  if (!players.length) {
+    return null;
+  }
+
+  players.sort(
+    (a, b) =>
+      b.rating - a.rating
+  );
+
+  const best =
+    players[0]?.data;
+
+  if (!best) {
+    return null;
+  }
+
+  if (best.id) {
+    return `id-${best.id}`;
+  }
+
+  return `name-${normalizeText(
+    best.name
+  )}`;
+}
 
 function renderFormations(
   homeLineup,
@@ -5880,39 +6479,92 @@ function normalizeStatistics(statistics) {
     return statistics.data;
   }
 
-  return [];
-}
-
-function flattenStatsForTeam(
-  teamBlock
-) {
-
-  const stats =
+  if (
     Array.isArray(
-      teamBlock?.statistics
+      statistics?.statistics
     )
-      ? teamBlock.statistics
-      : [];
+  ) {
+    return statistics.statistics;
+  }
 
-  const map = {};
+  function makeItems(value) {
 
-  stats.forEach(item => {
+    if (Array.isArray(value)) {
+      return value;
+    }
 
-    const name =
-      normalizeText(
-        item?.type ||
-        item?.name ||
-        ""
+    if (
+      !value ||
+      typeof value !== "object"
+    ) {
+      return [];
+    }
+
+    return Object.entries(value)
+      .filter(
+        ([, val]) =>
+          val === null ||
+          val === undefined ||
+          typeof val === "string" ||
+          typeof val === "number"
+      )
+      .map(
+        ([key, val]) => ({
+          type: key,
+          value: val
+        })
       );
+  }
 
-    if (!name) return;
+  const home =
+    statistics?.home ||
+    statistics?.home_team ||
+    statistics?.homeTeam ||
+    null;
 
-    map[name] =
-      item?.value ?? "-";
+  const away =
+    statistics?.away ||
+    statistics?.away_team ||
+    statistics?.awayTeam ||
+    null;
 
-  });
+  if (
+    home ||
+    away
+  ) {
 
-  return map;
+    return [
+      {
+        team:
+          home?.team ||
+          home?.club ||
+          {},
+
+        statistics:
+          makeItems(
+            home?.statistics ||
+            home?.stats ||
+            home
+          )
+      },
+
+      {
+        team:
+          away?.team ||
+          away?.club ||
+          {},
+
+        statistics:
+          makeItems(
+            away?.statistics ||
+            away?.stats ||
+            away
+          )
+      }
+    ];
+  }
+
+  return [];
 }
 
 function parsePercentage(value) {
@@ -5952,6 +6604,7 @@ function renderStatistics(statistics) {
     );
 
   if (!groups.length) {
+
     return `
       <div class="bf-detail-item">
         Aucune statistique disponible.
@@ -5960,12 +6613,10 @@ function renderStatistics(statistics) {
   }
 
   const homeBlock =
-    groups[0] ||
-    {};
+    groups[0] || {};
 
   const awayBlock =
-    groups[1] ||
-    {};
+    groups[1] || {};
 
   const homeName =
     homeBlock?.team?.name ||
@@ -5985,160 +6636,121 @@ function renderStatistics(statistics) {
       awayBlock
     );
 
-  const preferredStats = [
-    {
-      key: "ball possession",
-      label: "Possession"
-    },
-    {
-      key: "total shots",
-      label: "Tirs"
-    },
-    {
-      key: "shots on goal",
-      label: "Tirs cadrés"
-    },
-    {
-      key: "corner kicks",
-      label: "Corners"
-    },
-    {
-      key: "offsides",
-      label: "Hors-jeu"
-    },
-    {
-      key: "fouls",
-      label: "Fautes"
-    },
-    {
-      key: "yellow cards",
-      label: "Cartons jaunes"
-    },
-    {
-      key: "red cards",
-      label: "Cartons rouges"
-    },
-    {
-      key: "goalkeeper saves",
-      label: "Arrêts"
-    }
-  ];
-
-  const availableKeys = new Set([
-    ...Object.keys(homeStats),
-    ...Object.keys(awayStats)
-  ]);
-
-  const used = [];
-
-  preferredStats.forEach(stat => {
-
-    if (
-      availableKeys.has(
-        stat.key
-      )
-    ) {
-      used.push(stat);
-    }
-
-  });
-
-  /*
-     Si l'API utilise une autre nomenclature,
-     on rajoute les stats restantes.
-  */
-
-  availableKeys.forEach(key => {
-
-    if (
-      used.some(
-        item => item.key === key
-      )
-    ) {
-      return;
-    }
-
-    used.push({
-      key,
-      label: key
-    });
-
-  });
+  const keys =
+    Array.from(
+      new Set([
+        ...Object.keys(homeStats),
+        ...Object.keys(awayStats)
+      ])
+    );
 
   const rows =
-    used
+    keys
       .slice(0, 14)
-      .map(stat => {
+      .map(key => {
 
         const homeValue =
-          homeStats[
-            stat.key
-          ] ?? "-";
+          homeStats[key] ?? "-";
 
         const awayValue =
-          awayStats[
-            stat.key
-          ] ?? "-";
+          awayStats[key] ?? "-";
+
+        const h =
+          parsePercentage(
+            homeValue
+          );
+
+        const a =
+          parsePercentage(
+            awayValue
+          );
+
+        const total =
+          h + a;
+
+        const homeWidth =
+          total > 0
+            ? (h / total) * 100
+            : 50;
+
+        const awayWidth =
+          total > 0
+            ? (a / total) * 100
+            : 50;
 
         return `
-          <div class="bf-stat-row">
+          <div class="bf-stat-modern-row">
 
-            <div class="bf-stat-value-home">
-              ${escapeHTML(
-                formatStatValue(
-                  homeValue
-                )
-              )}
+            <div class="bf-stat-modern-values">
+
+              <strong>
+                ${escapeHTML(
+                  formatStatValue(
+                    homeValue
+                  )
+                )}
+              </strong>
+
+              <span>
+                ${escapeHTML(
+                  key
+                )}
+              </span>
+
+              <strong>
+                ${escapeHTML(
+                  formatStatValue(
+                    awayValue
+                  )
+                )}
+              </strong>
+
             </div>
 
-            <div class="bf-stat-name">
-              ${escapeHTML(
-                stat.label
-              )}
-            </div>
+            <div class="bf-stat-modern-bar">
 
-            <div class="bf-stat-value-away">
-              ${escapeHTML(
-                formatStatValue(
-                  awayValue
-                )
-              )}
+              <span
+                class="home"
+                style="
+                  width:${homeWidth}%;
+                "
+              ></span>
+
+              <span
+                class="away"
+                style="
+                  width:${awayWidth}%;
+                "
+              ></span>
+
             </div>
 
           </div>
         `;
-
       })
       .join("");
 
   return `
 
-    <div
-      style="
-        display:grid;
-        grid-template-columns:1fr 40px 1fr;
-        gap:10px;
-        margin-bottom:14px;
-        font-weight:800;
-        font-size:12px;
-      "
-    >
+    <div class="bf-stat-modern-head">
 
-      <div style="text-align:right">
-        ${escapeHTML(homeName)}
-      </div>
+      <strong>
+        ${escapeHTML(
+          homeName
+        )}
+      </strong>
 
-      <div style="text-align:center;opacity:.5">
-        VS
-      </div>
+      <span>VS</span>
 
-      <div>
-        ${escapeHTML(awayName)}
-      </div>
+      <strong>
+        ${escapeHTML(
+          awayName
+        )}
+      </strong>
 
     </div>
 
-    <div class="bf-stat-table">
+    <div class="bf-stat-modern-list">
       ${rows}
     </div>
 
@@ -7157,14 +7769,13 @@ function adaptSportScoreDetails(
 
   try {
 
-    statistics =
-      normalizeStatistics(
-        root,
-        {
-          homeTeam,
-          awayTeam
-        }
-      );
+  statistics =
+  normalizeStatistics(
+    root?.statistics ||
+    root?.stats ||
+    root?.match_statistics ||
+    root
+  );
 
   } catch (
     error
@@ -7793,15 +8404,16 @@ async function openMatchDetails(index) {
         homeLineup ||
         awayLineup
           ? renderFormations(
-              homeLineup,
-              awayLineup,
-              realHome,
-              realAway,
-              realHomeId,
-              realAwayId,
-              performanceMap,
-              eventMap
-            )
+  homeLineup,
+  awayLineup,
+  realHome,
+  realAway,
+  realHomeId,
+  realAwayId,
+  performanceMap,
+  eventMap,
+  events
+)
           : `
             <div class="bf-detail-section">
 
