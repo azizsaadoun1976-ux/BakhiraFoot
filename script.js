@@ -9310,7 +9310,7 @@ function startLiveRefresh() {
         )
       ) {
 
-        loadLive();
+       loadMatches(currentDate);
 
       }
 
