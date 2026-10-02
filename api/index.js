@@ -825,7 +825,9 @@ function adaptSofaWorldMatch(event) {
         "",
 
       logo:
-        ""
+  uniqueTournament?.id
+    ? `https://api.sofascore.com/api/v1/unique-tournament/${uniqueTournament.id}/image`
+    : ""
 
     },
 
