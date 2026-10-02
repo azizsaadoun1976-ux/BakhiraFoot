@@ -4065,7 +4065,120 @@ function addModalStyles() {
         font-size: 7px;
       }
     }
-    
+
+        /* ========================================
+       MATCH DETAILS - EVENTS PRO
+    ======================================== */
+
+    .bf-events {
+      display: flex;
+      flex-direction: column;
+      gap: 8px;
+    }
+
+    .bf-event {
+      position: relative;
+
+      display: grid;
+      grid-template-columns: 48px 34px minmax(0, 1fr);
+      align-items: center;
+
+      gap: 10px;
+
+      min-height: 48px;
+      padding: 8px 11px;
+
+      border-radius: 10px;
+
+      background: rgba(127,127,127,.06);
+      border: 1px solid rgba(127,127,127,.09);
+    }
+
+    .bf-event-minute {
+      font-size: 11px;
+      font-weight: 950;
+      text-align: center;
+    }
+
+    .bf-event-icon {
+      width: 30px;
+      height: 30px;
+
+      display: flex;
+      align-items: center;
+      justify-content: center;
+
+      border-radius: 50%;
+
+      background: rgba(127,127,127,.10);
+
+      font-size: 15px;
+    }
+
+    .bf-event-main {
+      min-width: 0;
+    }
+
+    .bf-event-player {
+      font-size: 11px;
+      font-weight: 900;
+
+      white-space: normal;
+      overflow-wrap: anywhere;
+    }
+
+    .bf-event-assist {
+      margin-top: 2px;
+      font-size: 9px;
+      opacity: .62;
+    }
+
+    .bf-event-team {
+      margin-top: 2px;
+      font-size: 8px;
+      opacity: .48;
+    }
+
+    .bf-event.home {
+      border-left: 3px solid rgba(70,110,180,.65);
+    }
+
+    .bf-event.away {
+      border-left: 3px solid rgba(205,75,70,.65);
+    }
+
+    @media (max-width: 600px) {
+
+      .bf-event {
+        grid-template-columns:
+          40px 30px minmax(0,1fr);
+
+        gap: 7px;
+        padding: 7px 8px;
+      }
+
+      .bf-event-minute {
+        font-size: 10px;
+      }
+
+      .bf-event-icon {
+        width: 27px;
+        height: 27px;
+        font-size: 13px;
+      }
+
+      .bf-event-player {
+        font-size: 10px;
+      }
+
+      .bf-event-assist {
+        font-size: 8px;
+      }
+
+      .bf-event-team {
+        font-size: 7px;
+      }
+    }
   `;
 
   document.head.appendChild(style);
