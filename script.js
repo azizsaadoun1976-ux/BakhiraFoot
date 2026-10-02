@@ -4308,6 +4308,65 @@ function addModalStyles() {
       }
 
     }
+
+        .bf-pitch-markers {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      flex-wrap: wrap;
+      gap: 2px;
+      margin-bottom: 2px;
+    }
+
+    .bf-pitch-marker {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+
+      min-width: 18px;
+      height: 18px;
+      padding: 0 3px;
+
+      border-radius: 5px;
+
+      background: rgba(0,0,0,.68);
+
+      font-size: 9px;
+      line-height: 1;
+
+      box-shadow:
+        0 2px 5px rgba(0,0,0,.18);
+    }
+
+    .bf-pitch-marker.goal {
+      background: rgba(20,125,60,.92);
+    }
+
+    .bf-pitch-marker.assist {
+      background: rgba(40,95,175,.92);
+    }
+
+    .bf-pitch-marker.yellow {
+      background: rgba(245,195,35,.95);
+    }
+
+    .bf-pitch-marker.red {
+      background: rgba(205,45,45,.95);
+    }
+
+    .bf-pitch-marker.injury {
+      background: rgba(220,120,35,.95);
+    }
+
+    @media (max-width: 600px) {
+
+      .bf-pitch-marker {
+        min-width: 16px;
+        height: 16px;
+        font-size: 8px;
+      }
+
+    }
   `;
 
   document.head.appendChild(style);
@@ -4852,7 +4911,17 @@ function getPlayerData(
       eventData.red ||
       0,
 
-    keyPasses:
+
+     injured:
+  player?.injured === true ||
+  player?.injury === true ||
+  player?.is_injured === true ||
+  String(
+    player?.status ||
+    player?.condition ||
+    ""
+  ).toLowerCase().includes("injur")
+     keyPasses:
       numberOrZero(
         passesObject?.key
       ),
@@ -5400,54 +5469,65 @@ function renderPitchPlayer(
 
   let badges = "";
 
-  /* ⚽ Goals */
+  /* ⚽ Goal */
   if (
     numberOrZero(
       playerData?.goals
     ) > 0
   ) {
     badges += `
-      <span class="bf-pitch-marker">
+      <span class="bf-pitch-marker goal">
         ⚽
       </span>
     `;
   }
 
-  /* 🅰️ Assists */
+  /* 🅰️ Assist */
   if (
     numberOrZero(
       playerData?.assists
     ) > 0
   ) {
     badges += `
-      <span class="bf-pitch-marker">
+      <span class="bf-pitch-marker assist">
         🅰️
       </span>
     `;
   }
 
-  /* 🟨 Yellow */
+  /* 🟨 Yellow card */
   if (
     numberOrZero(
       playerData?.yellow
     ) > 0
   ) {
     badges += `
-      <span class="bf-pitch-marker">
+      <span class="bf-pitch-marker yellow">
         🟨
       </span>
     `;
   }
 
-  /* 🟥 Red */
+  /* 🟥 Red card */
   if (
     numberOrZero(
       playerData?.red
     ) > 0
   ) {
     badges += `
-      <span class="bf-pitch-marker">
+      <span class="bf-pitch-marker red">
         🟥
+      </span>
+    `;
+  }
+
+  /* 🩹 Injury */
+  if (
+    playerData?.injured
+  ) {
+    badges += `
+      <span class="bf-pitch-marker injury">
+        🩹
       </span>
     `;
   }
