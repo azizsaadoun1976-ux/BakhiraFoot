@@ -499,36 +499,78 @@ const sofaUrls = [
 
             },
 
-            tournament: {
+tournament: {
 
-              id:
-                null,
+  id:
+    event?.season?.slug ||
+    event?.season?.year ||
+    null,
 
-              name:
-                event?.season
-                  ?.displayName ||
-                "Football",
+  name:
+    (
+      event?.season?.slug
+        ? String(
+            event.season.slug
+          )
+            .replace(
+              /^\d{4}-\d{2}-/,
+              ""
+            )
+            .replace(
+              /-/g,
+              " "
+            )
+            .replace(
+              /\b\w/g,
+              char =>
+                char.toUpperCase()
+            )
+        : ""
+    ) ||
+    event?.season?.displayName ||
+    "Football",
 
-              uniqueTournament: {
+  uniqueTournament: {
 
-                id:
-                  null,
+    id:
+      event?.season?.slug ||
+      event?.season?.year ||
+      null,
 
-                name:
-                  event?.season
-                    ?.displayName ||
-                  "Football"
+    name:
+      (
+        event?.season?.slug
+          ? String(
+              event.season.slug
+            )
+              .replace(
+                /^\d{4}-\d{2}-/,
+                ""
+              )
+              .replace(
+                /-/g,
+                " "
+              )
+              .replace(
+                /\b\w/g,
+                char =>
+                  char.toUpperCase()
+              )
+          : ""
+      ) ||
+      event?.season?.displayName ||
+      "Football"
 
-              },
+  },
 
-              category: {
+  category: {
 
-                name:
-                  "World"
+    name:
+      "World"
 
-              }
+  }
 
-            },
+},
 
             status: {
 
