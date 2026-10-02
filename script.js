@@ -1380,29 +1380,96 @@ function getScoreState(match) {
    مع India / Jordan Premier League
 ========================================================= */
 
-function getCompetitionGroupKey(match) {
-  const leagueName =
-    normalizeText(
-      getLeague(match)
-    );
+function canonicalCompetitionName(value) {
+  let name =
+    normalizeText(value);
 
-  const leagueCountry =
-    normalizeText(
-      match?.league?.country ||
-      match?.competition?.country ||
+  name = name
+    .replace(
+      /\b(?:19|20)\d{2}(?:[-/](?:\d{2}|(?:19|20)\d{2}))?\b/g,
       ""
-    );
+    )
+    .replace(
+      /\s+/g,
+      " "
+    )
+    .trim();
 
-  if (
-    leagueCountry &&
-    leagueName
-  ) {
-    return `${leagueCountry}__${leagueName}`;
-  }
+  const aliases = {
+    "english premier league":
+      "premier league",
 
-  return leagueName;
+    "premier league england":
+      "premier league",
+
+    "international friendly":
+      "international friendlies",
+
+    "international friendlies":
+      "international friendlies",
+
+    "friendly international":
+      "international friendlies",
+
+    "friendly internationals":
+      "international friendlies",
+
+    "uefa nations league":
+      "nations league",
+
+    "nations league":
+      "nations league",
+
+    "uefa champions league":
+      "champions league",
+
+    "champions league":
+      "champions league",
+
+    "uefa europa league":
+      "europa league",
+
+    "europa league":
+      "europa league",
+
+    "uefa conference league":
+      "conference league",
+
+    "conference league":
+      "conference league",
+
+    "german bundesliga":
+      "bundesliga",
+
+    "bundesliga":
+      "bundesliga",
+
+    "italian serie a":
+      "serie a",
+
+    "serie a":
+      "serie a",
+
+    "french ligue 1":
+      "ligue 1",
+
+    "ligue 1":
+      "ligue 1"
+  };
+
+  return (
+    aliases[name] ||
+    name ||
+    "football"
+  );
 }
 
+
+function getCompetitionGroupKey(match) {
+  return canonicalCompetitionName(
+    getLeague(match)
+  );
+}
 /* =========================================================
    SORT MATCHES
    LIVE -> HT -> UPCOMING -> POSTPONED -> FINISHED
