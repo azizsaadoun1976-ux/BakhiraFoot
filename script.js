@@ -3932,6 +3932,59 @@ function addModalStyles() {
       }
     }
 
+    /* ========================================
+       DETAILS - MOBILE RESPONSIVE
+    ======================================== */
+
+    .bf-modal {
+      width: min(1100px, 100%);
+      max-width: 100%;
+      box-sizing: border-box;
+    }
+
+    .bf-modal img {
+      max-width: 100%;
+    }
+
+    @media (max-width: 700px) {
+
+      .bf-modal-overlay {
+        padding: 8px;
+        align-items: flex-start;
+      }
+
+      .bf-modal {
+        width: 100%;
+        max-height: 96vh;
+        padding: 18px 12px;
+        border-radius: 16px;
+      }
+
+      .bf-details-teams {
+        gap: 8px;
+      }
+
+      .bf-details-team {
+        min-width: 0;
+      }
+
+      .bf-details-team-name {
+        max-width: 110px;
+        white-space: normal;
+        overflow-wrap: anywhere;
+        font-size: 11px;
+      }
+
+      .bf-details-logo,
+      .bf-details-team img {
+        width: 58px;
+        height: 58px;
+      }
+
+      .bf-details-score {
+        font-size: 25px;
+      }
+    }
   `;
 
   document.head.appendChild(style);
