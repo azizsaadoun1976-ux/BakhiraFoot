@@ -1221,11 +1221,13 @@ function adaptSofaWorldMatch(event) {
         }
       }
 
-      const competition = first(
-        raw?.competition,
-        raw?.league,
-        {}
-      );
+   const competition = first(
+  raw?.competition,
+  raw?.league,
+  raw?.tournament,
+  raw?.uniqueTournament,
+  {}
+);
 
       return {
         id:
