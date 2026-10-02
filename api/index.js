@@ -3907,7 +3907,56 @@ catch (error) {
   );
 
 }
+/* =========================================
+   FINAL DEDUPE
+   نفس الماتش = نفس الفريقين + نفس التاريخ
+========================================= */
 
+const finalUnique = new Map();
+
+for (const match of matches) {
+
+  const home =
+    norm(
+      match?.teams?.home?.name
+    );
+
+  const away =
+    norm(
+      match?.teams?.away?.name
+    );
+
+  const dateValue =
+    match?.fixture?.date ||
+    match?.time ||
+    "";
+
+  const matchDay =
+    toISODate(
+      dateValue
+    ) || matchDate;
+
+  if (!home || !away) {
+    continue;
+  }
+
+  const key =
+    `${home}__${away}__${matchDay}`;
+
+  if (!finalUnique.has(key)) {
+    finalUnique.set(
+      key,
+      match
+    );
+  }
+
+}
+
+matches =
+  Array.from(
+    finalUnique.values()
+  );
+     
     return output(
       200,
       {
