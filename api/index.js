@@ -71,6 +71,46 @@ module.exports = async (req, res) => {
       }
     }
 
+     async function getTheSportsDBMatches(date) {
+  try {
+
+    const response =
+      await fetch(
+        `https://www.thesportsdb.com/api/v1/json/123/eventsday.php?d=${encodeURIComponent(
+          date
+        )}&s=Soccer`,
+        {
+          method: "GET",
+          headers: {
+            Accept: "application/json"
+          },
+          cache: "no-store"
+        }
+      );
+
+    if (!response.ok) {
+      throw new Error(
+        `TheSportsDB HTTP ${response.status}`
+      );
+    }
+
+    const data =
+      await response.json();
+
+    return Array.isArray(data?.events)
+      ? data.events
+      : [];
+
+  } catch (error) {
+
+    console.warn(
+      "THESPORTSDB ERROR:",
+      error.message
+    );
+
+    return [];
+  }
+}
      /* =====================================================
    SOFASCORE - WORLD FOOTBALL BY DATE
 ===================================================== */
