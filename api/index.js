@@ -2513,13 +2513,85 @@ try {
       }
     }
 
-    const matches =
-      getMatches(body)
-        .map(normalizeMatch)
-        .filter(Boolean);
+    let matches =
+  getMatches(body)
+    .map(normalizeMatch)
+    .filter(Boolean);
+
+
+/* =========================================
+   EXTRA: UEFA NATIONS LEAGUE
+   كنجيبوها بوحدها باش ما تضيعش
+   خارج أول 200 مباراة
+========================================= */
+
+try {
+
+  const nationsBody =
+    await getJSON(
+      `${SPORTSCORE}/fixtures/?sport=football&date=${encodeURIComponent(
+        matchDate
+      )}&competition=uefa-nations-league&limit=200`
+    );
+
+  const nationsMatches =
+    getMatches(nationsBody)
+      .map(normalizeMatch)
+      .filter(Boolean);
+
+
+  const existing =
+    new Set(
+      matches
+        .map(match =>
+          String(
+            match?.fixture?.id ||
+            match?.fixture?.slug ||
+            match?.id ||
+            ""
+          )
+        )
+        .filter(Boolean)
+    );
+
+
+  nationsMatches.forEach(
+    match => {
+
+      const id =
+        String(
+          match?.fixture?.id ||
+          match?.fixture?.slug ||
+          match?.id ||
+          ""
+        );
+
+      if (
+        id &&
+        !existing.has(id)
+      ) {
+
+        matches.push(match);
+
+        existing.add(id);
+
+      }
+
+    }
+  );
+
+}
+catch (error) {
+
+  console.warn(
+    "UEFA NATIONS LEAGUE EXTRA:",
+    error.message
+  );
+
+}
 
     return output(
-      200,
+      300,
       {
         data: matches,
 
