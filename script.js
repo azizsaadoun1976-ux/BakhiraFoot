@@ -3985,6 +3985,87 @@ function addModalStyles() {
         font-size: 25px;
       }
     }
+    /* ========================================
+       MATCH DETAILS - BETTER PITCH PLAYERS
+    ======================================== */
+
+    .bf-pitch-box {
+      min-width: 0;
+    }
+
+    .bf-pitch {
+      min-height: 420px;
+    }
+
+    .bf-pitch-player {
+      width: 78px;
+      gap: 2px;
+    }
+
+    .bf-shirt {
+      width: 36px;
+      height: 36px;
+      font-size: 11px;
+      font-weight: 950;
+      border-width: 2px;
+    }
+
+    .bf-pitch-name {
+      max-width: 74px;
+      padding: 3px 5px;
+
+      text-align: center;
+      line-height: 1.1;
+
+      font-size: 8px;
+      font-weight: 850;
+    }
+
+    .bf-pitch-rating {
+      margin-top: 1px;
+      padding: 2px 5px;
+
+      border-radius: 5px;
+
+      font-size: 8px;
+      font-weight: 950;
+    }
+
+    .bf-pitch-title {
+      font-size: 12px;
+      font-weight: 900;
+    }
+
+    .bf-pitch-formation {
+      font-size: 10px;
+    }
+
+    @media (max-width: 600px) {
+
+      .bf-pitch {
+        min-height: 360px;
+      }
+
+      .bf-pitch-player {
+        width: 64px;
+      }
+
+      .bf-shirt {
+        width: 30px;
+        height: 30px;
+        font-size: 9px;
+      }
+
+      .bf-pitch-name {
+        max-width: 61px;
+        font-size: 7px;
+      }
+
+      .bf-pitch-rating {
+        font-size: 7px;
+      }
+    }
+    
   `;
 
   document.head.appendChild(style);
