@@ -3197,49 +3197,12 @@ async function loadMatches(date) {
         );
 
     }
+
+
     /*
      * ترتيب نهائي
      */
-}
-   
-     /*
- * إضافة LIVE اللي ما كانتش موجودة
- * فـ currentMatches.
- */
-const freshLiveMatches =
-  normalizeMatches(data);
 
-const existingIds =
-  new Set(
-    matches
-      .map(match =>
-        getFixtureId(match)
-      )
-      .filter(Boolean)
-      .map(String)
-  );
-
-freshLiveMatches.forEach(
-  live => {
-
-    const id =
-      getFixtureId(live);
-
-    if (
-      id &&
-      !existingIds.has(
-        String(id)
-      )
-    ) {
-
-      matches.push(
-        live
-      );
-
-    }
-
-  }
-);
     matches =
       sortMatchesByImportance(
         matches
