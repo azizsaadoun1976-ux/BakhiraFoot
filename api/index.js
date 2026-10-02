@@ -71,6 +71,266 @@ module.exports = async (req, res) => {
       }
     }
 
+     /* =====================================================
+   SOFASCORE - WORLD FOOTBALL BY DATE
+===================================================== */
+
+async function getSofaWorldMatches(date) {
+
+  const urls = [
+    `https://api.sofascore.com/api/v1/sport/football/scheduled-events/${encodeURIComponent(date)}/inverse`,
+    `https://api.sofascore.com/api/v1/sport/football/scheduled-events/${encodeURIComponent(date)}`
+  ];
+
+  for (const url of urls) {
+
+    try {
+
+      const response =
+        await fetch(
+          url,
+          {
+            method: "GET",
+
+            headers: {
+              Accept:
+                "application/json",
+
+              "User-Agent":
+                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/154 Safari/537.36"
+            },
+
+            cache:
+              "no-store"
+          }
+        );
+
+      if (!response.ok) {
+        continue;
+      }
+
+      const data =
+        await response.json();
+
+      if (
+        Array.isArray(
+          data?.events
+        )
+      ) {
+
+        return data.events;
+
+      }
+
+    }
+    catch (error) {
+
+      console.warn(
+        "SOFASCORE WORLD ERROR:",
+        error.message
+      );
+
+    }
+
+  }
+
+  return [];
+}
+
+
+/* =====================================================
+   ADAPT SOFASCORE EVENT
+   لنفس structure ديال BakhiraFoot
+===================================================== */
+
+function adaptSofaWorldMatch(event) {
+
+  if (
+    !event ||
+    typeof event !== "object"
+  ) {
+    return null;
+  }
+
+  const home =
+    event?.homeTeam ||
+    {};
+
+  const away =
+    event?.awayTeam ||
+    {};
+
+  const tournament =
+    event?.tournament ||
+    {};
+
+  const uniqueTournament =
+    tournament?.uniqueTournament ||
+    {};
+
+  const category =
+    tournament?.category ||
+    {};
+
+
+  let status =
+    "NS";
+
+  const statusType =
+    String(
+      event?.status?.type ||
+      ""
+    ).toLowerCase();
+
+  if (
+    statusType === "inprogress"
+  ) {
+    status = "LIVE";
+  }
+
+  else if (
+    statusType === "finished"
+  ) {
+    status = "FT";
+  }
+
+  else if (
+    statusType === "halftime"
+  ) {
+    status = "HT";
+  }
+
+  else if (
+    statusType === "postponed"
+  ) {
+    status = "PST";
+  }
+
+  else if (
+    statusType === "canceled" ||
+    statusType === "cancelled"
+  ) {
+    status = "CANC";
+  }
+
+  else {
+    status = "NS";
+  }
+
+
+  const startTimestamp =
+    Number(
+      event?.startTimestamp
+    );
+
+  const matchDate =
+    Number.isFinite(
+      startTimestamp
+    )
+      ? new Date(
+          startTimestamp * 1000
+        ).toISOString()
+      : null;
+
+
+  const homeScore =
+    event?.homeScore?.current ??
+    event?.homeScore?.normaltime ??
+    null;
+
+  const awayScore =
+    event?.awayScore?.current ??
+    event?.awayScore?.normaltime ??
+    null;
+
+
+  return {
+
+    id:
+      event?.id ||
+      null,
+
+    slug:
+      event?.slug ||
+      `sofa-${event?.id || ""}`,
+
+    home_team: {
+
+      id:
+        home?.id ||
+        null,
+
+      name:
+        home?.name ||
+        home?.shortName ||
+        "Domicile",
+
+      logo:
+        home?.id
+          ? `https://api.sofascore.com/api/v1/team/${home.id}/image`
+          : ""
+
+    },
+
+    away_team: {
+
+      id:
+        away?.id ||
+        null,
+
+      name:
+        away?.name ||
+        away?.shortName ||
+        "Extérieur",
+
+      logo:
+        away?.id
+          ? `https://api.sofascore.com/api/v1/team/${away.id}/image`
+          : ""
+
+    },
+
+    competition: {
+
+      id:
+        uniqueTournament?.id ||
+        tournament?.id ||
+        null,
+
+      name:
+        uniqueTournament?.name ||
+        tournament?.name ||
+        "Football",
+
+      country:
+        category?.name ||
+        "",
+
+      logo:
+        ""
+
+    },
+
+    home_score:
+      homeScore,
+
+    away_score:
+      awayScore,
+
+    status:
+      status,
+
+    status_text:
+      event?.status?.description ||
+      status,
+
+    time:
+      matchDate
+
+  };
+
+}
+
     function arr(value) {
       return Array.isArray(value) ? value : [];
     }
@@ -2518,6 +2778,157 @@ try {
     .map(normalizeMatch)
     .filter(Boolean);
 
+     /* =====================================================
+   AJOUT DES MATCHES DU MONDE
+===================================================== */
+
+try {
+
+  const sofaEvents =
+    await getSofaWorldMatches(
+      matchDate
+    );
+
+  const sofaMatches =
+    sofaEvents
+      .map(
+        adaptSofaWorldMatch
+      )
+      .map(
+        normalizeMatch
+      )
+      .filter(Boolean);
+
+
+  const existing =
+    new Set();
+
+  matches.forEach(
+    match => {
+
+      const id =
+        match?.fixture?.id ||
+        match?.fixture?.slug ||
+        match?.id ||
+        "";
+
+      const home =
+        norm(
+          match?.teams?.home?.name
+        );
+
+      const away =
+        norm(
+          match?.teams?.away?.name
+        );
+
+      if (id) {
+        existing.add(
+          `id:${String(id)}`
+        );
+      }
+
+      if (home && away) {
+        existing.add(
+          `teams:${home}__${away}`
+        );
+      }
+
+    }
+  );
+
+
+  sofaMatches.forEach(
+    match => {
+
+      const id =
+        match?.fixture?.id ||
+        match?.fixture?.slug ||
+        match?.id ||
+        "";
+
+      const home =
+        norm(
+          match?.teams?.home?.name
+        );
+
+      const away =
+        norm(
+          match?.teams?.away?.name
+        );
+
+
+      const exists =
+        (
+          id &&
+          existing.has(
+            `id:${String(id)}`
+          )
+        ) ||
+        (
+          home &&
+          away &&
+          existing.has(
+            `teams:${home}__${away}`
+          )
+        );
+
+
+      if (!exists) {
+
+        matches.push(
+          match
+        );
+
+        if (id) {
+
+          existing.add(
+            `id:${String(id)}`
+          );
+
+        }
+
+        if (
+          home &&
+          away
+        ) {
+
+          existing.add(
+            `teams:${home}__${away}`
+          );
+
+        }
+
+      }
+
+    }
+  );
+
+
+  console.log(
+    "BAKHIRAFOOT WORLD:",
+    JSON.stringify({
+      sportScore:
+        matches.length -
+        sofaMatches.length,
+
+      sofaScore:
+        sofaMatches.length,
+
+      total:
+        matches.length
+    })
+  );
+
+}
+catch (error) {
+
+  console.warn(
+    "SOFASCORE WORLD MERGE:",
+    error.message
+  );
+
+}
 
 /* =========================================
    EXTRA: UEFA NATIONS LEAGUE
