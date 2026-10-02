@@ -2328,138 +2328,23 @@ module.exports = async (req, res) => {
       );
     }
 
-     /* =====================================================
+    /* =====================================================
        DATE
-       SPORTScore + SofaScore
-    ===================================================== */
+       ===================================================== */
 
     const matchDate =
       date || today;
 
-    let sportScoreMatches = [];
-    let sofaScoreMatches = [];
-
-
-    /* =========================================
-       1. SportScore
-    ========================================= */
+    let body;
 
     try {
-
-      const body =
-        await getJSON(
-          `${SPORTSCORE}/fixtures/?sport=football&date=${encodeURIComponent(
-            matchDate
-          )}&limit=200`
-        );
-
-      sportScoreMatches =
-        getMatches(body)
-          .map(
-            normalizeMatch
-          )
-          .filter(Boolean);
-
-    }
-    catch (error) {
-
-      console.warn(
-        "SPORTSCORE DATE ERROR:",
-        error.message
-      );
-
-      /*
-       * fallback ديال SportScore
-       */
-      try {
-
-        const body =
-          await getJSON(
-            `${SPORTSCORE}/matches/?sport=football&limit=100`
-          );
-
-        sportScoreMatches =
-          getMatches(body)
-            .map(
-              normalizeMatch
-            )
-            .filter(Boolean);
-
-      }
-      catch (fallbackError) {
-
-        console.warn(
-          "SPORTSCORE FALLBACK ERROR:",
-          fallbackError.message
-        );
-
-      }
-
-    }
-
-
-    /* =========================================
-       2. SofaScore
-    ========================================= */
-
-    sofaScoreMatches =
-      (
-        await getSofaScoreMatches(
+      body = await getJSON(
+        `${SPORTSCORE}/fixtures/?sport=football&date=${encodeURIComponent(
           matchDate
-        )
-      )
-      .map(
-        adaptSofaScoreEvent
-      )
-      .filter(Boolean);
-
-
-    /* =========================================
-       3. MERGE
-       SportScore أولاً
-       SofaScore يكمل الناقص
-    ========================================= */
-
-    const matches =
-      mergeDailyMatches(
-        sportScoreMatches,
-        sofaScoreMatches
+        )}&limit=200`
       );
+    }
 
-
-    console.log(
-      "BAKHIRAFOOT DAILY COVERAGE:",
-      JSON.stringify(
-        {
-          date:
-            matchDate,
-
-          sportScore:
-            sportScoreMatches.length,
-
-          sofaScore:
-            sofaScoreMatches.length,
-
-          final:
-            matches.length
-        }
-      )
-    );
-
-
-    return output(
-      200,
-      {
-
-        data:
-          matches,
-
-        provider:
-          "SportScore + SofaScore"
-
-      }
-    );
-     
     catch (error) {
       if (matchDate === today) {
         body = await getJSON(
