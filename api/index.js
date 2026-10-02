@@ -2436,17 +2436,41 @@ module.exports = async (req, res) => {
        DATE
        ===================================================== */
 
-    const matchDate =
-      date || today;
+   const matchDate =
+  date || today;
 
-    let body;
+let body;
 
-    try {
-      body = await getJSON(
+try {
+
+  const [upcomingBody, finishedBody, liveBody] =
+    await Promise.all([
+      getJSON(
         `${SPORTSCORE}/fixtures/?sport=football&date=${encodeURIComponent(
           matchDate
-        )}&limit=200`
-      );
+        )}&status=upcoming&limit=200`
+      ),
+
+      getJSON(
+        `${SPORTSCORE}/fixtures/?sport=football&date=${encodeURIComponent(
+          matchDate
+        )}&status=finished&limit=200`
+      ),
+
+      getJSON(
+        `${SPORTSCORE}/fixtures/?sport=football&date=${encodeURIComponent(
+          matchDate
+        )}&status=live&limit=200`
+      )
+    ]);
+
+  body = {
+    matches: [
+      ...getMatches(upcomingBody),
+      ...getMatches(finishedBody),
+      ...getMatches(liveBody)
+    ]
+  };
     }
 
     catch (error) {
