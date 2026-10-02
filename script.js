@@ -2995,28 +2995,8 @@ async function loadMatches(date) {
                     match
                   );
 
-                           /*
-           * إضافة LIVE اللي ما كانش موجود
-           * أصلاً فـ date endpoint
-           */
-
-          const existingMatches =
-            new Set();
-
-          matches.forEach(
-            match => {
-
-              const id =
-                getFixtureId(
-                  match
-                );
-
-              if (id) {
-                existingMatches.add(
-                  `id:${String(id)}`
-                );
-              }
-
+               }            
+     
               const home =
                 normalizeText(
                   getHome(match)
