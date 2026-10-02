@@ -1834,359 +1834,6 @@ module.exports = async (req, res) => {
       );
     }
 
-         /* =====================================================
-       SOFASCORE - EXTRA DAILY MATCHES
-       المصدر الثاني غير باش نكملو الماتشات الناقصة
-    ===================================================== */
-
-    async function getSofaScoreMatches(date) {
-
-      const url =
-        `https://api.sofascore.com/api/v1/sport/football/scheduled-events/${encodeURIComponent(
-          date
-        )}/inverse`;
-
-      try {
-
-        const body =
-          await getJSON(url);
-
-        return arr(
-          body?.events
-        );
-
-      } catch (error) {
-
-        console.warn(
-          "SOFASCORE DAILY ERROR:",
-          error.message
-        );
-
-        return [];
-      }
-    }
-
-
-    function adaptSofaScoreEvent(event) {
-
-      if (
-        !event ||
-        typeof event !== "object"
-      ) {
-        return null;
-      }
-
-      const home =
-        obj(
-          event?.homeTeam
-        );
-
-      const away =
-        obj(
-          event?.awayTeam
-        );
-
-      const tournament =
-        obj(
-          event?.tournament
-        );
-
-      const uniqueTournament =
-        obj(
-          tournament?.uniqueTournament
-        );
-
-
-      let status =
-        "notstarted";
-
-      const statusType =
-        String(
-          event?.status?.type ||
-          ""
-        ).toLowerCase();
-
-      if (
-        statusType ===
-        "inprogress"
-      ) {
-        status =
-          "live";
-      }
-
-      else if (
-        statusType ===
-        "finished"
-      ) {
-        status =
-          "finished";
-      }
-
-      else if (
-        statusType ===
-        "halftime"
-      ) {
-        status =
-          "halftime";
-      }
-
-      else if (
-        statusType ===
-        "postponed"
-      ) {
-        status =
-          "postponed";
-      }
-
-      else if (
-        statusType ===
-          "canceled" ||
-        statusType ===
-          "cancelled"
-      ) {
-        status =
-          "cancelled";
-      }
-
-
-      const startTimestamp =
-        Number(
-          event?.startTimestamp
-        );
-
-      const matchTime =
-        Number.isFinite(
-          startTimestamp
-        )
-          ? new Date(
-              startTimestamp * 1000
-            ).toISOString()
-          : null;
-
-
-      const homeScore =
-        first(
-          event?.homeScore?.current,
-          event?.homeScore?.normaltime,
-          event?.homeScore?.display,
-          null
-        );
-
-      const awayScore =
-        first(
-          event?.awayScore?.current,
-          event?.awayScore?.normaltime,
-          event?.awayScore?.display,
-          null
-        );
-
-
-      const homeId =
-        first(
-          home?.id,
-          null
-        );
-
-      const awayId =
-        first(
-          away?.id,
-          null
-        );
-
-
-      const homeLogo =
-        homeId
-          ? `https://api.sofascore.com/api/v1/team/${homeId}/image`
-          : "";
-
-      const awayLogo =
-        awayId
-          ? `https://api.sofascore.com/api/v1/team/${awayId}/image`
-          : "";
-
-
-      /*
-       * كنصايبو object بنفس structure
-       * اللي normalizeMatch() ديالك كيعرفها.
-       */
-      return normalizeMatch({
-
-        id:
-          event?.id ??
-          null,
-
-        slug:
-          `sofa-${event?.id ?? ""}`,
-
-        home_team: {
-
-          id:
-            homeId,
-
-          name:
-            first(
-              home?.name,
-              home?.shortName,
-              "Domicile"
-            ),
-
-          logo:
-            homeLogo
-
-        },
-
-        away_team: {
-
-          id:
-            awayId,
-
-          name:
-            first(
-              away?.name,
-              away?.shortName,
-              "Extérieur"
-            ),
-
-          logo:
-            awayLogo
-
-        },
-
-        competition: {
-
-          id:
-            first(
-              uniqueTournament?.id,
-              tournament?.id,
-              null
-            ),
-
-          name:
-            first(
-              uniqueTournament?.name,
-              tournament?.name,
-              "Football"
-            ),
-
-          country:
-            first(
-              tournament?.category?.name,
-              event?.category?.name,
-              ""
-            )
-
-        },
-
-        home_score:
-          homeScore,
-
-        away_score:
-          awayScore,
-
-        status:
-          status,
-
-        status_text:
-          event?.status?.description ||
-          status,
-
-        time:
-          matchTime
-
-      });
-
-    }
-
-
-    function matchMergeKey(match) {
-
-      const home =
-        norm(
-          match?.teams?.home?.name
-        );
-
-      const away =
-        norm(
-          match?.teams?.away?.name
-        );
-
-      const date =
-        String(
-          match?.fixture?.date ||
-          ""
-        ).slice(0, 16);
-
-      return (
-        `${home}__${away}__${date}`
-      );
-    }
-
-
-    function mergeDailyMatches(
-      primary,
-      secondary
-    ) {
-
-      const result = [];
-
-      const keys =
-        new Set();
-
-
-      primary.forEach(
-        match => {
-
-          const key =
-            matchMergeKey(
-              match
-            );
-
-          if (
-            !keys.has(key)
-          ) {
-
-            keys.add(key);
-
-            result.push(
-              match
-            );
-
-          }
-
-        }
-      );
-
-
-      secondary.forEach(
-        match => {
-
-          const key =
-            matchMergeKey(
-              match
-            );
-
-          /*
-           * SportScore هو المصدر الأول.
-           * SofaScore غير كيكمل الناقص.
-           */
-          if (
-            !keys.has(key)
-          ) {
-
-            keys.add(key);
-
-            result.push(
-              match
-            );
-
-          }
-
-        }
-      );
-
-
-      return result;
-    }
     /* =====================================================
        MATCH DETAILS
        ===================================================== */
@@ -2812,6 +2459,63 @@ module.exports = async (req, res) => {
 
       }
     );
+     
+    catch (error) {
+      if (matchDate === today) {
+        body = await getJSON(
+          `${SPORTSCORE}/matches/?sport=football&limit=100`
+        );
+      }
+
+      else {
+        try {
+          body = await getJSON(
+            `${SPORTSCORE}/fixtures/?sport=football&date=${encodeURIComponent(
+              matchDate
+            )}&limit=100`
+          );
+        }
+
+        catch (secondError) {
+          return output(
+            secondError?.status ||
+              error?.status ||
+              502,
+
+            {
+              error:
+                secondError?.message ||
+                error?.message ||
+                "API request failed",
+
+              details:
+                secondError?.data ||
+                error?.data ||
+                null,
+
+              data: []
+            }
+          );
+        }
+      }
+    }
+
+    const matches =
+      getMatches(body)
+        .map(normalizeMatch)
+        .filter(Boolean);
+
+    return output(
+      200,
+      {
+        data: matches,
+
+        provider:
+          "SportScore"
+      }
+    );
+
+  }
 
   catch (error) {
     console.error(
