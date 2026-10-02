@@ -2702,6 +2702,43 @@ async function loadLive() {
         }
       );
 
+               const existingLiveIds =
+            new Set(
+              matches
+                .map(
+                  match =>
+                    getFixtureId(
+                      match
+                    )
+                )
+                .filter(Boolean)
+                .map(String)
+            );
+
+          liveMatches.forEach(
+            live => {
+
+              const id =
+                getFixtureId(
+                  live
+                );
+
+              if (
+                id &&
+                !existingLiveIds.has(
+                  String(id)
+                )
+              ) {
+
+                matches.push(
+                  live
+                );
+
+              }
+
+            }
+          );
+
 
     /*
      * Sort فقط من بعد الـmerge
@@ -9387,7 +9424,6 @@ function initNavigation() {
 /* =========================================================
    LIVE REFRESH
 ========================================================= */
-
 function startLiveRefresh() {
 
   setInterval(
@@ -9399,7 +9435,7 @@ function startLiveRefresh() {
         )
       ) {
 
-       loadMatches(currentDate);
+        loadMatches(currentDate);
 
       }
 
@@ -9407,7 +9443,6 @@ function startLiveRefresh() {
     60000
   );
 }
-
 /* =========================================================
    START APP
 ========================================================= */
