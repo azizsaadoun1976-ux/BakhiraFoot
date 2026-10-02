@@ -207,6 +207,65 @@ module.exports = async (req, res) => {
     return null;
   }
 }
+
+/* =====================================================
+   THE SPORTS DB - MATCHES BY DAY
+===================================================== */
+
+async function getTheSportsDBDayMatches(date) {
+  const matchDate = String(
+    date || ""
+  ).slice(0, 10);
+
+  if (!matchDate) {
+    return [];
+  }
+
+  const url =
+    `https://www.thesportsdb.com/api/v1/json/123/eventsday.php` +
+    `?d=${encodeURIComponent(matchDate)}` +
+    `&s=Soccer`;
+
+  try {
+    const response = await fetch(
+      url,
+      {
+        method: "GET",
+        headers: {
+          Accept:
+            "application/json"
+        },
+        cache: "no-store"
+      }
+    );
+
+    if (!response.ok) {
+      throw new Error(
+        `HTTP ${response.status}`
+      );
+    }
+
+    const data =
+      await response.json();
+
+    return Array.isArray(
+      data?.events
+    )
+      ? data.events
+      : [];
+
+  } catch (error) {
+
+    console.warn(
+      "THESPORTSDB DAY ERROR:",
+      error.message
+    );
+
+    return [];
+  }
+}
+     
+     
      /* =====================================================
    SOFASCORE - WORLD FOOTBALL BY DATE
 ===================================================== */
