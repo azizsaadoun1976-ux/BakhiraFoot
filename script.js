@@ -3155,7 +3155,92 @@ async function loadMatches(date) {
 
               }
             );
+                   /* =========================================
+             AJOUT DES LIVE MANQUANTS
+             ========================================= */
 
+          const existingMatchKeys =
+            new Set();
+
+          matches.forEach(match => {
+
+            const id =
+              getFixtureId(match);
+
+            if (id) {
+              existingMatchKeys.add(
+                `id:${String(id)}`
+              );
+            }
+
+            const home =
+              normalizeText(
+                getHome(match)
+              );
+
+            const away =
+              normalizeText(
+                getAway(match)
+              );
+
+            if (home && away) {
+              existingMatchKeys.add(
+                `teams:${home}__${away}`
+              );
+            }
+
+          });
+
+          liveMatches.forEach(live => {
+
+            const id =
+              getFixtureId(live);
+
+            const home =
+              normalizeText(
+                getHome(live)
+              );
+
+            const away =
+              normalizeText(
+                getAway(live)
+              );
+
+            const existsById =
+              id &&
+              existingMatchKeys.has(
+                `id:${String(id)}`
+              );
+
+            const existsByTeams =
+              home &&
+              away &&
+              existingMatchKeys.has(
+                `teams:${home}__${away}`
+              );
+
+            if (
+              !existsById &&
+              !existsByTeams
+            ) {
+
+              matches.push(live);
+
+              if (id) {
+                existingMatchKeys.add(
+                  `id:${String(id)}`
+                );
+              }
+
+              if (home && away) {
+                existingMatchKeys.add(
+                  `teams:${home}__${away}`
+                );
+              }
+
+            }
+
+          });
         }
 
       }
