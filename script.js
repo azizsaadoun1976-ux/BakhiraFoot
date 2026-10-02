@@ -2955,6 +2955,95 @@ async function loadMatches(date) {
                     match
                   );
 
+                           /*
+           * إضافة LIVE اللي ما كانش موجود
+           * أصلاً فـ date endpoint
+           */
+
+          const existingMatches =
+            new Set();
+
+          matches.forEach(
+            match => {
+
+              const id =
+                getFixtureId(
+                  match
+                );
+
+              if (id) {
+                existingMatches.add(
+                  `id:${String(id)}`
+                );
+              }
+
+              const home =
+                normalizeText(
+                  getHome(match)
+                );
+
+              const away =
+                normalizeText(
+                  getAway(match)
+                );
+
+              if (home && away) {
+                existingMatches.add(
+                  `teams:${home}__${away}`
+                );
+              }
+
+            }
+          );
+
+
+          liveMatches.forEach(
+            live => {
+
+              const id =
+                getFixtureId(
+                  live
+                );
+
+              const home =
+                normalizeText(
+                  getHome(live)
+                );
+
+              const away =
+                normalizeText(
+                  getAway(live)
+                );
+
+
+              const existsById =
+                id &&
+                existingMatches.has(
+                  `id:${String(id)}`
+                );
+
+              const existsByTeams =
+                home &&
+                away &&
+                existingMatches.has(
+                  `teams:${home}__${away}`
+                );
+
+
+              if (
+                !existsById &&
+                !existsByTeams
+              ) {
+
+                matches.push(
+                  live
+                );
+
+              }
+
+            }
+          );
+
                 const home =
                   normalizeText(
                     getHome(match)
