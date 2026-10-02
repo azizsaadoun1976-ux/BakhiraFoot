@@ -4002,8 +4002,15 @@ for (const match of matches) {
         (15 * 60 * 1000)
       );
 
-    const key =
-      `${home}__${away}__${roundedTime}`;
+   const competitionName =
+  norm(
+    match?.league?.name ||
+    match?.competition?.name ||
+    "football"
+  );
+
+const key =
+  `${home}__${away}__${matchDay}__${competitionName}`;
 
     if (
       !finalUnique.has(
