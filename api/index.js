@@ -1240,21 +1240,39 @@ function adaptSofaWorldMatch(event) {
       return text(value);
     }
 
-    function imageOf(value) {
-      if (!value || typeof value !== "object") {
-        return "";
-      }
+ function imageOf(value) {
+  if (
+    !value ||
+    typeof value !== "object"
+  ) {
+    return "";
+  }
 
-      return (
-        value.picture ||
-        value.image ||
-        value.photo ||
-        value.avatar ||
-        value.logo ||
-        value.icon ||
-        ""
-      );
-    }
+  return (
+    value.picture ||
+    value.image ||
+    value.photo ||
+    value.avatar ||
+    value.logo ||
+    value.icon ||
+    value.image_url ||
+    value.imageUrl ||
+    value.logo_url ||
+    value.logoUrl ||
+    value.image_path ||
+    value.imagePath ||
+    value.logo_path ||
+    value.logoPath ||
+    value.badge ||
+    value.badge_url ||
+    value.badgeUrl ||
+    value.strBadge ||
+    value.strBadgeLogo ||
+    value.team_logo ||
+    value.teamLogo ||
+    ""
+  );
+}
 
     function toISODate(value) {
       if (
@@ -1855,15 +1873,23 @@ function resolveCompetition(raw) {
         raw?.away_name ||
         "Extérieur";
 
-      const homeLogo =
-        imageOf(homeRaw) ||
-        raw?.home_logo ||
-        "";
+     const homeLogo =
+  imageOf(homeRaw) ||
+  imageOf(raw?.home) ||
+  imageOf(raw?.homeTeam) ||
+  raw?.home_logo ||
+  raw?.homeLogo ||
+  raw?.home_logo_url ||
+  "";
 
-      const awayLogo =
-        imageOf(awayRaw) ||
-        raw?.away_logo ||
-        "";
+const awayLogo =
+  imageOf(awayRaw) ||
+  imageOf(raw?.away) ||
+  imageOf(raw?.awayTeam) ||
+  raw?.away_logo ||
+  raw?.awayLogo ||
+  raw?.away_logo_url ||
+  "";
 
       const homeId =
         idOf(homeRaw) ||
@@ -2040,11 +2066,17 @@ league: {
     raw?.country ||
     null,
 
-  logo:
-    imageOf(competition) ||
-    raw?.competition_logo ||
-    "",
-
+ logo:
+  imageOf(competition) ||
+  imageOf(raw?.league) ||
+  imageOf(raw?.tournament) ||
+  imageOf(raw?.uniqueTournament) ||
+  raw?.competition_logo ||
+  raw?.competitionLogo ||
+  raw?.competition_logo_url ||
+  raw?.league_logo ||
+  raw?.leagueLogo ||
+  "",
   round:
     raw?.round ||
     raw?.round_name ||
