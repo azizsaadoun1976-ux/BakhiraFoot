@@ -695,17 +695,23 @@ events.splice(
               "finished";
           }
 
-          return {
+          const sourceId =
+  event?.id
+    ? `espn-${event.id}`
+    : "";
 
-            id:
-              event?.id ||
-              null,
+return {
 
-            slug:
-              `espn-${event?.id || ""}`,
+  id:
+    sourceId ||
+    null,
 
-             provider:
-  "ESPN",
+  slug:
+    sourceId ||
+    null,
+
+  provider:
+    "ESPN",
              
             homeTeam: {
 
@@ -993,17 +999,23 @@ function adaptSofaWorldMatch(event) {
     null;
 
 
-  return {
+ const sourceId =
+  event?.id
+    ? `sofa-${event.id}`
+    : "";
 
-    id:
-      event?.id ||
-      null,
+return {
 
-    slug:
-      event?.slug ||
-      `sofa-${event?.id || ""}`,
+  id:
+    sourceId ||
+    null,
 
-     provider: "SofaScore",
+  slug:
+    sourceId ||
+    null,
+
+  provider:
+    "SofaScore",
 
      
     home_team: {
