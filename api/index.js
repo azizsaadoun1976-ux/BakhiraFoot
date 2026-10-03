@@ -1322,6 +1322,106 @@ function adaptSofaWorldMatch(event) {
       };
     }
 
+function isStageCompetitionName(value) {
+  const name = String(value || "")
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, " ");
+
+  return /^(regular season|fall season|spring season|summer season|winter season|group stage|first round|second round|third round|round of \d+|quarterfinal|quarterfinals|quarter-final|quarter-finals|semifinal|semifinals|semi-final|semi-finals|final|playoff|playoffs|play-off|play-offs)$/i.test(
+    name
+  );
+}
+
+function cleanCompetitionName(value) {
+  let name = text(value);
+
+  if (!name) {
+    return "";
+  }
+
+  name = String(name)
+    .replace(/\s+/g, " ")
+    .trim();
+
+  /* مثال:
+     Premier League - Regular Season - 7
+     => Premier League
+  */
+  name = name.replace(
+    /\s*[-–—:|]\s*(Regular Season|Fall Season|Spring Season|Summer Season|Winter Season|Group Stage|First Round|Second Round|Third Round|Round of \d+|Quarterfinals?|Quarter-finals?|Semifinals?|Semi-finals?|Final|Playoffs?|Play-offs?)\s*(?:[-–—:|]\s*\d+)?\s*$/i,
+    ""
+  ).trim();
+
+  /* مثال:
+     2026-27 Premier League
+     => Premier League
+  */
+  name = name.replace(
+    /^\d{4}(?:-\d{2})?\s*[-–—:|]?\s*/i,
+    ""
+  ).trim();
+
+  return name;
+}
+
+function getRealCompetition(raw) {
+  const candidates = [
+    raw?.competition,
+    raw?.league,
+    raw?.tournament,
+    raw?.uniqueTournament,
+    raw?.competitionData,
+    raw?.leagueData
+  ];
+
+  /* أولاً: نقلبو على اسم بطولة حقيقي */
+  for (const candidate of candidates) {
+    const name = cleanCompetitionName(candidate);
+
+    if (
+      name &&
+      !isStageCompetitionName(name)
+    ) {
+      return {
+        value: candidate,
+        name
+      };
+    }
+  }
+
+  /* بعض APIs كيكون الاسم الحقيقي داخل nested objects */
+  const nestedCandidates = [
+    raw?.competition?.tournament,
+    raw?.competition?.league,
+    raw?.competition?.uniqueTournament,
+    raw?.league?.tournament,
+    raw?.league?.uniqueTournament,
+    raw?.tournament?.uniqueTournament,
+    raw?.tournament?.competition,
+    raw?.tournament?.league
+  ];
+
+  for (const candidate of nestedCandidates) {
+    const name = cleanCompetitionName(candidate);
+
+    if (
+      name &&
+      !isStageCompetitionName(name)
+    ) {
+      return {
+        value: candidate,
+        name
+      };
+    }
+  }
+
+  return {
+    value: {},
+    name: "Football"
+  };
+}
+     
     function normalizeMatch(item) {
       if (!item) {
         return null;
@@ -1455,14 +1555,14 @@ function adaptSofaWorldMatch(event) {
         }
       }
 
-   const competition = first(
-  raw?.competition,
-  raw?.league,
-  raw?.tournament,
-  raw?.uniqueTournament,
-  {}
-);
+const competitionInfo =
+  getRealCompetition(raw);
 
+const competition =
+  competitionInfo.value;
+
+const competitionName =
+  competitionInfo.name;
       return {
         id:
           slug ||
@@ -1534,11 +1634,9 @@ function adaptSofaWorldMatch(event) {
             raw?.league_id ||
             null,
 
-          name:
-            nameOf(competition) ||
-            raw?.competition_name ||
-            raw?.league_name ||
-            "Football",
+        name:
+  competitionName ||
+  "Football",
 
           country:
             competition?.country ||
@@ -1550,10 +1648,23 @@ function adaptSofaWorldMatch(event) {
             raw?.competition_logo ||
             "",
 
-          round:
-            raw?.round ||
-            raw?.round_name ||
-            null,
+         round:
+  raw?.round ||
+  raw?.round_name ||
+  raw?.stage ||
+  raw?.stage_name ||
+  (
+    isStageCompetitionName(
+      nameOf(
+        raw?.competition
+      )
+    )
+      ? nameOf(
+          raw?.competition
+        )
+      : null
+  ) ||
+  null,
 
           season:
             raw?.season ||
