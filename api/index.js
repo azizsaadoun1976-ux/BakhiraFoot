@@ -521,37 +521,10 @@ tournament: {
   event?.competition?.name ||
   "Football",
 
-  uniqueTournament: {
-
-    id:
-      event?.season?.slug ||
-      event?.season?.year ||
-      null,
-
-    name:
-      (
-        event?.season?.slug
-          ? String(
-              event.season.slug
-            )
-              .replace(
-                /^\d{4}-\d{2}-/,
-                ""
-              )
-              .replace(
-                /-/g,
-                " "
-              )
-              .replace(
-                /\b\w/g,
-                char =>
-                  char.toUpperCase()
-              )
-          : ""
-      ) ||
-      event?.season?.displayName ||
-      "Football"
-
+ name:
+  event?.league?.name ||
+  event?.competition?.name ||
+  "Football",
   },
 
   category: {
