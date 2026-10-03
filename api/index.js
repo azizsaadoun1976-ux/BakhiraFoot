@@ -3592,6 +3592,15 @@ const finalFixtureId =
   )
     .trim()
     .toLowerCase();
+
+if (
+  fixture &&
+  /^(sofa|espn|tsdb)-/i.test(
+    String(fixture).trim()
+  )
+) {
+  return require("./details")(req, res);
+}
      
   /* =====================================================
    SOURCE-SPECIFIC MATCH DETAILS
