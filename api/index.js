@@ -3369,7 +3369,43 @@ try {
   getMatches(body)
     .map(normalizeMatch)
     .filter(Boolean);
+/* =========================================
+   MOROCCO - THE BOTOLA PRO
+   Fetch competition directly
+========================================= */
 
+try {
+
+  const botolaBody =
+    await getJSON(
+      `${SPORTSCORE}/fixtures/?sport=football&date=${encodeURIComponent(
+        matchDate
+      )}&competition=the-botola-pro&limit=200`
+    );
+
+  const botolaMatches =
+    getMatches(botolaBody)
+      .map(normalizeMatch)
+      .filter(Boolean);
+
+  matches.push(
+    ...botolaMatches
+  );
+
+  console.log(
+    "BOTOLA PRO MATCHES:",
+    botolaMatches.length
+  );
+
+}
+catch (error) {
+
+  console.warn(
+    "BOTOLA PRO ERROR:",
+    error.message
+  );
+
+}
 /* =====================================================
    THE SPORTS DB - AJOUT DES MATCHES DU JOUR
 ===================================================== */
