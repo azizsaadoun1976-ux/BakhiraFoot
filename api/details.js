@@ -340,546 +340,436 @@ function sourceOf() {
      SOFASCORE DETAILS
   ===================================================== */
 
-  async function sofaDetails(
-    value
-  ) {
+async function sofaDetails(
+  value
+) {
 
-    const id =
-      value
-        .replace(
-          /^sofa-/i,
-          ""
-        )
-        .trim();
+  const id =
+    String(value || "")
+      .replace(/^sofa-/i, "")
+      .trim();
 
-
-    if (!id) {
-
-      throw new Error(
-        "SofaScore event ID manquant"
-      );
-
-    }
-
-
-   let eventBody = null;
-let lastSofaError = null;
-
-const sofaHosts = [
-  "https://www.sofascore.com/api/v1",
-  "https://api.sofascore.com/api/v1"
-];
-
-for (const host of sofaHosts) {
-
-  try {
-
-    eventBody =
-      await getJSON(
-        `${host}/event/${encodeURIComponent(id)}`
-      );
-
-    if (eventBody?.event) {
-
-  eventBody.__host =
-    host;
-
-  break;
-}
-
+  if (!id) {
+    throw new Error(
+      "SofaScore event ID manquant"
+    );
   }
-  catch (error) {
 
-    lastSofaError =
-      error;
+  /* =========================================
+     SOFASCORE HOSTS
+     الأول www ثم api كـfallback
+  ========================================= */
 
-  }
-}
+  const hosts = [
+    "https://www.sofascore.com/api/v1",
+    "https://api.sofascore.com/api/v1"
+  ];
 
-if (!eventBody?.event) {
+  let eventBody = null;
+  let usedHost = hosts[0];
+  let lastError = null;
 
-  throw (
-    lastSofaError ||
-    new Error(
-      "SofaScore match introuvable"
-    )
-  );
-}
+  /* =========================================
+     EVENT
+  ========================================= */
 
+  for (const host of hosts) {
 
-    const event =
-      eventBody?.event;
+    try {
 
+      eventBody =
+        await getJSON(
+          `${host}/event/${encodeURIComponent(id)}`
+        );
 
-    if (
-      !event?.id
-    ) {
+      if (eventBody?.event) {
 
-      throw new Error(
-        "SofaScore match introuvable"
-      );
+        usedHost =
+          host;
 
-    }
-
-
-const sofaBase =
-  eventBody?.event
-    ? (
-        eventBody.__host ||
-        "https://www.sofascore.com/api/v1"
-      )
-    : "https://www.sofascore.com/api/v1";
-
-const [incidentsResult, lineupsResult, statsResult] =
-  await Promise.allSettled([
-
-    getJSON(
-      `${sofaBase}/event/${encodeURIComponent(id)}/incidents`
-    ),
-
-    getJSON(
-      `${sofaBase}/event/${encodeURIComponent(id)}/lineups`
-    ),
-
-    getJSON(
-      `${sofaBase}/event/${encodeURIComponent(id)}/statistics`
-    )
-
-  ]);
-
-
-    const incidentsBody =
-      results[0].status ===
-      "fulfilled"
-
-        ? results[0].value
-
-        : {};
-
-
-    const lineupsBody =
-      results[1].status ===
-      "fulfilled"
-
-        ? results[1].value
-
-        : {};
-
-
-    const statsBody =
-      results[2].status ===
-      "fulfilled"
-
-        ? results[2].value
-
-        : {};
-
-
-    const homeRaw =
-      event?.homeTeam ||
-      {};
-
-
-    const awayRaw =
-      event?.awayTeam ||
-      {};
-
-
-    const tournament =
-      event?.tournament ||
-      {};
-
-
-    const uniqueTournament =
-      tournament?.uniqueTournament ||
-      {};
-
-
-    const category =
-      tournament?.category ||
-      {};
-
-
-    const home =
-      team(
-
-        homeRaw?.id,
-
-        homeRaw?.name ||
-        homeRaw?.shortName,
-
-        homeRaw?.logo ||
-
-        (
-          homeRaw?.id
-
-            ? `https://api.sofascore.com/api/v1/team/${homeRaw.id}/image`
-
-            : ""
-        )
-
-      );
-
-
-    const away =
-      team(
-
-        awayRaw?.id,
-
-        awayRaw?.name ||
-        awayRaw?.shortName,
-
-        awayRaw?.logo ||
-
-        (
-          awayRaw?.id
-
-            ? `https://api.sofascore.com/api/v1/team/${awayRaw.id}/image`
-
-            : ""
-        )
-
-      );
-
-
-    const homeScore =
-      num(
-        event?.homeScore?.current
-      );
-
-
-    const awayScore =
-      num(
-        event?.awayScore?.current
-      );
-
-
-    const league = {
-
-      id:
-        uniqueTournament?.id ||
-        tournament?.id ||
-        null,
-
-      name:
-        uniqueTournament?.name ||
-        tournament?.name ||
-        "Football",
-
-      country:
-        category?.name ||
-        "",
-
-      logo:
-
-        uniqueTournament?.id
-
-          ? `https://api.sofascore.com/api/v1/unique-tournament/${uniqueTournament.id}/image`
-
-          : "",
-
-      round:
-        event?.roundInfo?.name ||
-        event?.roundInfo?.round ||
-        null,
-
-      season:
-        event?.season?.name ||
-        null
-
-    };
-
-
-    const fixtureData = {
-
-      id:
-        id,
-
-      slug:
-        event?.slug ||
-        `sofa-${id}`,
-
-      upstreamId:
-        id,
-
-      date:
-
-        event?.startTimestamp
-
-          ? new Date(
-
-              Number(
-                event.startTimestamp
-              ) * 1000
-
-            ).toISOString()
-
-          : null,
-
-
-      status: {
-
-        short:
-          sofaStatus(
-            event
-          ),
-
-        long:
-          event?.status
-            ?.description ||
-          "Match",
-
-        elapsed:
-          null
-
-      },
-
-
-      venue:
-        event?.venue
-          ?.name ||
-        null,
-
-
-      referee:
-        event?.referee
-          ?.name ||
-        null,
-
-
-      timezone:
-        event?.timeZone ||
-        null
-
-    };
-
-
-    const lineups =
-      [];
-
-
-    for (
-      const side of
-        ["home", "away"]
-    ) {
-
-      const raw =
-        lineupsBody?.[
-          side
-        ];
-
-
-      if (
-        !raw
-      ) {
-
-        continue;
-
+        break;
       }
 
+    } catch (error) {
 
-      const selectedTeam =
-        side ===
-        "home"
+      lastError =
+        error;
+    }
+  }
 
-          ? home
+  if (!eventBody?.event) {
 
-          : away;
+    throw (
+      lastError ||
+      new Error(
+        "SofaScore match introuvable"
+      )
+    );
+  }
 
+  const event =
+    eventBody.event;
 
-      const players =
-        arr(
-          raw?.players
-        );
+  /* =========================================
+     INCIDENTS / LINEUPS / STATS
+     نستعمل نفس الـhost اللي نجح
+  ========================================= */
 
+  const results =
+    await Promise.allSettled([
 
-      const startXI =
-        players
-          .filter(
-            player =>
-              player?.substitute !==
-              true
-          )
-          .slice(
-            0,
-            11
-          );
+      getJSON(
+        `${usedHost}/event/${encodeURIComponent(id)}/incidents`
+      ),
 
+      getJSON(
+        `${usedHost}/event/${encodeURIComponent(id)}/lineups`
+      ),
 
-      const substitutes =
-        players.filter(
-          player =>
-            player?.substitute ===
-            true
-        );
+      getJSON(
+        `${usedHost}/event/${encodeURIComponent(id)}/statistics`
+      )
 
+    ]);
 
-      lineups.push({
+  const incidentsBody =
+    results[0].status === "fulfilled"
+      ? results[0].value
+      : {};
 
-        team:
-          selectedTeam,
+  const lineupsBody =
+    results[1].status === "fulfilled"
+      ? results[1].value
+      : {};
 
-        formation:
-          raw?.formation ||
-          "—",
+  const statsBody =
+    results[2].status === "fulfilled"
+      ? results[2].value
+      : {};
 
-        coach:
-          raw?.manager
-            ?.name ||
-          raw?.coach
-            ?.name ||
-          null,
+  /* =========================================
+     TEAMS
+  ========================================= */
 
-        startXI,
+  const homeRaw =
+    event?.homeTeam ||
+    {};
 
-        substitutes,
+  const awayRaw =
+    event?.awayTeam ||
+    {};
 
-        players: [
+  const home = team(
+    homeRaw?.id,
+    homeRaw?.name ||
+      homeRaw?.shortName,
+    homeRaw?.logo ||
+      (
+        homeRaw?.id
+          ? `https://www.sofascore.com/api/v1/team/${homeRaw.id}/image`
+          : ""
+      )
+  );
 
-          ...startXI,
+  const away = team(
+    awayRaw?.id,
+    awayRaw?.name ||
+      awayRaw?.shortName,
+    awayRaw?.logo ||
+      (
+        awayRaw?.id
+          ? `https://www.sofascore.com/api/v1/team/${awayRaw.id}/image`
+          : ""
+      )
+  );
 
-          ...substitutes
+  /* =========================================
+     COMPETITION
+  ========================================= */
 
-        ]
+  const tournament =
+    event?.tournament ||
+    {};
 
-      });
+  const uniqueTournament =
+    tournament?.uniqueTournament ||
+    {};
 
+  const category =
+    tournament?.category ||
+    {};
+
+  const league = {
+
+    id:
+      uniqueTournament?.id ||
+      tournament?.id ||
+      null,
+
+    name:
+      uniqueTournament?.name ||
+      tournament?.name ||
+      "Football",
+
+    country:
+      category?.name ||
+      "",
+
+    logo:
+      uniqueTournament?.id
+        ? `https://www.sofascore.com/api/v1/unique-tournament/${uniqueTournament.id}/image`
+        : "",
+
+    round:
+      event?.roundInfo?.name ||
+      event?.roundInfo?.round ||
+      null,
+
+    season:
+      event?.season?.name ||
+      null
+  };
+
+  /* =========================================
+     SCORE
+  ========================================= */
+
+  const homeScore =
+    num(
+      event?.homeScore?.current
+    );
+
+  const awayScore =
+    num(
+      event?.awayScore?.current
+    );
+
+  /* =========================================
+     FIXTURE
+  ========================================= */
+
+  const fixtureData = {
+
+    id:
+      id,
+
+    slug:
+      event?.slug ||
+      `sofa-${id}`,
+
+    upstreamId:
+      id,
+
+    date:
+      event?.startTimestamp
+        ? new Date(
+            Number(
+              event.startTimestamp
+            ) * 1000
+          ).toISOString()
+        : null,
+
+    status: {
+
+      short:
+        sofaStatus(
+          event
+        ),
+
+      long:
+        event?.status?.description ||
+        "Match",
+
+      elapsed:
+        null
+    },
+
+    venue:
+      event?.venue?.name ||
+      null,
+
+    referee:
+      event?.referee?.name ||
+      null,
+
+    timezone:
+      event?.timeZone ||
+      null
+  };
+
+  /* =========================================
+     LINEUPS
+  ========================================= */
+
+  const lineups = [];
+
+  for (
+    const side of
+      ["home", "away"]
+  ) {
+
+    const raw =
+      lineupsBody?.[side];
+
+    if (!raw) {
+      continue;
     }
 
+    const selectedTeam =
+      side === "home"
+        ? home
+        : away;
 
-    const events =
+    const players =
       arr(
-        incidentsBody
-          ?.incidents
+        raw?.players
       );
 
+    const startXI =
+      players
+        .filter(
+          player =>
+            player?.substitute !== true
+        )
+        .slice(
+          0,
+          11
+        );
 
-    const statistics =
-      arr(
-        statsBody
-          ?.statistics
+    const substitutes =
+      players.filter(
+        player =>
+          player?.substitute === true
       );
 
+    lineups.push({
 
-    return {
+      team:
+        selectedTeam,
 
-      fixture:
-        fixtureData,
+      formation:
+        raw?.formation ||
+        "—",
 
+      coach:
+        raw?.manager?.name ||
+        raw?.coach?.name ||
+        null,
 
-      league:
+      startXI,
 
+      substitutes,
 
-        league,
+      players: [
+        ...startXI,
+        ...substitutes
+      ]
+    });
+  }
 
+  /* =========================================
+     EVENTS / STATS
+  ========================================= */
 
-      competition:
-        {
-          ...league
-        },
+  const events =
+    arr(
+      incidentsBody?.incidents
+    );
 
+  const statistics =
+    arr(
+      statsBody?.statistics
+    );
 
-      teams: {
+  /* =========================================
+     FINAL DETAILS
+  ========================================= */
 
-        home,
+  return {
 
-        away
+    fixture:
+      fixtureData,
 
+    league:
+      league,
+
+    competition:
+      {
+        ...league
       },
 
+    teams: {
+      home,
+      away
+    },
 
-      home_team:
-        home,
+    home_team:
+      home,
 
+    away_team:
+      away,
 
-      away_team:
-        away,
+    goals: {
+      home:
+        homeScore,
 
+      away:
+        awayScore
+    },
 
-      goals: {
+    home_score:
+      homeScore,
+
+    away_score:
+      awayScore,
+
+    score: {
+
+      home:
+        homeScore,
+
+      away:
+        awayScore,
+
+      halftime: {
+
+        home:
+          num(
+            event?.homeScore?.period1
+          ),
+
+        away:
+          num(
+            event?.awayScore?.period1
+          )
+      },
+
+      fulltime: {
 
         home:
           homeScore,
 
         away:
           awayScore
+      }
+    },
 
-      },
+    events,
 
-
-      home_score:
-        homeScore,
-
-
-      away_score:
-        awayScore,
-
-
-      score: {
-
-        home:
-          homeScore,
-
-        away:
-          awayScore,
-
-
-        halftime: {
-
-          home:
-            num(
-              event
-                ?.homeScore
-                ?.period1
-            ),
-
-          away:
-            num(
-              event
-                ?.awayScore
-                ?.period1
-            )
-
-        },
-
-
-        fulltime: {
-
-          home:
-            homeScore,
-
-          away:
-            awayScore
-
-        }
-
-      },
-
-
+    incidents:
       events,
 
+    lineups,
 
-      incidents:
-        events,
+    statistics,
 
+    players:
+      [],
 
-      lineups,
-
-
-      statistics,
-
-
-      players:
-        [],
-
-
-      provider:
-        "SofaScore"
-
-    };
-
-  }
-
+    provider:
+      "SofaScore"
+  };
+}
 
   /* =====================================================
      ESPN DETAILS
