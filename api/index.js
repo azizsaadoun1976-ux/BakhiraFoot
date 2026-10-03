@@ -6127,7 +6127,801 @@ async function getTheSportsDBDetails(
    /* =====================================================
    MATCH DETAILS
 ===================================================== */
+/* =====================================================
+   EXTERNAL MATCH DETAILS ROUTER
+   كل match جديد يرجع Details ديالو
+===================================================== */
 
+async function getSofaMatchDetails(eventId) {
+
+  const id =
+    String(eventId || "")
+      .replace(/^sofa-/i, "")
+      .trim();
+
+  if (!id) {
+    throw new Error(
+      "SofaScore event ID manquant"
+    );
+  }
+
+  const eventBody =
+    await getJSON(
+      `https://www.sofascore.com/api/v1/event/${encodeURIComponent(id)}`
+    );
+
+  const event =
+    eventBody?.event ||
+    {};
+
+  if (!event?.id) {
+    throw new Error(
+      "SofaScore match introuvable"
+    );
+  }
+
+  const [
+    incidentsBody,
+    lineupsBody,
+    statisticsBody
+  ] =
+    await Promise.allSettled([
+
+      getJSON(
+        `https://www.sofascore.com/api/v1/event/${encodeURIComponent(id)}/incidents`
+      ),
+
+      getJSON(
+        `https://www.sofascore.com/api/v1/event/${encodeURIComponent(id)}/lineups`
+      ),
+
+      getJSON(
+        `https://www.sofascore.com/api/v1/event/${encodeURIComponent(id)}/statistics`
+      )
+
+    ]);
+
+  const incidents =
+    incidentsBody.status === "fulfilled"
+      ? incidentsBody.value
+      : {};
+
+  const lineups =
+    lineupsBody.status === "fulfilled"
+      ? lineupsBody.value
+      : {};
+
+  const statistics =
+    statisticsBody.status === "fulfilled"
+      ? statisticsBody.value
+      : {};
+
+  const home =
+    event?.homeTeam ||
+    {};
+
+  const away =
+    event?.awayTeam ||
+    {};
+
+  const tournament =
+    event?.tournament ||
+    {};
+
+  const uniqueTournament =
+    tournament?.uniqueTournament ||
+    {};
+
+  const category =
+    tournament?.category ||
+    {};
+
+  const homeTeam = {
+
+    id:
+      home?.id ||
+      null,
+
+    name:
+      home?.name ||
+      home?.shortName ||
+      "Domicile",
+
+    logo:
+      home?.logo ||
+      (
+        home?.id
+          ? `https://api.sofascore.com/api/v1/team/${home.id}/image`
+          : ""
+      )
+  };
+
+  const awayTeam = {
+
+    id:
+      away?.id ||
+      null,
+
+    name:
+      away?.name ||
+      away?.shortName ||
+      "Extérieur",
+
+    logo:
+      away?.logo ||
+      (
+        away?.id
+          ? `https://api.sofascore.com/api/v1/team/${away.id}/image`
+          : ""
+      )
+  };
+
+  let status =
+    "NS";
+
+  const statusType =
+    String(
+      event?.status?.type ||
+      ""
+    ).toLowerCase();
+
+  if (
+    statusType ===
+    "inprogress"
+  ) {
+    status = "LIVE";
+  }
+
+  else if (
+    statusType ===
+    "halftime"
+  ) {
+    status = "HT";
+  }
+
+  else if (
+    statusType ===
+    "finished"
+  ) {
+    status = "FT";
+  }
+
+  else if (
+    statusType ===
+    "postponed"
+  ) {
+    status = "PST";
+  }
+
+  else if (
+    statusType ===
+      "canceled" ||
+    statusType ===
+      "cancelled"
+  ) {
+    status = "CANC";
+  }
+
+  const details = {
+
+    fixture: {
+
+      id:
+        id,
+
+      slug:
+        event?.slug ||
+        `sofa-${id}`,
+
+      upstreamId:
+        id,
+
+      date:
+        event?.startTimestamp
+          ? new Date(
+              Number(
+                event.startTimestamp
+              ) * 1000
+            ).toISOString()
+          : null,
+
+      status: {
+
+        short:
+          status,
+
+        long:
+          event?.status?.description ||
+          "Match",
+
+        elapsed:
+          null
+      },
+
+      venue:
+        event?.venue?.name ||
+        null,
+
+      referee:
+        event?.referee?.name ||
+        null
+    },
+
+    competition: {
+
+      id:
+        uniqueTournament?.id ||
+        tournament?.id ||
+        null,
+
+      name:
+        uniqueTournament?.name ||
+        tournament?.name ||
+        "Football",
+
+      country:
+        category?.name ||
+        "",
+
+      logo:
+        uniqueTournament?.id
+          ? `https://api.sofascore.com/api/v1/unique-tournament/${uniqueTournament.id}/image`
+          : ""
+    },
+
+    league: {
+
+      id:
+        uniqueTournament?.id ||
+        tournament?.id ||
+        null,
+
+      name:
+        uniqueTournament?.name ||
+        tournament?.name ||
+        "Football",
+
+      country:
+        category?.name ||
+        "",
+
+      logo:
+        uniqueTournament?.id
+          ? `https://api.sofascore.com/api/v1/unique-tournament/${uniqueTournament.id}/image`
+          : "",
+
+      round:
+        event?.roundInfo?.name ||
+        event?.roundInfo?.round ||
+        null,
+
+      season:
+        event?.season?.name ||
+        null
+    },
+
+    home_team:
+      homeTeam,
+
+    away_team:
+      awayTeam,
+
+    teams: {
+
+      home:
+        homeTeam,
+
+      away:
+        awayTeam
+    },
+
+    home_score:
+      event?.homeScore?.current ??
+      null,
+
+    away_score:
+      event?.awayScore?.current ??
+      null,
+
+    score: {
+
+      home:
+        event?.homeScore?.current ??
+        null,
+
+      away:
+        event?.awayScore?.current ??
+        null,
+
+      halftime: {
+
+        home:
+          event?.homeScore?.period1 ??
+          null,
+
+        away:
+          event?.awayScore?.period1 ??
+          null
+      },
+
+      fulltime: {
+
+        home:
+          event?.homeScore?.current ??
+          null,
+
+        away:
+          event?.awayScore?.current ??
+          null
+      }
+    },
+
+    incidents:
+      Array.isArray(
+        incidents?.incidents
+      )
+        ? incidents.incidents
+        : [],
+
+    events:
+      Array.isArray(
+        incidents?.incidents
+      )
+        ? incidents.incidents
+        : [],
+
+    lineups: [
+
+      ...(lineups?.home
+        ? [{
+            team:
+              homeTeam,
+
+            formation:
+              lineups.home?.formation ||
+              "—",
+
+            coach:
+              lineups.home?.manager?.name ||
+              null,
+
+            players:
+              Array.isArray(
+                lineups.home?.players
+              )
+                ? lineups.home.players
+                : [],
+
+            substitutes:
+              []
+          }]
+        : []),
+
+      ...(lineups?.away
+        ? [{
+            team:
+              awayTeam,
+
+            formation:
+              lineups.away?.formation ||
+              "—",
+
+            coach:
+              lineups.away?.manager?.name ||
+              null,
+
+            players:
+              Array.isArray(
+                lineups.away?.players
+              )
+                ? lineups.away.players
+                : [],
+
+            substitutes:
+              []
+          }]
+        : [])
+    ],
+
+    statistics:
+      Array.isArray(
+        statistics?.statistics
+      )
+        ? statistics.statistics
+        : [],
+
+    players:
+      [],
+
+    provider:
+      "SofaScore"
+  };
+
+  return details;
+}
+
+
+/* =====================================================
+   THE SPORTs DB DETAILS
+===================================================== */
+
+async function getTSDBMatchDetails(eventId) {
+
+  const id =
+    String(eventId || "")
+      .replace(/^tsdb-/i, "")
+      .trim();
+
+  if (!id) {
+    throw new Error(
+      "TheSportsDB event ID manquant"
+    );
+  }
+
+  const event =
+    await getTheSportsDBEvent(
+      id
+    );
+
+  if (!event) {
+    throw new Error(
+      "TheSportsDB match introuvable"
+    );
+  }
+
+  const homeTeam = {
+
+    id:
+      event?.idHomeTeam ||
+      null,
+
+    name:
+      event?.strHomeTeam ||
+      "Domicile",
+
+    logo:
+      event?.strHomeTeamBadge ||
+      ""
+  };
+
+  const awayTeam = {
+
+    id:
+      event?.idAwayTeam ||
+      null,
+
+    name:
+      event?.strAwayTeam ||
+      "Extérieur",
+
+    logo:
+      event?.strAwayTeamBadge ||
+      ""
+  };
+
+  const homeScore =
+    event?.intHomeScore ===
+      "" ||
+    event?.intHomeScore ===
+      null ||
+    event?.intHomeScore ===
+      undefined
+      ? null
+      : Number(
+          event.intHomeScore
+        );
+
+  const awayScore =
+    event?.intAwayScore ===
+      "" ||
+    event?.intAwayScore ===
+      null ||
+    event?.intAwayScore ===
+      undefined
+      ? null
+      : Number(
+          event.intAwayScore
+        );
+
+  const rawStatus =
+    String(
+      event?.strStatus ||
+      event?.strProgress ||
+      ""
+    ).toLowerCase();
+
+  let status =
+    "NS";
+
+  if (
+    rawStatus.includes(
+      "finished"
+    ) ||
+    rawStatus ===
+      "ft"
+  ) {
+    status = "FT";
+  }
+
+  else if (
+    rawStatus.includes(
+      "half"
+    ) ||
+    rawStatus ===
+      "ht"
+  ) {
+    status = "HT";
+  }
+
+  else if (
+    rawStatus.includes(
+      "live"
+    ) ||
+    rawStatus.includes(
+      "progress"
+    )
+  ) {
+    status = "LIVE";
+  }
+
+  return {
+
+    fixture: {
+
+      id:
+        id,
+
+      slug:
+        `tsdb-${id}`,
+
+      upstreamId:
+        id,
+
+      date:
+        event?.dateEvent &&
+        event?.strTime
+          ? `${event.dateEvent}T${event.strTime}`
+          : event?.dateEvent ||
+            null,
+
+      status: {
+
+        short:
+          status,
+
+        long:
+          event?.strStatus ||
+          status,
+
+        elapsed:
+          null
+      },
+
+      venue:
+        event?.strVenue ||
+        null,
+
+      referee:
+        event?.strReferee ||
+        null
+    },
+
+    competition: {
+
+      id:
+        event?.idLeague ||
+        null,
+
+      name:
+        event?.strLeague ||
+        "Football",
+
+      country:
+        event?.strCountry ||
+        "",
+
+      logo:
+        event?.strLeagueBadge ||
+        ""
+    },
+
+    league: {
+
+      id:
+        event?.idLeague ||
+        null,
+
+      name:
+        event?.strLeague ||
+        "Football",
+
+      country:
+        event?.strCountry ||
+        "",
+
+      logo:
+        event?.strLeagueBadge ||
+        "",
+
+      round:
+        event?.intRound ||
+        null,
+
+      season:
+        event?.strSeason ||
+        null
+    },
+
+    home_team:
+      homeTeam,
+
+    away_team:
+      awayTeam,
+
+    teams: {
+
+      home:
+        homeTeam,
+
+      away:
+        awayTeam
+    },
+
+    home_score:
+      homeScore,
+
+    away_score:
+      awayScore,
+
+    score: {
+
+      home:
+        homeScore,
+
+      away:
+        awayScore,
+
+      halftime: {
+
+        home:
+          null,
+
+        away:
+          null
+      },
+
+      fulltime: {
+
+        home:
+          homeScore,
+
+        away:
+          awayScore
+      }
+    },
+
+    events: [],
+
+    incidents: [],
+
+    lineups: [],
+
+    statistics: [],
+
+    players: [],
+
+    provider:
+      "TheSportsDB"
+  };
+}
+
+
+/* =====================================================
+   ROUTER
+===================================================== */
+
+if (
+  fixture &&
+  String(fixture)
+    .toLowerCase()
+    .startsWith("sofa-")
+) {
+
+  try {
+
+    const details =
+      await getSofaMatchDetails(
+        fixture
+      );
+
+    return output(
+      200,
+      {
+        data:
+          details,
+
+        provider:
+          "SofaScore"
+      }
+    );
+
+  }
+
+  catch (error) {
+
+    console.error(
+      "SOFASCORE DETAILS ERROR:",
+      error
+    );
+
+    return output(
+      502,
+      {
+        error:
+          "Impossible de charger le match",
+
+        details:
+          error?.message ||
+          null,
+
+        data:
+          []
+      }
+    );
+  }
+}
+
+
+if (
+  fixture &&
+  String(fixture)
+    .toLowerCase()
+    .startsWith("tsdb-")
+) {
+
+  try {
+
+    const details =
+      await getTSDBMatchDetails(
+        fixture
+      );
+
+    return output(
+      200,
+      {
+        data:
+          details,
+
+        provider:
+          "TheSportsDB"
+      }
+    );
+
+  }
+
+  catch (error) {
+
+    console.error(
+      "THESPORTSDB DETAILS ERROR:",
+      error
+    );
+
+    return output(
+      502,
+      {
+        error:
+          "Impossible de charger le match",
+
+        details:
+          error?.message ||
+          null,
+
+        data:
+          []
+      }
+    );
+  }
+}
 if (fixture) {
 
   const fixtureValue =
