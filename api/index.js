@@ -2063,50 +2063,6 @@ function normalizeMatch(item) {
       {}
     );
 
-const provider =
-  raw?.provider ||
-  item?.provider ||
-  "SportScore";
-
-const rawUpstreamId =
-  raw?.id ||
-  raw?.match_id ||
-  raw?.fixture_id ||
-  raw?.event_id ||
-  null;
-
-let sourceFixtureId = null;
-
-if (
-  provider === "SofaScore" &&
-  rawUpstreamId !== null
-) {
-  sourceFixtureId =
-    `sofa-${rawUpstreamId}`;
-}
-
-else if (
-  provider === "ESPN" &&
-  rawUpstreamId !== null
-) {
-  sourceFixtureId =
-    `espn-${rawUpstreamId}`;
-}
-
-else if (
-  provider === "TheSportsDB" &&
-  rawUpstreamId !== null
-) {
-  sourceFixtureId =
-    `tsdb-${rawUpstreamId}`;
-}
-
-const finalFixtureId =
-  sourceFixtureId ||
-  slug ||
-  rawUpstreamId ||
-  null;
-   
   return {
     id:
       finalFixtureId,
@@ -2115,6 +2071,7 @@ const finalFixtureId =
       finalFixtureId,
 
     provider:
+
       provider,
 
     fixture: {
@@ -3592,15 +3549,6 @@ const finalFixtureId =
   )
     .trim()
     .toLowerCase();
-
-if (
-  fixture &&
-  /^(sofa|espn|tsdb)-/i.test(
-    String(fixture).trim()
-  )
-) {
-  return require("./details")(req, res);
-}
      
   /* =====================================================
    SOURCE-SPECIFIC MATCH DETAILS
