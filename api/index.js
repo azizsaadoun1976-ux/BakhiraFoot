@@ -311,20 +311,22 @@ const sofaUrls = [
       const data =
         await response.json();
 
-      if (
-        Array.isArray(
-          data?.events
-        )
-      ) {
+   if (
+  Array.isArray(
+    data?.events
+  )
+) {
 
-        console.log(
-          "SOFASCORE WORLD:",
-          data.events.length
-        );
+  console.log(
+    "SOFASCORE WORLD:",
+    data.events.length
+  );
 
-        return data.events;
+  return [
+    ...data.events
+  ];
 
-      }
+}
 
     }
     catch (error) {
