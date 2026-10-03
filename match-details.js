@@ -1653,134 +1653,957 @@ function getPlayerRating(
   /* =========================================================
      BUILD LINEUP
   ========================================================= */
-
- function buildLineup(
+function buildLineup(
   details,
   side,
   team
 ) {
-  const raw =
-    first(
-      details?.lineups,
-      details?.lineup,
-      details?.compositions,
-      details?.formations,
-      null
-    );
-
-  const sidePrefix =
-    `${side}_`;
 
   /* =====================================================
-     FIND SOURCE
+     1) COLLECT ALL POSSIBLE SOURCES
   ===================================================== */
 
-  let source = null;
+  const roots = [];
 
-  if (Array.isArray(raw)) {
-    source =
-      arrayTeamGroup(
-        raw,
-        team,
-        side
-      );
-  }
-
-  else if (obj(raw)) {
-    source =
-      sideObject(
-        raw,
-        side
-      );
-
-    if (!source) {
-      source =
-        first(
-          raw?.[side],
-          raw?.[
-            side === "home"
-              ? "homeTeam"
-              : "awayTeam"
-          ],
-          raw?.[
-            side === "home"
-              ? "host"
-              : "guest"
-          ],
-          null
-        );
+  const pushRoot = (value) => {
+    if (
+      value !== undefined &&
+      value !== null
+    ) {
+      roots.push(value);
     }
-  }
+  };
+
+  pushRoot(details?.lineups);
+  pushRoot(details?.lineup);
+  pushRoot(details?.compositions);
+  pushRoot(details?.formations);
+  pushRoot(details?.players);
+
+  pushRoot(details?.data?.lineups);
+  pushRoot(details?.data?.lineup);
+  pushRoot(details?.data?.players);
+
+  pushRoot(details?.match?.lineups);
+  pushRoot(details?.match?.lineup);
+  pushRoot(details?.match?.players);
 
   /* =====================================================
-     EXTRA SOURCES
-     بعض responses كيكونو فـ players
+     2) TEAM HELPERS
   ===================================================== */
 
-  const extraPlayers =
-    arr(
-      details?.players
-    );
+  function unwrapPlayer(player) {
 
-  const extraLineups =
-    arr(
-      details?.players?.lineups
-    );
+    if (
+      player &&
+      typeof player === "object" &&
+      player.player &&
+      typeof player.player === "object"
+    ) {
+      return {
+        ...player.player,
+        ...player
+      };
+    }
 
-  if (!source && extraLineups.length) {
-    source =
-      arrayTeamGroup(
-        extraLineups,
-        team,
-        side
+    return player || {};
+  }
+
+  function playerTeamObject(player) {
+
+    const p =
+      unwrapPlayer(player);
+
+    return (
+      p?.team ||
+      p?.club ||
+      p?.team_info ||
+      p?.teamInfo ||
+      p?.player_team ||
+      {}
+    );
+  }
+
+  function belongs(player) {
+
+    if (
+      !player ||
+      typeof player !== "object"
+    ) {
+      return false;
+    }
+
+    const p =
+      unwrapPlayer(player);
+
+    const wantedSide =
+      side === "home"
+        ? ["home", "host"]
+        : ["away", "guest"];
+
+    const rawSide =
+      norm(
+        first(
+          p?.side,
+          p?.team_side,
+          p?.teamType,
+          p?.sideType,
+          ""
+        )
       );
+
+    if (
+      rawSide &&
+      wantedSide.includes(rawSide)
+    ) {
+      return true;
+    }
+
+    if (
+      rawSide &&
+      !wantedSide.includes(rawSide)
+    ) {
+      return false;
+    }
+
+    const pt =
+      playerTeamObject(player);
+
+    const teamId =
+      first(
+        team?.id,
+        null
+      );
+
+    const playerTeamId =
+      first(
+        pt?.id,
+        pt?.team_id,
+        p?.team_id,
+        p?.teamId,
+        p?.club_id,
+        null
+      );
+
+    if (
+      teamId &&
+      playerTeamId &&
+      String(teamId) ===
+        String(playerTeamId)
+    ) {
+      return true;
+    }
+
+    const wantedName =
+      norm(
+        team?.name || ""
+      );
+
+    const playerTeamName =
+      norm(
+        first(
+          pt?.name,
+          pt?.team_name,
+          p?.team_name,
+          p?.teamName,
+          ""
+        )
+      );
+
+    if (
+      wantedName &&
+      playerTeamName &&
+      wantedName === playerTeamName
+    ) {
+      return true;
+    }
+
+    return false;
+  }
+
+  function startingValue(player) {
+
+    const p =
+      unwrapPlayer(player);
+
+    const value =
+      first(
+        p?.is_starting,
+        p?.isStarting,
+        p?.starting,
+        p?.starter,
+        p?.isStarter,
+        p?.in_starting,
+        p?.inStarting,
+        p?.starting_player,
+        p?.startingPlayer,
+        null
+      );
+
+    if (
+      value === true ||
+      value === 1 ||
+      value === "1" ||
+      value === "true"
+    ) {
+      return true;
+    }
+
+    if (
+      value === false ||
+      value === 0 ||
+      value === "0" ||
+      value === "false"
+    ) {
+      return false;
+    }
+
+    return null;
+  }
+
+  function cleanArray(value) {
+
+    if (
+      Array.isArray(value)
+    ) {
+      return value.filter(Boolean);
+    }
+
+    if (
+      !value ||
+      typeof value !== "object"
+    ) {
+      return [];
+    }
+
+    const possible =
+      first(
+        value?.data,
+        value?.results,
+        value?.items,
+        value?.players,
+        value?.list,
+        value?.xi,
+        value?.startXI,
+        value?.startingXI,
+        value?.starting_xi,
+        value?.starters,
+        value?.substitutes,
+        value?.subs,
+        []
+      );
+
+    if (
+      Array.isArray(possible)
+    ) {
+      return possible.filter(Boolean);
+    }
+
+    return [];
+  }
+
+  function firstArray(...values) {
+
+    for (
+      const value of values
+    ) {
+
+      const list =
+        cleanArray(value);
+
+      if (
+        list.length
+      ) {
+        return list;
+      }
+
+    }
+
+    return [];
+  }
+
+  function teamBlock(root) {
+
+    if (
+      !root ||
+      typeof root !== "object"
+    ) {
+      return null;
+    }
+
+    if (
+      root?.[side]
+    ) {
+      return root[side];
+    }
+
+    if (
+      side === "home" &&
+      root?.host
+    ) {
+      return root.host;
+    }
+
+    if (
+      side === "away" &&
+      root?.guest
+    ) {
+      return root.guest;
+    }
+
+    if (
+      side === "home" &&
+      root?.homeTeam
+    ) {
+      return root.homeTeam;
+    }
+
+    if (
+      side === "away" &&
+      root?.awayTeam
+    ) {
+      return root.awayTeam;
+    }
+
+    return null;
   }
 
   /* =====================================================
-     FORMATION
+     3) FORMATION
   ===================================================== */
 
   let formation =
     first(
-
-      source?.formation,
-      source?.tacticalFormation,
-      source?.formationUsed,
-
-      source?.tactics?.formation,
-
-      raw?.[
-        `${sidePrefix}formation`
-      ],
-
-      raw?.[
-        `${sidePrefix}tactic`
-      ],
-
-      raw?.formation?.[side],
-
-      raw?.formation?.[
-        `${sidePrefix}formation`
-      ],
-
-      details?.[
-        `${sidePrefix}formation`
-      ],
-
+      details?.[`${side}_formation`],
       details?.formation?.[side],
-
-      details?.[
-        `${side}Formation`
-      ],
-
-      "—"
+      details?.formation?.[`${side}_formation`],
+      details?.lineups?.[side]?.formation,
+      details?.lineup?.[side]?.formation,
+      details?.compositions?.[side]?.formation,
+      details?.players?.[side]?.formation,
+      "4-3-3"
     );
+
+  for (
+    const root of roots
+  ) {
+
+    const block =
+      teamBlock(root);
+
+    formation =
+      first(
+        formation,
+        block?.formation,
+        block?.tactics?.formation,
+        root?.[`${side}_formation`],
+        root?.formation?.[side],
+        root?.formation?.[`${side}_formation`],
+        null
+      );
+
+  }
 
   formation =
     normalizeFormation(
       formation
     );
 
+  /* =====================================================
+     4) STARTERS + SUBSTITUTES
+  ===================================================== */
+
+  let starters = [];
+  let substitutes = [];
+
+  function extractFromBlock(block) {
+
+    if (
+      !block ||
+      typeof block !== "object"
+    ) {
+      return;
+    }
+
+    const directStart =
+      firstArray(
+        block?.startXI,
+        block?.startingXI,
+        block?.starting_xi,
+        block?.startingLineup,
+        block?.starters,
+        block?.xi,
+        block?.starting,
+        block?.starting_players
+      );
+
+    const directSubs =
+      firstArray(
+        block?.substitutes,
+        block?.subs,
+        block?.bench,
+        block?.backup,
+        block?.sub_players
+      );
+
+    if (
+      !starters.length &&
+      directStart.length
+    ) {
+      starters =
+        directStart;
+    }
+
+    if (
+      !substitutes.length &&
+      directSubs.length
+    ) {
+      substitutes =
+        directSubs;
+    }
+
+    /* players داخل block */
+
+    if (
+      !starters.length
+    ) {
+
+      const players =
+        firstArray(
+          block?.players,
+          block?.lineup_players,
+          block?.squad
+        );
+
+      if (
+        players.length
+      ) {
+
+        const teamPlayers =
+          players.filter(
+            belongs
+          );
+
+        const marked =
+          teamPlayers.filter(
+            player =>
+              startingValue(player) === true
+          );
+
+        if (
+          marked.length
+        ) {
+
+          starters =
+            marked;
+
+        }
+        else if (
+          teamPlayers.length >= 11
+        ) {
+
+          starters =
+            teamPlayers.slice(
+              0,
+              11
+            );
+
+          if (
+            !substitutes.length
+          ) {
+
+            substitutes =
+              teamPlayers.slice(
+                11
+              );
+
+          }
+
+        }
+
+      }
+
+    }
+
+  }
+
+  /* =====================================================
+     5) READ SOURCES ONE BY ONE
+  ===================================================== */
+
+  for (
+    const root of roots
+  ) {
+
+    if (
+      !root
+    ) {
+      continue;
+    }
+
+    /* ---------------------------------------------
+       Array source
+    --------------------------------------------- */
+
+    if (
+      Array.isArray(root)
+    ) {
+
+      const teamPlayers =
+        root.filter(
+          player =>
+            belongs(player)
+        );
+
+      const marked =
+        teamPlayers.filter(
+          player =>
+            startingValue(player) === true
+        );
+
+      if (
+        !starters.length &&
+        marked.length
+      ) {
+
+        starters =
+          marked;
+
+      }
+
+      else if (
+        !starters.length &&
+        teamPlayers.length >= 11
+      ) {
+
+        starters =
+          teamPlayers.slice(
+            0,
+            11
+          );
+
+        if (
+          !substitutes.length
+        ) {
+
+          substitutes =
+            teamPlayers.slice(
+              11
+            );
+
+        }
+
+      }
+
+      continue;
+    }
+
+    /* ---------------------------------------------
+       Team block
+    --------------------------------------------- */
+
+    const block =
+      teamBlock(root);
+
+    if (
+      block
+    ) {
+      extractFromBlock(
+        block
+      );
+    }
+
+    /* ---------------------------------------------
+       Direct side keys
+    --------------------------------------------- */
+
+    const sideStart =
+      firstArray(
+        root?.[`${side}_xi`],
+        root?.[`${side}_startXI`],
+        root?.[`${side}_startingXI`],
+        root?.[`${side}_starting_xi`],
+        root?.[`${side}_starting`],
+        root?.[`${side}_starters`],
+        root?.[`${side}_players`]
+      );
+
+    const sideSubs =
+      firstArray(
+        root?.[`${side}_subs`],
+        root?.[`${side}_substitutes`],
+        root?.[`${side}_bench`],
+        root?.[`${side}_backup`]
+      );
+
+    if (
+      !starters.length &&
+      sideStart.length
+    ) {
+      starters =
+        sideStart;
+    }
+
+    if (
+      !substitutes.length &&
+      sideSubs.length
+    ) {
+      substitutes =
+        sideSubs;
+    }
+
+    /* ---------------------------------------------
+       players شاملين الفريقين
+    --------------------------------------------- */
+
+    if (
+      !starters.length
+    ) {
+
+      const allPlayers =
+        firstArray(
+          root?.players,
+          root?.lineup_players,
+          root?.squad,
+          root?.data?.players,
+          root?.results?.players
+        );
+
+      if (
+        allPlayers.length
+      ) {
+
+        const teamPlayers =
+          allPlayers.filter(
+            belongs
+          );
+
+        const marked =
+          teamPlayers.filter(
+            player =>
+              startingValue(player) === true
+          );
+
+        if (
+          marked.length
+        ) {
+
+          starters =
+            marked;
+
+        }
+        else if (
+          teamPlayers.length >= 11
+        ) {
+
+          starters =
+            teamPlayers.slice(
+              0,
+              11
+            );
+
+          if (
+            !substitutes.length
+          ) {
+
+            substitutes =
+              teamPlayers.slice(
+                11
+              );
+
+          }
+
+        }
+
+      }
+
+    }
+
+  }
+
+  /* =====================================================
+     6) DETAILS.PLAYERS
+     API ديالك كيمكن ترجع:
+     players: {home:[], away:[]}
+     أو players: []
+  ===================================================== */
+
+  if (
+    !starters.length &&
+    details?.players
+  ) {
+
+    const playersRoot =
+      details.players;
+
+    if (
+      playersRoot &&
+      typeof playersRoot === "object" &&
+      !Array.isArray(playersRoot)
+    ) {
+
+      const directTeam =
+        firstArray(
+          playersRoot?.[side],
+          side === "home"
+            ? playersRoot?.host
+            : playersRoot?.guest
+        );
+
+      if (
+        directTeam.length
+      ) {
+
+        const marked =
+          directTeam.filter(
+            player =>
+              startingValue(player) !== false
+          );
+
+        starters =
+          marked.slice(
+            0,
+            11
+          );
+
+        if (
+          !substitutes.length
+        ) {
+
+          substitutes =
+            directTeam
+              .filter(
+                player =>
+                  !starters.includes(
+                    player
+                  )
+              );
+
+        }
+
+      }
+
+    }
+
+    else if (
+      Array.isArray(playersRoot)
+    ) {
+
+      const teamPlayers =
+        playersRoot.filter(
+          belongs
+        );
+
+      const marked =
+        teamPlayers.filter(
+          player =>
+            startingValue(player) === true
+        );
+
+      if (
+        marked.length
+      ) {
+
+        starters =
+          marked.slice(
+            0,
+            11
+          );
+
+      }
+
+      else if (
+        teamPlayers.length >= 11
+      ) {
+
+        starters =
+          teamPlayers.slice(
+            0,
+            11
+          );
+
+        if (
+          !substitutes.length
+        ) {
+
+          substitutes =
+            teamPlayers.slice(
+              11
+            );
+
+        }
+
+      }
+
+    }
+
+  }
+
+  /* =====================================================
+     7) REMOVE DUPLICATES
+  ===================================================== */
+
+  function uniquePlayers(
+    list
+  ) {
+
+    const seen =
+      new Set();
+
+    const output =
+      [];
+
+    for (
+      const player of list || []
+    ) {
+
+      const p =
+        unwrapPlayer(
+          player
+        );
+
+      const key =
+        String(
+          first(
+            p?.id,
+            p?.player_id,
+            p?.playerId,
+            getPlayerName(p),
+            ""
+          )
+        )
+          .trim()
+          .toLowerCase();
+
+      if (
+        !key
+      ) {
+        continue;
+      }
+
+      if (
+        seen.has(key)
+      ) {
+        continue;
+      }
+
+      seen.add(key);
+      output.push(
+        player
+      );
+
+    }
+
+    return output;
+  }
+
+  starters =
+    uniquePlayers(
+      starters
+    ).slice(
+      0,
+      11
+    );
+
+  substitutes =
+    uniquePlayers(
+      substitutes
+    );
+
+  /* =====================================================
+     8) LAST FALLBACK
+  ===================================================== */
+
+  if (
+    starters.length < 11
+  ) {
+
+    const candidates =
+      [];
+
+    for (
+      const root of roots
+    ) {
+
+      const all =
+        firstArray(
+          root?.players,
+          root?.lineup_players,
+          Array.isArray(root)
+            ? root
+            : null
+        );
+
+      for (
+        const player of all
+      ) {
+
+        if (
+          belongs(player)
+        ) {
+
+          candidates.push(
+            player
+          );
+
+        }
+
+      }
+
+    }
+
+    const merged =
+      uniquePlayers(
+        [
+          ...starters,
+          ...candidates
+        ]
+      );
+
+    starters =
+      merged.slice(
+        0,
+        11
+      );
+
+    if (
+      !substitutes.length
+    ) {
+
+      substitutes =
+        merged.slice(
+          11
+        );
+
+    }
+
+  }
+
+  /* =====================================================
+     9) DEBUG
+  ===================================================== */
+
+  console.log(
+    "BAKHIRAFOOT FINAL LINEUP",
+    {
+      side,
+      team: team?.name,
+      formation,
+      starters: starters.length,
+      substitutes: substitutes.length,
+      firstPlayer:
+        starters[0] || null
+    }
+  );
+
+  return {
+    side,
+    team,
+    formation,
+    xi: starters,
+    subs: substitutes
+  };
+}
   /* =====================================================
      EXTRACT ARRAY
   ===================================================== */
