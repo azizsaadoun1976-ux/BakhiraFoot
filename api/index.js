@@ -3579,32 +3579,105 @@ if (
 
   try {
 
-    const [
-      eventBody,
-      incidentsBody,
-      lineupsBody,
-      statisticsBody
-    ] = await Promise.all([
-      getJSON(
-        `https://www.sofascore.com/api/v1/event/${encodeURIComponent(eventId)}`
-      ),
+    /* =================================================
+       1. MATCH PRINCIPAL
+    ================================================= */
 
-      getJSON(
-        `https://www.sofascore.com/api/v1/event/${encodeURIComponent(eventId)}/incidents`
-      ),
-
-      getJSON(
-        `https://www.sofascore.com/api/v1/event/${encodeURIComponent(eventId)}/lineups`
-      ),
-
-      getJSON(
-        `https://www.sofascore.com/api/v1/event/${encodeURIComponent(eventId)}/statistics`
-      )
-    ]);
+    const eventBody =
+      await getJSON(
+        `${SOFA}/event/${encodeURIComponent(eventId)}`
+      );
 
     const event =
       eventBody?.event ||
-      {};
+      null;
+
+    if (!event?.id) {
+      return output(
+        404,
+        {
+          error:
+            "SofaScore match introuvable",
+          data: []
+        }
+      );
+    }
+
+    /* =================================================
+       2. DETAILS SECONDAIRES
+       مهم:
+       403 ديال واحد منهم ما يطيحش الماتش كامل
+    ================================================= */
+
+    const results =
+      await Promise.allSettled([
+
+        getJSON(
+          `${SOFA}/event/${encodeURIComponent(eventId)}/incidents`
+        ),
+
+        getJSON(
+          `${SOFA}/event/${encodeURIComponent(eventId)}/lineups`
+        ),
+
+        getJSON(
+          `${SOFA}/event/${encodeURIComponent(eventId)}/statistics`
+        )
+
+      ]);
+
+    const incidentsBody =
+      results[0]?.status === "fulfilled"
+        ? results[0].value
+        : {};
+
+    const lineupsBody =
+      results[1]?.status === "fulfilled"
+        ? results[1].value
+        : {};
+
+    const statisticsBody =
+      results[2]?.status === "fulfilled"
+        ? results[2].value
+        : {};
+
+    /* =================================================
+       LOG ERREURS SANS CASSER LE MATCH
+    ================================================= */
+
+    if (
+      results[0]?.status === "rejected"
+    ) {
+      console.warn(
+        "SOFASCORE INCIDENTS ERROR:",
+        results[0].reason?.message ||
+        results[0].reason
+      );
+    }
+
+    if (
+      results[1]?.status === "rejected"
+    ) {
+      console.warn(
+        "SOFASCORE LINEUPS ERROR:",
+        results[1].reason?.message ||
+        results[1].reason
+      );
+    }
+
+    if (
+      results[2]?.status === "rejected"
+    ) {
+      console.warn(
+        "SOFASCORE STATISTICS ERROR:",
+        results[2].reason?.message ||
+        results[2].reason
+      );
+    }
+
+    /* =================================================
+       TEAMS
+    ================================================= */
 
     const home =
       event?.homeTeam ||
@@ -3626,6 +3699,67 @@ if (
       tournament?.category ||
       {};
 
+    /* =================================================
+       STATUS
+    ================================================= */
+
+    let status =
+      "NS";
+
+    const statusType =
+      String(
+        event?.status?.type ||
+        ""
+      ).toLowerCase();
+
+    if (
+      statusType === "inprogress"
+    ) {
+      status = "LIVE";
+    }
+
+    else if (
+      statusType === "halftime"
+    ) {
+      status = "HT";
+    }
+
+    else if (
+      statusType === "finished"
+    ) {
+      status = "FT";
+    }
+
+    else if (
+      statusType === "postponed"
+    ) {
+      status = "PST";
+    }
+
+    else if (
+      statusType === "canceled" ||
+      statusType === "cancelled"
+    ) {
+      status = "CANC";
+    }
+
+    /* =================================================
+       DATE
+    ================================================= */
+
+    const matchDate =
+      event?.startTimestamp
+        ? new Date(
+            Number(
+              event.startTimestamp
+            ) * 1000
+          ).toISOString()
+        : null;
+
+    /* =================================================
+       DETAILS
+    ================================================= */
+
     const details = {
 
       fixture: {
@@ -3641,36 +3775,28 @@ if (
           eventId,
 
         date:
-          event?.startTimestamp
-            ? new Date(
-                Number(
-                  event.startTimestamp
-                ) * 1000
-              ).toISOString()
-            : null,
+          matchDate,
 
         status: {
+
           short:
-            event?.status?.type === "inprogress"
-              ? "LIVE"
-              : event?.status?.type === "halftime"
-                ? "HT"
-                : event?.status?.type === "finished"
-                  ? "FT"
-                  : "NS",
+            status,
 
           long:
             event?.status?.description ||
             "Match",
 
           elapsed:
-            event?.status?.currentPeriodStartTimestamp
-              ? null
-              : null
+            null
+
         },
 
         venue:
           event?.venue?.name ||
+          null,
+
+        referee:
+          event?.referee?.name ||
           null
 
       },
@@ -3693,10 +3819,12 @@ if (
 
         logo:
           uniqueTournament?.id
-            ? `https://api.sofascore.com/api/v1/unique-tournament/${uniqueTournament.id}/image`
+            ? `${SOFA}/unique-tournament/${uniqueTournament.id}/image`
             : "",
 
         round:
+          event?.roundInfo?.name ||
+          event?.roundInfo?.round ||
           null,
 
         season:
@@ -3715,11 +3843,12 @@ if (
 
           name:
             home?.name ||
+            home?.shortName ||
             "Domicile",
 
           logo:
             home?.id
-              ? `https://api.sofascore.com/api/v1/team/${home.id}/image`
+              ? `${SOFA}/team/${home.id}/image`
               : ""
 
         },
@@ -3732,11 +3861,12 @@ if (
 
           name:
             away?.name ||
+            away?.shortName ||
             "Extérieur",
 
           logo:
             away?.id
-              ? `https://api.sofascore.com/api/v1/team/${away.id}/image`
+              ? `${SOFA}/team/${away.id}/image`
               : ""
 
         }
@@ -3791,67 +3921,123 @@ if (
 
       },
 
+      /* =========================================
+         INCIDENTS
+      ========================================= */
+
       events:
-        incidentsBody?.incidents ||
-        [],
+        Array.isArray(
+          incidentsBody?.incidents
+        )
+          ? incidentsBody.incidents
+          : [],
+
+      /* =========================================
+         LINEUPS
+      ========================================= */
 
       lineups: [
 
         {
-          team:
-            {
-              id:
-                home?.id ||
-                null,
-              name:
-                home?.name ||
-                "Domicile"
-            },
+
+          team: {
+
+            id:
+              home?.id ||
+              null,
+
+            name:
+              home?.name ||
+              "Domicile",
+
+            logo:
+              home?.id
+                ? `${SOFA}/team/${home.id}/image`
+                : ""
+
+          },
 
           formation:
             lineupsBody?.home?.formation ||
             "—",
 
+          coach:
+            lineupsBody?.home?.manager?.name ||
+            lineupsBody?.home?.coach?.name ||
+            null,
+
           players:
-            lineupsBody?.home?.players ||
-            [],
+            Array.isArray(
+              lineupsBody?.home?.players
+            )
+              ? lineupsBody.home.players
+              : [],
 
           substitutes:
-            lineupsBody?.home?.substitutes ||
-            []
+            Array.isArray(
+              lineupsBody?.home?.substitutes
+            )
+              ? lineupsBody.home.substitutes
+              : []
 
         },
 
         {
-          team:
-            {
-              id:
-                away?.id ||
-                null,
-              name:
-                away?.name ||
-                "Extérieur"
-            },
+
+          team: {
+
+            id:
+              away?.id ||
+              null,
+
+            name:
+              away?.name ||
+              "Extérieur",
+
+            logo:
+              away?.id
+                ? `${SOFA}/team/${away.id}/image`
+                : ""
+
+          },
 
           formation:
             lineupsBody?.away?.formation ||
             "—",
 
+          coach:
+            lineupsBody?.away?.manager?.name ||
+            lineupsBody?.away?.coach?.name ||
+            null,
+
           players:
-            lineupsBody?.away?.players ||
-            [],
+            Array.isArray(
+              lineupsBody?.away?.players
+            )
+              ? lineupsBody.away.players
+              : [],
 
           substitutes:
-            lineupsBody?.away?.substitutes ||
-            []
+            Array.isArray(
+              lineupsBody?.away?.substitutes
+            )
+              ? lineupsBody.away.substitutes
+              : []
 
         }
 
       ],
 
+      /* =========================================
+         STATISTICS
+      ========================================= */
+
       statistics:
-        statisticsBody?.statistics ||
-        [],
+        Array.isArray(
+          statisticsBody?.statistics
+        )
+          ? statisticsBody.statistics
+          : [],
 
       players: [],
 
@@ -3860,21 +4046,69 @@ if (
 
     };
 
+    console.log(
+      "SOFASCORE DETAILS OK:",
+      {
+        eventId,
+
+        home:
+          home?.name ||
+          "",
+
+        away:
+          away?.name ||
+          "",
+
+        events:
+          details.events.length,
+
+        homePlayers:
+          details.lineups[0]?.players?.length ||
+          0,
+
+        awayPlayers:
+          details.lineups[1]?.players?.length ||
+          0,
+
+        statistics:
+          details.statistics.length
+
+      }
+    );
+
     return output(
       200,
       {
-        data: details,
+        data:
+          details,
+
         provider:
           "SofaScore"
       }
     );
 
   }
+
   catch (error) {
 
-    console.warn(
+    console.error(
       "SOFASCORE DETAILS ERROR:",
-      error.message
+      {
+        fixture:
+          fixture,
+
+        eventId:
+          eventId,
+
+        message:
+          error?.message,
+
+        status:
+          error?.status || null,
+
+        data:
+          error?.data || null
+      }
     );
 
     return output(
@@ -3883,9 +4117,15 @@ if (
       {
         error:
           "Impossible de charger les détails du match SofaScore",
+
         details:
           error?.data ||
+          error?.message ||
           null,
+
+        provider:
+          "SofaScore",
+
         data: []
       }
     );
