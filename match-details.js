@@ -3249,196 +3249,516 @@ function getGrid(player) {
   }
 
   /*
-   * =====================================================
-   * 1) GRID
-   * =====================================================
-   *
-   * الأولوية للـgrid حيث كتحدد:
-   * row = الخط
-   * col = المكان داخل الخط
+ * =====================================================
+ * 1) GRID EXACT
+ * =====================================================
+ *
+ * grid بحال:
+ * 1:1  = GK
+ * 2:1  = دفاع
+ * 2:2  = دفاع
+ * 3:1  = وسط
+ * 4:2  = هجوم
+ *
+ * كنحافظو على grid ديال المصدر
+ * بلا ما نبدلو formation كاملة.
+ */
+
+const gridPositions =
+  players.map(player => {
+
+    const grid =
+      getGrid(player);
+
+    return {
+      player,
+      grid,
+      valid:
+        !!grid
+    };
+
+  });
+
+const gridValid =
+  gridPositions.filter(
+    item => item.valid
+  );
+
+/*
+ * إلا كان حتى لاعب واحد عندو grid،
+ * كنستعملو grid ديالو مباشرة.
+ */
+
+if (
+  gridValid.length
+) {
+
+  /*
+   * جميع الصفوف الموجودة
    */
 
-  const gridPositions =
-    players.map(player => {
+  const rows =
+    gridValid.map(
+      item =>
+        Number(
+          item.grid.row
+        )
+    );
 
-      const grid =
-        getGrid(player);
+  const minRow =
+    Math.min(
+      ...rows
+    );
 
-      return {
-        player,
-        grid,
-        valid:
-          !!grid
-      };
+  const maxRow =
+    Math.max(
+      ...rows
+    );
 
-    });
-
-  const gridValid =
-    gridPositions.filter(
-      item => item.valid
+  const rowRange =
+    Math.max(
+      1,
+      maxRow - minRow
     );
 
   /*
-   * إلا كان عندنا grid كافية،
-   * نستعملوها.
+   * أكبر column داخل كل row
    */
 
-  if (
-    gridValid.length >=
-    Math.max(
-      7,
-      Math.ceil(
-        players.length * 0.7
-      )
-    )
-  ) {
+  const maxColByRow = {};
 
-    const rows =
-      gridValid.map(
-        item =>
+  gridValid.forEach(
+    item => {
+
+      const row =
+        Number(
           item.grid.row
-      );
+        );
 
-    const minRow =
-      Math.min(...rows);
+      const col =
+        Number(
+          item.grid.col
+        );
 
-    const maxRow =
-      Math.max(...rows);
+      maxColByRow[row] =
+        Math.max(
+          maxColByRow[row] || 1,
+          col
+        );
 
-    const rowRange =
-      Math.max(
-        1,
-        maxRow - minRow
-      );
+    }
+  );
 
-    /*
-     * أقصى column لكل row
-     */
+  /*
+   * position حسب grid
+   */
 
-    const maxColByRow =
-      {};
-
-    gridValid.forEach(
+  const exactResult =
+    gridPositions.map(
       item => {
 
-        const row =
-          item.grid.row;
+        if (
+          !item.valid
+        ) {
+          return null;
+        }
 
-        maxColByRow[row] =
-          Math.max(
-            maxColByRow[row] || 1,
+        const row =
+          Number(
+            item.grid.row
+          );
+
+        const col =
+          Number(
             item.grid.col
           );
+
+        const maxCol =
+          maxColByRow[row] || 1;
+
+        /*
+         * X:
+         * column 1 فاليسار
+         * آخر column فاليمين
+         */
+
+        let x;
+
+        if (
+          maxCol === 1
+        ) {
+
+          x = 50;
+
+        }
+        else {
+
+          x =
+            12 +
+            (
+              76 *
+              (
+                (col - 1) /
+                (maxCol - 1)
+              )
+            );
+
+        }
+
+        /*
+         * Y:
+         * row الأولى قريبة للـGK
+         * row الأخيرة قريبة للهجوم
+         */
+
+        let y;
+
+        if (
+          rowRange === 0 ||
+          maxRow === minRow
+        ) {
+
+          y = 50;
+
+        }
+        else {
+
+          y =
+            8 +
+            (
+              84 *
+              (
+                (row - minRow) /
+                rowRange
+              )
+            );
+
+        }
+
+        /*
+         * Away:
+         * قلب الملعب عمودياً
+         */
+
+        if (
+          side === "away"
+        ) {
+
+          y =
+            100 - y;
+
+        }
+
+        return {
+
+          player:
+            item.player,
+
+          x:
+            Math.max(
+              5,
+              Math.min(
+                95,
+                x
+              )
+            ),
+
+          y:
+            Math.max(
+              5,
+              Math.min(
+                95,
+                y
+              )
+            ),
+
+          fromGrid:
+            true
+
+        };
 
       }
     );
 
-    const result =
-      gridPositions.map(
-        item => {
+  /*
+   * ==========================================
+   * PLAYERS WITHOUT GRID
+   * ==========================================
+   *
+   * ما غاديش نضيعوهم.
+   * غير اللاعبين اللي ما عندهمش grid
+   * غادي نعطيوهم position احتياطي.
+   */
 
-          if (!item.valid) {
-            return null;
-          }
+  const missing =
+    players.filter(
+      player =>
+        !getGrid(player)
+    );
 
-          const row =
-            item.grid.row;
+  if (
+    missing.length
+  ) {
 
-          const col =
-            item.grid.col;
+    const fallbackFormation =
+      formationRows(
+        lineup?.formation
+      );
 
-          const maxCol =
-            maxColByRow[row] || 1;
+    /*
+     * نحاولو نعرفو الدور ديال
+     * اللاعبين اللي ما عندهمش grid.
+     */
 
-          let x;
+    const groups = {
+      gk: [],
+      def: [],
+      mid: [],
+      fwd: [],
+      unknown: []
+    };
 
-          if (
-            maxCol <= 1
-          ) {
-            x = 50;
-          }
-          else {
-            /*
-             * كنخلي اللاعبين بعيدين شوية
-             * على الحواف
-             */
-            x =
-              18 +
-              (
-                64 *
-                (
-                  (col - 1) /
-                  (maxCol - 1)
-                )
-              );
-          }
+    missing.forEach(
+      player => {
 
-          let y;
+        const type =
+          classify(player);
 
-          if (
-            rowRange <= 1
-          ) {
-            y = 50;
-          }
-          else {
+        if (
+          groups[type]
+        ) {
+          groups[type].push(
+            player
+          );
+        }
+        else {
+          groups.unknown.push(
+            player
+          );
+        }
 
-            y =
-              8 +
-              (
-                84 *
-                (
-                  (row - minRow) /
-                  rowRange
-                )
-              );
-          }
+      }
+    );
 
-          /*
-           * Away كيتقلب
-           * باش GK يبقى فالجهة المقابلة.
-           */
+    /*
+     * كنخليو غير مكان تقريبي
+     * لهد اللاعبين فقط.
+     */
 
-          if (
-            side === "away"
-          ) {
-            y =
-              100 - y;
-          }
+    const fallbackPlayers = [];
 
-          return {
-            player:
-              item.player,
+    [
+      ...groups.gk,
+      ...groups.def,
+      ...groups.mid,
+      ...groups.fwd,
+      ...groups.unknown
+    ].forEach(
+      player =>
+        fallbackPlayers.push(
+          player
+        )
+    );
 
-            x:
-              Math.max(
-                6,
-                Math.min(
-                  94,
-                  x
-                )
-              ),
+    fallbackPlayers.forEach(
+      (player, index) => {
 
-            y:
-              Math.max(
-                6,
-                Math.min(
-                  94,
-                  y
-                )
-              )
-          };
+        let x =
+          50;
+
+        let y =
+          50;
+
+        /*
+         * GK
+         */
+
+        if (
+          classify(player) ===
+          "gk"
+        ) {
+
+          x = 50;
+          y = 8;
 
         }
-      )
-      .filter(Boolean);
 
-    if (
-      result.length >= 7
-    ) {
-      return result;
-    }
+        /*
+         * DEF
+         */
+
+        else if (
+          classify(player) ===
+          "def"
+        ) {
+
+          const def =
+            groups.def;
+
+          const i =
+            def.indexOf(
+              player
+            );
+
+          x =
+            def.length <= 1
+              ? 50
+              : 15 +
+                (
+                  70 *
+                  (
+                    i /
+                    (
+                      def.length - 1
+                    )
+                  )
+                );
+
+          y = 28;
+
+        }
+
+        /*
+         * MID
+         */
+
+        else if (
+          classify(player) ===
+          "mid"
+        ) {
+
+          const mid =
+            groups.mid;
+
+          const i =
+            mid.indexOf(
+              player
+            );
+
+          x =
+            mid.length <= 1
+              ? 50
+              : 15 +
+                (
+                  70 *
+                  (
+                    i /
+                    (
+                      mid.length - 1
+                    )
+                  )
+                );
+
+          y = 52;
+
+        }
+
+        /*
+         * FWD
+         */
+
+        else if (
+          classify(player) ===
+          "fwd"
+        ) {
+
+          const fwd =
+            groups.fwd;
+
+          const i =
+            fwd.indexOf(
+              player
+            );
+
+          x =
+            fwd.length <= 1
+              ? 50
+              : 15 +
+                (
+                  70 *
+                  (
+                    i /
+                    (
+                      fwd.length - 1
+                    )
+                  )
+                );
+
+          y = 78;
+
+        }
+
+        /*
+         * UNKNOWN
+         */
+
+        else {
+
+          x =
+            50;
+
+          y =
+            90 -
+            (
+              index * 5
+            );
+
+        }
+
+        if (
+          side === "away"
+        ) {
+
+          y =
+            100 - y;
+
+        }
+
+        exactResult.push({
+
+          player,
+
+          x:
+            Math.max(
+              5,
+              Math.min(
+                95,
+                x
+              )
+            ),
+
+          y:
+            Math.max(
+              5,
+              Math.min(
+                95,
+                y
+              )
+            ),
+
+          fromGrid:
+            false
+
+        });
+
+      }
+    );
+
   }
 
+  /*
+   * رجعو جميع اللاعبين
+   */
+
+  if (
+    exactResult.length
+  ) {
+
+    return exactResult;
+
+  }
+
+}
   /*
    * =====================================================
    * 2) X / Y REAL
