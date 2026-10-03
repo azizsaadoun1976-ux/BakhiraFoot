@@ -3459,7 +3459,355 @@ league: {
        MATCH DETAILS
        ===================================================== */
 
-    if (fixture) {
+     const source =
+  String(
+    req?.query?.source ||
+    ""
+  )
+    .trim()
+    .toLowerCase();
+     
+  /* =====================================================
+   SOURCE-SPECIFIC MATCH DETAILS
+   كل ماتش خاصو يرجع من نفس المصدر
+===================================================== */
+
+if (
+  source === "sofascore"
+) {
+
+  const eventId =
+    String(fixture)
+      .replace(/^sofa-/i, "")
+      .trim();
+
+  if (!eventId) {
+    return output(
+      400,
+      {
+        error:
+          "SofaScore event ID manquant",
+        data: []
+      }
+    );
+  }
+
+  try {
+
+    const [
+      eventBody,
+      incidentsBody,
+      lineupsBody,
+      statisticsBody
+    ] = await Promise.all([
+      getJSON(
+        `https://www.sofascore.com/api/v1/event/${encodeURIComponent(eventId)}`
+      ),
+
+      getJSON(
+        `https://www.sofascore.com/api/v1/event/${encodeURIComponent(eventId)}/incidents`
+      ),
+
+      getJSON(
+        `https://www.sofascore.com/api/v1/event/${encodeURIComponent(eventId)}/lineups`
+      ),
+
+      getJSON(
+        `https://www.sofascore.com/api/v1/event/${encodeURIComponent(eventId)}/statistics`
+      )
+    ]);
+
+    const event =
+      eventBody?.event ||
+      {};
+
+    const home =
+      event?.homeTeam ||
+      {};
+
+    const away =
+      event?.awayTeam ||
+      {};
+
+    const tournament =
+      event?.tournament ||
+      {};
+
+    const uniqueTournament =
+      tournament?.uniqueTournament ||
+      {};
+
+    const category =
+      tournament?.category ||
+      {};
+
+    const details = {
+
+      fixture: {
+
+        id:
+          eventId,
+
+        slug:
+          event?.slug ||
+          `sofa-${eventId}`,
+
+        upstreamId:
+          eventId,
+
+        date:
+          event?.startTimestamp
+            ? new Date(
+                Number(
+                  event.startTimestamp
+                ) * 1000
+              ).toISOString()
+            : null,
+
+        status: {
+          short:
+            event?.status?.type === "inprogress"
+              ? "LIVE"
+              : event?.status?.type === "halftime"
+                ? "HT"
+                : event?.status?.type === "finished"
+                  ? "FT"
+                  : "NS",
+
+          long:
+            event?.status?.description ||
+            "Match",
+
+          elapsed:
+            event?.status?.currentPeriodStartTimestamp
+              ? null
+              : null
+        },
+
+        venue:
+          event?.venue?.name ||
+          null
+
+      },
+
+      league: {
+
+        id:
+          uniqueTournament?.id ||
+          tournament?.id ||
+          null,
+
+        name:
+          uniqueTournament?.name ||
+          tournament?.name ||
+          "Football",
+
+        country:
+          category?.name ||
+          "",
+
+        logo:
+          uniqueTournament?.id
+            ? `https://api.sofascore.com/api/v1/unique-tournament/${uniqueTournament.id}/image`
+            : "",
+
+        round:
+          null,
+
+        season:
+          event?.season?.name ||
+          null
+
+      },
+
+      teams: {
+
+        home: {
+
+          id:
+            home?.id ||
+            null,
+
+          name:
+            home?.name ||
+            "Domicile",
+
+          logo:
+            home?.id
+              ? `https://api.sofascore.com/api/v1/team/${home.id}/image`
+              : ""
+
+        },
+
+        away: {
+
+          id:
+            away?.id ||
+            null,
+
+          name:
+            away?.name ||
+            "Extérieur",
+
+          logo:
+            away?.id
+              ? `https://api.sofascore.com/api/v1/team/${away.id}/image`
+              : ""
+
+        }
+
+      },
+
+      goals: {
+
+        home:
+          event?.homeScore?.current ??
+          null,
+
+        away:
+          event?.awayScore?.current ??
+          null
+
+      },
+
+      score: {
+
+        home:
+          event?.homeScore?.current ??
+          null,
+
+        away:
+          event?.awayScore?.current ??
+          null,
+
+        halftime: {
+
+          home:
+            event?.homeScore?.period1 ??
+            null,
+
+          away:
+            event?.awayScore?.period1 ??
+            null
+
+        },
+
+        fulltime: {
+
+          home:
+            event?.homeScore?.current ??
+            null,
+
+          away:
+            event?.awayScore?.current ??
+            null
+
+        }
+
+      },
+
+      events:
+        incidentsBody?.incidents ||
+        [],
+
+      lineups: [
+
+        {
+          team:
+            {
+              id:
+                home?.id ||
+                null,
+              name:
+                home?.name ||
+                "Domicile"
+            },
+
+          formation:
+            lineupsBody?.home?.formation ||
+            "—",
+
+          players:
+            lineupsBody?.home?.players ||
+            [],
+
+          substitutes:
+            lineupsBody?.home?.substitutes ||
+            []
+
+        },
+
+        {
+          team:
+            {
+              id:
+                away?.id ||
+                null,
+              name:
+                away?.name ||
+                "Extérieur"
+            },
+
+          formation:
+            lineupsBody?.away?.formation ||
+            "—",
+
+          players:
+            lineupsBody?.away?.players ||
+            [],
+
+          substitutes:
+            lineupsBody?.away?.substitutes ||
+            []
+
+        }
+
+      ],
+
+      statistics:
+        statisticsBody?.statistics ||
+        [],
+
+      players: [],
+
+      provider:
+        "SofaScore"
+
+    };
+
+    return output(
+      200,
+      {
+        data: details,
+        provider:
+          "SofaScore"
+      }
+    );
+
+  }
+  catch (error) {
+
+    console.warn(
+      "SOFASCORE DETAILS ERROR:",
+      error.message
+    );
+
+    return output(
+      error?.status ||
+        502,
+      {
+        error:
+          "Impossible de charger les détails du match SofaScore",
+        details:
+          error?.data ||
+          null,
+        data: []
+      }
+    );
+
+  }
+}
+     if (fixture) {
       const slug =
         String(fixture).trim();
 
