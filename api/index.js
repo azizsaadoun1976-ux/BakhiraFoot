@@ -3807,6 +3807,21 @@ if (
 
   }
 }
+
+/* =====================================================
+   NEW MATCH DETAILS
+   SofaScore / ESPN / TheSportsDB
+===================================================== */
+
+if (
+  fixture &&
+  /^(sofa|espn|tsdb)-/i.test(
+    String(fixture).trim()
+  )
+) {
+  return require("./details")(req, res);
+}
+     
      if (fixture) {
       const slug =
         String(fixture).trim();
