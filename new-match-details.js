@@ -1,1419 +1,2039 @@
-(function(){
-"use strict";
+(function () {
+  "use strict";
 
-const API="/api?fixture=";
+  /* =========================================================
+     BAKHIRAFOOT PRO - NEW MATCH DETAILS
 
-const arr=v=>Array.isArray(v)?v:[];
-const obj=v=>v&&typeof v==="object"&&!Array.isArray(v)?v:null;
+     الهدف:
+     - كيتدخل فـ Match Details الجديدة
+     - كيدعم cards الحالية ديال Scores
+     - كيحاول SofaScore ثم ESPN ثم TheSportsDB
+     - ما كيحتاجش source=auto
+     - إذا ما لقا حتى مصدر خارجي، كيخلي القديم SportScore يخدم
+     ========================================================= */
 
-const first=(...a)=>
-  a.find(v=>v!==null&&v!==undefined&&v!=="")??null;
+  const API = "/api?fixture=";
 
-const esc=v=>String(v??"")
-  .replace(/&/g,"&amp;")
-  .replace(/</g,"&lt;")
-  .replace(/>/g,"&gt;")
-  .replace(/"/g,"&quot;")
-  .replace(/'/g,"&#039;");
-
-const norm=v=>String(v??"")
-  .toLowerCase()
-  .trim()
-  .normalize("NFD")
-  .replace(/[\u0300-\u036f]/g,"")
-  .replace(/\s+/g," ");
-
-const nameOf=v=>String(
-  first(
-    v?.name,
-    v?.displayName,
-    v?.fullName,
-    v?.full_name,
-    v?.shortName,
-    v?.title,
-    ""
-  )
-);
-
-
-/* =========================================================
-   GET CURRENT MATCH
-========================================================= */
-
-function getMatch(i,card){
-  try{
-    return Array.isArray(window.currentMatches)
-      ? window.currentMatches[i] || null
-      : null;
-  }catch{
-    return null;
+  function arr(v) {
+    return Array.isArray(v) ? v : [];
   }
-}
 
+  function obj(v) {
+    return v && typeof v === "object" && !Array.isArray(v) ? v : {};
+  }
 
-/* =========================================================
-   GET NEW MATCH ID
-========================================================= */
-
-function newId(i,card){
-
-  const m=getMatch(i,card);
-
-  if(!m){
+  function first(...values) {
+    for (const v of values) {
+      if (v !== undefined && v !== null && v !== "") return v;
+    }
     return null;
   }
 
-  let provider=norm(
-    first(
-      m.provider,
-      m.score?.provider,
-      m.fixture?.provider,
-      ""
-    )
-  );
-
-  let id=first(
-    m.fixture?.upstreamId,
-    m.upstreamId,
-    m.fixture?.id,
-    m.id,
-    card?.dataset?.fixtureId,
-    card?.dataset?.matchSlug,
-    card?.dataset?.slug
-  );
-
-  if(id===null || id===""){
-    return null;
+  function esc(v) {
+    return String(v ?? "")
+      .replace(/&/g, "&amp;")
+      .replace(/</g, "&lt;")
+      .replace(/>/g, "&gt;")
+      .replace(/"/g, "&quot;")
+      .replace(/'/g, "&#039;");
   }
 
-  id=String(id).trim();
-
-  if(/^(sofa|espn|tsdb)-/i.test(id)){
-    return id;
+  function norm(v) {
+    return String(v ?? "")
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, " ")
+      .trim();
   }
 
-  if(provider.includes("sofa")){
-    return "sofa-"+id;
+  function dateOnly(v) {
+    if (!v) return "";
+
+    const s = String(v);
+
+    const m =
+      s.match(/^(\d{4}-\d{2}-\d{2})/);
+
+    if (m) return m[1];
+
+    const d = new Date(s);
+
+    return Number.isNaN(d.getTime())
+      ? ""
+      : d.toISOString().slice(0, 10);
   }
 
-  if(provider.includes("espn")){
-    return "espn-"+id;
+  function toCompactDate(v) {
+    return dateOnly(v).replace(/-/g, "");
   }
 
-  if(
-    provider.includes("sportsdb") ||
-    provider.includes("sportdb") ||
-    provider.includes("tsdb")
-  ){
-    return "tsdb-"+id;
-  }
-
-  return null;
-}
-
-
-/* =========================================================
-   TEAM
-========================================================= */
-
-function team(d,s){
-
-  const t=
-    d?.teams?.[s] ||
-    d?.[s+"_team"] ||
-    d?.[s+"Team"] ||
-    d?.[s] ||
-    {};
-
-  return {
-    id:first(
-      t.id,
-      t.team_id,
-      d?.[s+"_id"]
-    ),
-
-    name:String(
+  function teamName(team) {
+    return String(
       first(
-        t.name,
-        t.displayName,
-        d?.[s+"_name"],
-        s==="home"
-          ? "Domicile"
-          : "Extérieur"
-      )
-    ),
-
-    logo:String(
-      first(
-        t.logo,
-        t.image,
-        t.badge,
-        t.picture,
-        d?.[s+"_logo"],
+        team?.name,
+        team?.displayName,
+        team?.shortName,
+        team?.fullName,
         ""
       )
-    )
-  };
-}
-
-
-/* =========================================================
-   SCORE
-========================================================= */
-
-function score(d,s){
-
-  return first(
-    d?.score?.[s],
-    d?.goals?.[s],
-    d?.[s+"_score"],
-    d?.[s+"Score"],
-    "-"
-  );
-}
-
-
-/* =========================================================
-   STATUS
-========================================================= */
-
-function status(d){
-
-  const s=
-    d?.fixture?.status ??
-    d?.status ??
-    {};
-
-  return String(
-    first(
-      d?.status_text,
-      typeof s==="string"
-        ? s
-        : null,
-      s.long,
-      s.description,
-      s.short,
-      "Match"
-    )
-  );
-}
-
-
-/* =========================================================
-   LEAGUE
-========================================================= */
-
-function league(d){
-
-  return String(
-    first(
-      d?.league?.name,
-      d?.competition?.name,
-      typeof d?.competition==="string"
-        ? d.competition
-        : null,
-      "Football"
-    )
-  );
-}
-
-
-/* =========================================================
-   PLAYER HELPERS
-========================================================= */
-
-function pName(p){
-
-  const x=
-    p?.player &&
-    obj(p.player)
-      ? p.player
-      : p;
-
-  return String(
-    first(
-      p?.name,
-      p?.player_name,
-      x?.name,
-      x?.displayName,
-      "Joueur"
-    )
-  );
-}
-
-function pNum(p){
-
-  const x=
-    p?.player &&
-    obj(p.player)
-      ? p.player
-      : p;
-
-  return first(
-    p?.number,
-    p?.shirt_number,
-    p?.shirtNumber,
-    p?.jersey,
-    x?.number,
-    "-"
-  );
-}
-
-function pPos(p){
-
-  const x=
-    p?.player &&
-    obj(p.player)
-      ? p.player
-      : p;
-
-  return String(
-    first(
-      p?.position,
-      p?.pos,
-      p?.role,
-      x?.position,
-      x?.pos,
-      ""
-    )
-  );
-}
-
-function pPhoto(p){
-
-  const x=
-    p?.player &&
-    obj(p.player)
-      ? p.player
-      : p;
-
-  return String(
-    first(
-      p?.photo,
-      p?.image,
-      p?.picture,
-      p?.avatar,
-      p?.headshot,
-      p?.photo_url,
-      p?.image_url,
-
-      x?.photo,
-      x?.image,
-      x?.picture,
-      x?.avatar,
-      x?.headshot,
-      x?.photo_url,
-      x?.image_url,
-
-      ""
-    )
-  );
-}
-
-function pRate(p){
-
-  const x=
-    p?.player &&
-    obj(p.player)
-      ? p.player
-      : p;
-
-  const r=
-    first(
-      p?.rating,
-      p?.match_rating,
-      p?.matchRating,
-      p?.ratingValue,
-      p?.statistics?.rating,
-      p?.performance?.rating,
-
-      x?.rating,
-      x?.match_rating,
-      x?.ratingValue
     );
-
-  if(r===null){
-    return null;
   }
 
-  const n=
-    Number(
-      String(r)
-        .replace(",",".")
-        .trim()
-    );
+  function getCurrentMatches() {
+    try {
+      if (
+        typeof currentMatches !== "undefined" &&
+        Array.isArray(currentMatches)
+      ) {
+        return currentMatches;
+      }
+    } catch (e) {}
 
-  return Number.isFinite(n)
-    ? n
-    : null;
-}
-
-function pSide(p){
-
-  return norm(
-    first(
-      p?.side,
-      p?.team_side,
-      p?.teamType,
-      ""
-    )
-  );
-}
-
-
-/* =========================================================
-   PLAYER TEAM CHECK
-========================================================= */
-
-function belongs(p,s,t){
-
-  const ps=pSide(p);
-
-  if(ps){
-
-    if(s==="home"){
-      return ps==="home" || ps==="host";
-    }
-
-    return ps==="away" || ps==="guest";
+    return [];
   }
 
-  const pt=
-    p?.team ||
-    p?.club ||
-    {};
+  function getMatch(index) {
+    return getCurrentMatches()[index] || null;
+  }
 
-  const id=
-    first(
-      pt.id,
-      pt.team_id,
-      p?.team_id
-    );
-
-  const n=
-    first(
-      pt.name,
-      p?.team_name
-    );
-
-  return !!(
-    (
-      t.id &&
-      id &&
-      String(t.id)===String(id)
-    )
-    ||
-    (
-      n &&
-      t.name &&
-      norm(n)===norm(t.name)
-    )
-  );
-}
-
-
-/* =========================================================
-   LINEUPS
-========================================================= */
-
-function lineup(d,s,t){
-
-  const raw=
-    first(
-      d?.lineups,
-      d?.lineup,
-      d?.compositions,
-      d?.formations,
+  function getHome(match) {
+    return (
+      match?.teams?.home ||
+      match?.home_team ||
+      match?.home ||
       {}
     );
+  }
 
-  let g=null;
+  function getAway(match) {
+    return (
+      match?.teams?.away ||
+      match?.away_team ||
+      match?.away ||
+      {}
+    );
+  }
 
-  if(Array.isArray(raw)){
-
-    g=
-      raw.find(
-        x=>belongsGroup(x,s,t)
+  function getProvider(match) {
+    return String(
+      first(
+        match?.provider,
+        match?.fixture?.provider,
+        match?.score?.provider,
+        ""
       )
-      ||
-      raw[s==="home"?0:1]
-      ||
-      null;
-
-  }else if(obj(raw)){
-
-    g=
-      raw[s]
-      ||
-      raw[
-        s==="home"
-          ? "homeTeam"
-          : "awayTeam"
-      ]
-      ||
-      raw[
-        s==="home"
-          ? "host"
-          : "guest"
-      ]
-      ||
-      null;
+    )
+      .trim()
+      .toLowerCase();
   }
 
-  let xi=[];
-  let sub=[];
-
-  let f=
-    first(
-      g?.formation,
-      g?.tactics?.formation,
-      g?.tacticalFormation,
-
-      obj(raw)
-        ? raw?.[s+"_formation"]
-        : null,
-
-      d?.[s+"_formation"],
-
-      "—"
+  function getMatchDate(match) {
+    return first(
+      match?.fixture?.date,
+      match?.date,
+      match?.kickoff,
+      match?.start_time,
+      ""
     );
-
-
-  /* DIRECT SIDE */
-
-  if(obj(raw)){
-
-    xi=
-      arr(
-        first(
-          raw?.[s+"_xi"],
-          raw?.[s+"_startingXI"],
-          raw?.[s+"_starting_xi"],
-          []
-        )
-      );
-
-    sub=
-      arr(
-        first(
-          raw?.[s+"_subs"],
-          raw?.[s+"_substitutes"],
-          raw?.[s+"_bench"],
-          []
-        )
-      );
   }
 
-
-  /* SOURCE */
-
-  if(!xi.length && g){
-
-    xi=
-      arr(
-        first(
-          g.startXI,
-          g.startingXI,
-          g.starting_xi,
-          g.starters,
-          g.xi,
-          g.players,
-          []
-        )
-      );
+  function getRawId(match, card) {
+    return String(
+      first(
+        match?.fixture?.upstreamId,
+        match?.upstreamId,
+        match?.fixture?.id,
+        match?.id,
+        match?.fixture?.slug,
+        match?.slug,
+        card?.dataset?.fixtureId,
+        card?.dataset?.matchSlug,
+        card?.dataset?.slug,
+        ""
+      )
+    ).trim();
   }
 
-  if(!sub.length && g){
+  function cleanProvider(v) {
+    const s =
+      norm(v).replace(/ /g, "");
 
-    sub=
-      arr(
-        first(
-          g.substitutes,
-          g.subs,
-          g.bench,
-          []
-        )
-      );
-  }
-
-
-  /* ALL PLAYERS */
-
-  const all=
-    arr(
-      obj(raw)
-        ? (
-            raw.players ||
-            raw.lineup_players
-          )
-        : null
-    );
-
-  if(!xi.length && all.length){
-
-    const a=
-      all.filter(
-        p=>belongs(p,s,t)
-      );
-
-    const st=
-      a.filter(
-        p=>
-          p?.starter===true ||
-          p?.is_starting===true ||
-          p?.starting===true ||
-          p?.first===1 ||
-          p?.first===true
-      );
-
-    xi=
-      (
-        st.length
-          ? st
-          : a
-      ).slice(0,11);
-
-    if(
-      !sub.length &&
-      a.length>11
-    ){
-      sub=a.slice(11);
+    if (
+      s === "sofa" ||
+      s === "sofascore"
+    ) {
+      return "sofascore";
     }
+
+    if (s === "espn") {
+      return "espn";
+    }
+
+    if (
+      s === "tsdb" ||
+      s === "thesportsdb" ||
+      s === "the-sports-db"
+    ) {
+      return "thesportsdb";
+    }
+
+    if (s === "sportscore") {
+      return "sportscore";
+    }
+
+    return "";
   }
 
+  function sourceValue(
+    provider,
+    id,
+    slug
+  ) {
+    const p =
+      cleanProvider(provider);
 
-  /* ARRAY FORMAT */
+    let value =
+      String(
+        first(
+          slug,
+          id,
+          ""
+        ) || ""
+      ).trim();
 
-  if(
-    !xi.length &&
-    Array.isArray(raw)
-  ){
+    if (
+      !p ||
+      !value ||
+      p === "sportscore"
+    ) {
+      return null;
+    }
 
-    const a=
-      raw
-        .filter(
-          x=>
-            obj(x) &&
-            (
-              x.name ||
-              x.player_name ||
-              x.player
-            )
-        )
-        .filter(
-          p=>belongs(p,s,t)
+    if (
+      p === "sofascore" &&
+      !/^sofa-/i.test(value)
+    ) {
+      value =
+        `sofa-${value}`;
+    }
+
+    if (
+      p === "espn" &&
+      !/^espn-/i.test(value)
+    ) {
+      value =
+        `espn-${value}`;
+    }
+
+    if (
+      p === "thesportsdb" &&
+      !/^tsdb-/i.test(value)
+    ) {
+      value =
+        `tsdb-${value}`;
+    }
+
+    return {
+      provider: p,
+      value
+    };
+  }
+
+  function collectKnownSources(
+    match,
+    card
+  ) {
+    const out = [];
+
+    const add = (
+      provider,
+      id,
+      slug
+    ) => {
+      const x =
+        sourceValue(
+          provider,
+          id,
+          slug
         );
 
-    const st=
-      a.filter(
-        p=>
-          p?.starter===true ||
-          p?.is_starting===true ||
-          p?.first===1 ||
-          p?.first===true
+      if (!x) return;
+
+      if (
+        !out.some(
+          y =>
+            y.provider === x.provider &&
+            y.value === x.value
+        )
+      ) {
+        out.push(x);
+      }
+    };
+
+    add(
+      match?.provider ||
+        match?.fixture?.provider,
+
+      match?.fixture?.upstreamId ||
+        match?.upstreamId ||
+        match?.fixture?.id ||
+        match?.id,
+
+      match?.fixture?.slug ||
+        match?.slug ||
+        card?.dataset?.fixtureId
+    );
+
+    const lists = [
+      match?.detailsProviders,
+      match?.detailsSources,
+      match?.fixture?.detailsProviders,
+      match?.fixture?.detailsSources
+    ];
+
+    for (
+      const list of lists
+    ) {
+      for (
+        const item of arr(list)
+      ) {
+        add(
+          item?.provider ||
+            item?.source,
+
+          item?.id ||
+            item?.upstreamId,
+
+          item?.slug
+        );
+      }
+    }
+
+    add(
+      match?.detailsProvider,
+      match?.detailsId,
+      match?.detailsSlug
+    );
+
+    add(
+      match?.fixture?.detailsProvider,
+      match?.fixture?.detailsId,
+      match?.fixture?.detailsSlug
+    );
+
+    return out;
+  }
+
+  function sameTeams(
+    aHome,
+    aAway,
+    bHome,
+    bAway
+  ) {
+    const ah =
+      norm(aHome);
+
+    const aa =
+      norm(aAway);
+
+    const bh =
+      norm(bHome);
+
+    const ba =
+      norm(bAway);
+
+    if (
+      !ah ||
+      !aa ||
+      !bh ||
+      !ba
+    ) {
+      return false;
+    }
+
+    const direct =
+      ah === bh &&
+      aa === ba;
+
+    const swap =
+      ah === ba &&
+      aa === bh;
+
+    return (
+      direct ||
+      swap
+    );
+  }
+
+  function matchTimeClose(
+    target,
+    candidate
+  ) {
+    const t =
+      new Date(
+        target || ""
+      ).getTime();
+
+    const c =
+      new Date(
+        candidate || ""
+      ).getTime();
+
+    if (
+      !Number.isFinite(t) ||
+      !Number.isFinite(c)
+    ) {
+      return true;
+    }
+
+    return (
+      Math.abs(t - c) <=
+      3 *
+        24 *
+        60 *
+        60 *
+        1000
+    );
+  }
+
+  /* =========================================================
+     SOFASCORE AUTO LOOKUP
+  ========================================================= */
+
+  async function findSofaMatch(
+    match
+  ) {
+    const date =
+      dateOnly(
+        getMatchDate(match)
       );
 
-    xi=
-      (
-        st.length
-          ? st
-          : a
-      ).slice(0,11);
+    if (!date) {
+      return null;
+    }
 
-    if(
-      !sub.length &&
-      a.length>11
-    ){
-      sub=a.slice(11);
+    const home =
+      teamName(
+        getHome(match)
+      );
+
+    const away =
+      teamName(
+        getAway(match)
+      );
+
+    if (
+      !home ||
+      !away
+    ) {
+      return null;
+    }
+
+    try {
+
+      const r =
+        await fetch(
+          `https://www.sofascore.com/api/v1/sport/football/scheduled-events/${encodeURIComponent(date)}`,
+          {
+            cache:
+              "no-store",
+
+            headers: {
+              Accept:
+                "application/json"
+            }
+          }
+        );
+
+      if (!r.ok) {
+        return null;
+      }
+
+      const body =
+        await r.json();
+
+      const events =
+        arr(
+          body?.events
+        );
+
+      let best =
+        null;
+
+      for (
+        const event of events
+      ) {
+
+        const eh =
+          teamName(
+            event?.homeTeam
+          );
+
+        const ea =
+          teamName(
+            event?.awayTeam
+          );
+
+        if (
+          !sameTeams(
+            home,
+            away,
+            eh,
+            ea
+          )
+        ) {
+          continue;
+        }
+
+        const candidateDate =
+          event?.startTimestamp
+            ? new Date(
+                event.startTimestamp *
+                  1000
+              ).toISOString()
+            : null;
+
+        if (
+          !matchTimeClose(
+            getMatchDate(match),
+            candidateDate
+          )
+        ) {
+          continue;
+        }
+
+        best =
+          event;
+
+        break;
+      }
+
+      if (
+        !best?.id
+      ) {
+        return null;
+      }
+
+      return {
+        provider:
+          "sofascore",
+
+        value:
+          `sofa-${best.id}`
+      };
+
+    } catch (e) {
+
+      console.warn(
+        "BAKHIRAFOOT SofaScore lookup failed",
+        e
+      );
+
+      return null;
     }
   }
 
+  /* =========================================================
+     ESPN AUTO LOOKUP
+  ========================================================= */
 
-  /* DIRECT DETAILS */
-
-  if(!xi.length){
-
-    xi=
-      arr(
-        first(
-          d?.[s+"_xi"],
-          d?.[s+"_startingXI"],
-          []
-        )
+  async function findESPNMatch(
+    match
+  ) {
+    const compact =
+      toCompactDate(
+        getMatchDate(match)
       );
+
+    if (!compact) {
+      return null;
+    }
+
+    const home =
+      teamName(
+        getHome(match)
+      );
+
+    const away =
+      teamName(
+        getAway(match)
+      );
+
+    try {
+
+      const r =
+        await fetch(
+          `https://site.api.espn.com/apis/site/v2/sports/soccer/all/scoreboard?dates=${encodeURIComponent(compact)}`,
+          {
+            cache:
+              "no-store",
+
+            headers: {
+              Accept:
+                "application/json"
+            }
+          }
+        );
+
+      if (!r.ok) {
+        return null;
+      }
+
+      const body =
+        await r.json();
+
+      for (
+        const event of
+          arr(
+            body?.events
+          )
+      ) {
+
+        const competition =
+          arr(
+            event?.competitions
+          )[0] || {};
+
+        const competitors =
+          arr(
+            competition?.competitors
+          );
+
+        const h =
+          competitors.find(
+            x =>
+              x?.homeAway ===
+              "home"
+          );
+
+        const a =
+          competitors.find(
+            x =>
+              x?.homeAway ===
+              "away"
+          );
+
+        if (
+          !h ||
+          !a ||
+          !event?.id
+        ) {
+          continue;
+        }
+
+        if (
+          sameTeams(
+            home,
+            away,
+            teamName(h?.team),
+            teamName(a?.team)
+          )
+        ) {
+          return {
+            provider:
+              "espn",
+
+            value:
+              `espn-${event.id}`
+          };
+        }
+      }
+
+    } catch (e) {
+
+      console.warn(
+        "BAKHIRAFOOT ESPN lookup failed",
+        e
+      );
+
+    }
+
+    return null;
   }
 
+  /* =========================================================
+     THESPORTSDB AUTO LOOKUP
+  ========================================================= */
 
-  return {
-    formation:
-      String(f||"—")
-        .replace(
-          /^(\d{3,4})$/,
-          (_,x)=>x.split("").join("-")
+  async function findTSDBMatch(
+    match
+  ) {
+    const date =
+      dateOnly(
+        getMatchDate(match)
+      );
+
+    if (!date) {
+      return null;
+    }
+
+    const home =
+      teamName(
+        getHome(match)
+      );
+
+    const away =
+      teamName(
+        getAway(match)
+      );
+
+    try {
+
+      const r =
+        await fetch(
+          `https://www.thesportsdb.com/api/v1/json/123/eventsday.php?d=${encodeURIComponent(date)}&s=Soccer`,
+          {
+            cache:
+              "no-store",
+
+            headers: {
+              Accept:
+                "application/json"
+            }
+          }
+        );
+
+      if (!r.ok) {
+        return null;
+      }
+
+      const body =
+        await r.json();
+
+      for (
+        const event of
+          arr(
+            body?.events
+          )
+      ) {
+
+        if (
+          !event?.idEvent
+        ) {
+          continue;
+        }
+
+        if (
+          sameTeams(
+            home,
+            away,
+            event?.strHomeTeam,
+            event?.strAwayTeam
+          )
+        ) {
+
+          return {
+            provider:
+              "thesportsdb",
+
+            value:
+              `tsdb-${event.idEvent}`
+          };
+
+        }
+      }
+
+    } catch (e) {
+
+      console.warn(
+        "BAKHIRAFOOT TSDB lookup failed",
+        e
+      );
+
+    }
+
+    return null;
+  }
+
+  async function findExternalSource(
+    match,
+    card
+  ) {
+
+    const known =
+      collectKnownSources(
+        match,
+        card
+      );
+
+    if (
+      known.length
+    ) {
+      return known[0];
+    }
+
+    const sofa =
+      await findSofaMatch(
+        match
+      );
+
+    if (sofa) {
+      return sofa;
+    }
+
+    const espn =
+      await findESPNMatch(
+        match
+      );
+
+    if (espn) {
+      return espn;
+    }
+
+    const tsdb =
+      await findTSDBMatch(
+        match
+      );
+
+    if (tsdb) {
+      return tsdb;
+    }
+
+    return null;
+  }
+
+  /* =========================================================
+     MODAL STYLES
+  ========================================================= */
+
+  function ensureStyles() {
+
+    if (
+      document.getElementById(
+        "bf-new-details-style"
+      )
+    ) {
+      return;
+    }
+
+    const style =
+      document.createElement(
+        "style"
+      );
+
+    style.id =
+      "bf-new-details-style";
+
+    style.textContent = `
+
+      #bf-new-details-modal{
+        display:none;
+        position:fixed;
+        inset:0;
+        z-index:1000000;
+      }
+
+      .bfnd-overlay{
+        position:absolute;
+        inset:0;
+        background:rgba(0,0,0,.82);
+        display:flex;
+        align-items:center;
+        justify-content:center;
+        padding:12px;
+      }
+
+      .bfnd-box{
+        position:relative;
+        width:min(1100px,100%);
+        max-height:94vh;
+        overflow:auto;
+        background:var(--card,#fff);
+        color:var(--text,#111827);
+        border-radius:22px;
+        box-shadow:0 30px 100px rgba(0,0,0,.45);
+        padding:22px;
+      }
+
+      .bfnd-close{
+        position:absolute;
+        right:12px;
+        top:12px;
+        border:0;
+        border-radius:50%;
+        width:38px;
+        height:38px;
+        font-weight:900;
+        cursor:pointer;
+        font-size:18px;
+      }
+
+      .bfnd-loading{
+        text-align:center;
+        padding:50px 15px;
+        font-weight:900;
+      }
+
+      .bfnd-league{
+        text-align:center;
+        font-size:13px;
+        font-weight:900;
+        opacity:.7;
+      }
+
+      .bfnd-head{
+        display:grid;
+        grid-template-columns:1fr auto 1fr;
+        align-items:center;
+        gap:16px;
+        text-align:center;
+        margin:16px 0;
+      }
+
+      .bfnd-team{
+        font-weight:950;
+        overflow-wrap:anywhere;
+      }
+
+      .bfnd-team img{
+        width:72px;
+        height:72px;
+        object-fit:contain;
+        display:block;
+        margin:0 auto 7px;
+      }
+
+      .bfnd-score{
+        font-size:42px;
+        font-weight:950;
+      }
+
+      .bfnd-status{
+        font-size:10px;
+        font-weight:900;
+        display:inline-block;
+        margin-top:7px;
+        padding:6px 10px;
+        border-radius:999px;
+        background:rgba(127,127,127,.12);
+      }
+
+      .bfnd-info{
+        display:flex;
+        justify-content:center;
+        flex-wrap:wrap;
+        gap:7px;
+      }
+
+      .bfnd-info span{
+        font-size:10px;
+        padding:6px 9px;
+        border-radius:999px;
+        background:rgba(127,127,127,.08);
+      }
+
+      .bfnd-section{
+        margin-top:22px;
+        padding-top:18px;
+        border-top:1px solid rgba(127,127,127,.16);
+      }
+
+      .bfnd-title{
+        font-size:17px;
+        font-weight:950;
+        margin-bottom:12px;
+      }
+
+      .bfnd-grid{
+        display:grid;
+        grid-template-columns:1fr 1fr;
+        gap:16px;
+      }
+
+      .bfnd-panel{
+        padding:12px;
+        border-radius:14px;
+        background:rgba(127,127,127,.06);
+      }
+
+      .bfnd-player{
+        display:grid;
+        grid-template-columns:40px 34px 1fr auto;
+        gap:7px;
+        align-items:center;
+        padding:7px;
+        margin-bottom:6px;
+        border-radius:8px;
+        background:rgba(127,127,127,.07);
+      }
+
+      .bfnd-player img,
+      .bfnd-avatar{
+        width:38px;
+        height:38px;
+        border-radius:50%;
+        object-fit:cover;
+        background:rgba(127,127,127,.12);
+      }
+
+      .bfnd-num{
+        width:28px;
+        height:28px;
+        border-radius:50%;
+        display:flex;
+        align-items:center;
+        justify-content:center;
+        background:rgba(127,127,127,.12);
+        font-size:9px;
+        font-weight:900;
+      }
+
+      .bfnd-name{
+        font-size:11px;
+        font-weight:900;
+      }
+
+      .bfnd-pos{
+        font-size:9px;
+        opacity:.6;
+      }
+
+      .bfnd-rating{
+        font-size:9px;
+        font-weight:900;
+      }
+
+      .bfnd-pitches{
+        display:grid;
+        grid-template-columns:1fr 1fr;
+        gap:16px;
+      }
+
+      .bfnd-pitch-wrap{
+        padding:8px;
+      }
+
+      .bfnd-pitch-head{
+        display:flex;
+        justify-content:space-between;
+        font-size:11px;
+        font-weight:900;
+        margin-bottom:7px;
+      }
+
+      .bfnd-pitch{
+        position:relative;
+        aspect-ratio:.68;
+        border-radius:13px;
+        overflow:hidden;
+
+        background:
+          repeating-linear-gradient(
+            90deg,
+            #2f7e44 0,
+            #2f7e44 10%,
+            #37884d 10%,
+            #37884d 20%
+          );
+      }
+
+      .bfnd-border{
+        position:absolute;
+        inset:7px;
+        border:2px solid #fff;
+      }
+
+      .bfnd-half{
+        position:absolute;
+        left:7px;
+        right:7px;
+        top:50%;
+        height:2px;
+        background:#fff;
+      }
+
+      .bfnd-circle{
+        position:absolute;
+        left:50%;
+        top:50%;
+        width:20%;
+        aspect-ratio:1;
+        border:2px solid #fff;
+        border-radius:50%;
+        transform:translate(-50%,-50%);
+      }
+
+      .bfnd-pitch-player{
+        position:absolute;
+        transform:translate(-50%,-50%);
+        width:80px;
+        text-align:center;
+        color:#fff;
+      }
+
+      .bfnd-pitch-player img,
+      .bfnd-pitch-avatar{
+        width:40px;
+        height:40px;
+        border-radius:50%;
+        object-fit:cover;
+        background:#fff;
+        border:2px solid #fff;
+      }
+
+      .bfnd-pitch-name{
+        font-size:8px;
+        font-weight:900;
+        background:rgba(0,0,0,.75);
+        border-radius:4px;
+        padding:2px;
+        white-space:nowrap;
+        overflow:hidden;
+        text-overflow:ellipsis;
+      }
+
+      .bfnd-pitch-rate{
+        font-size:8px;
+        background:#fff;
+        color:#111;
+        border-radius:4px;
+        padding:2px 4px;
+        display:inline-block;
+      }
+
+      .bfnd-event{
+        display:grid;
+        grid-template-columns:44px 30px 1fr;
+        gap:8px;
+        align-items:center;
+        padding:8px;
+        margin-bottom:6px;
+        border-radius:8px;
+        background:rgba(127,127,127,.07);
+      }
+
+      .bfnd-event-minute{
+        font-size:10px;
+        font-weight:900;
+      }
+
+      .bfnd-event-icon{
+        font-size:17px;
+      }
+
+      .bfnd-event-main{
+        font-size:10px;
+        font-weight:900;
+      }
+
+      .bfnd-event-team{
+        font-size:9px;
+        opacity:.55;
+      }
+
+      .bfnd-empty{
+        padding:12px;
+        border-radius:9px;
+        background:rgba(127,127,127,.06);
+        font-size:10px;
+        opacity:.7;
+      }
+
+      @media(max-width:800px){
+        .bfnd-grid,
+        .bfnd-pitches{
+          grid-template-columns:1fr;
+        }
+      }
+
+      @media(max-width:600px){
+
+        .bfnd-box{
+          padding:15px 9px;
+        }
+
+        .bfnd-head{
+          gap:7px;
+        }
+
+        .bfnd-score{
+          font-size:28px;
+        }
+
+        .bfnd-team{
+          font-size:11px;
+        }
+
+        .bfnd-team img{
+          width:55px;
+          height:55px;
+        }
+      }
+
+    `;
+
+    document.head.appendChild(
+      style
+    );
+  }
+
+  /* =========================================================
+     MODAL
+  ========================================================= */
+
+  function ensureModal() {
+
+    let modal =
+      document.getElementById(
+        "bf-new-details-modal"
+      );
+
+    if (modal) {
+      return modal;
+    }
+
+    modal =
+      document.createElement(
+        "div"
+      );
+
+    modal.id =
+      "bf-new-details-modal";
+
+    modal.innerHTML = `
+
+      <div class="bfnd-overlay">
+
+        <div
+          class="bfnd-box"
+          onclick="event.stopPropagation()"
+        >
+
+          <button
+            class="bfnd-close"
+            type="button"
+          >
+            ✕
+          </button>
+
+          <div id="bfnd-content"></div>
+
+        </div>
+
+      </div>
+
+    `;
+
+    document.body.appendChild(
+      modal
+    );
+
+    modal
+      .querySelector(
+        ".bfnd-close"
+      )
+      .onclick =
+      closeModal;
+
+    modal
+      .querySelector(
+        ".bfnd-overlay"
+      )
+      .onclick =
+      closeModal;
+
+    ensureStyles();
+
+    return modal;
+  }
+
+  function closeModal() {
+
+    const modal =
+      document.getElementById(
+        "bf-new-details-modal"
+      );
+
+    if (modal) {
+      modal.style.display =
+        "none";
+    }
+
+    document.body.style.overflow =
+      "";
+  }
+
+  /* =========================================================
+     DETAILS TEAM
+  ========================================================= */
+
+  function getTeam(
+    details,
+    side
+  ) {
+
+    const t =
+      details?.teams?.[side] ||
+      details?.[
+        side + "_team"
+      ] ||
+      {};
+
+    return {
+      id:
+        first(
+          t?.id,
+          t?.team_id
         ),
 
-    xi:
-      xi.slice(0,11),
+      name:
+        String(
+          first(
+            t?.name,
+            t?.displayName,
 
-    sub
-  };
-}
+            side === "home"
+              ? "Domicile"
+              : "Extérieur"
+          )
+        ),
 
-
-/* =========================================================
-   LINEUP TEAM MATCH
-========================================================= */
-
-function belongsGroup(x,s,t){
-
-  if(!obj(x)){
-    return false;
+      logo:
+        String(
+          first(
+            t?.logo,
+            t?.image,
+            t?.badge,
+            t?.picture,
+            ""
+          )
+        )
+    };
   }
 
-  const q=
-    x.team ||
-    x.club ||
-    {};
+  function getScore(
+    details,
+    side
+  ) {
 
-  const id=
-    first(
-      q.id,
-      q.team_id,
-      x.team_id,
-      x.id
+    return first(
+      details?.goals?.[side],
+
+      details?.score?.[side],
+
+      details?.[
+        side + "_score"
+      ],
+
+      "-"
     );
+  }
 
-  const n=
-    first(
-      q.name,
-      x.team_name,
-      x.name
-    );
+  /* =========================================================
+     LINEUPS
+  ========================================================= */
 
-  const side=
-    norm(
+  function getLineup(
+    details,
+    side,
+    team
+  ) {
+
+    const raw =
+      details?.lineups;
+
+    let block =
+      null;
+
+    if (
+      Array.isArray(raw)
+    ) {
+
+      block =
+        raw.find(
+          x => {
+
+            const t =
+              x?.team || {};
+
+            return (
+
+              (
+                team.id &&
+                t.id &&
+                String(team.id) ===
+                  String(t.id)
+              )
+
+              ||
+
+              (
+                team.name &&
+                t.name &&
+                norm(team.name) ===
+                  norm(t.name)
+              )
+
+              ||
+
+              norm(x?.side) ===
+                side
+
+              ||
+
+              (
+                side === "home" &&
+                norm(x?.side) ===
+                  "host"
+              )
+
+              ||
+
+              (
+                side === "away" &&
+                norm(x?.side) ===
+                  "guest"
+              )
+
+            );
+
+          }
+        );
+
+    } else {
+
+      block =
+        raw?.[side] ||
+        raw?.[
+          side + "Team"
+        ] ||
+        null;
+    }
+
+    if (!block) {
+
+      return {
+        formation:
+          "—",
+
+        players:
+          []
+      };
+
+    }
+
+    return {
+
+      formation:
+        String(
+          first(
+            block?.formation,
+            block?.tactics
+              ?.formation,
+            "—"
+          )
+        ),
+
+      players:
+        arr(
+          first(
+            block?.players,
+            block?.startXI,
+            block?.startingXI,
+            block?.xi,
+            []
+          )
+        )
+
+    };
+  }
+
+  /* =========================================================
+     PLAYER
+  ========================================================= */
+
+  function playerName(p) {
+
+    const x =
+      p?.player &&
+      obj(p.player)
+        ? p.player
+        : p;
+
+    return String(
       first(
-        x.side,
-        x.team_side,
+        p?.name,
+        p?.player_name,
+        x?.name,
+        x?.displayName,
+        x?.fullName,
+        "Joueur"
+      )
+    );
+  }
+
+  function playerNumber(p) {
+
+    const x =
+      p?.player &&
+      obj(p.player)
+        ? p.player
+        : p;
+
+    return first(
+      p?.number,
+      p?.shirt_number,
+      p?.shirtNumber,
+      p?.jersey,
+      x?.number,
+      "-"
+    );
+  }
+
+  function playerPosition(p) {
+
+    const x =
+      p?.player &&
+      obj(p.player)
+        ? p.player
+        : p;
+
+    const v =
+      first(
+        p?.position,
+        p?.pos,
+        p?.role,
+        x?.position,
+        x?.pos,
+        ""
+      );
+
+    return String(
+      typeof v ===
+        "object"
+        ? first(
+            v?.name,
+            v?.abbreviation,
+            ""
+          )
+        : v
+    );
+  }
+
+  function playerPhoto(p) {
+
+    const x =
+      p?.player &&
+      obj(p.player)
+        ? p.player
+        : p;
+
+    return String(
+      first(
+        p?.photo,
+        p?.image,
+        p?.picture,
+        p?.headshot,
+        p?.avatar,
+
+        x?.photo,
+        x?.image,
+        x?.picture,
+        x?.headshot,
+        x?.avatar,
+
         ""
       )
     );
-
-  return !!(
-    (
-      t.id &&
-      id &&
-      String(t.id)===String(id)
-    )
-    ||
-    (
-      n &&
-      t.name &&
-      norm(n)===norm(t.name)
-    )
-    ||
-    side===s
-    ||
-    (
-      s==="home" &&
-      side==="host"
-    )
-    ||
-    (
-      s==="away" &&
-      side==="guest"
-    )
-  );
-}
-
-
-/* =========================================================
-   EVENTS
-========================================================= */
-
-function events(d){
-
-  return arr(
-    first(
-      d?.events,
-      d?.incidents,
-      d?.plays,
-      []
-    )
-  );
-}
-
-function eType(e){
-
-  return norm(
-    first(
-      typeof e?.type==="object"
-        ? nameOf(e.type)
-        : e?.type,
-
-      e?.incidentType,
-      e?.kind,
-      e?.detail,
-      e?.text,
-
-      ""
-    )
-  );
-}
-
-function eIcon(e){
-
-  const t=eType(e);
-
-  if(
-    t.includes("goal") ||
-    t.includes("score")
-  ){
-    return "⚽";
   }
 
-  if(t.includes("yellow")){
-    return "🟨";
-  }
+  function playerRating(p) {
 
-  if(t.includes("red")){
-    return "🟥";
-  }
+    const x =
+      p?.player &&
+      obj(p.player)
+        ? p.player
+        : p;
 
-  if(t.includes("sub")){
-    return "🔄";
-  }
+    const r =
+      first(
+        p?.rating,
+        p?.match_rating,
+        p?.statistics
+          ?.rating,
+        p?.performance
+          ?.rating,
 
-  return "•";
-}
-
-function ePlayer(e){
-
-  return String(
-    first(
-      e?.player?.name,
-      e?.athlete?.displayName,
-      e?.player_name,
-      e?.name,
-      e?.participants?.[0]?.athlete?.displayName,
-      e?.text,
-      e?.detail,
-      "Événement"
-    )
-  );
-}
-
-function eAssist(e){
-
-  return String(
-    first(
-      e?.assist?.name,
-      e?.assist?.player?.name,
-      e?.participants?.[1]?.athlete?.displayName,
-      e?.in?.name,
-      e?.player_in?.name,
-      ""
-    )
-  );
-}
-
-function eTeam(e){
-
-  return String(
-    first(
-      e?.team?.name,
-      e?.team_name,
-      e?.club?.name,
-      ""
-    )
-  );
-}
-
-function eMin(e){
-
-  return first(
-    e?.minute,
-    e?.clock?.displayValue,
-    e?.elapsed,
-    e?.time?.minute,
-    e?.time,
-    "-"
-  );
-}
-
-
-/* =========================================================
-   RATINGS MAP
-========================================================= */
-
-function ratingMap(d){
-
-  const m=new Map();
-
-  for(
-    const p of arr(d?.players)
-  ){
-
-    const r=pRate(p);
-
-    if(r!==null){
-
-      m.set(
-        norm(pName(p)),
-        r
+        x?.rating,
+        x?.statistics
+          ?.rating
       );
+
+    if (r === null) {
+      return null;
     }
+
+    const n =
+      Number(
+        String(r)
+          .replace(
+            ",",
+            "."
+          )
+      );
+
+    return Number.isFinite(n)
+      ? n
+      : null;
   }
 
-  for(
-    const g of arr(d?.lineups)
-  ){
+  function classify(p) {
 
-    for(
-      const p of arr(g?.players)
-    ){
+    const x =
+      norm(
+        playerPosition(p)
+      );
 
-      const r=pRate(p);
-
-      if(r!==null){
-
-        m.set(
-          norm(pName(p)),
-          r
-        );
-      }
+    if (!x) {
+      return "unknown";
     }
+
+    if (
+      x.includes("goal") ||
+      x === "g" ||
+      x === "gk" ||
+      x.includes("keeper")
+    ) {
+      return "gk";
+    }
+
+    if (
+      x.includes("def") ||
+      x.includes("back") ||
+      x.includes("cb") ||
+      x.includes("lb") ||
+      x.includes("rb")
+    ) {
+      return "def";
+    }
+
+    if (
+      x.includes("mid") ||
+      x.includes("mf") ||
+      x.includes("cm") ||
+      x.includes("dm") ||
+      x.includes("am")
+    ) {
+      return "mid";
+    }
+
+    if (
+      x.includes("att") ||
+      x.includes("fwd") ||
+      x.includes("fw") ||
+      x.includes("strik") ||
+      x.includes("wing") ||
+      x.includes("forward")
+    ) {
+      return "att";
+    }
+
+    return "unknown";
   }
 
-  return m;
-}
-
-
-/* =========================================================
-   CSS
-========================================================= */
-
-function styles(){
-
-  if(
-    document.getElementById(
-      "bfndStyle"
-    )
-  ){
-    return;
-  }
-
-  const s=
-    document.createElement(
-      "style"
-    );
-
-  s.id="bfndStyle";
-
-  s.textContent=`
-
-#bfNewMatchDetailsModal{
-  display:none;
-  position:fixed;
-  inset:0;
-  z-index:999999;
-}
-
-.bfnd-bg{
-  position:fixed;
-  inset:0;
-  background:rgba(0,0,0,.82);
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  padding:12px;
-  overflow:auto;
-}
-
-.bfnd-box{
-  width:min(1150px,100%);
-  max-height:95vh;
-  overflow:auto;
-  background:var(--card,#fff);
-  color:var(--text,#111827);
-  border-radius:22px;
-  padding:24px;
-  position:relative;
-  box-shadow:0 30px 100px rgba(0,0,0,.45);
-}
-
-.bfnd-close{
-  position:absolute;
-  top:10px;
-  right:10px;
-  width:40px;
-  height:40px;
-  border:0;
-  border-radius:50%;
-  cursor:pointer;
-  font-size:18px;
-  font-weight:900;
-}
-
-.bfnd-league{
-  text-align:center;
-  font-size:13px;
-  font-weight:900;
-  opacity:.7;
-}
-
-.bfnd-head{
-  display:grid;
-  grid-template-columns:1fr auto 1fr;
-  gap:16px;
-  align-items:center;
-  text-align:center;
-  margin:16px 0;
-}
-
-.bfnd-team{
-  font-weight:900;
-  overflow-wrap:anywhere;
-}
-
-.bfnd-team img{
-  width:70px;
-  height:70px;
-  object-fit:contain;
-  display:block;
-  margin:auto;
-}
-
-.bfnd-score{
-  font-size:40px;
-  font-weight:950;
-}
-
-.bfnd-status{
-  font-size:10px;
-  font-weight:900;
-  padding:6px 11px;
-  border-radius:999px;
-  background:rgba(220,38,38,.1);
-  display:inline-block;
-  margin-top:6px;
-}
-
-.bfnd-info{
-  display:flex;
-  justify-content:center;
-  gap:7px;
-  flex-wrap:wrap;
-}
-
-.bfnd-info span{
-  padding:6px 9px;
-  border-radius:999px;
-  background:rgba(127,127,127,.1);
-  font-size:10px;
-}
-
-.bfnd-sec{
-  margin-top:24px;
-  padding-top:18px;
-  border-top:1px solid rgba(127,127,127,.16);
-}
-
-.bfnd-title{
-  font-size:17px;
-  font-weight:950;
-  margin-bottom:13px;
-}
-
-.bfnd-pitches,
-.bfnd-lists{
-  display:grid;
-  grid-template-columns:1fr 1fr;
-  gap:16px;
-}
-
-.bfnd-pitch{
-  position:relative;
-  aspect-ratio:.68;
-  border-radius:14px;
-  overflow:hidden;
-
-  background:
-    repeating-linear-gradient(
-      90deg,
-      #26743b 0,
-      #26743b 10%,
-      #2e8045 10%,
-      #2e8045 20%
-    );
-}
-
-.bfnd-line{
-  position:absolute;
-  inset:7px;
-  border:2px solid #fff;
-}
-
-.bfnd-mid{
-  position:absolute;
-  top:50%;
-  left:7px;
-  right:7px;
-  height:2px;
-  background:#fff;
-}
-
-.bfnd-circle{
-  position:absolute;
-  top:50%;
-  left:50%;
-  width:20%;
-  aspect-ratio:1;
-  transform:translate(-50%,-50%);
-  border:2px solid #fff;
-  border-radius:50%;
-}
-
-.bfnd-player{
-  position:absolute;
-  transform:translate(-50%,-50%);
-  width:90px;
-  text-align:center;
-}
-
-.bfnd-photo{
-  width:42px;
-  height:42px;
-  border-radius:50%;
-  object-fit:cover;
-  border:2px solid #fff;
-  background:#fff;
-  display:inline-block;
-}
-
-.bfnd-pname{
-  font-size:9px;
-  font-weight:900;
-  background:rgba(0,0,0,.78);
-  color:#fff;
-  border-radius:5px;
-  padding:3px;
-  white-space:nowrap;
-  overflow:hidden;
-  text-overflow:ellipsis;
-}
-
-.bfnd-num{
-  font-size:9px;
-  background:#fff;
-  border-radius:50%;
-  padding:3px 5px;
-  position:relative;
-  left:20px;
-  top:-8px;
-}
-
-.bfnd-rate{
-  font-size:9px;
-  font-weight:900;
-  background:#fff;
-  border-radius:5px;
-  display:inline-block;
-  padding:2px 4px;
-}
-
-.bfnd-row{
-  display:grid;
-  grid-template-columns:36px 34px 1fr auto;
-  gap:7px;
-  align-items:center;
-  padding:7px;
-  margin-bottom:6px;
-  border-radius:9px;
-  background:rgba(127,127,127,.07);
-}
-
-.bfnd-row img{
-  width:34px;
-  height:34px;
-  border-radius:50%;
-  object-fit:cover;
-}
-
-.bfnd-num2{
-  width:30px;
-  height:30px;
-  border-radius:50%;
-  display:flex;
-  align-items:center;
-  justify-content:center;
-  background:rgba(127,127,127,.12);
-  font-size:9px;
-  font-weight:900;
-}
-
-.bfnd-name{
-  font-size:11px;
-  font-weight:900;
-}
-
-.bfnd-pos{
-  font-size:9px;
-  opacity:.55;
-}
-
-.bfnd-badge{
-  font-size:8px;
-  padding:3px 5px;
-  border-radius:5px;
-  background:rgba(127,127,127,.12);
-}
-
-.bfnd-event{
-  display:grid;
-  grid-template-columns:45px 30px 1fr;
-  gap:8px;
-  align-items:center;
-  padding:9px;
-  border-radius:9px;
-  background:rgba(127,127,127,.07);
-  margin-bottom:6px;
-}
-
-.bfnd-empty{
-  padding:12px;
-  border-radius:9px;
-  background:rgba(127,127,127,.06);
-  font-size:11px;
-  opacity:.65;
-}
-
-.bfnd-motm{
-  text-align:center;
-  padding:12px;
-  border-radius:10px;
-  background:rgba(250,204,21,.1);
-  font-size:12px;
-  font-weight:900;
-}
-
-@media(max-width:800px){
-
-  .bfnd-pitches,
-  .bfnd-lists{
-    grid-template-columns:1fr;
-  }
-}
-
-@media(max-width:600px){
-
-  .bfnd-box{
-    padding:18px 10px;
-  }
-
-  .bfnd-head{
-    gap:8px;
-  }
-
-  .bfnd-score{
-    font-size:28px;
-  }
-
-  .bfnd-team{
-    font-size:11px;
-  }
-
-  .bfnd-team img{
-    width:55px;
-    height:55px;
-  }
-
-  .bfnd-row{
-    grid-template-columns:32px 32px 1fr;
-  }
-
-  .bfnd-badge{
-    grid-column:3;
-  }
-}
-
-`;
-
-  document.head.appendChild(s);
-}
-
-
-/* =========================================================
-   MODAL
-========================================================= */
-
-function modal(){
-
-  let m=
-    document.getElementById(
-      "bfNewMatchDetailsModal"
-    );
-
-  if(m){
-    return m;
-  }
-
-  m=
-    document.createElement(
-      "div"
-    );
-
-  m.id=
-    "bfNewMatchDetailsModal";
-
-  m.innerHTML=`
-
-    <div class="bfnd-bg">
-
-      <div
-        class="bfnd-box"
-        onclick="event.stopPropagation()"
-      >
-
-        <button
-          class="bfnd-close"
-          type="button"
-        >
-          ✕
-        </button>
-
-        <div id="bfndContent"></div>
-
-      </div>
-
-    </div>
-
-  `;
-
-  document.body.appendChild(m);
-
-  m
-    .querySelector(".bfnd-close")
-    .onclick=close;
-
-  m
-    .querySelector(".bfnd-bg")
-    .onclick=close;
-
-  styles();
-
-  return m;
-}
-
-function close(){
-
-  const m=
-    document.getElementById(
-      "bfNewMatchDetailsModal"
-    );
-
-  if(m){
-    m.style.display="none";
-  }
-
-  document.body.style.overflow="";
-}
-
-
-/* =========================================================
-   PLAYER ROW
-========================================================= */
-
-function row(p,rm){
-
-  const photo=pPhoto(p);
-
-  const r=
-    first(
-      pRate(p),
-      rm.get(
-        norm(pName(p))
+  function formationRows(
+    formation
+  ) {
+
+    const a =
+      String(
+        formation || ""
       )
+        .split("-")
+        .map(Number)
+        .filter(
+          n => n > 0
+        );
+
+    return a.length
+      ? a
+      : [4, 3, 3];
+  }
+
+  /* =========================================================
+     PITCH POSITION
+  ========================================================= */
+
+  function pitchPositions(
+    lineup,
+    side
+  ) {
+
+    const players =
+      lineup.players.slice(
+        0,
+        11
+      );
+
+    if (
+      !players.length
+    ) {
+      return [];
+    }
+
+    const groups = {
+      gk: [],
+      def: [],
+      mid: [],
+      att: [],
+      unknown: []
+    };
+
+    players.forEach(
+      p => {
+
+        groups[
+          classify(p)
+        ].push(p);
+
+      }
     );
 
-  return`
+    const rows = [
+      groups.gk.slice(
+        0,
+        1
+      )
+    ];
 
-    <div class="bfnd-row">
+    const formation =
+      formationRows(
+        lineup.formation
+      );
 
-      ${
-        photo
-          ? `
-            <img
-              src="${esc(photo)}"
-              loading="lazy"
-              alt="${esc(pName(p))}"
-            >
-          `
-          : `
-            <div class="bfnd-num2">
-              ⚽
-            </div>
-          `
-      }
+    let di = 0;
+    let mi = 0;
+    let ai = 0;
+    let ui = 0;
 
-      <div class="bfnd-num2">
-        ${esc(pNum(p))}
-      </div>
+    formation.forEach(
+      (
+        count,
+        rowIndex
+      ) => {
 
-      <div>
+        let source;
 
-        <div class="bfnd-name">
-          ${esc(pName(p))}
-        </div>
+        if (
+          rowIndex === 0
+        ) {
 
-        <div class="bfnd-pos">
-          ${esc(pPos(p))}
-        </div>
+          source =
+            groups.def.slice(
+              di,
+              di + count
+            );
 
-      </div>
+          di +=
+            source.length;
 
-      <div>
+        } else if (
+          rowIndex ===
+          formation.length - 1
+        ) {
 
-        ${
-          r!=null
-            ? `
-              <span class="bfnd-badge">
-                ⭐ ${esc(r)}
-              </span>
-            `
-            : ""
+          source =
+            groups.att.slice(
+              ai,
+              ai + count
+            );
+
+          ai +=
+            source.length;
+
+        } else {
+
+          source =
+            groups.mid.slice(
+              mi,
+              mi + count
+            );
+
+          mi +=
+            source.length;
+
         }
 
-      </div>
+        while (
+          source.length <
+            count &&
+          ui <
+            groups.unknown.length
+        ) {
 
-    </div>
+          source.push(
+            groups.unknown[
+              ui++
+            ]
+          );
 
-  `;
-}
+        }
 
+        rows.push(
+          source
+        );
 
-/* =========================================================
-   PITCH
-========================================================= */
+      }
+    );
 
-function pitch(l,t,rm){
+    const flat =
+      [];
 
-  const ps=
-    arr(l.xi)
-      .slice(0,11);
+    rows.forEach(
+      (
+        row,
+        ri
+      ) => {
 
-  if(!ps.length){
+        row.forEach(
+          (
+            player,
+            pi
+          ) => {
 
-    return`
+            const x =
+              row.length === 1
+                ? 50
+                : 16 +
+                  68 *
+                    (
+                      pi /
+                      (
+                        row.length - 1
+                      )
+                    );
 
-      <div>
+            let y =
+              rows.length === 1
+                ? 50
+                : 8 +
+                  84 *
+                    (
+                      ri /
+                      Math.max(
+                        1,
+                        rows.length - 1
+                      )
+                    );
 
-        <b>
-          ${esc(t.name)}
-        </b>
+            if (
+              side ===
+              "away"
+            ) {
+              y =
+                100 - y;
+            }
 
-        <div class="bfnd-empty">
-          التشكيلة غير متوفرة
+            flat.push({
+              player,
+
+              x:
+                Math.max(
+                  6,
+                  Math.min(
+                    94,
+                    x
+                  )
+                ),
+
+              y:
+                Math.max(
+                  6,
+                  Math.min(
+                    94,
+                    y
+                  )
+                )
+            });
+
+          }
+        );
+
+      }
+    );
+
+    const used =
+      new Set(
+        flat.map(
+          x =>
+            x.player
+        )
+      );
+
+    for (
+      const p of players
+    ) {
+
+      if (
+        !used.has(p) &&
+        flat.length < 11
+      ) {
+
+        flat.push({
+          player: p,
+          x: 50,
+          y: 50
+        });
+
+      }
+
+    }
+
+    return flat;
+  }
+
+  /* =========================================================
+     PITCH
+  ========================================================= */
+
+  function renderPitch(
+    lineup,
+    team,
+    side
+  ) {
+
+    if (
+      !lineup.players.length
+    ) {
+
+      return `
+
+        <div class="bfnd-panel">
+
+          <div class="bfnd-pitch-head">
+
+            <span>
+              ${esc(
+                team.name
+              )}
+            </span>
+
+            <span>
+              ${esc(
+                lineup.formation
+              )}
+            </span>
+
+          </div>
+
+          <div class="bfnd-empty">
+            Composition indisponible
+          </div>
+
+        </div>
+
+      `;
+
+    }
+
+    const positions =
+      pitchPositions(
+        lineup,
+        side
+      );
+
+    return `
+
+      <div class="bfnd-pitch-wrap">
+
+        <div class="bfnd-pitch-head">
+
+          <span>
+            ${esc(
+              team.name
+            )}
+          </span>
+
+          <span>
+            ${esc(
+              lineup.formation
+            )}
+          </span>
+
+        </div>
+
+        <div class="bfnd-pitch">
+
+          <div class="bfnd-border"></div>
+
+          <div class="bfnd-half"></div>
+
+          <div class="bfnd-circle"></div>
+
+          ${positions
+            .map(
+              item => {
+
+                const p =
+                  item.player;
+
+                const photo =
+                  playerPhoto(p);
+
+                const rating =
+                  playerRating(p);
+
+                return `
+
+                  <div
+                    class="bfnd-pitch-player"
+                    style="
+                      left:${item.x}%;
+                      top:${item.y}%;
+                    "
+                  >
+
+                    ${
+                      photo
+                        ? `
+                          <img
+                            src="${esc(
+                              photo
+                            )}"
+                            alt="${esc(
+                              playerName(p)
+                            )}"
+                          >
+                        `
+                        : `
+                          <div
+                            class="bfnd-pitch-avatar"
+                          >
+                            ⚽
+                          </div>
+                        `
+                    }
+
+                    <div
+                      class="bfnd-pitch-name"
+                    >
+                      ${esc(
+                        playerName(p)
+                      )}
+                    </div>
+
+                    ${
+                      rating != null
+                        ? `
+                          <div
+                            class="bfnd-pitch-rate"
+                          >
+                            ⭐ ${esc(
+                              rating.toFixed(1)
+                            )}
+                          </div>
+                        `
+                        : ""
+                    }
+
+                  </div>
+
+                `;
+              }
+            )
+            .join("")}
+
         </div>
 
       </div>
@@ -1421,271 +2041,281 @@ function pitch(l,t,rm){
     `;
   }
 
-  const c={
-    gk:[],
-    def:[],
-    mid:[],
-    att:[],
-    u:[]
-  };
+  /* =========================================================
+     PLAYER LIST
+  ========================================================= */
 
-  for(
-    const p of ps
-  ){
+  function renderPlayers(
+    lineup
+  ) {
 
-    const x=
-      norm(
-        pPos(p)
-      );
+    if (
+      !lineup.players.length
+    ) {
 
-    let k;
+      return `
 
-    if(
-      x.includes("goal") ||
-      ["g","gk","1"].includes(x)
-    ){
+        <div class="bfnd-empty">
+          Joueurs indisponibles
+        </div>
 
-      k="gk";
-
-    }else if(
-      x.includes("def") ||
-      x.includes("back") ||
-      ["d","df","2"].includes(x)
-    ){
-
-      k="def";
-
-    }else if(
-      x.includes("mid") ||
-      ["m","mf","3"].includes(x)
-    ){
-
-      k="mid";
-
-    }else if(
-      x.includes("att") ||
-      x.includes("forw") ||
-      x.includes("strik") ||
-      x.includes("wing") ||
-      ["f","fw","4"].includes(x)
-    ){
-
-      k="att";
-
-    }else{
-
-      k="u";
-    }
-
-    c[k].push(p);
-  }
-
-
-  let f=
-    String(
-      l.formation || ""
-    )
-      .split("-")
-      .map(Number)
-      .filter(n=>n>0);
-
-
-  if(!f.length){
-
-    f=[
-      c.def.length || 4,
-      c.mid.length || 3,
-      c.att.length || 3
-    ];
-  }
-
-
-  const rows=[
-    [
-      ...c.gk.slice(0,1)
-    ]
-  ];
-
-  const used=[
-    0,
-    0,
-    0
-  ];
-
-
-  f.forEach(
-    (n,i)=>{
-
-      let list;
-
-      let idx;
-
-      if(i===0){
-
-        list=c.def;
-        idx=0;
-
-      }else if(
-        i===f.length-1
-      ){
-
-        list=c.att;
-        idx=2;
-
-      }else{
-
-        list=c.mid;
-        idx=1;
-      }
-
-      const a=
-        list.slice(
-          used[idx],
-          used[idx]+n
-        );
-
-      used[idx]+=a.length;
-
-      rows.push(a);
-    }
-  );
-
-
-  const flat=[];
-
-  rows.forEach(
-    (r,ri)=>{
-
-      r.forEach(
-        (p,ci)=>{
-
-          flat.push({
-            p,
-
-            x:
-              50 +
-              (
-                ci -
-                (r.length-1)/2
-              ) *
-              Math.min(
-                17,
-                70 /
-                Math.max(
-                  r.length,
-                  1
-                )
-              ),
-
-            y:
-              8 +
-              ri *
-              (
-                84 /
-                (
-                  rows.length-1 ||
-                  1
-                )
-              )
-          });
-
-        }
-      );
+      `;
 
     }
-  );
 
+    return lineup.players
+      .map(
+        p => {
 
-  return`
+          const photo =
+            playerPhoto(p);
 
-    <div>
+          const rating =
+            playerRating(p);
 
-      <div
-        style="
-          text-align:center;
-          font-size:12px;
-          font-weight:900;
-          margin-bottom:6px;
-        "
-      >
+          return `
 
-        ${esc(t.name)}
+            <div
+              class="bfnd-player"
+            >
 
-        <span style="opacity:.6">
-          ${esc(l.formation)}
-        </span>
+              ${
+                photo
+                  ? `
+                    <img
+                      src="${esc(
+                        photo
+                      )}"
+                      alt="${esc(
+                        playerName(p)
+                      )}"
+                    >
+                  `
+                  : `
+                    <div class="bfnd-avatar">
+                      ⚽
+                    </div>
+                  `
+              }
 
-      </div>
+              <div class="bfnd-num">
+                ${esc(
+                  playerNumber(p)
+                )}
+              </div>
 
-      <div class="bfnd-pitch">
+              <div>
 
-        <div class="bfnd-line"></div>
-        <div class="bfnd-mid"></div>
-        <div class="bfnd-circle"></div>
+                <div class="bfnd-name">
+                  ${esc(
+                    playerName(p)
+                  )}
+                </div>
 
-        ${flat.map(
-          ({p,x,y})=>{
+                <div class="bfnd-pos">
+                  ${esc(
+                    playerPosition(p)
+                  )}
+                </div>
 
-            const ph=
-              pPhoto(p);
+              </div>
 
-            const r=
-              first(
-                pRate(p),
-                rm.get(
-                  norm(
-                    pName(p)
-                  )
-                )
-              );
-
-            return`
-
-              <div
-                class="bfnd-player"
-                style="
-                  left:${Math.max(
-                    7,
-                    Math.min(
-                      93,
-                      x
-                    )
-                  )}%;
-                  top:${y}%;
-                "
-              >
+              <div class="bfnd-rating">
 
                 ${
-                  ph
-                    ? `
-                      <img
-                        class="bfnd-photo"
-                        src="${esc(ph)}"
-                        alt="${esc(
-                          pName(p)
-                        )}"
-                      >
-                    `
-                    : `
-                      <div class="bfnd-photo">
-                        ⚽
-                      </div>
-                    `
+                  rating != null
+                    ? `⭐ ${esc(
+                        rating.toFixed(1)
+                      )}`
+                    : "—"
                 }
 
-                <span class="bfnd-num">
-                  ${esc(pNum(p))}
-                </span>
+              </div>
 
-                <div class="bfnd-pname">
-                  ${esc(pName(p))}
+            </div>
+
+          `;
+        }
+      )
+      .join("");
+  }
+
+  /* =========================================================
+     EVENT ICON
+  ========================================================= */
+
+  function eventIcon(
+    event
+  ) {
+
+    const t =
+      norm(
+        first(
+
+          typeof event?.type ===
+            "object"
+
+            ? event?.type?.name
+
+            : event?.type,
+
+          event?.incidentType,
+
+          event?.kind,
+
+          event?.detail,
+
+          event?.text,
+
+          ""
+        )
+      );
+
+    if (
+      t.includes("goal") ||
+      t.includes("score")
+    ) {
+      return "⚽";
+    }
+
+    if (
+      t.includes("yellow")
+    ) {
+      return "🟨";
+    }
+
+    if (
+      t.includes("red")
+    ) {
+      return "🟥";
+    }
+
+    if (
+      t.includes("sub")
+    ) {
+      return "🔄";
+    }
+
+    return "•";
+  }
+
+  /* =========================================================
+     EVENTS
+  ========================================================= */
+
+  function renderEvents(
+    details
+  ) {
+
+    const events =
+      arr(
+        first(
+          details?.events,
+          details?.incidents,
+          details?.plays,
+          []
+        )
+      );
+
+    if (
+      !events.length
+    ) {
+
+      return `
+
+        <div class="bfnd-empty">
+          Aucun événement détaillé disponible.
+        </div>
+
+      `;
+
+    }
+
+    return events
+      .map(
+        e => {
+
+          const p =
+            first(
+
+              e?.player?.name,
+
+              e?.player_name,
+
+              e?.athlete
+                ?.displayName,
+
+              e?.name,
+
+              e?.participants
+                ?.
+                [0]
+                ?.athlete
+                ?.displayName,
+
+              e?.text,
+
+              e?.detail,
+
+              "Événement"
+            );
+
+          const team =
+            first(
+              e?.team?.name,
+              e?.team_name,
+              e?.club?.name,
+              ""
+            );
+
+          const minute =
+            first(
+              e?.minute,
+              e?.elapsed,
+              e?.clock
+                ?.displayValue,
+              e?.time
+                ?.elapsed,
+              "-"
+            );
+
+          return `
+
+            <div
+              class="bfnd-event"
+            >
+
+              <div
+                class="bfnd-event-minute"
+              >
+                ${esc(
+                  minute
+                )}'
+              </div>
+
+              <div
+                class="bfnd-event-icon"
+              >
+                ${eventIcon(e)}
+              </div>
+
+              <div>
+
+                <div
+                  class="bfnd-event-main"
+                >
+                  ${esc(p)}
                 </div>
 
                 ${
-                  r!=null
+                  team
                     ? `
-                      <div class="bfnd-rate">
-                        ⭐ ${esc(r)}
+                      <div
+                        class="bfnd-event-team"
+                      >
+                        ${esc(
+                          team
+                        )}
                       </div>
                     `
                     : ""
@@ -1693,322 +2323,128 @@ function pitch(l,t,rm){
 
               </div>
 
-            `;
-          }
-        ).join("")}
+            </div>
 
-      </div>
-
-    </div>
-
-  `;
-}
-
-
-/* =========================================================
-   OPEN DETAILS
-========================================================= */
-
-async function openDetails(id){
-
-  if(!id){
-    return;
+          `;
+        }
+      )
+      .join("");
   }
 
-  const m=modal();
+  /* =========================================================
+     RENDER FULL DETAILS
+  ========================================================= */
 
-  const c=
-    document.getElementById(
-      "bfndContent"
-    );
+  function renderDetails(
+    details,
+    source
+  ) {
 
-  m.style.display="block";
+    const modal =
+      ensureModal();
 
-  document.body.style.overflow=
-    "hidden";
-
-  c.innerHTML=`
-
-    <div class="bfnd-empty">
-
-      ⏳ جاري تحميل تفاصيل المباراة...
-
-    </div>
-
-  `;
-
-
-  try{
-
-    const r=
-      await fetch(
-        API +
-        encodeURIComponent(id),
-        {
-          cache:"no-store",
-
-          headers:{
-            Accept:
-              "application/json"
-          }
-        }
+    const content =
+      document.getElementById(
+        "bfnd-content"
       );
 
-
-    const raw=
-      await r.text();
-
-
-    if(!r.ok){
-
-      throw new Error(
-        `API HTTP ${r.status}`
-      );
-    }
-
-
-    let p;
-
-    try{
-
-      p=
-        JSON.parse(raw);
-
-    }catch{
-
-      throw new Error(
-        "Réponse JSON invalide"
-      );
-    }
-
-
-    let d=
-      p?.data ||
-      p?.match ||
-      p;
-
-
-    if(
-      d?.match &&
-      obj(d.match)
-    ){
-
-      d=d.match;
-    }
-
-
-    if(!obj(d)){
-
-      throw new Error(
-        "Données du match introuvables"
-      );
-    }
-
-
-    const h=
-      team(
-        d,
+    const home =
+      getTeam(
+        details,
         "home"
       );
 
-    const a=
-      team(
-        d,
+    const away =
+      getTeam(
+        details,
         "away"
       );
 
-
-    const hl=
-      lineup(
-        d,
+    const homeLineup =
+      getLineup(
+        details,
         "home",
-        h
+        home
       );
 
-    const al=
-      lineup(
-        d,
+    const awayLineup =
+      getLineup(
+        details,
         "away",
-        a
+        away
       );
 
+    const league =
+      String(
+        first(
+          details?.league?.name,
+          details?.competition?.name,
+          "Football"
+        )
+      );
 
-    const ev=
-      events(d);
+    const status =
+      String(
+        first(
+          details?.fixture
+            ?.status?.long,
 
-    const rm=
-      ratingMap(d);
+          details?.fixture
+            ?.status?.short,
 
+          details?.status_text,
 
-    const date=
-      d?.fixture?.date ||
-      d?.date;
+          details?.status,
 
+          "MATCH"
+        )
+      );
 
-    const info=`
-
-      ${
-        date
-          ? `
-            <span>
-              📅 ${
-                esc(
-                  new Date(
-                    date
-                  ).toLocaleString(
-                    "fr-FR"
-                  )
-                )
-              }
-            </span>
-          `
-          : ""
-      }
-
-      ${
-        d?.fixture?.venue
-          ? `
-            <span>
-              🏟️ ${
-                esc(
-                  nameOf(
-                    d.fixture.venue
-                  )
-                )
-              }
-            </span>
-          `
-          : ""
-      }
-
-      ${
-        d?.fixture?.referee
-          ? `
-            <span>
-              👨‍⚖️ ${
-                esc(
-                  nameOf(
-                    d.fixture.referee
-                  )
-                )
-              }
-            </span>
-          `
-          : ""
-      }
-
-    `;
-
-
-    const eventHtml=
-      ev.length
-
-        ? ev.map(
-            e=>`
-
-              <div class="bfnd-event">
-
-                <b>
-                  ${esc(eMin(e))}'
-                </b>
-
-                <span>
-                  ${eIcon(e)}
-                </span>
-
-                <div>
-
-                  <b>
-                    ${esc(
-                      ePlayer(e)
-                    )}
-                  </b>
-
-                  ${
-                    eTeam(e)
-                      ? `
-                        <div
-                          style="
-                            font-size:9px;
-                            opacity:.6;
-                          "
-                        >
-                          ${esc(
-                            eTeam(e)
-                          )}
-                        </div>
-                      `
-                      : ""
-                  }
-
-                  ${
-                    eAssist(e)
-                      ? `
-                        <div
-                          style="
-                            font-size:9px;
-                            opacity:.7;
-                          "
-                        >
-                          ↪ ${esc(
-                            eAssist(e)
-                          )}
-                        </div>
-                      `
-                      : ""
-                  }
-
-                </div>
-
-              </div>
-
-            `
-          ).join("")
-
-        : `
-          <div class="bfnd-empty">
-            ماكايناش أحداث مفصلة لهاد الماتش.
-          </div>
-        `;
-
-
-    const mot=
+    const date =
       first(
-        d?.player_of_match,
-        d?.playerOfMatch,
-        d?.man_of_the_match,
-        d?.manOfTheMatch,
-        d?.mvp,
-        d?.best_player
+        details?.fixture?.date,
+        details?.date,
+        ""
       );
 
+    content.innerHTML = `
 
-    c.innerHTML=`
-
-      <div class="bfnd-league">
+      <div
+        class="bfnd-league"
+      >
         🏆 ${esc(
-          league(d)
+          league
         )}
       </div>
 
 
-      <div class="bfnd-head">
+      <div
+        class="bfnd-head"
+      >
 
-        <div class="bfnd-team">
+        <div
+          class="bfnd-team"
+        >
 
           ${
-            h.logo
+            home.logo
               ? `
                 <img
-                  src="${esc(h.logo)}"
-                  alt="${esc(h.name)}"
+                  src="${esc(
+                    home.logo
+                  )}"
+                  alt="${esc(
+                    home.name
+                  )}"
                 >
               `
               : "⚽"
           }
 
           <div>
-            ${esc(h.name)}
+            ${esc(
+              home.name
+            )}
           </div>
 
         </div>
@@ -2016,11 +2452,13 @@ async function openDetails(id){
 
         <div>
 
-          <div class="bfnd-score">
+          <div
+            class="bfnd-score"
+          >
 
             ${esc(
-              score(
-                d,
+              getScore(
+                details,
                 "home"
               )
             )}
@@ -2028,40 +2466,48 @@ async function openDetails(id){
             -
 
             ${esc(
-              score(
-                d,
+              getScore(
+                details,
                 "away"
               )
             )}
 
           </div>
 
-          <div class="bfnd-status">
-
+          <div
+            class="bfnd-status"
+          >
             ${esc(
-              status(d)
+              status
             )}
-
           </div>
 
         </div>
 
 
-        <div class="bfnd-team">
+        <div
+          class="bfnd-team"
+        >
 
           ${
-            a.logo
+            away.logo
               ? `
                 <img
-                  src="${esc(a.logo)}"
-                  alt="${esc(a.name)}"
+                  src="${esc(
+                    away.logo
+                  )}"
+                  alt="${esc(
+                    away.name
+                  )}"
                 >
               `
               : "⚽"
           }
 
           <div>
-            ${esc(a.name)}
+            ${esc(
+              away.name
+            )}
           </div>
 
         </div>
@@ -2069,31 +2515,98 @@ async function openDetails(id){
       </div>
 
 
-      <div class="bfnd-info">
+      <div
+        class="bfnd-info"
+      >
 
-        ${info}
+        ${
+          date
+            ? `
+              <span>
+                📅 ${esc(
+                  new Date(
+                    date
+                  ).toLocaleString(
+                    "fr-FR"
+                  )
+                )}
+              </span>
+            `
+            : ""
+        }
+
+
+        ${
+          details?.fixture
+            ?.venue
+            ? `
+              <span>
+
+                🏟️ ${esc(
+                  typeof
+                    details
+                      .fixture
+                      .venue ===
+                    "object"
+
+                    ? first(
+                        details
+                          .fixture
+                          .venue
+                          ?.name,
+
+                        details
+                          .fixture
+                          .venue
+                          ?.displayName,
+
+                        ""
+                      )
+
+                    : details
+                        .fixture
+                        .venue
+                )}
+
+              </span>
+            `
+            : ""
+        }
+
+
+        <span>
+          🔗 ${esc(
+            source
+          )}
+        </span>
 
       </div>
 
 
-      <div class="bfnd-sec">
+      <div
+        class="bfnd-section"
+      >
 
-        <div class="bfnd-title">
+        <div
+          class="bfnd-title"
+        >
           🧩 Formations & Compositions
         </div>
 
-        <div class="bfnd-pitches">
+        <div
+          class="bfnd-pitches"
+        >
 
-          ${pitch(
-            hl,
-            h,
-            rm
+          ${renderPitch(
+            homeLineup,
+            home,
+            "home"
           )}
 
-          ${pitch(
-            al,
-            a,
-            rm
+          ${renderPitch(
+            awayLineup,
+            away,
+            "away"
           )}
 
         </div>
@@ -2101,355 +2614,595 @@ async function openDetails(id){
       </div>
 
 
-      <div class="bfnd-sec">
+      <div
+        class="bfnd-section"
+      >
 
-        <div class="bfnd-title">
+        <div
+          class="bfnd-title"
+        >
           👥 Joueurs
         </div>
 
+        <div
+          class="bfnd-grid"
+        >
 
-        <div class="bfnd-lists">
-
-
-          <div>
+          <div
+            class="bfnd-panel"
+          >
 
             <b>
-              ${esc(h.name)}
+              ${esc(
+                home.name
+              )}
             </b>
 
-
-            ${
-              hl.xi.length
-                ? hl.xi.map(
-                    p=>row(
-                      p,
-                      rm
-                    )
-                  ).join("")
-                : `
-                  <div class="bfnd-empty">
-                    التشكيلة غير متوفرة
-                  </div>
-                `
-            }
-
-
-            ${
-              hl.sub.length
-
-                ? `
-
-                  <h4>
-                    Banc
-                  </h4>
-
-                  ${
-                    hl.sub
-                      .slice(0,14)
-                      .map(
-                        p=>row(
-                          p,
-                          rm
-                        )
-                      )
-                      .join("")
-                  }
-
-                `
-
-                : ""
-            }
+            ${renderPlayers(
+              homeLineup
+            )}
 
           </div>
 
 
-          <div>
+          <div
+            class="bfnd-panel"
+          >
 
             <b>
-              ${esc(a.name)}
+              ${esc(
+                away.name
+              )}
             </b>
 
-
-            ${
-              al.xi.length
-                ? al.xi.map(
-                    p=>row(
-                      p,
-                      rm
-                    )
-                  ).join("")
-                : `
-                  <div class="bfnd-empty">
-                    التشكيلة غير متوفرة
-                  </div>
-                `
-            }
-
-
-            ${
-              al.sub.length
-
-                ? `
-
-                  <h4>
-                    Banc
-                  </h4>
-
-                  ${
-                    al.sub
-                      .slice(0,14)
-                      .map(
-                        p=>row(
-                          p,
-                          rm
-                        )
-                      )
-                      .join("")
-                  }
-
-                `
-
-                : ""
-            }
+            ${renderPlayers(
+              awayLineup
+            )}
 
           </div>
-
 
         </div>
 
       </div>
 
 
-      <div class="bfnd-sec">
+      <div
+        class="bfnd-section"
+      >
 
-        <div class="bfnd-title">
+        <div
+          class="bfnd-title"
+        >
           ⏱️ Événements
         </div>
 
-        ${eventHtml}
+        ${renderEvents(
+          details
+        )}
 
       </div>
 
+    `;
 
-      ${
-        mot
+    modal.style.display =
+      "block";
 
-          ? `
+    document.body.style.overflow =
+      "hidden";
+  }
 
-            <div class="bfnd-sec">
+  /* =========================================================
+     FETCH DETAILS
+  ========================================================= */
 
-              <div class="bfnd-motm">
+  async function fetchDetails(
+    source
+  ) {
 
-                ⭐ Joueur du match :
+    const response =
+      await fetch(
+        API +
+          encodeURIComponent(
+            source.value
+          ) +
+          "&source=" +
+          encodeURIComponent(
+            source.provider
+          ),
 
-                ${esc(
-                  typeof mot==="string"
-                    ? mot
-                    : nameOf(mot)
-                )}
+        {
+          cache:
+            "no-store",
 
-              </div>
+          headers: {
+            Accept:
+              "application/json"
+          }
+        }
+      );
 
-            </div>
+    const raw =
+      await response.text();
 
-          `
+    if (
+      !response.ok
+    ) {
 
-          : ""
+      throw new Error(
+        `API HTTP ${response.status}`
+      );
+
+    }
+
+    let data;
+
+    try {
+
+      data =
+        JSON.parse(
+          raw
+        );
+
+    } catch {
+
+      throw new Error(
+        "Réponse JSON invalide"
+      );
+
+    }
+
+    const details =
+      data?.data ||
+      data?.match ||
+      data;
+
+    if (
+      !details ||
+      typeof details !==
+        "object" ||
+      Array.isArray(details)
+    ) {
+
+      throw new Error(
+        "Détails du match introuvables"
+      );
+
+    }
+
+    return details;
+  }
+
+  /* =========================================================
+     OPEN NEW MATCH
+  ========================================================= */
+
+  async function openNewMatch(
+    index,
+    card
+  ) {
+
+    const match =
+      getMatch(index);
+
+    if (!match) {
+      return false;
+    }
+
+    const modal =
+      ensureModal();
+
+    const content =
+      document.getElementById(
+        "bfnd-content"
+      );
+
+    modal.style.display =
+      "block";
+
+    document.body.style.overflow =
+      "hidden";
+
+    content.innerHTML = `
+
+      <div
+        class="bfnd-loading"
+      >
+
+        ⏳ جاري البحث على تفاصيل الماتش...
+
+      </div>
+
+    `;
+
+    try {
+
+      const source =
+        await findExternalSource(
+          match,
+          card
+        );
+
+      if (!source) {
+
+        closeModal();
+
+        return false;
+
       }
 
+      console.log(
+        "BAKHIRAFOOT NEW MATCH SOURCE:",
+        source
+      );
 
-    `;
+      const details =
+        await fetchDetails(
+          source
+        );
 
-  }catch(e){
+      renderDetails(
+        details,
 
-    console.error(
-      "BAKHIRAFOOT NEW DETAILS ERROR",
-      e
-    );
+        source.provider ===
+          "sofascore"
 
-    c.innerHTML=`
+          ? "SofaScore"
 
-      <div class="bfnd-empty">
+          : source.provider ===
+              "espn"
 
-        ما قدرناش نحملو تفاصيل هاد الماتش.
+            ? "ESPN"
 
-        <br><br>
+            : "TheSportsDB"
+      );
 
-        <strong>
-          ${esc(
-            e?.message ||
-            "Erreur inconnue"
-          )}
-        </strong>
+      return true;
 
-      </div>
+    } catch (error) {
 
-    `;
+      console.error(
+        "BAKHIRAFOOT NEW MATCH DETAILS ERROR:",
+        error
+      );
+
+      content.innerHTML = `
+
+        <div
+          class="bfnd-loading"
+        >
+
+          ❌ ما قدرناش نجيبو تفاصيل هاد الماتش دابا.
+
+          <br>
+          <br>
+
+          <small>
+            ${esc(
+              error?.message ||
+                "Erreur inconnue"
+            )}
+          </small>
+
+        </div>
+
+      `;
+
+      return true;
+    }
   }
-}
 
-
-/* =========================================================
-   HOOK
-========================================================= */
-
-function hook(){
+  /* =========================================================
+     CLICK INTERCEPTOR
+  ========================================================= */
 
   document.addEventListener(
     "click",
-    e=>{
 
-      const card=
-        e.target?.closest?.(
-          ".match-card"
-        );
+    async function (event) {
 
-      if(!card){
+      const target =
+        event.target;
+
+      if (
+        !target?.closest
+      ) {
         return;
       }
 
+      const card =
+        target.closest(
 
-      const i=
+          ".match-card, " +
+          ".bf-score-pro-card, " +
+          ".bf-score-professional-match"
+
+        );
+
+      if (!card) {
+        return;
+      }
+
+      const index =
         Number(
           card.dataset.matchIndex
         );
 
-      if(
-        !Number.isInteger(i)
-      ){
+      if (
+        !Number.isInteger(
+          index
+        ) ||
+        index < 0
+      ) {
         return;
       }
 
+      const match =
+        getMatch(index);
 
-      const id=
-        newId(
-          i,
+      if (!match) {
+        return;
+      }
+
+      const hasExternal =
+        collectKnownSources(
+          match,
           card
-        );
-
+        ).length > 0
+        ||
+        getProvider(
+          match
+        ) ===
+          "sofascore"
+        ||
+        getProvider(
+          match
+        ) ===
+          "sofa"
+        ||
+        getProvider(
+          match
+        ) ===
+          "espn"
+        ||
+        getProvider(
+          match
+        ) ===
+          "thesportsdb"
+        ||
+        getProvider(
+          match
+        ) ===
+          "tsdb";
 
       /*
-       * غير الماتشات الجداد
-       * كنوقفو onclick القديم
+       * ماتش جديد:
+       * نحبسو onclick القديم
        */
 
-      if(!id){
+      if (!hasExternal) {
+
+        event.preventDefault();
+
+        event.stopImmediatePropagation();
+
+        const worked =
+          await openNewMatch(
+            index,
+            card
+          );
+
+        /*
+         * إلا ما لقا حتى source
+         * نرجعو للقديم
+         */
+
+        if (
+          !worked &&
+          typeof
+            window
+              .bfOldOpenMatchDetails ===
+            "function"
+        ) {
+
+          window
+            .bfOldOpenMatchDetails(
+              index
+            );
+
+        }
+
         return;
       }
 
+      event.preventDefault();
 
-      e.preventDefault();
+      event.stopImmediatePropagation();
 
-      e.stopImmediatePropagation();
-
-
-      console.log(
-        "BAKHIRAFOOT NEW DETAILS:",
-        id
+      await openNewMatch(
+        index,
+        card
       );
 
-
-      openDetails(id);
-
     },
+
     true
   );
 
+  /* =========================================================
+     PROGRAMMATIC openMatchDetails(index)
+  ========================================================= */
 
-  /*
-   * PROGRAMMATIC OPEN
-   */
-
-  const old=
+  const oldOpen =
     window.openMatchDetails;
 
+  if (
+    !window
+      .bfOldOpenMatchDetails
+  ) {
 
-  window.bfOpenMatchDetails=
-    openDetails;
+    window
+      .bfOldOpenMatchDetails =
+      oldOpen;
 
+  }
 
-  window.openMatchDetails=
-    function(i){
+  window.bfOpenMatchDetails =
+    async function (
+      identifier
+    ) {
 
-      const card=
-        document.querySelector(
-          `.match-card[data-match-index="${i}"]`
+      let source =
+        null;
+
+      const value =
+        String(
+          identifier ||
+            ""
+        ).trim();
+
+      if (
+        /^sofa-/i.test(
+          value
+        )
+      ) {
+
+        source = {
+          provider:
+            "sofascore",
+
+          value
+        };
+
+      } else if (
+        /^espn-/i.test(
+          value
+        )
+      ) {
+
+        source = {
+          provider:
+            "espn",
+
+          value
+        };
+
+      } else if (
+        /^tsdb-/i.test(
+          value
+        )
+      ) {
+
+        source = {
+          provider:
+            "thesportsdb",
+
+          value
+        };
+
+      }
+
+      if (!source) {
+        return false;
+      }
+
+      try {
+
+        const details =
+          await fetchDetails(
+            source
+          );
+
+        renderDetails(
+          details,
+
+          source.provider ===
+            "sofascore"
+
+            ? "SofaScore"
+
+            : source.provider ===
+                "espn"
+
+              ? "ESPN"
+
+              : "TheSportsDB"
         );
 
-      const id=
-        newId(
-          i,
+        return true;
+
+      } catch (error) {
+
+        console.error(
+          error
+        );
+
+        return false;
+      }
+    };
+
+  window.openMatchDetails =
+    async function (
+      index
+    ) {
+
+      const card =
+        document.querySelector(
+
+          [
+            `.match-card[data-match-index="${index}"]`,
+
+            `.bf-score-pro-card[data-match-index="${index}"]`,
+
+            `.bf-score-professional-match[data-match-index="${index}"]`
+          ].join(",")
+
+        );
+
+      const worked =
+        await openNewMatch(
+          Number(index),
           card
         );
 
+      if (
+        !worked &&
+        typeof
+          window
+            .bfOldOpenMatchDetails ===
+          "function"
+      ) {
 
-      if(id){
-
-        console.log(
-          "BAKHIRAFOOT NEW DETAILS:",
-          id
-        );
-
-        return openDetails(
-          id
-        );
-      }
-
-
-      /*
-       * SportScore القديم
-       */
-
-      if(
-        typeof old==="function"
-      ){
-
-        return old(i);
+        return window
+          .bfOldOpenMatchDetails(
+            index
+          );
 
       }
-
     };
 
-
-  /*
-   * ESC
-   */
+  /* =========================================================
+     ESC CLOSE
+  ========================================================= */
 
   document.addEventListener(
     "keydown",
-    e=>{
 
-      if(
-        e.key==="Escape"
-      ){
+    event => {
 
-        close();
+      if (
+        event.key ===
+        "Escape"
+      ) {
+
+        closeModal();
 
       }
 
     }
   );
 
-}
-
-
-/* =========================================================
-   START
-========================================================= */
-
-if(
-  document.readyState==="loading"
-){
-
-  document.addEventListener(
-    "DOMContentLoaded",
-    hook
+  console.log(
+    "✅ BakhiraFoot New Match Details loaded"
   );
-
-}else{
-
-  hook();
-
-}
 
 })();
