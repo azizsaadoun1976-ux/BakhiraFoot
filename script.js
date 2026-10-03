@@ -7145,8 +7145,10 @@ function renderMatchInformation(
    LOAD REAL SPORTScore MATCH DETAILS
 ========================================================= */
 
-async function loadRealMatchDetails(fixtureId) {
-
+async function loadRealMatchDetails(
+  fixtureId,
+  provider = "SportScore"
+) {
   const value =
     String(
       fixtureId || ""
@@ -7176,10 +7178,12 @@ async function loadRealMatchDetails(fixtureId) {
 
   try {
 
-    const url =
-      `/api?fixture=${encodeURIComponent(
-        value
-      )}`;
+  const url =
+  `/api?fixture=${encodeURIComponent(
+    value
+  )}&source=${encodeURIComponent(
+    provider
+  )}`;
 
     console.log(
       "BAKHIRAFOOT DETAILS REQUEST:",
@@ -8206,12 +8210,18 @@ async function openMatchDetails(index) {
     return;
   }
 
-  const fixtureId =
-    match?.fixture?.slug ||
-    match?.slug ||
-    match?.fixture?.id ||
-    match?.id ||
-    null;
+ const provider =
+  match?.provider ||
+  "SportScore";
+
+const fixtureId =
+  match?.fixture?.upstreamId ||
+  match?.upstreamId ||
+  match?.fixture?.id ||
+  match?.id ||
+  match?.fixture?.slug ||
+  match?.slug ||
+  null;
 
   createMatchModal();
 
@@ -8394,11 +8404,11 @@ async function openMatchDetails(index) {
 
   try {
 
-    const raw =
-      await loadRealMatchDetails(
-        fixtureId
-      );
-
+   const raw =
+  await loadRealMatchDetails(
+    fixtureId,
+    provider
+  );
 
     if (
       currentOpenedFixture !==
