@@ -387,6 +387,82 @@ const sofaUrls = [
         ? data.events
         : [];
 
+const enrichedEvents =
+  await Promise.all(
+    events.map(
+      async event => {
+
+        const seasonSlug =
+          String(
+            event?.season?.slug ||
+            ""
+          )
+            .toLowerCase();
+
+        const seasonName =
+          String(
+            event?.season?.displayName ||
+            ""
+          )
+            .toLowerCase();
+
+        const isStageName =
+          /^(?:\d{4}(?:-\d{2})?-)?(?:fall-season|spring-season|summer-season|winter-season|group-stage|first-round|second-round|third-round|round-of-16|round-of-32|round-of-64|quarterfinals?|semifinals?|final)$/.test(
+            seasonSlug
+          ) ||
+          /^(fall season|spring season|summer season|winter season|group stage|first round|second round|third round|round of 16|round of 32|round of 64|quarterfinal|quarterfinals|semifinal|semifinals|final)$/.test(
+            seasonName
+          );
+
+        if (
+          !isStageName ||
+          !event?.id
+        ) {
+          return event;
+        }
+
+        try {
+
+          const summary =
+            await getJSON(
+              `https://site.api.espn.com/apis/site/v2/sports/soccer/all/summary?event=${encodeURIComponent(
+                event.id
+              )}`
+            );
+
+          const league =
+            summary?.header?.league ||
+            null;
+
+          return {
+            ...event,
+
+            _bakhiraLeague:
+              league
+          };
+
+        }
+        catch (error) {
+
+          console.warn(
+            "ESPN LEAGUE RESOLVE ERROR:",
+            event.id,
+            error.message
+          );
+
+          return event;
+        }
+
+      }
+    )
+  );
+
+events.splice(
+  0,
+  events.length,
+  ...enrichedEvents
+);
+     
     const converted =
       events
         .map(event => {
