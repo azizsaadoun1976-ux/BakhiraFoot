@@ -192,68 +192,60 @@ module.exports = async (req, res) => {
 function sourceOf() {
 
   const value =
-    String(
-      fixture || ""
-    )
+    String(fixture || "")
       .trim()
       .toLowerCase();
 
-  /*
-     الأولوية للـfixture prefix
-     باش حتى إلا source جا SportScore
-     نعرفو المصدر الحقيقي للماتش.
-  */
+  /* =========================================
+     1. PREFIX ديال الماتش عندو الأولوية
+  ========================================= */
 
   if (
-    value.startsWith(
-      "sofa-"
-    )
+    value.startsWith("sofa-")
   ) {
     return "sofascore";
   }
 
   if (
-    value.startsWith(
-      "espn-"
-    )
+    value.startsWith("espn-")
   ) {
     return "espn";
   }
 
   if (
-    value.startsWith(
-      "tsdb-"
-    )
+    value.startsWith("tsdb-")
   ) {
     return "thesportsdb";
   }
 
-  /*
-     إلا ما كان حتى prefix،
-     نستعمل source المرسل.
-  */
+  /* =========================================
+     2. إلا ما كانش prefix
+        نستعمل source المرسل
+  ========================================= */
+
+  const requested =
+    String(
+      requestedSource || ""
+    )
+      .trim()
+      .toLowerCase();
 
   if (
-    requestedSource ===
-      "sofa" ||
-    requestedSource ===
-      "sofascore"
+    requested === "sofa" ||
+    requested === "sofascore"
   ) {
     return "sofascore";
   }
 
   if (
-    requestedSource ===
-    "espn"
+    requested === "espn"
   ) {
     return "espn";
   }
 
   if (
-    requestedSource ===
-      "tsdb" ||
-    requestedSource ===
-      "thesportsdb"
+    requested === "tsdb" ||
+    requested === "thesportsdb"
   ) {
     return "thesportsdb";
   }
