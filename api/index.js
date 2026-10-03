@@ -2648,6 +2648,323 @@ function adaptSofaWorldMatch(event) {
       const slug =
         String(fixture).trim();
 
+/* =====================================================
+   ESPN MATCH DETAILS
+===================================================== */
+
+if (
+  slug.toLowerCase().startsWith(
+    "espn-"
+  )
+) {
+
+  const eventId =
+    slug.substring(5);
+
+  if (!eventId) {
+    return output(
+      400,
+      {
+        error:
+          "ESPN event ID manquant",
+        data: []
+      }
+    );
+  }
+
+  try {
+
+    const espnBody =
+      await getJSON(
+        `https://site.api.espn.com/apis/site/v2/sports/soccer/all/summary?event=${encodeURIComponent(
+          eventId
+        )}`
+      );
+
+    const header =
+      espnBody?.header ||
+      {};
+
+    const competition =
+      Array.isArray(
+        header?.competitions
+      )
+        ? header.competitions[0]
+        : null;
+
+    const competitors =
+      Array.isArray(
+        competition?.competitors
+      )
+        ? competition.competitors
+        : [];
+
+    const home =
+      competitors.find(
+        item =>
+          item?.homeAway ===
+          "home"
+      );
+
+    const away =
+      competitors.find(
+        item =>
+          item?.homeAway ===
+          "away"
+      );
+
+    if (
+      !home ||
+      !away
+    ) {
+      return output(
+        404,
+        {
+          error:
+            "Match ESPN introuvable",
+          data: []
+        }
+      );
+    }
+
+    const statusState =
+      String(
+        header?.competitions?.[0]
+          ?.status?.type
+          ?.state ||
+        ""
+      ).toLowerCase();
+
+    let statusShort =
+      "NS";
+
+    if (
+      statusState === "in"
+    ) {
+      statusShort =
+        "LIVE";
+    }
+
+    else if (
+      statusState === "post"
+    ) {
+      statusShort =
+        "FT";
+    }
+
+    const homeScore =
+      home?.score !== undefined
+        ? Number(
+            home.score
+          )
+        : null;
+
+    const awayScore =
+      away?.score !== undefined
+        ? Number(
+            away.score
+          )
+        : null;
+
+    const leagueName =
+      header?.league?.name ||
+      header?.season?.name ||
+      "Football";
+
+    const espnDetails = {
+
+      fixture: {
+
+        id:
+          slug,
+
+        slug:
+          slug,
+
+        upstreamId:
+          eventId,
+
+        date:
+          header?.competitions?.[0]
+            ?.date ||
+          null,
+
+        status: {
+
+          short:
+            statusShort,
+
+          long:
+            header?.competitions?.[0]
+              ?.status?.type
+              ?.description ||
+            "Match",
+
+          elapsed:
+            null
+
+        }
+
+      },
+
+      league: {
+
+        id:
+          header?.league?.id ||
+          null,
+
+        name:
+          leagueName,
+
+        country:
+          "",
+
+        logo:
+          header?.league?.logos?.[0]
+            ?.href ||
+          "",
+
+        round:
+          null,
+
+        season:
+          header?.season?.displayName ||
+          null
+
+      },
+
+      teams: {
+
+        home: {
+
+          id:
+            home?.team?.id ||
+            null,
+
+          name:
+            home?.team?.displayName ||
+            home?.team?.name ||
+            "Domicile",
+
+          logo:
+            home?.team?.logo ||
+            home?.team?.logos?.[0]
+              ?.href ||
+            ""
+
+        },
+
+        away: {
+
+          id:
+            away?.team?.id ||
+            null,
+
+          name:
+            away?.team?.displayName ||
+            away?.team?.name ||
+            "Extérieur",
+
+          logo:
+            away?.team?.logo ||
+            away?.team?.logos?.[0]
+              ?.href ||
+            ""
+
+        }
+
+      },
+
+      goals: {
+
+        home:
+          homeScore,
+
+        away:
+          awayScore
+
+      },
+
+      score: {
+
+        home:
+          homeScore,
+
+        away:
+          awayScore,
+
+        halftime: {
+
+          home:
+            null,
+
+          away:
+            null
+
+        },
+
+        fulltime: {
+
+          home:
+            homeScore,
+
+          away:
+            awayScore
+
+        }
+
+      },
+
+      events: [],
+
+      lineups: [],
+
+      statistics: [],
+
+      players: []
+
+    };
+
+    return output(
+      200,
+      {
+        data:
+          espnDetails,
+
+        provider:
+          "ESPN"
+      }
+    );
+
+  }
+
+  catch (error) {
+
+    console.warn(
+      "ESPN MATCH DETAILS ERROR:",
+      error.message
+    );
+
+    return output(
+      error?.status ||
+        502,
+
+      {
+        error:
+          "Impossible de charger le match ESPN",
+
+        details:
+          error?.data ||
+          null,
+
+        data: []
+      }
+    );
+
+  }
+
+}
+       
       if (!slug) {
         return output(
           400,
