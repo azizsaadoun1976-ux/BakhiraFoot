@@ -9669,6 +9669,52 @@ function startLiveRefresh() {
     60000
   );
 }
+
+/* =========================================================
+   MATCH DETAILS BRIDGE
+   كيخلي Home cards وScore cards بجوج يخدمو
+========================================================= */
+
+window.bfOpenMatchDetails =
+  function (fixtureId) {
+
+    const value =
+      String(
+        fixtureId || ""
+      ).trim();
+
+    if (!value) {
+      toast(
+        "تفاصيل الماتش غير متوفرة"
+      );
+      return;
+    }
+
+    const index =
+      currentMatches.findIndex(
+        match =>
+          String(
+            getFixtureId(match) ||
+            ""
+          ) === value
+      );
+
+    if (
+      index < 0
+    ) {
+
+      toast(
+        "الماتش غير موجود"
+      );
+
+      return;
+    }
+
+    openMatchDetails(
+      index
+    );
+  };
+
 /* =========================================================
    START APP
 ========================================================= */
