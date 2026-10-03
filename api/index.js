@@ -71,105 +71,6 @@ module.exports = async (req, res) => {
       }
     }
 
-/* =====================================================
-   ESPN - RESOLVE REAL LEAGUE FROM EVENT UID
-===================================================== */
-
-const espnLeagueCache = new Map();
-
-async function getEspnLeagueFromEvent(event) {
-
-  const uid =
-    String(
-      event?.uid ||
-      ""
-    );
-
-  const match =
-    uid.match(
-      /~l:([^~]+)~/
-    );
-
-  const leagueId =
-    match?.[1] ||
-    "";
-
-  if (!leagueId) {
-    return null;
-  }
-
-  if (
-    espnLeagueCache.has(
-      leagueId
-    )
-  ) {
-    return espnLeagueCache.get(
-      leagueId
-    );
-  }
-
-  const promise =
-    (async () => {
-
-      try {
-
-        const data =
-          await getJSON(
-            `https://sports.core.api.espn.com/v2/sports/soccer/leagues/${encodeURIComponent(
-              leagueId
-            )}`
-          );
-
-        return {
-          id:
-            data?.id ||
-            leagueId,
-
-          name:
-            data?.name ||
-            data?.displayName ||
-            data?.shortName ||
-            "",
-
-          slug:
-            data?.slug ||
-            "",
-
-          logo:
-            data?.logos?.[0]
-              ?.href ||
-            "",
-
-          country:
-            data?.country?.name ||
-            ""
-
-        };
-
-      }
-      catch (error) {
-
-        console.warn(
-          "ESPN LEAGUE ERROR:",
-          leagueId,
-          error.message
-        );
-
-        return null;
-
-      }
-
-    })();
-
-  espnLeagueCache.set(
-    leagueId,
-    promise
-  );
-
-  return promise;
-}
-     
-
      async function getTheSportsDBMatches(date) {
   try {
 
@@ -562,54 +463,9 @@ events.splice(
   ...enrichedEvents
 );
      
-  const converted =
-  (
-    await Promise.all(
-      events.map(
-        async event => {
-
-          const seasonSlug =
-            String(
-              event?.season?.slug ||
-              ""
-            ).toLowerCase();
-
-          const seasonName =
-            String(
-              event?.season?.displayName ||
-              ""
-            ).toLowerCase();
-
-          const isStage =
-            /(?:fall-season|spring-season|summer-season|winter-season|group-stage|first-round|second-round|third-round|round-of-16|round-of-32|round-of-64|quarterfinal|quarterfinals|semifinal|semifinals|final)/.test(
-              seasonSlug
-            ) ||
-            /^(fall season|spring season|summer season|winter season|group stage|first round|second round|third round|round of 16|round of 32|round of 64|quarterfinal|quarterfinals|semifinal|semifinals|final)$/.test(
-              seasonName
-            );
-
-          let realLeague =
-            null;
-
-          if (isStage) {
-            realLeague =
-              await getEspnLeagueFromEvent(
-                event
-              );
-          }
-
-          return {
-            ...event,
-
-            _bakhiraLeague:
-              realLeague
-          };
-
-        }
-      )
-    )
-  ).map(
-    event => {
+    const converted =
+      events
+        .map(event => {
 
           const competition =
             Array.isArray(
@@ -736,31 +592,9 @@ tournament: {
     event?.season?.year ||
     null,
 
-name:
-  event?._bakhiraLeague?.name ||
+ name:
   event?.league?.name ||
   event?.competition?.name ||
-  (
-    !isStageName &&
-    event?.season?.slug
-      ? String(
-          event.season.slug
-        )
-          .replace(
-            /^\d{4}-\d{2}-/,
-            ""
-          )
-          .replace(
-            /-/g,
-            " "
-          )
-          .replace(
-            /\b\w/g,
-            char =>
-              char.toUpperCase()
-          )
-        : ""
-  ) ||
   "Football",
 
   uniqueTournament: {
@@ -770,32 +604,30 @@ name:
       event?.season?.year ||
       null,
 
-name:
-  event?._bakhiraLeague?.name ||
-  event?.league?.name ||
-  event?.competition?.name ||
-  (
-    !isStageName &&
-    event?.season?.slug
-      ? String(
-          event.season.slug
-        )
-          .replace(
-            /^\d{4}-\d{2}-/,
-            ""
-          )
-          .replace(
-            /-/g,
-            " "
-          )
-          .replace(
-            /\b\w/g,
-            char =>
-              char.toUpperCase()
-          )
-      : ""
-  ) ||
-  "Football"
+    name:
+      (
+        event?.season?.slug
+          ? String(
+              event.season.slug
+            )
+              .replace(
+                /^\d{4}-\d{2}-/,
+                ""
+              )
+              .replace(
+                /-/g,
+                " "
+              )
+              .replace(
+                /\b\w/g,
+                char =>
+                  char.toUpperCase()
+              )
+          : ""
+      ) ||
+      event?.season?.displayName ||
+      "Football"
+
   },
 
   category: {
