@@ -4588,20 +4588,48 @@ function getPlayerRating(
 
     try {
 
-      const response =
-        await fetch(
-          `${DETAILS_API}${encodeURIComponent(
-            identifier
-          )}`,
-          {
-            cache: "no-store",
-            headers: {
-              Accept:
-                "application/json"
-            }
-          }
-        );
+      let detailsUrl =
+  `${DETAILS_API}${encodeURIComponent(
+    identifier
+  )}`;
 
+const lowIdentifier =
+  String(identifier || "")
+    .trim()
+    .toLowerCase();
+
+if (
+  lowIdentifier.startsWith("sofa-")
+) {
+  detailsUrl +=
+    "&source=sofascore";
+}
+
+else if (
+  lowIdentifier.startsWith("espn-")
+) {
+  detailsUrl +=
+    "&source=espn";
+}
+
+else if (
+  lowIdentifier.startsWith("tsdb-")
+) {
+  detailsUrl +=
+    "&source=thesportsdb";
+}
+
+const response =
+  await fetch(
+    detailsUrl,
+    {
+      cache: "no-store",
+      headers: {
+        Accept:
+          "application/json"
+      }
+    }
+  );
       const rawText =
         await response.text();
 
