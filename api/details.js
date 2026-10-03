@@ -189,83 +189,77 @@ module.exports = async (req, res) => {
      SOURCE DETECTION
   ===================================================== */
 
-  function sourceOf() {
+function sourceOf() {
 
-    if (
-      requestedSource ===
-        "sofa" ||
-      requestedSource ===
-        "sofascore"
-    ) {
+  const value =
+    String(
+      fixture || ""
+    )
+      .trim()
+      .toLowerCase();
 
-      return "sofascore";
+  /*
+     الأولوية للـfixture prefix
+     باش حتى إلا source جا SportScore
+     نعرفو المصدر الحقيقي للماتش.
+  */
 
-    }
-
-
-    if (
-      requestedSource ===
-      "espn"
-    ) {
-
-      return "espn";
-
-    }
-
-
-    if (
-      requestedSource ===
-        "tsdb" ||
-      requestedSource ===
-        "thesportsdb"
-    ) {
-
-      return "thesportsdb";
-
-    }
-
-
-    const value =
-      fixture.toLowerCase();
-
-
-    if (
-      value.startsWith(
-        "sofa-"
-      )
-    ) {
-
-      return "sofascore";
-
-    }
-
-
-    if (
-      value.startsWith(
-        "espn-"
-      )
-    ) {
-
-      return "espn";
-
-    }
-
-
-    if (
-      value.startsWith(
-        "tsdb-"
-      )
-    ) {
-
-      return "thesportsdb";
-
-    }
-
-
-    return "sportscore";
-
+  if (
+    value.startsWith(
+      "sofa-"
+    )
+  ) {
+    return "sofascore";
   }
 
+  if (
+    value.startsWith(
+      "espn-"
+    )
+  ) {
+    return "espn";
+  }
+
+  if (
+    value.startsWith(
+      "tsdb-"
+    )
+  ) {
+    return "thesportsdb";
+  }
+
+  /*
+     إلا ما كان حتى prefix،
+     نستعمل source المرسل.
+  */
+
+  if (
+    requestedSource ===
+      "sofa" ||
+    requestedSource ===
+      "sofascore"
+  ) {
+    return "sofascore";
+  }
+
+  if (
+    requestedSource ===
+    "espn"
+  ) {
+    return "espn";
+  }
+
+  if (
+    requestedSource ===
+      "tsdb" ||
+    requestedSource ===
+      "thesportsdb"
+  ) {
+    return "thesportsdb";
+  }
+
+  return "sportscore";
+}
 
   /* =====================================================
      TEAM
