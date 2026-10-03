@@ -1654,253 +1654,555 @@ function getPlayerRating(
      BUILD LINEUP
   ========================================================= */
 
-  function buildLineup(
-    details,
-    side,
-    team
+ function buildLineup(
+  details,
+  side,
+  team
+) {
+  const raw =
+    first(
+      details?.lineups,
+      details?.lineup,
+      details?.compositions,
+      details?.formations,
+      null
+    );
+
+  const sidePrefix =
+    `${side}_`;
+
+  /* =====================================================
+     FIND SOURCE
+  ===================================================== */
+
+  let source = null;
+
+  if (Array.isArray(raw)) {
+    source =
+      arrayTeamGroup(
+        raw,
+        team,
+        side
+      );
+  }
+
+  else if (obj(raw)) {
+    source =
+      sideObject(
+        raw,
+        side
+      );
+
+    if (!source) {
+      source =
+        first(
+          raw?.[side],
+          raw?.[
+            side === "home"
+              ? "homeTeam"
+              : "awayTeam"
+          ],
+          raw?.[
+            side === "home"
+              ? "host"
+              : "guest"
+          ],
+          null
+        );
+    }
+  }
+
+  /* =====================================================
+     EXTRA SOURCES
+     بعض responses كيكونو فـ players
+  ===================================================== */
+
+  const extraPlayers =
+    arr(
+      details?.players
+    );
+
+  const extraLineups =
+    arr(
+      details?.players?.lineups
+    );
+
+  if (!source && extraLineups.length) {
+    source =
+      arrayTeamGroup(
+        extraLineups,
+        team,
+        side
+      );
+  }
+
+  /* =====================================================
+     FORMATION
+  ===================================================== */
+
+  let formation =
+    first(
+
+      source?.formation,
+      source?.tacticalFormation,
+      source?.formationUsed,
+
+      source?.tactics?.formation,
+
+      raw?.[
+        `${sidePrefix}formation`
+      ],
+
+      raw?.[
+        `${sidePrefix}tactic`
+      ],
+
+      raw?.formation?.[side],
+
+      raw?.formation?.[
+        `${sidePrefix}formation`
+      ],
+
+      details?.[
+        `${sidePrefix}formation`
+      ],
+
+      details?.formation?.[side],
+
+      details?.[
+        `${side}Formation`
+      ],
+
+      "—"
+    );
+
+  formation =
+    normalizeFormation(
+      formation
+    );
+
+  /* =====================================================
+     EXTRACT ARRAY
+  ===================================================== */
+
+  function extractPlayers(
+    value
   ) {
-    const raw =
-      first(
-        details?.lineups,
-        details?.lineup,
-        details?.compositions,
-        details?.formations,
-        null
-      );
-
-    let source = null;
-
-    if (
-      Array.isArray(raw)
-    ) {
-      source =
-        arrayTeamGroup(
-          raw,
-          team,
-          side
-        );
-    }
-    else if (
-      obj(raw)
-    ) {
-      source =
-        sideObject(
-          raw,
-          side
-        );
+    if (!value) {
+      return [];
     }
 
-    /*
-     * إذا ما لقيناش source مباشرة،
-     * كنستعملو raw نفسه فالحالة
-     * اللي فيه home_xi / away_xi.
-     */
-    const sourceRoot =
-      source ||
-      (
-        obj(raw)
-          ? raw
-          : {}
-      );
-
-    let formation =
-      first(
-        source?.formation,
-        source?.tactics?.formation,
-        raw?.[`${side}_formation`],
-        raw?.formation?.[side],
-        raw?.formation?.[
-          `${side}_formation`
-        ],
-        details?.[
-          `${side}_formation`
-        ],
-        details?.formation?.[
-          `${side}_formation`
-        ],
-        "—"
-      );
-
-    formation =
-      normalizeFormation(
-        formation
-      );
-
-    let starters =
-      [];
-
-    let substitutes =
-      [];
-
-    /*
-     * 1. Direct side keys:
-     *
-     * home_xi / away_xi
-     * home_subs / away_subs
-     */
-    if (
-      obj(raw)
-    ) {
-      starters =
-        arr(
-          first(
-            raw?.[
-              `${side}_xi`
-            ],
-            raw?.[
-              `${side}_starting`
-            ],
-            raw?.[
-              `${side}_starting_xi`
-            ],
-            raw?.[
-              `${side}_startingXI`
-            ],
-            []
-          )
-        );
-
-      substitutes =
-        arr(
-          first(
-            raw?.[
-              `${side}_subs`
-            ],
-            raw?.[
-              `${side}_substitutes`
-            ],
-            raw?.[
-              `${side}_bench`
-            ],
-            []
-          )
-        );
+    if (Array.isArray(value)) {
+      return value;
     }
 
-    /*
-     * 2. Source-level keys
-     */
-    if (
-      !starters.length
-    ) {
-      starters =
-        getPlayers(
-          sourceRoot?.startXI ||
-          sourceRoot?.startingXI ||
-          sourceRoot?.starting_xi ||
-          sourceRoot?.starters ||
-          sourceRoot?.xi ||
-          sourceRoot?.players ||
-          [],
-          side
-        );
+    if (!obj(value)) {
+      return [];
     }
 
-    if (
-      !substitutes.length
-    ) {
-      substitutes =
-        arr(
-          first(
-            sourceRoot?.subs,
-            sourceRoot?.substitutes,
-            sourceRoot?.bench,
-            sourceRoot?.backup,
-            []
-          )
-        );
-    }
+    const candidates = [
 
-    /*
-     * 3. lineups is object
-     * وفيه players شاملين الفريقين
-     */
-    if (
-      !starters.length &&
-      obj(raw)
-    ) {
-      const allPlayers =
-        arr(
-          raw?.players ||
-          raw?.lineup_players
-        );
+      value?.startXI,
+      value?.startingXI,
+      value?.starting_xi,
 
+      value?.starting,
+      value?.starters,
+
+      value?.xi,
+      value?.lineup,
+
+      value?.players,
+      value?.roster,
+
+      value?.composition,
+
+      value?.items,
+      value?.list,
+      value?.data
+
+    ];
+
+    for (
+      const candidate
+      of candidates
+    ) {
       if (
-        allPlayers.length
+        Array.isArray(candidate)
       ) {
-        const teamPlayers =
-          allPlayers.filter(
-            player =>
-              playerBelongsToTeam(
-                player,
-                side,
-                team
-              )
+        return candidate;
+      }
+    }
+
+    return [];
+  }
+
+  function extractSubs(
+    value
+  ) {
+    if (!obj(value)) {
+      return [];
+    }
+
+    const candidates = [
+
+      value?.substitutes,
+      value?.subs,
+      value?.bench,
+      value?.backup,
+
+      value?.players_substitutes,
+      value?.playersSubstitutes,
+
+      value?.substitutePlayers
+
+    ];
+
+    for (
+      const candidate
+      of candidates
+    ) {
+      if (
+        Array.isArray(candidate)
+      ) {
+        return candidate;
+      }
+    }
+
+    return [];
+  }
+
+  /* =====================================================
+     DIRECT SIDE ARRAYS
+  ===================================================== */
+
+  let starters =
+    arr(
+      first(
+
+        raw?.[
+          `${sidePrefix}xi`
+        ],
+
+        raw?.[
+          `${sidePrefix}starting`
+        ],
+
+        raw?.[
+          `${sidePrefix}startingXI`
+        ],
+
+        raw?.[
+          `${sidePrefix}starting_xi`
+        ],
+
+        raw?.[
+          `${sidePrefix}starters`
+        ],
+
+        raw?.[
+          `${sidePrefix}players`
+        ],
+
+        details?.[
+          `${sidePrefix}xi`
+        ],
+
+        details?.[
+          `${sidePrefix}startingXI`
+        ],
+
+        details?.[
+          `${sidePrefix}starting_xi`
+        ],
+
+        details?.[
+          `${sidePrefix}players`
+        ],
+
+        []
+      )
+    );
+
+  let substitutes =
+    arr(
+      first(
+
+        raw?.[
+          `${sidePrefix}subs`
+        ],
+
+        raw?.[
+          `${sidePrefix}substitutes`
+        ],
+
+        raw?.[
+          `${sidePrefix}bench`
+        ],
+
+        details?.[
+          `${sidePrefix}subs`
+        ],
+
+        details?.[
+          `${sidePrefix}substitutes`
+        ],
+
+        details?.[
+          `${sidePrefix}bench`
+        ],
+
+        []
+      )
+    );
+
+  /* =====================================================
+     SOURCE ARRAYS
+  ===================================================== */
+
+  if (!starters.length) {
+    starters =
+      extractPlayers(
+        source
+      );
+  }
+
+  if (!substitutes.length) {
+    substitutes =
+      extractSubs(
+        source
+      );
+  }
+
+  /* =====================================================
+     DETAILS.LINEUPS FALLBACK
+  ===================================================== */
+
+  if (
+    !starters.length &&
+    Array.isArray(
+      details?.lineups
+    )
+  ) {
+    const group =
+      arrayTeamGroup(
+        details.lineups,
+        team,
+        side
+      );
+
+    if (group) {
+      starters =
+        extractPlayers(
+          group
+        );
+
+      substitutes =
+        extractSubs(
+          group
+        );
+    }
+  }
+
+  /* =====================================================
+     DETAILS.PLAYERS FALLBACK
+  ===================================================== */
+
+  if (
+    !starters.length &&
+    extraPlayers.length
+  ) {
+
+    let teamPlayers =
+      extraPlayers.filter(
+        player =>
+          playerBelongsToTeam(
+            player,
+            side,
+            team
+          )
+      );
+
+    /*
+     * إلا ما قدرناش نعرفو الفريق
+     * ولكن العناصر مجموعات ديال teams,
+     * كنقلبو داخلهم.
+     */
+
+    if (!teamPlayers.length) {
+
+      for (
+        const group
+        of extraPlayers
+      ) {
+
+        if (
+          !obj(group)
+        ) {
+          continue;
+        }
+
+        const groupTeam =
+          first(
+            group?.team,
+            group?.club,
+            group?.team_info,
+            {}
           );
 
-        const marked =
-          teamPlayers.filter(
-            player =>
-              playerIsStarting(
-                player
-              ) === true
+        const groupPlayers =
+          extractPlayers(
+            group
           );
 
         if (
-          marked.length
+          groupPlayers.length &&
+          (
+            teamMatches(
+              group,
+              team
+            ) ||
+            (
+              groupTeam?.id &&
+              team?.id &&
+              String(
+                groupTeam.id
+              ) ===
+              String(
+                team.id
+              )
+            ) ||
+            (
+              groupTeam?.name &&
+              team?.name &&
+              norm(
+                groupTeam.name
+              ) ===
+              norm(
+                team.name
+              )
+            )
+          )
         ) {
-          starters =
-            marked;
-        }
-        else if (
-          teamPlayers.length >= 11
-        ) {
-          starters =
-            teamPlayers.slice(
-              0,
-              11
-            );
 
+          teamPlayers =
+            groupPlayers;
+
+          if (
+            !substitutes.length
+          ) {
+            substitutes =
+              extractSubs(
+                group
+              );
+          }
+
+          break;
+        }
+      }
+    }
+
+    if (
+      teamPlayers.length
+    ) {
+
+      const markedStarting =
+        teamPlayers.filter(
+          player =>
+            playerIsStarting(
+              player
+            ) === true
+        );
+
+      const markedSubs =
+        teamPlayers.filter(
+          player =>
+            playerIsStarting(
+              player
+            ) === false
+        );
+
+      if (
+        markedStarting.length
+      ) {
+        starters =
+          markedStarting;
+
+        if (
+          !substitutes.length
+        ) {
+          substitutes =
+            markedSubs;
+        }
+      }
+
+      else {
+
+        /*
+         * إلا ما كايناش starter flag
+         * كنستعملو أول 11
+         */
+
+        starters =
+          teamPlayers.slice(
+            0,
+            11
+          );
+
+        if (
+          !substitutes.length &&
+          teamPlayers.length > 11
+        ) {
           substitutes =
             teamPlayers.slice(
               11
             );
         }
-      }
-    }
 
-    /*
-     * 4. lineups array containing players
-     */
+      }
+
+    }
+  }
+
+  /* =====================================================
+     ARRAY SOURCES WITH TEAM LABEL
+  ===================================================== */
+
+  if (
+    !starters.length &&
+    Array.isArray(raw)
+  ) {
+
+    const allPlayers =
+      raw.filter(
+        item =>
+          obj(item) &&
+          (
+            item?.player ||
+            item?.name ||
+            item?.player_name
+          )
+      );
+
     if (
-      !starters.length &&
-      Array.isArray(raw)
+      allPlayers.length
     ) {
-      const playerObjects =
-        raw.filter(
-          item =>
-            obj(item) &&
-            (
-              item?.name ||
-              item?.player_name ||
-              item?.player
+
+      const teamPlayers =
+        allPlayers.filter(
+          player =>
+            playerBelongsToTeam(
+              player,
+              side,
+              team
             )
         );
 
       if (
-        playerObjects.length
+        teamPlayers.length
       ) {
-        const teamPlayers =
-          playerObjects.filter(
-            player =>
-              playerBelongsToTeam(
-                player,
-                side,
-                team
-              )
-          );
 
-        const marked =
+        const markedStarting =
           teamPlayers.filter(
             player =>
               playerIsStarting(
@@ -1909,73 +2211,143 @@ function getPlayerRating(
           );
 
         if (
-          marked.length
+          markedStarting.length
         ) {
           starters =
-            marked;
+            markedStarting;
         }
-        else if (
-          teamPlayers.length >= 11
-        ) {
+        else {
           starters =
             teamPlayers.slice(
               0,
               11
             );
+        }
 
+        if (
+          !substitutes.length &&
+          teamPlayers.length > 11
+        ) {
           substitutes =
             teamPlayers.slice(
               11
             );
         }
+
       }
+
     }
 
-    /*
-     * 5. details home/away direct
-     */
-    if (
-      !starters.length
-    ) {
-      starters =
-        arr(
-          first(
-            details?.[
-              `${side}_xi`
-            ],
-            details?.[
-              `${side}_startingXI`
-            ],
-            []
-          )
-        );
-    }
-
-    /*
-     * 6. If source itself is the XI array.
-     */
-    if (
-      !starters.length &&
-      Array.isArray(source)
-    ) {
-      starters =
-        source.slice(
-          0,
-          11
-        );
-    }
-
-    return {
-      side,
-      team,
-      formation,
-      xi:
-        starters,
-      subs:
-        substitutes
-    };
   }
 
+  /* =====================================================
+     CLEAN STARTING XI
+  ===================================================== */
+
+  starters =
+    arr(
+      starters
+    )
+      .filter(
+        player =>
+          player &&
+          (
+            typeof player === "string" ||
+            typeof player === "number" ||
+            obj(player)
+          )
+      );
+
+  substitutes =
+    arr(
+      substitutes
+    )
+      .filter(
+        player =>
+          player &&
+          (
+            typeof player === "string" ||
+            typeof player === "number" ||
+            obj(player)
+          )
+      );
+
+  /* =====================================================
+     إذا الـXI فيه starters + substitutes مخلوطين
+  ===================================================== */
+
+  if (
+    !substitutes.length &&
+    starters.length
+  ) {
+
+    const detectedSubs =
+      starters.filter(
+        player =>
+          playerIsStarting(
+            player
+          ) === false
+      );
+
+    if (
+      detectedSubs.length
+    ) {
+
+      substitutes =
+        detectedSubs;
+
+      starters =
+        starters.filter(
+          player =>
+            playerIsStarting(
+              player
+            ) !== false
+        );
+
+    }
+
+  }
+
+  /* =====================================================
+     LIMIT
+  ===================================================== */
+
+  starters =
+    starters.slice(
+      0,
+      11
+    );
+
+  /* =====================================================
+     RESULT
+  ===================================================== */
+
+  console.log(
+    "BAKHIRAFOOT LINEUP:",
+    {
+      side,
+      team:
+        team?.name || "",
+      formation,
+      starters:
+        starters.length,
+      substitutes:
+        substitutes.length,
+      firstPlayer:
+        starters[0] || null
+    }
+  );
+
+  return {
+    side,
+    team,
+    formation,
+    xi:
+      starters,
+    subs:
+      substitutes
+  };
+}
   function playerBelongsToTeam(
     player,
     side,
