@@ -5016,250 +5016,237 @@ function getPlayerRating(
     );
   }
 
-/* =========================================================
-   GLOBAL OPEN
-   SportScore القديم يبقى خدام كما هو.
-   الماتشات الجداد كيمشيو لـ openDetails().
-========================================================= */
+  /* =========================================================
+     MATCH DETAILS GLOBAL CONTROL
+  ========================================================= */
 
-window.bfOpenMatchDetails = openDetails;
+  window.bfOpenMatchDetails = openDetails;
 
-/* نخزنو الدالة الأصلية ديال SportScore */
-const bfOldSportScoreOpen =
-  window.openMatchDetails;
+  /*
+     كنخليو SportScore القديم خدام كيف ما هو.
+     غير الماتشات الجداد غادي نعترضو عليهم.
+  */
 
-/* =========================================================
-   DETECT NEW MATCH SOURCE
-========================================================= */
-
-function detectNewMatchIdentifier(match) {
-
-  if (!match) {
-    return null;
-  }
-
-  const provider =
-    String(
-      match?.provider ||
-      match?.score?.provider ||
-      ""
-    )
-      .trim()
-      .toLowerCase();
-
-  const id =
-    String(
-      match?.id ||
-      match?.fixture?.id ||
-      ""
-    ).trim();
-
-  const slug =
-    String(
-      match?.slug ||
-      match?.fixture?.slug ||
-      ""
-    ).trim();
-
-  const upstream =
-    String(
-      match?.fixture?.upstreamId ||
-      ""
-    ).trim();
-
-  /* =========================
-     SOFASCORE
-  ========================= */
-
-  if (
-    provider === "sofascore" ||
-    provider === "sofa" ||
-    slug.toLowerCase().startsWith("sofa-") ||
-    upstream.toLowerCase().startsWith("sofa-") ||
-    id.toLowerCase().startsWith("sofa-")
-  ) {
-
-    if (
-      slug.toLowerCase().startsWith("sofa-")
-    ) {
-      return slug;
-    }
-
-    if (
-      upstream.toLowerCase().startsWith("sofa-")
-    ) {
-      return upstream;
-    }
-
-    if (
-      id.toLowerCase().startsWith("sofa-")
-    ) {
-      return id;
-    }
-
-    if (
-      id &&
-      /^\d+$/.test(id)
-    ) {
-      return `sofa-${id}`;
-    }
-  }
-
-  /* =========================
-     ESPN
-  ========================= */
-
-  if (
-    provider === "espn" ||
-    slug.toLowerCase().startsWith("espn-") ||
-    upstream.toLowerCase().startsWith("espn-") ||
-    id.toLowerCase().startsWith("espn-")
-  ) {
-
-    if (
-      slug.toLowerCase().startsWith("espn-")
-    ) {
-      return slug;
-    }
-
-    if (
-      upstream.toLowerCase().startsWith("espn-")
-    ) {
-      return upstream;
-    }
-
-    if (
-      id.toLowerCase().startsWith("espn-")
-    ) {
-      return id;
-    }
-
-    if (
-      id &&
-      /^\d+$/.test(id)
-    ) {
-      return `espn-${id}`;
-    }
-  }
-
-  /* =========================
-     THESPORTSDB
-  ========================= */
-
-  if (
-    provider === "thesportsdb" ||
-    provider === "tsdb" ||
-    slug.toLowerCase().startsWith("tsdb-") ||
-    upstream.toLowerCase().startsWith("tsdb-") ||
-    id.toLowerCase().startsWith("tsdb-")
-  ) {
-
-    if (
-      slug.toLowerCase().startsWith("tsdb-")
-    ) {
-      return slug;
-    }
-
-    if (
-      upstream.toLowerCase().startsWith("tsdb-")
-    ) {
-      return upstream;
-    }
-
-    if (
-      id.toLowerCase().startsWith("tsdb-")
-    ) {
-      return id;
-    }
-
-    if (
-      id &&
-      /^\d+$/.test(id)
-    ) {
-      return `tsdb-${id}`;
-    }
-  }
-
-  return null;
-}
-
-
-/* =========================================================
-   FINAL OPEN FUNCTION
-========================================================= */
-
-window.openMatchDetails =
-  function (index) {
+  function getNewMatchIdentifier(index, card) {
 
     let match = null;
 
     try {
-      match =
-        typeof currentMatches !== "undefined"
-          ? currentMatches[index]
-          : null;
-    }
-    catch {
+      if (
+        typeof currentMatches !== "undefined" &&
+        Array.isArray(currentMatches)
+      ) {
+        match = currentMatches[index] || null;
+      }
+    } catch {
       match = null;
     }
 
     if (!match) {
+      return null;
+    }
 
-      console.error(
-        "BakhiraFoot: match introuvable",
-        index
-      );
+    const provider =
+      String(
+        match?.provider ||
+        match?.score?.provider ||
+        ""
+      )
+        .trim()
+        .toLowerCase();
 
-      if (
-        typeof bfOldSportScoreOpen ===
-        "function"
-      ) {
-        return bfOldSportScoreOpen(index);
-      }
+    const rawId =
+      String(
+        match?.fixture?.upstreamId ||
+        match?.upstreamId ||
+        match?.fixture?.id ||
+        match?.id ||
+        card?.dataset?.fixtureId ||
+        ""
+      ).trim();
 
-      return;
+    if (!rawId) {
+      return null;
     }
 
     /* =========================
-       NEW MATCH
-    ========================= */
-
-    const newIdentifier =
-      detectNewMatchIdentifier(
-        match
-      );
-
-    if (newIdentifier) {
-
-      console.log(
-        "BAKHIRAFOOT NEW MATCH DETAILS:",
-        newIdentifier
-      );
-
-      openDetails(
-        newIdentifier
-      );
-
-      return;
-    }
-
-    /* =========================
-       OLD SPORTSCORE MATCH
-       → on laisse exactement
-       l'ancien système travailler
+       SOFASCORE
     ========================= */
 
     if (
-      typeof bfOldSportScoreOpen ===
-      "function"
+      provider === "sofascore" ||
+      provider === "sofa"
     ) {
-
-      bfOldSportScoreOpen(index);
-
-      return;
+      return rawId
+        .toLowerCase()
+        .startsWith("sofa-")
+        ? rawId
+        : `sofa-${rawId}`;
     }
 
-    console.error(
-      "BakhiraFoot: ancienne fonction SportScore introuvable"
-    );
-  };
+    /* =========================
+       ESPN
+    ========================= */
+
+    if (
+      provider === "espn"
+    ) {
+      return rawId
+        .toLowerCase()
+        .startsWith("espn-")
+        ? rawId
+        : `espn-${rawId}`;
+    }
+
+    /* =========================
+       THESPORTSDB
+    ========================= */
+
+    if (
+      provider === "thesportsdb" ||
+      provider === "tsdb"
+    ) {
+      return rawId
+        .toLowerCase()
+        .startsWith("tsdb-")
+        ? rawId
+        : `tsdb-${rawId}`;
+    }
+
+    /* SportScore القديم */
+    return null;
+  }
+
+
+  /* =========================================================
+     INTERCEPT NEW MATCH CLICKS
+     capture = true
+     
+     هادي كتخدم قبل onclick ديال script.js
+  ========================================================= */
+
+  document.addEventListener(
+    "click",
+    function (event) {
+
+      const target =
+        event.target;
+
+      if (
+        !target ||
+        !target.closest
+      ) {
+        return;
+      }
+
+      const card =
+        target.closest(
+          ".match-card"
+        );
+
+      if (!card) {
+        return;
+      }
+
+      const index =
+        Number(
+          card.dataset.matchIndex
+        );
+
+      if (
+        !Number.isInteger(index) ||
+        index < 0
+      ) {
+        return;
+      }
+
+      const identifier =
+        getNewMatchIdentifier(
+          index,
+          card
+        );
+
+      /*
+         إلا كان ماتش جديد:
+         نوقفو onclick ديال script.js
+         ونفتحو Details ديال match-details.js
+      */
+
+      if (identifier) {
+
+        event.preventDefault();
+        event.stopImmediatePropagation();
+
+        console.log(
+          "BAKHIRAFOOT NEW DETAILS:",
+          identifier
+        );
+
+        openDetails(
+          identifier
+        );
+      }
+
+      /*
+         إلا كان SportScore:
+         ما نديرو والو.
+         script.js القديم يبقى هو المسؤول.
+      */
+    },
+    true
+  );
+
+
+  /* =========================================================
+     PROGRAMMATIC OPEN
+  ========================================================= */
+
+  const bfOriginalOpenMatchDetails =
+    window.openMatchDetails;
+
+  window.openMatchDetails =
+    function (index) {
+
+      const card =
+        document.querySelector(
+          `.match-card[data-match-index="${index}"]`
+        );
+
+      const identifier =
+        getNewMatchIdentifier(
+          index,
+          card
+        );
+
+      if (identifier) {
+
+        console.log(
+          "BAKHIRAFOOT NEW DETAILS:",
+          identifier
+        );
+
+        return openDetails(
+          identifier
+        );
+      }
+
+      /*
+         القديم SportScore
+      */
+
+      if (
+        typeof bfOriginalOpenMatchDetails ===
+        "function"
+      ) {
+        return bfOriginalOpenMatchDetails(
+          index
+        );
+      }
+    };
+
+
+  /* =========================================================
+     CLOSE IIFE
+  ========================================================= */
+
+})();
