@@ -5018,59 +5018,248 @@ function getPlayerRating(
 
 /* =========================================================
    GLOBAL OPEN
-   IMPORTANT:
-   ما نبدلوش openMatchDetails ديال script.js
+   SportScore القديم يبقى خدام كما هو.
+   الماتشات الجداد كيمشيو لـ openDetails().
 ========================================================= */
 
 window.bfOpenMatchDetails = openDetails;
 
-/*
- * script.js عندو أصلاً:
- *
- * openMatchDetails(index)
- *
- * وهاد الدالة كتجيب الماتش مباشرة من:
- * currentMatches[index]
- *
- * لذلك ما نعوضوهاش هنا.
- */
+/* نخزنو الدالة الأصلية ديال SportScore */
+const bfOldSportScoreOpen =
+  window.openMatchDetails;
 
 /* =========================================================
-   GLOBAL OPEN
-   match-details.js هو اللي يتحكم فـ Match Details
+   DETECT NEW MATCH SOURCE
 ========================================================= */
 
-window.bfOpenMatchDetails = openDetails;
+function detectNewMatchIdentifier(match) {
 
-window.openMatchDetails = function (index) {
-
-  const card =
-    document.querySelector(
-      `.match-card[data-match-index="${index}"]`
-    );
-
-  if (!card) {
-    console.error(
-      "BakhiraFoot: match card introuvable",
-      index
-    );
-    return;
+  if (!match) {
+    return null;
   }
 
-  const identifier =
-    getCardIdentifier(card);
+  const provider =
+    String(
+      match?.provider ||
+      match?.score?.provider ||
+      ""
+    )
+      .trim()
+      .toLowerCase();
 
-  if (!identifier) {
-    console.error(
-      "BakhiraFoot: fixture introuvable",
-      card
-    );
-    return;
+  const id =
+    String(
+      match?.id ||
+      match?.fixture?.id ||
+      ""
+    ).trim();
+
+  const slug =
+    String(
+      match?.slug ||
+      match?.fixture?.slug ||
+      ""
+    ).trim();
+
+  const upstream =
+    String(
+      match?.fixture?.upstreamId ||
+      ""
+    ).trim();
+
+  /* =========================
+     SOFASCORE
+  ========================= */
+
+  if (
+    provider === "sofascore" ||
+    provider === "sofa" ||
+    slug.toLowerCase().startsWith("sofa-") ||
+    upstream.toLowerCase().startsWith("sofa-") ||
+    id.toLowerCase().startsWith("sofa-")
+  ) {
+
+    if (
+      slug.toLowerCase().startsWith("sofa-")
+    ) {
+      return slug;
+    }
+
+    if (
+      upstream.toLowerCase().startsWith("sofa-")
+    ) {
+      return upstream;
+    }
+
+    if (
+      id.toLowerCase().startsWith("sofa-")
+    ) {
+      return id;
+    }
+
+    if (
+      id &&
+      /^\d+$/.test(id)
+    ) {
+      return `sofa-${id}`;
+    }
   }
 
-  openDetails(identifier);
-};
+  /* =========================
+     ESPN
+  ========================= */
 
-}  
+  if (
+    provider === "espn" ||
+    slug.toLowerCase().startsWith("espn-") ||
+    upstream.toLowerCase().startsWith("espn-") ||
+    id.toLowerCase().startsWith("espn-")
+  ) {
 
- 
+    if (
+      slug.toLowerCase().startsWith("espn-")
+    ) {
+      return slug;
+    }
+
+    if (
+      upstream.toLowerCase().startsWith("espn-")
+    ) {
+      return upstream;
+    }
+
+    if (
+      id.toLowerCase().startsWith("espn-")
+    ) {
+      return id;
+    }
+
+    if (
+      id &&
+      /^\d+$/.test(id)
+    ) {
+      return `espn-${id}`;
+    }
+  }
+
+  /* =========================
+     THESPORTSDB
+  ========================= */
+
+  if (
+    provider === "thesportsdb" ||
+    provider === "tsdb" ||
+    slug.toLowerCase().startsWith("tsdb-") ||
+    upstream.toLowerCase().startsWith("tsdb-") ||
+    id.toLowerCase().startsWith("tsdb-")
+  ) {
+
+    if (
+      slug.toLowerCase().startsWith("tsdb-")
+    ) {
+      return slug;
+    }
+
+    if (
+      upstream.toLowerCase().startsWith("tsdb-")
+    ) {
+      return upstream;
+    }
+
+    if (
+      id.toLowerCase().startsWith("tsdb-")
+    ) {
+      return id;
+    }
+
+    if (
+      id &&
+      /^\d+$/.test(id)
+    ) {
+      return `tsdb-${id}`;
+    }
+  }
+
+  return null;
+}
+
+
+/* =========================================================
+   FINAL OPEN FUNCTION
+========================================================= */
+
+window.openMatchDetails =
+  function (index) {
+
+    let match = null;
+
+    try {
+      match =
+        typeof currentMatches !== "undefined"
+          ? currentMatches[index]
+          : null;
+    }
+    catch {
+      match = null;
+    }
+
+    if (!match) {
+
+      console.error(
+        "BakhiraFoot: match introuvable",
+        index
+      );
+
+      if (
+        typeof bfOldSportScoreOpen ===
+        "function"
+      ) {
+        return bfOldSportScoreOpen(index);
+      }
+
+      return;
+    }
+
+    /* =========================
+       NEW MATCH
+    ========================= */
+
+    const newIdentifier =
+      detectNewMatchIdentifier(
+        match
+      );
+
+    if (newIdentifier) {
+
+      console.log(
+        "BAKHIRAFOOT NEW MATCH DETAILS:",
+        newIdentifier
+      );
+
+      openDetails(
+        newIdentifier
+      );
+
+      return;
+    }
+
+    /* =========================
+       OLD SPORTSCORE MATCH
+       → on laisse exactement
+       l'ancien système travailler
+    ========================= */
+
+    if (
+      typeof bfOldSportScoreOpen ===
+      "function"
+    ) {
+
+      bfOldSportScoreOpen(index);
+
+      return;
+    }
+
+    console.error(
+      "BakhiraFoot: ancienne fonction SportScore introuvable"
+    );
+  };
