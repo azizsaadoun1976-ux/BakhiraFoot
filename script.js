@@ -1541,6 +1541,60 @@ function sortScoreMatches(matches) {
 
 
 /* =========================================================
+   HIDDEN COMPETITIONS
+   هادو مراحل ماشي بطولات
+========================================================= */
+
+function isHiddenCompetition(match) {
+  let name = getLeague(match);
+
+  name = normalizeText(name)
+    .replace(/\s+/g, " ")
+    .trim();
+
+  /*
+     نحيدو رقم المرحلة من الآخر:
+     Regular Season - 7
+     First Round - 2
+     Qualifying Round - 1
+  */
+  name = name.replace(
+    /\s*[-–—:|]\s*\d+\s*$/i,
+    ""
+  ).trim();
+
+  const hidden = [
+    "first round",
+    "second round",
+    "third round",
+    "qualifying round",
+    "qualification round",
+    "league phase",
+    "regular season",
+    "fall season",
+    "spring season",
+    "summer season",
+    "winter season",
+    "group stage",
+    "final",
+    "semi final",
+    "semi-final",
+    "semi finals",
+    "semi-finals",
+    "quarter final",
+    "quarter-final",
+    "quarter finals",
+    "quarter-finals",
+    "playoff",
+    "playoffs",
+    "play-off",
+    "play-offs"
+  ];
+
+  return hidden.includes(name);
+}
+
+/* =========================================================
    BUILD COMPETITIONS
 ========================================================= */
 
@@ -1549,46 +1603,52 @@ function buildCompetitionGroups(matches) {
   const groupsMap =
     new Map();
 
-  matches.forEach(
-    (match, index) => {
+  matches
+    .filter(
+      match =>
+        !isHiddenCompetition(match)
+    )
+    .forEach(
+      (match, index) => {
 
-      const key =
-        getCompetitionGroupKey(
-          match
-        );
+        const key =
+          getCompetitionGroupKey(
+            match
+          );
 
-      if (!groupsMap.has(key)) {
-        groupsMap.set(
-          key,
-          {
-            name:
-              getLeague(match) ||
-              "Football",
+        if (!groupsMap.has(key)) {
 
-            logo:
-              getLeagueLogo(match),
+          groupsMap.set(
+            key,
+            {
+              name:
+                getLeague(match) ||
+                "Football",
 
-            matches: []
-          }
-        );
+              logo:
+                getLeagueLogo(match),
+
+              matches: []
+            }
+          );
+
+        }
+
+        groupsMap
+          .get(key)
+          .matches
+          .push({
+            match,
+            index
+          });
+
       }
-
-      groupsMap
-        .get(key)
-        .matches
-        .push({
-          match,
-          index
-        });
-    }
-  );
-
+    );
 
   const result =
     Array.from(
       groupsMap.values()
     );
-
 
   /* ترتيب المنافسات */
   result.sort(
@@ -1618,11 +1678,11 @@ function buildCompetitionGroups(matches) {
         b.name,
         "fr"
       );
+
     }
   );
 
-
-  /* ترتيب الماتشات داخل كل Competition */
+  /* ترتيب الماتشات */
   result.forEach(
     group => {
 
@@ -1633,7 +1693,6 @@ function buildCompetitionGroups(matches) {
 
     }
   );
-
 
   return result;
 }
