@@ -2,85 +2,69 @@
   "use strict";
 
   /* =========================================================
-     BAKHIRAFOOT PRO - NEW MATCH DETAILS
+     BAKHIRAFOOT PRO - NEW MATCH DETAILS SAFE VERSION
 
-     الهدف:
-     - كيتدخل فـ Match Details الجديدة
-     - كيدعم cards الحالية ديال Scores
-     - كيحاول SofaScore ثم ESPN ثم TheSportsDB
-     - ما كيحتاجش source=auto
-     - إذا ما لقا حتى مصدر خارجي، كيخلي القديم SportScore يخدم
+     - ما كيمسش Match Details القديم
+     - ما كيدير حتى request مباشر لـSofaScore/ESPN/TSDB
+     - كيهضر غير مع /api ديال الموقع
+     - كيتدخل غير للماتش اللي عندو مصدر details خارجي
      ========================================================= */
+
+  if (window.__BF_NEW_MATCH_DETAILS_SAFE__) {
+    return;
+  }
+
+  window.__BF_NEW_MATCH_DETAILS_SAFE__ = true;
 
   const API = "/api?fixture=";
 
-  function arr(v) {
-    return Array.isArray(v) ? v : [];
-  }
+  const arr = value =>
+    Array.isArray(value)
+      ? value
+      : [];
 
-  function obj(v) {
-    return v && typeof v === "object" && !Array.isArray(v) ? v : {};
-  }
+  const obj = value =>
+    value &&
+    typeof value === "object" &&
+    !Array.isArray(value)
+      ? value
+      : {};
 
-  function first(...values) {
-    for (const v of values) {
-      if (v !== undefined && v !== null && v !== "") return v;
+  const first = (...values) => {
+    for (const value of values) {
+      if (
+        value !== undefined &&
+        value !== null &&
+        value !== ""
+      ) {
+        return value;
+      }
     }
-    return null;
-  }
 
-  function esc(v) {
-    return String(v ?? "")
+    return null;
+  };
+
+  const esc = value =>
+    String(value ?? "")
       .replace(/&/g, "&amp;")
       .replace(/</g, "&lt;")
       .replace(/>/g, "&gt;")
       .replace(/"/g, "&quot;")
       .replace(/'/g, "&#039;");
-  }
 
-  function norm(v) {
-    return String(v ?? "")
+  const norm = value =>
+    String(value ?? "")
       .normalize("NFD")
       .replace(/[\u0300-\u036f]/g, "")
       .toLowerCase()
       .replace(/[^a-z0-9]+/g, " ")
       .trim();
-  }
 
-  function dateOnly(v) {
-    if (!v) return "";
+  /* =========================================================
+     CURRENT MATCHES
+     ========================================================= */
 
-    const s = String(v);
-
-    const m =
-      s.match(/^(\d{4}-\d{2}-\d{2})/);
-
-    if (m) return m[1];
-
-    const d = new Date(s);
-
-    return Number.isNaN(d.getTime())
-      ? ""
-      : d.toISOString().slice(0, 10);
-  }
-
-  function toCompactDate(v) {
-    return dateOnly(v).replace(/-/g, "");
-  }
-
-  function teamName(team) {
-    return String(
-      first(
-        team?.name,
-        team?.displayName,
-        team?.shortName,
-        team?.fullName,
-        ""
-      )
-    );
-  }
-
-  function getCurrentMatches() {
+  function getMatches() {
     try {
       if (
         typeof currentMatches !== "undefined" &&
@@ -88,13 +72,16 @@
       ) {
         return currentMatches;
       }
-    } catch (e) {}
+    } catch (error) {}
 
     return [];
   }
 
   function getMatch(index) {
-    return getCurrentMatches()[index] || null;
+    return (
+      getMatches()[index] ||
+      null
+    );
   }
 
   function getHome(match) {
@@ -115,83 +102,51 @@
     );
   }
 
-  function getProvider(match) {
-    return String(
-      first(
-        match?.provider,
-        match?.fixture?.provider,
-        match?.score?.provider,
-        ""
-      )
-    )
-      .trim()
-      .toLowerCase();
-  }
+  /* =========================================================
+     PROVIDER
+     ========================================================= */
 
-  function getMatchDate(match) {
-    return first(
-      match?.fixture?.date,
-      match?.date,
-      match?.kickoff,
-      match?.start_time,
-      ""
-    );
-  }
-
-  function getRawId(match, card) {
-    return String(
-      first(
-        match?.fixture?.upstreamId,
-        match?.upstreamId,
-        match?.fixture?.id,
-        match?.id,
-        match?.fixture?.slug,
-        match?.slug,
-        card?.dataset?.fixtureId,
-        card?.dataset?.matchSlug,
-        card?.dataset?.slug,
-        ""
-      )
-    ).trim();
-  }
-
-  function cleanProvider(v) {
-    const s =
-      norm(v).replace(/ /g, "");
+  function providerName(value) {
+    const p =
+      norm(value).replace(/ /g, "");
 
     if (
-      s === "sofa" ||
-      s === "sofascore"
+      p.includes("sofa")
     ) {
       return "sofascore";
     }
 
-    if (s === "espn") {
+    if (
+      p.includes("espn")
+    ) {
       return "espn";
     }
 
     if (
-      s === "tsdb" ||
-      s === "thesportsdb" ||
-      s === "the-sports-db"
+      p.includes("sportsdb") ||
+      p.includes("tsdb")
     ) {
       return "thesportsdb";
-    }
-
-    if (s === "sportscore") {
-      return "sportscore";
     }
 
     return "";
   }
 
-  function sourceValue(
+  /* =========================================================
+     SOURCE BUILDER
+     ========================================================= */
+
+  function makeSource(
     provider,
     id,
     slug
   ) {
-    const p =
-      cleanProvider(provider);
+    const source =
+      providerName(provider);
+
+    if (!source) {
+      return null;
+    }
 
     let value =
       String(
@@ -202,94 +157,100 @@
         ) || ""
       ).trim();
 
-    if (
-      !p ||
-      !value ||
-      p === "sportscore"
-    ) {
+    if (!value) {
       return null;
     }
 
     if (
-      p === "sofascore" &&
+      source === "sofascore" &&
       !/^sofa-/i.test(value)
     ) {
       value =
-        `sofa-${value}`;
+        "sofa-" + value;
     }
 
     if (
-      p === "espn" &&
+      source === "espn" &&
       !/^espn-/i.test(value)
     ) {
       value =
-        `espn-${value}`;
+        "espn-" + value;
     }
 
     if (
-      p === "thesportsdb" &&
+      source === "thesportsdb" &&
       !/^tsdb-/i.test(value)
     ) {
       value =
-        `tsdb-${value}`;
+        "tsdb-" + value;
     }
 
     return {
-      provider: p,
+      source,
       value
     };
   }
 
-  function collectKnownSources(
-    match,
-    card
+  function getExternalSources(
+    match
   ) {
-    const out = [];
+    const sources = [];
 
-    const add = (
+    function add(
       provider,
       id,
       slug
-    ) => {
-      const x =
-        sourceValue(
+    ) {
+      const source =
+        makeSource(
           provider,
           id,
           slug
         );
 
-      if (!x) return;
+      if (!source) {
+        return;
+      }
 
       if (
-        !out.some(
-          y =>
-            y.provider === x.provider &&
-            y.value === x.value
+        !sources.some(
+          item =>
+            item.source ===
+              source.source &&
+            item.value ===
+              source.value
         )
       ) {
-        out.push(x);
+        sources.push(
+          source
+        );
       }
-    };
+    }
+
+    /* مصدر الماتش */
 
     add(
-      match?.provider ||
-        match?.fixture?.provider,
-
-      match?.fixture?.upstreamId ||
+      match?.provider,
+      match?.fixture
+        ?.upstreamId ||
         match?.upstreamId ||
         match?.fixture?.id ||
         match?.id,
 
-      match?.fixture?.slug ||
-        match?.slug ||
-        card?.dataset?.fixtureId
+      match?.fixture
+        ?.slug ||
+        match?.slug
     );
+
+    /* detailsProviders */
 
     const lists = [
       match?.detailsProviders,
       match?.detailsSources,
-      match?.fixture?.detailsProviders,
-      match?.fixture?.detailsSources
+      match?.fixture
+        ?.detailsProviders,
+      match?.fixture
+        ?.detailsSources
     ];
 
     for (
@@ -298,6 +259,7 @@
       for (
         const item of arr(list)
       ) {
+
         add(
           item?.provider ||
             item?.source,
@@ -307,8 +269,11 @@
 
           item?.slug
         );
+
       }
     }
+
+    /* direct details fields */
 
     add(
       match?.detailsProvider,
@@ -317,971 +282,73 @@
     );
 
     add(
-      match?.fixture?.detailsProvider,
-      match?.fixture?.detailsId,
-      match?.fixture?.detailsSlug
+      match?.fixture
+        ?.detailsProvider,
+
+      match?.fixture
+        ?.detailsId,
+
+      match?.fixture
+        ?.detailsSlug
     );
 
-    return out;
-  }
-
-  function sameTeams(
-    aHome,
-    aAway,
-    bHome,
-    bAway
-  ) {
-    const ah =
-      norm(aHome);
-
-    const aa =
-      norm(aAway);
-
-    const bh =
-      norm(bHome);
-
-    const ba =
-      norm(bAway);
-
-    if (
-      !ah ||
-      !aa ||
-      !bh ||
-      !ba
-    ) {
-      return false;
-    }
-
-    const direct =
-      ah === bh &&
-      aa === ba;
-
-    const swap =
-      ah === ba &&
-      aa === bh;
-
-    return (
-      direct ||
-      swap
-    );
-  }
-
-  function matchTimeClose(
-    target,
-    candidate
-  ) {
-    const t =
-      new Date(
-        target || ""
-      ).getTime();
-
-    const c =
-      new Date(
-        candidate || ""
-      ).getTime();
-
-    if (
-      !Number.isFinite(t) ||
-      !Number.isFinite(c)
-    ) {
-      return true;
-    }
-
-    return (
-      Math.abs(t - c) <=
-      3 *
-        24 *
-        60 *
-        60 *
-        1000
-    );
-  }
-
-  /* =========================================================
-     SOFASCORE AUTO LOOKUP
-  ========================================================= */
-
-  async function findSofaMatch(
-    match
-  ) {
-    const date =
-      dateOnly(
-        getMatchDate(match)
-      );
-
-    if (!date) {
-      return null;
-    }
-
-    const home =
-      teamName(
-        getHome(match)
-      );
-
-    const away =
-      teamName(
-        getAway(match)
-      );
-
-    if (
-      !home ||
-      !away
-    ) {
-      return null;
-    }
-
-    try {
-
-      const r =
-        await fetch(
-          `https://www.sofascore.com/api/v1/sport/football/scheduled-events/${encodeURIComponent(date)}`,
-          {
-            cache:
-              "no-store",
-
-            headers: {
-              Accept:
-                "application/json"
-            }
-          }
-        );
-
-      if (!r.ok) {
-        return null;
-      }
-
-      const body =
-        await r.json();
-
-      const events =
-        arr(
-          body?.events
-        );
-
-      let best =
-        null;
-
-      for (
-        const event of events
-      ) {
-
-        const eh =
-          teamName(
-            event?.homeTeam
-          );
-
-        const ea =
-          teamName(
-            event?.awayTeam
-          );
-
-        if (
-          !sameTeams(
-            home,
-            away,
-            eh,
-            ea
-          )
-        ) {
-          continue;
-        }
-
-        const candidateDate =
-          event?.startTimestamp
-            ? new Date(
-                event.startTimestamp *
-                  1000
-              ).toISOString()
-            : null;
-
-        if (
-          !matchTimeClose(
-            getMatchDate(match),
-            candidateDate
-          )
-        ) {
-          continue;
-        }
-
-        best =
-          event;
-
-        break;
-      }
-
-      if (
-        !best?.id
-      ) {
-        return null;
-      }
-
-      return {
-        provider:
-          "sofascore",
-
-        value:
-          `sofa-${best.id}`
-      };
-
-    } catch (e) {
-
-      console.warn(
-        "BAKHIRAFOOT SofaScore lookup failed",
-        e
-      );
-
-      return null;
-    }
-  }
-
-  /* =========================================================
-     ESPN AUTO LOOKUP
-  ========================================================= */
-
-  async function findESPNMatch(
-    match
-  ) {
-    const compact =
-      toCompactDate(
-        getMatchDate(match)
-      );
-
-    if (!compact) {
-      return null;
-    }
-
-    const home =
-      teamName(
-        getHome(match)
-      );
-
-    const away =
-      teamName(
-        getAway(match)
-      );
-
-    try {
-
-      const r =
-        await fetch(
-          `https://site.api.espn.com/apis/site/v2/sports/soccer/all/scoreboard?dates=${encodeURIComponent(compact)}`,
-          {
-            cache:
-              "no-store",
-
-            headers: {
-              Accept:
-                "application/json"
-            }
-          }
-        );
-
-      if (!r.ok) {
-        return null;
-      }
-
-      const body =
-        await r.json();
-
-      for (
-        const event of
-          arr(
-            body?.events
-          )
-      ) {
-
-        const competition =
-          arr(
-            event?.competitions
-          )[0] || {};
-
-        const competitors =
-          arr(
-            competition?.competitors
-          );
-
-        const h =
-          competitors.find(
-            x =>
-              x?.homeAway ===
-              "home"
-          );
-
-        const a =
-          competitors.find(
-            x =>
-              x?.homeAway ===
-              "away"
-          );
-
-        if (
-          !h ||
-          !a ||
-          !event?.id
-        ) {
-          continue;
-        }
-
-        if (
-          sameTeams(
-            home,
-            away,
-            teamName(h?.team),
-            teamName(a?.team)
-          )
-        ) {
-          return {
-            provider:
-              "espn",
-
-            value:
-              `espn-${event.id}`
-          };
-        }
-      }
-
-    } catch (e) {
-
-      console.warn(
-        "BAKHIRAFOOT ESPN lookup failed",
-        e
-      );
-
-    }
-
-    return null;
-  }
-
-  /* =========================================================
-     THESPORTSDB AUTO LOOKUP
-  ========================================================= */
-
-  async function findTSDBMatch(
-    match
-  ) {
-    const date =
-      dateOnly(
-        getMatchDate(match)
-      );
-
-    if (!date) {
-      return null;
-    }
-
-    const home =
-      teamName(
-        getHome(match)
-      );
-
-    const away =
-      teamName(
-        getAway(match)
-      );
-
-    try {
-
-      const r =
-        await fetch(
-          `https://www.thesportsdb.com/api/v1/json/123/eventsday.php?d=${encodeURIComponent(date)}&s=Soccer`,
-          {
-            cache:
-              "no-store",
-
-            headers: {
-              Accept:
-                "application/json"
-            }
-          }
-        );
-
-      if (!r.ok) {
-        return null;
-      }
-
-      const body =
-        await r.json();
-
-      for (
-        const event of
-          arr(
-            body?.events
-          )
-      ) {
-
-        if (
-          !event?.idEvent
-        ) {
-          continue;
-        }
-
-        if (
-          sameTeams(
-            home,
-            away,
-            event?.strHomeTeam,
-            event?.strAwayTeam
-          )
-        ) {
-
-          return {
-            provider:
-              "thesportsdb",
-
-            value:
-              `tsdb-${event.idEvent}`
-          };
-
-        }
-      }
-
-    } catch (e) {
-
-      console.warn(
-        "BAKHIRAFOOT TSDB lookup failed",
-        e
-      );
-
-    }
-
-    return null;
-  }
-
-  async function findExternalSource(
-    match,
-    card
-  ) {
-
-    const known =
-      collectKnownSources(
-        match,
-        card
-      );
-
-    if (
-      known.length
-    ) {
-      return known[0];
-    }
-
-    const sofa =
-      await findSofaMatch(
-        match
-      );
-
-    if (sofa) {
-      return sofa;
-    }
-
-    const espn =
-      await findESPNMatch(
-        match
-      );
-
-    if (espn) {
-      return espn;
-    }
-
-    const tsdb =
-      await findTSDBMatch(
-        match
-      );
-
-    if (tsdb) {
-      return tsdb;
-    }
-
-    return null;
-  }
-
-  /* =========================================================
-     MODAL STYLES
-  ========================================================= */
-
-  function ensureStyles() {
-
-    if (
-      document.getElementById(
-        "bf-new-details-style"
-      )
-    ) {
-      return;
-    }
-
-    const style =
-      document.createElement(
-        "style"
-      );
-
-    style.id =
-      "bf-new-details-style";
-
-    style.textContent = `
-
-      #bf-new-details-modal{
-        display:none;
-        position:fixed;
-        inset:0;
-        z-index:1000000;
-      }
-
-      .bfnd-overlay{
-        position:absolute;
-        inset:0;
-        background:rgba(0,0,0,.82);
-        display:flex;
-        align-items:center;
-        justify-content:center;
-        padding:12px;
-      }
-
-      .bfnd-box{
-        position:relative;
-        width:min(1100px,100%);
-        max-height:94vh;
-        overflow:auto;
-        background:var(--card,#fff);
-        color:var(--text,#111827);
-        border-radius:22px;
-        box-shadow:0 30px 100px rgba(0,0,0,.45);
-        padding:22px;
-      }
-
-      .bfnd-close{
-        position:absolute;
-        right:12px;
-        top:12px;
-        border:0;
-        border-radius:50%;
-        width:38px;
-        height:38px;
-        font-weight:900;
-        cursor:pointer;
-        font-size:18px;
-      }
-
-      .bfnd-loading{
-        text-align:center;
-        padding:50px 15px;
-        font-weight:900;
-      }
-
-      .bfnd-league{
-        text-align:center;
-        font-size:13px;
-        font-weight:900;
-        opacity:.7;
-      }
-
-      .bfnd-head{
-        display:grid;
-        grid-template-columns:1fr auto 1fr;
-        align-items:center;
-        gap:16px;
-        text-align:center;
-        margin:16px 0;
-      }
-
-      .bfnd-team{
-        font-weight:950;
-        overflow-wrap:anywhere;
-      }
-
-      .bfnd-team img{
-        width:72px;
-        height:72px;
-        object-fit:contain;
-        display:block;
-        margin:0 auto 7px;
-      }
-
-      .bfnd-score{
-        font-size:42px;
-        font-weight:950;
-      }
-
-      .bfnd-status{
-        font-size:10px;
-        font-weight:900;
-        display:inline-block;
-        margin-top:7px;
-        padding:6px 10px;
-        border-radius:999px;
-        background:rgba(127,127,127,.12);
-      }
-
-      .bfnd-info{
-        display:flex;
-        justify-content:center;
-        flex-wrap:wrap;
-        gap:7px;
-      }
-
-      .bfnd-info span{
-        font-size:10px;
-        padding:6px 9px;
-        border-radius:999px;
-        background:rgba(127,127,127,.08);
-      }
-
-      .bfnd-section{
-        margin-top:22px;
-        padding-top:18px;
-        border-top:1px solid rgba(127,127,127,.16);
-      }
-
-      .bfnd-title{
-        font-size:17px;
-        font-weight:950;
-        margin-bottom:12px;
-      }
-
-      .bfnd-grid{
-        display:grid;
-        grid-template-columns:1fr 1fr;
-        gap:16px;
-      }
-
-      .bfnd-panel{
-        padding:12px;
-        border-radius:14px;
-        background:rgba(127,127,127,.06);
-      }
-
-      .bfnd-player{
-        display:grid;
-        grid-template-columns:40px 34px 1fr auto;
-        gap:7px;
-        align-items:center;
-        padding:7px;
-        margin-bottom:6px;
-        border-radius:8px;
-        background:rgba(127,127,127,.07);
-      }
-
-      .bfnd-player img,
-      .bfnd-avatar{
-        width:38px;
-        height:38px;
-        border-radius:50%;
-        object-fit:cover;
-        background:rgba(127,127,127,.12);
-      }
-
-      .bfnd-num{
-        width:28px;
-        height:28px;
-        border-radius:50%;
-        display:flex;
-        align-items:center;
-        justify-content:center;
-        background:rgba(127,127,127,.12);
-        font-size:9px;
-        font-weight:900;
-      }
-
-      .bfnd-name{
-        font-size:11px;
-        font-weight:900;
-      }
-
-      .bfnd-pos{
-        font-size:9px;
-        opacity:.6;
-      }
-
-      .bfnd-rating{
-        font-size:9px;
-        font-weight:900;
-      }
-
-      .bfnd-pitches{
-        display:grid;
-        grid-template-columns:1fr 1fr;
-        gap:16px;
-      }
-
-      .bfnd-pitch-wrap{
-        padding:8px;
-      }
-
-      .bfnd-pitch-head{
-        display:flex;
-        justify-content:space-between;
-        font-size:11px;
-        font-weight:900;
-        margin-bottom:7px;
-      }
-
-      .bfnd-pitch{
-        position:relative;
-        aspect-ratio:.68;
-        border-radius:13px;
-        overflow:hidden;
-
-        background:
-          repeating-linear-gradient(
-            90deg,
-            #2f7e44 0,
-            #2f7e44 10%,
-            #37884d 10%,
-            #37884d 20%
-          );
-      }
-
-      .bfnd-border{
-        position:absolute;
-        inset:7px;
-        border:2px solid #fff;
-      }
-
-      .bfnd-half{
-        position:absolute;
-        left:7px;
-        right:7px;
-        top:50%;
-        height:2px;
-        background:#fff;
-      }
-
-      .bfnd-circle{
-        position:absolute;
-        left:50%;
-        top:50%;
-        width:20%;
-        aspect-ratio:1;
-        border:2px solid #fff;
-        border-radius:50%;
-        transform:translate(-50%,-50%);
-      }
-
-      .bfnd-pitch-player{
-        position:absolute;
-        transform:translate(-50%,-50%);
-        width:80px;
-        text-align:center;
-        color:#fff;
-      }
-
-      .bfnd-pitch-player img,
-      .bfnd-pitch-avatar{
-        width:40px;
-        height:40px;
-        border-radius:50%;
-        object-fit:cover;
-        background:#fff;
-        border:2px solid #fff;
-      }
-
-      .bfnd-pitch-name{
-        font-size:8px;
-        font-weight:900;
-        background:rgba(0,0,0,.75);
-        border-radius:4px;
-        padding:2px;
-        white-space:nowrap;
-        overflow:hidden;
-        text-overflow:ellipsis;
-      }
-
-      .bfnd-pitch-rate{
-        font-size:8px;
-        background:#fff;
-        color:#111;
-        border-radius:4px;
-        padding:2px 4px;
-        display:inline-block;
-      }
-
-      .bfnd-event{
-        display:grid;
-        grid-template-columns:44px 30px 1fr;
-        gap:8px;
-        align-items:center;
-        padding:8px;
-        margin-bottom:6px;
-        border-radius:8px;
-        background:rgba(127,127,127,.07);
-      }
-
-      .bfnd-event-minute{
-        font-size:10px;
-        font-weight:900;
-      }
-
-      .bfnd-event-icon{
-        font-size:17px;
-      }
-
-      .bfnd-event-main{
-        font-size:10px;
-        font-weight:900;
-      }
-
-      .bfnd-event-team{
-        font-size:9px;
-        opacity:.55;
-      }
-
-      .bfnd-empty{
-        padding:12px;
-        border-radius:9px;
-        background:rgba(127,127,127,.06);
-        font-size:10px;
-        opacity:.7;
-      }
-
-      @media(max-width:800px){
-        .bfnd-grid,
-        .bfnd-pitches{
-          grid-template-columns:1fr;
-        }
-      }
-
-      @media(max-width:600px){
-
-        .bfnd-box{
-          padding:15px 9px;
-        }
-
-        .bfnd-head{
-          gap:7px;
-        }
-
-        .bfnd-score{
-          font-size:28px;
-        }
-
-        .bfnd-team{
-          font-size:11px;
-        }
-
-        .bfnd-team img{
-          width:55px;
-          height:55px;
-        }
-      }
-
-    `;
-
-    document.head.appendChild(
-      style
-    );
-  }
-
-  /* =========================================================
-     MODAL
-  ========================================================= */
-
-  function ensureModal() {
-
-    let modal =
-      document.getElementById(
-        "bf-new-details-modal"
-      );
-
-    if (modal) {
-      return modal;
-    }
-
-    modal =
-      document.createElement(
-        "div"
-      );
-
-    modal.id =
-      "bf-new-details-modal";
-
-    modal.innerHTML = `
-
-      <div class="bfnd-overlay">
-
-        <div
-          class="bfnd-box"
-          onclick="event.stopPropagation()"
-        >
-
-          <button
-            class="bfnd-close"
-            type="button"
-          >
-            ✕
-          </button>
-
-          <div id="bfnd-content"></div>
-
-        </div>
-
-      </div>
-
-    `;
-
-    document.body.appendChild(
-      modal
+    /*
+     * الأولوية
+     * SofaScore
+     * ثم ESPN
+     * ثم TheSportsDB
+     */
+
+    const priority = {
+      sofascore: 1,
+      espn: 2,
+      thesportsdb: 3
+    };
+
+    sources.sort(
+      (a, b) =>
+        (
+          priority[a.source] ||
+          99
+        ) -
+        (
+          priority[b.source] ||
+          99
+        )
     );
 
-    modal
-      .querySelector(
-        ".bfnd-close"
-      )
-      .onclick =
-      closeModal;
-
-    modal
-      .querySelector(
-        ".bfnd-overlay"
-      )
-      .onclick =
-      closeModal;
-
-    ensureStyles();
-
-    return modal;
-  }
-
-  function closeModal() {
-
-    const modal =
-      document.getElementById(
-        "bf-new-details-modal"
-      );
-
-    if (modal) {
-      modal.style.display =
-        "none";
-    }
-
-    document.body.style.overflow =
-      "";
+    return sources;
   }
 
   /* =========================================================
-     DETAILS TEAM
-  ========================================================= */
+     TEAM
+     ========================================================= */
 
   function getTeam(
     details,
     side
   ) {
-
-    const t =
+    const team =
       details?.teams?.[side] ||
       details?.[
         side + "_team"
       ] ||
+      details?.[side] ||
       {};
 
     return {
       id:
         first(
-          t?.id,
-          t?.team_id
+          team?.id,
+          team?.team_id
         ),
 
       name:
         String(
           first(
-            t?.name,
-            t?.displayName,
+            team?.name,
+            team?.displayName,
+            team?.shortName,
 
             side === "home"
               ? "Domicile"
@@ -1292,49 +359,192 @@
       logo:
         String(
           first(
-            t?.logo,
-            t?.image,
-            t?.badge,
-            t?.picture,
+            team?.logo,
+            team?.image,
+            team?.badge,
+            team?.picture,
             ""
           )
         )
     };
   }
 
-  function getScore(
-    details,
-    side
+  /* =========================================================
+     PLAYER HELPERS
+     ========================================================= */
+
+  function getPlayerObject(
+    player
   ) {
+    if (
+      player?.player &&
+      typeof player.player ===
+        "object"
+    ) {
+      return player.player;
+    }
+
+    return player || {};
+  }
+
+  function playerName(
+    player
+  ) {
+    const p =
+      getPlayerObject(
+        player
+      );
+
+    return String(
+      first(
+        player?.name,
+        player?.player_name,
+        p?.name,
+        p?.displayName,
+        p?.fullName,
+        "Joueur"
+      )
+    );
+  }
+
+  function playerNumber(
+    player
+  ) {
+    const p =
+      getPlayerObject(
+        player
+      );
 
     return first(
-      details?.goals?.[side],
-
-      details?.score?.[side],
-
-      details?.[
-        side + "_score"
-      ],
-
+      player?.number,
+      player?.shirt_number,
+      player?.shirtNumber,
+      player?.jersey,
+      p?.number,
       "-"
     );
   }
 
+  function playerPosition(
+    player
+  ) {
+    const p =
+      getPlayerObject(
+        player
+      );
+
+    const value =
+      first(
+        player?.position,
+        player?.pos,
+        player?.role,
+        p?.position,
+        p?.pos,
+        ""
+      );
+
+    if (
+      typeof value ===
+      "object"
+    ) {
+      return String(
+        first(
+          value?.name,
+          value?.abbreviation,
+          ""
+        )
+      );
+    }
+
+    return String(
+      value || ""
+    );
+  }
+
+  function playerPhoto(
+    player
+  ) {
+    const p =
+      getPlayerObject(
+        player
+      );
+
+    return String(
+      first(
+        player?.photo,
+        player?.image,
+        player?.picture,
+        player?.headshot,
+        player?.avatar,
+
+        p?.photo,
+        p?.image,
+        p?.picture,
+        p?.headshot,
+        p?.avatar,
+
+        ""
+      )
+    );
+  }
+
+  function playerRating(
+    player
+  ) {
+    const p =
+      getPlayerObject(
+        player
+      );
+
+    const value =
+      first(
+        player?.rating,
+        player?.match_rating,
+        player?.statistics
+          ?.rating,
+        player?.performance
+          ?.rating,
+
+        p?.rating,
+        p?.statistics
+          ?.rating
+      );
+
+    if (
+      value === null
+    ) {
+      return null;
+    }
+
+    const number =
+      Number(
+        String(value)
+          .replace(
+            ",",
+            "."
+          )
+      );
+
+    return Number.isFinite(
+      number
+    )
+      ? number
+      : null;
+  }
+
   /* =========================================================
-     LINEUPS
-  ========================================================= */
+     LINEUP
+     ========================================================= */
 
   function getLineup(
     details,
     side,
     team
   ) {
-
     const raw =
       details?.lineups;
 
-    let block =
-      null;
+    let block = null;
 
     if (
       Array.isArray(raw)
@@ -1342,52 +552,65 @@
 
       block =
         raw.find(
-          x => {
+          item => {
 
             const t =
-              x?.team || {};
+              item?.team ||
+              {};
+
+            const itemSide =
+              norm(
+                item?.side
+              );
 
             return (
-
               (
-                team.id &&
-                t.id &&
-                String(team.id) ===
-                  String(t.id)
+                team?.id &&
+                t?.id &&
+                String(
+                  team.id
+                ) ===
+                String(
+                  t.id
+                )
               )
 
               ||
 
               (
-                team.name &&
-                t.name &&
-                norm(team.name) ===
-                  norm(t.name)
+                team?.name &&
+                t?.name &&
+                norm(
+                  team.name
+                ) ===
+                norm(
+                  t.name
+                )
               )
 
               ||
 
-              norm(x?.side) ===
+              itemSide ===
                 side
 
               ||
 
               (
-                side === "home" &&
-                norm(x?.side) ===
+                side ===
+                  "home" &&
+                itemSide ===
                   "host"
               )
 
               ||
 
               (
-                side === "away" &&
-                norm(x?.side) ===
+                side ===
+                  "away" &&
+                itemSide ===
                   "guest"
               )
-
             );
-
           }
         );
 
@@ -1404,11 +627,8 @@
     if (!block) {
 
       return {
-        formation:
-          "—",
-
-        players:
-          []
+        formation: "—",
+        players: []
       };
 
     }
@@ -1440,226 +660,813 @@
   }
 
   /* =========================================================
-     PLAYER
-  ========================================================= */
+     EVENTS
+     ========================================================= */
 
-  function playerName(p) {
-
-    const x =
-      p?.player &&
-      obj(p.player)
-        ? p.player
-        : p;
-
-    return String(
+  function getEvents(
+    details
+  ) {
+    return arr(
       first(
-        p?.name,
-        p?.player_name,
-        x?.name,
-        x?.displayName,
-        x?.fullName,
-        "Joueur"
+        details?.events,
+        details?.incidents,
+        details?.plays,
+        []
       )
     );
   }
 
-  function playerNumber(p) {
+  function eventType(
+    event
+  ) {
+    return norm(
+      first(
 
-    const x =
-      p?.player &&
-      obj(p.player)
-        ? p.player
-        : p;
+        typeof event?.type ===
+          "object"
 
+          ? event?.type?.name
+
+          : event?.type,
+
+        event?.incidentType,
+
+        event?.kind,
+
+        event?.detail,
+
+        event?.text,
+
+        ""
+      )
+    );
+  }
+
+  function eventIcon(
+    event
+  ) {
+    const type =
+      eventType(
+        event
+      );
+
+    if (
+      type.includes(
+        "goal"
+      ) ||
+      type.includes(
+        "score"
+      )
+    ) {
+      return "⚽";
+    }
+
+    if (
+      type.includes(
+        "yellow"
+      )
+    ) {
+      return "🟨";
+    }
+
+    if (
+      type.includes(
+        "red"
+      )
+    ) {
+      return "🟥";
+    }
+
+    if (
+      type.includes(
+        "sub"
+      )
+    ) {
+      return "🔄";
+    }
+
+    return "•";
+  }
+
+  function eventPlayer(
+    event
+  ) {
+    return String(
+      first(
+
+        event?.player
+          ?.name,
+
+        event?.player_name,
+
+        event?.athlete
+          ?.displayName,
+
+        event?.name,
+
+        event
+          ?.participants?.[0]
+          ?.athlete
+          ?.displayName,
+
+        event?.text,
+
+        event?.detail,
+
+        "Événement"
+      )
+    );
+  }
+
+  function eventAssist(
+    event
+  ) {
+    return String(
+      first(
+        event?.assist
+          ?.name,
+
+        event?.assist
+          ?.player
+          ?.name,
+
+        event
+          ?.participants?.[1]
+          ?.athlete
+          ?.displayName,
+
+        ""
+      )
+    );
+  }
+
+  function eventMinute(
+    event
+  ) {
     return first(
-      p?.number,
-      p?.shirt_number,
-      p?.shirtNumber,
-      p?.jersey,
-      x?.number,
+      event?.minute,
+      event?.elapsed,
+      event?.clock
+        ?.displayValue,
+      event?.time
+        ?.elapsed,
       "-"
     );
   }
 
-  function playerPosition(p) {
+  /* =========================================================
+     STYLES
+     ========================================================= */
 
-    const x =
-      p?.player &&
-      obj(p.player)
-        ? p.player
-        : p;
+  function createStyles() {
 
-    const v =
-      first(
-        p?.position,
-        p?.pos,
-        p?.role,
-        x?.position,
-        x?.pos,
-        ""
-      );
-
-    return String(
-      typeof v ===
-        "object"
-        ? first(
-            v?.name,
-            v?.abbreviation,
-            ""
-          )
-        : v
-    );
-  }
-
-  function playerPhoto(p) {
-
-    const x =
-      p?.player &&
-      obj(p.player)
-        ? p.player
-        : p;
-
-    return String(
-      first(
-        p?.photo,
-        p?.image,
-        p?.picture,
-        p?.headshot,
-        p?.avatar,
-
-        x?.photo,
-        x?.image,
-        x?.picture,
-        x?.headshot,
-        x?.avatar,
-
-        ""
+    if (
+      document.getElementById(
+        "bf-new-match-safe-style"
       )
-    );
-  }
+    ) {
+      return;
+    }
 
-  function playerRating(p) {
-
-    const x =
-      p?.player &&
-      obj(p.player)
-        ? p.player
-        : p;
-
-    const r =
-      first(
-        p?.rating,
-        p?.match_rating,
-        p?.statistics
-          ?.rating,
-        p?.performance
-          ?.rating,
-
-        x?.rating,
-        x?.statistics
-          ?.rating
+    const style =
+      document.createElement(
+        "style"
       );
 
-    if (r === null) {
-      return null;
-    }
+    style.id =
+      "bf-new-match-safe-style";
 
-    const n =
-      Number(
-        String(r)
-          .replace(
-            ",",
-            "."
-          )
-      );
+    style.textContent = `
 
-    return Number.isFinite(n)
-      ? n
-      : null;
-  }
+      #bf-new-match-safe-modal{
+        display:none;
+        position:fixed;
+        inset:0;
+        z-index:1000000;
+      }
 
-  function classify(p) {
+      .bf-new-safe-overlay{
+        position:absolute;
+        inset:0;
+        background:rgba(0,0,0,.84);
 
-    const x =
-      norm(
-        playerPosition(p)
-      );
+        display:flex;
+        justify-content:center;
+        align-items:center;
 
-    if (!x) {
-      return "unknown";
-    }
+        padding:12px;
+      }
 
-    if (
-      x.includes("goal") ||
-      x === "g" ||
-      x === "gk" ||
-      x.includes("keeper")
-    ) {
-      return "gk";
-    }
+      .bf-new-safe-box{
+        position:relative;
 
-    if (
-      x.includes("def") ||
-      x.includes("back") ||
-      x.includes("cb") ||
-      x.includes("lb") ||
-      x.includes("rb")
-    ) {
-      return "def";
-    }
-
-    if (
-      x.includes("mid") ||
-      x.includes("mf") ||
-      x.includes("cm") ||
-      x.includes("dm") ||
-      x.includes("am")
-    ) {
-      return "mid";
-    }
-
-    if (
-      x.includes("att") ||
-      x.includes("fwd") ||
-      x.includes("fw") ||
-      x.includes("strik") ||
-      x.includes("wing") ||
-      x.includes("forward")
-    ) {
-      return "att";
-    }
-
-    return "unknown";
-  }
-
-  function formationRows(
-    formation
-  ) {
-
-    const a =
-      String(
-        formation || ""
-      )
-        .split("-")
-        .map(Number)
-        .filter(
-          n => n > 0
+        width:min(
+          1120px,
+          100%
         );
 
-    return a.length
-      ? a
-      : [4, 3, 3];
+        max-height:94vh;
+
+        overflow:auto;
+
+        background:
+          var(--card,#fff);
+
+        color:
+          var(--text,#111827);
+
+        border-radius:22px;
+
+        padding:22px;
+
+        box-shadow:
+          0 30px 100px
+          rgba(0,0,0,.45);
+      }
+
+      .bf-new-safe-close{
+        position:absolute;
+
+        right:12px;
+        top:12px;
+
+        width:40px;
+        height:40px;
+
+        border:0;
+        border-radius:50%;
+
+        cursor:pointer;
+
+        font-size:18px;
+        font-weight:950;
+      }
+
+      .bf-new-safe-league{
+        text-align:center;
+
+        font-size:13px;
+        font-weight:900;
+
+        opacity:.7;
+      }
+
+      .bf-new-safe-head{
+        display:grid;
+
+        grid-template-columns:
+          1fr auto 1fr;
+
+        gap:16px;
+
+        align-items:center;
+
+        text-align:center;
+
+        margin:
+          18px 0;
+      }
+
+      .bf-new-safe-team{
+        font-size:14px;
+        font-weight:950;
+
+        overflow-wrap:anywhere;
+      }
+
+      .bf-new-safe-team img{
+        width:72px;
+        height:72px;
+
+        object-fit:contain;
+
+        display:block;
+
+        margin:
+          0 auto 7px;
+      }
+
+      .bf-new-safe-score{
+        font-size:42px;
+        font-weight:950;
+      }
+
+      .bf-new-safe-status{
+        display:inline-block;
+
+        margin-top:7px;
+
+        padding:
+          6px 11px;
+
+        border-radius:999px;
+
+        background:
+          rgba(127,127,127,.1);
+
+        font-size:10px;
+        font-weight:900;
+      }
+
+      .bf-new-safe-info{
+        display:flex;
+
+        justify-content:center;
+
+        flex-wrap:wrap;
+
+        gap:7px;
+      }
+
+      .bf-new-safe-info span{
+        padding:
+          6px 10px;
+
+        border-radius:999px;
+
+        background:
+          rgba(127,127,127,.08);
+
+        font-size:10px;
+      }
+
+      .bf-new-safe-section{
+        margin-top:22px;
+
+        padding-top:18px;
+
+        border-top:
+          1px solid
+          rgba(127,127,127,.16);
+      }
+
+      .bf-new-safe-title{
+        font-size:17px;
+        font-weight:950;
+
+        margin-bottom:13px;
+      }
+
+      .bf-new-safe-pitches{
+        display:grid;
+
+        grid-template-columns:
+          1fr 1fr;
+
+        gap:16px;
+      }
+
+      .bf-new-safe-pitch-wrap{
+        padding:8px;
+      }
+
+      .bf-new-safe-pitch-head{
+        display:flex;
+
+        justify-content:
+          space-between;
+
+        gap:8px;
+
+        margin-bottom:7px;
+
+        font-size:11px;
+        font-weight:950;
+      }
+
+      .bf-new-safe-pitch{
+        position:relative;
+
+        aspect-ratio:
+          .68;
+
+        border-radius:13px;
+
+        overflow:hidden;
+
+        background:
+          repeating-linear-gradient(
+            90deg,
+            #2f7d43 0,
+            #2f7d43 10%,
+            #35874a 10%,
+            #35874a 20%
+          );
+      }
+
+      .bf-new-safe-border{
+        position:absolute;
+
+        inset:7px;
+
+        border:
+          2px solid #fff;
+      }
+
+      .bf-new-safe-half{
+        position:absolute;
+
+        left:7px;
+        right:7px;
+
+        top:50%;
+
+        height:2px;
+
+        background:#fff;
+      }
+
+      .bf-new-safe-circle{
+        position:absolute;
+
+        left:50%;
+        top:50%;
+
+        width:20%;
+
+        aspect-ratio:1;
+
+        border:
+          2px solid #fff;
+
+        border-radius:50%;
+
+        transform:
+          translate(
+            -50%,
+            -50%
+          );
+      }
+
+      .bf-new-safe-player{
+        position:absolute;
+
+        transform:
+          translate(
+            -50%,
+            -50%
+          );
+
+        width:82px;
+
+        text-align:center;
+
+        color:#fff;
+      }
+
+      .bf-new-safe-player img,
+      .bf-new-safe-avatar{
+        width:41px;
+        height:41px;
+
+        border-radius:50%;
+
+        object-fit:cover;
+
+        background:#fff;
+
+        border:
+          2px solid #fff;
+      }
+
+      .bf-new-safe-player-name{
+        font-size:8px;
+        font-weight:900;
+
+        background:
+          rgba(0,0,0,.76);
+
+        border-radius:4px;
+
+        padding:2px;
+
+        white-space:nowrap;
+
+        overflow:hidden;
+
+        text-overflow:ellipsis;
+      }
+
+      .bf-new-safe-player-rate{
+        display:inline-block;
+
+        padding:
+          2px 4px;
+
+        background:#fff;
+
+        color:#111;
+
+        border-radius:4px;
+
+        font-size:8px;
+        font-weight:900;
+      }
+
+      .bf-new-safe-columns{
+        display:grid;
+
+        grid-template-columns:
+          1fr 1fr;
+
+        gap:16px;
+      }
+
+      .bf-new-safe-panel{
+        padding:12px;
+
+        border-radius:14px;
+
+        background:
+          rgba(127,127,127,.06);
+      }
+
+      .bf-new-safe-list-player{
+        display:grid;
+
+        grid-template-columns:
+          40px 30px 1fr auto;
+
+        align-items:center;
+
+        gap:7px;
+
+        padding:7px;
+
+        margin-bottom:6px;
+
+        border-radius:8px;
+
+        background:
+          rgba(127,127,127,.07);
+      }
+
+      .bf-new-safe-list-player img,
+      .bf-new-safe-list-avatar{
+        width:38px;
+        height:38px;
+
+        border-radius:50%;
+
+        object-fit:cover;
+
+        background:
+          rgba(127,127,127,.1);
+      }
+
+      .bf-new-safe-number{
+        width:28px;
+        height:28px;
+
+        display:flex;
+        align-items:center;
+        justify-content:center;
+
+        border-radius:50%;
+
+        background:
+          rgba(127,127,127,.1);
+
+        font-size:9px;
+        font-weight:950;
+      }
+
+      .bf-new-safe-name{
+        font-size:11px;
+        font-weight:950;
+      }
+
+      .bf-new-safe-pos{
+        font-size:9px;
+        opacity:.58;
+      }
+
+      .bf-new-safe-rating{
+        font-size:9px;
+        font-weight:950;
+      }
+
+      .bf-new-safe-event{
+        display:grid;
+
+        grid-template-columns:
+          45px 30px 1fr;
+
+        align-items:center;
+
+        gap:8px;
+
+        padding:8px;
+
+        margin-bottom:6px;
+
+        border-radius:8px;
+
+        background:
+          rgba(127,127,127,.07);
+      }
+
+      .bf-new-safe-minute{
+        font-size:10px;
+        font-weight:950;
+      }
+
+      .bf-new-safe-icon{
+        font-size:17px;
+      }
+
+      .bf-new-safe-event-player{
+        font-size:10px;
+        font-weight:950;
+      }
+
+      .bf-new-safe-event-team{
+        font-size:9px;
+        opacity:.55;
+      }
+
+      .bf-new-safe-assist{
+        font-size:9px;
+        opacity:.7;
+
+        margin-top:2px;
+      }
+
+      .bf-new-safe-loading{
+        text-align:center;
+
+        padding:
+          60px 12px;
+
+        font-size:13px;
+        font-weight:950;
+      }
+
+      .bf-new-safe-empty{
+        padding:12px;
+
+        border-radius:9px;
+
+        background:
+          rgba(127,127,127,.06);
+
+        font-size:10px;
+
+        opacity:.7;
+      }
+
+      .bf-new-safe-error{
+        text-align:center;
+
+        padding:
+          40px 12px;
+
+        color:#ef4444;
+
+        font-weight:950;
+      }
+
+      @media(max-width:800px){
+
+        .bf-new-safe-pitches,
+        .bf-new-safe-columns{
+          grid-template-columns:1fr;
+        }
+
+      }
+
+      @media(max-width:600px){
+
+        .bf-new-safe-box{
+          padding:16px 9px;
+        }
+
+        .bf-new-safe-head{
+          gap:7px;
+        }
+
+        .bf-new-safe-score{
+          font-size:28px;
+        }
+
+        .bf-new-safe-team{
+          font-size:11px;
+        }
+
+        .bf-new-safe-team img{
+          width:56px;
+          height:56px;
+        }
+
+      }
+
+    `;
+
+    document.head.appendChild(
+      style
+    );
   }
 
   /* =========================================================
-     PITCH POSITION
-  ========================================================= */
+     MODAL
+     ========================================================= */
 
-  function pitchPositions(
+  function ensureModal() {
+
+    let modal =
+      document.getElementById(
+        "bf-new-match-safe-modal"
+      );
+
+    if (modal) {
+      return modal;
+    }
+
+    modal =
+      document.createElement(
+        "div"
+      );
+
+    modal.id =
+      "bf-new-match-safe-modal";
+
+    modal.innerHTML = `
+
+      <div
+        class="bf-new-safe-overlay"
+      >
+
+        <div
+          class="bf-new-safe-box"
+          onclick="
+            event.stopPropagation()
+          "
+        >
+
+          <button
+            type="button"
+            class="bf-new-safe-close"
+          >
+            ✕
+          </button>
+
+          <div
+            id="bf-new-safe-content"
+          ></div>
+
+        </div>
+
+      </div>
+
+    `;
+
+    document.body.appendChild(
+      modal
+    );
+
+    modal
+      .querySelector(
+        ".bf-new-safe-close"
+      )
+      .onclick =
+      closeModal;
+
+    modal
+      .querySelector(
+        ".bf-new-safe-overlay"
+      )
+      .onclick =
+      closeModal;
+
+    createStyles();
+
+    return modal;
+  }
+
+  function closeModal() {
+
+    const modal =
+      document.getElementById(
+        "bf-new-match-safe-modal"
+      );
+
+    if (modal) {
+      modal.style.display =
+        "none";
+    }
+
+    document.body.style.overflow =
+      "";
+  }
+
+  /* =========================================================
+     PITCH POSITIONS
+     ========================================================= */
+
+  function getPitchPlayers(
     lineup,
     side
   ) {
-
     const players =
       lineup.players.slice(
         0,
@@ -1680,27 +1487,96 @@
       unknown: []
     };
 
-    players.forEach(
-      p => {
+    for (
+      const player of players
+    ) {
 
-        groups[
-          classify(p)
-        ].push(p);
+      const p =
+        norm(
+          playerPosition(
+            player
+          )
+        );
+
+      if (
+        p.includes("goal") ||
+        p.includes("keeper") ||
+        p === "gk" ||
+        p === "g"
+      ) {
+
+        groups.gk.push(
+          player
+        );
+
+      } else if (
+        p.includes("def") ||
+        p.includes("back") ||
+        p.includes("cb") ||
+        p.includes("lb") ||
+        p.includes("rb")
+      ) {
+
+        groups.def.push(
+          player
+        );
+
+      } else if (
+        p.includes("mid") ||
+        p.includes("mf") ||
+        p.includes("cm") ||
+        p.includes("dm") ||
+        p.includes("am")
+      ) {
+
+        groups.mid.push(
+          player
+        );
+
+      } else if (
+        p.includes("att") ||
+        p.includes("fwd") ||
+        p.includes("fw") ||
+        p.includes("strik") ||
+        p.includes("wing") ||
+        p.includes("forward")
+      ) {
+
+        groups.att.push(
+          player
+        );
+
+      } else {
+
+        groups.unknown.push(
+          player
+        );
 
       }
-    );
+
+    }
+
+    let formation =
+      String(
+        lineup.formation ||
+        "4-3-3"
+      )
+        .split("-")
+        .map(Number)
+        .filter(
+          n => n > 0
+        );
+
+    if (
+      !formation.length
+    ) {
+      formation =
+        [4,3,3];
+    }
 
     const rows = [
-      groups.gk.slice(
-        0,
-        1
-      )
+      groups.gk.slice(0,1)
     ];
-
-    const formation =
-      formationRows(
-        lineup.formation
-      );
 
     let di = 0;
     let mi = 0;
@@ -1713,7 +1589,7 @@
         rowIndex
       ) => {
 
-        let source;
+        let source = [];
 
         if (
           rowIndex === 0
@@ -1777,19 +1653,18 @@
       }
     );
 
-    const flat =
-      [];
+    const result = [];
 
     rows.forEach(
       (
         row,
-        ri
+        rowIndex
       ) => {
 
         row.forEach(
           (
             player,
-            pi
+            playerIndex
           ) => {
 
             const x =
@@ -1798,8 +1673,9 @@
                 : 16 +
                   68 *
                     (
-                      pi /
-                      (
+                      playerIndex /
+                      Math.max(
+                        1,
                         row.length - 1
                       )
                     );
@@ -1810,7 +1686,7 @@
                 : 8 +
                   84 *
                     (
-                      ri /
+                      rowIndex /
                       Math.max(
                         1,
                         rows.length - 1
@@ -1818,14 +1694,13 @@
                     );
 
             if (
-              side ===
-              "away"
+              side === "away"
             ) {
               y =
                 100 - y;
             }
 
-            flat.push({
+            result.push({
               player,
 
               x:
@@ -1853,39 +1728,12 @@
       }
     );
 
-    const used =
-      new Set(
-        flat.map(
-          x =>
-            x.player
-        )
-      );
-
-    for (
-      const p of players
-    ) {
-
-      if (
-        !used.has(p) &&
-        flat.length < 11
-      ) {
-
-        flat.push({
-          player: p,
-          x: 50,
-          y: 50
-        });
-
-      }
-
-    }
-
-    return flat;
+    return result;
   }
 
   /* =========================================================
-     PITCH
-  ========================================================= */
+     RENDER PITCH
+     ========================================================= */
 
   function renderPitch(
     lineup,
@@ -1899,9 +1747,13 @@
 
       return `
 
-        <div class="bfnd-panel">
+        <div
+          class="bf-new-safe-panel"
+        >
 
-          <div class="bfnd-pitch-head">
+          <div
+            class="bf-new-safe-pitch-head"
+          >
 
             <span>
               ${esc(
@@ -1917,7 +1769,9 @@
 
           </div>
 
-          <div class="bfnd-empty">
+          <div
+            class="bf-new-safe-empty"
+          >
             Composition indisponible
           </div>
 
@@ -1927,17 +1781,15 @@
 
     }
 
-    const positions =
-      pitchPositions(
-        lineup,
-        side
-      );
-
     return `
 
-      <div class="bfnd-pitch-wrap">
+      <div
+        class="bf-new-safe-pitch-wrap"
+      >
 
-        <div class="bfnd-pitch-head">
+        <div
+          class="bf-new-safe-pitch-head"
+        >
 
           <span>
             ${esc(
@@ -1953,31 +1805,47 @@
 
         </div>
 
-        <div class="bfnd-pitch">
+        <div
+          class="bf-new-safe-pitch"
+        >
 
-          <div class="bfnd-border"></div>
+          <div
+            class="bf-new-safe-border"
+          ></div>
 
-          <div class="bfnd-half"></div>
+          <div
+            class="bf-new-safe-half"
+          ></div>
 
-          <div class="bfnd-circle"></div>
+          <div
+            class="bf-new-safe-circle"
+          ></div>
 
-          ${positions
+          ${
+            getPitchPlayers(
+              lineup,
+              side
+            )
             .map(
               item => {
 
-                const p =
+                const player =
                   item.player;
 
                 const photo =
-                  playerPhoto(p);
+                  playerPhoto(
+                    player
+                  );
 
                 const rating =
-                  playerRating(p);
+                  playerRating(
+                    player
+                  );
 
                 return `
 
                   <div
-                    class="bfnd-pitch-player"
+                    class="bf-new-safe-player"
                     style="
                       left:${item.x}%;
                       top:${item.y}%;
@@ -1986,44 +1854,60 @@
 
                     ${
                       photo
+
                         ? `
+
                           <img
                             src="${esc(
                               photo
                             )}"
                             alt="${esc(
-                              playerName(p)
+                              playerName(
+                                player
+                              )
                             )}"
                           >
+
                         `
+
                         : `
+
                           <div
-                            class="bfnd-pitch-avatar"
+                            class="bf-new-safe-avatar"
                           >
                             ⚽
                           </div>
+
                         `
                     }
 
                     <div
-                      class="bfnd-pitch-name"
+                      class="bf-new-safe-player-name"
                     >
                       ${esc(
-                        playerName(p)
+                        playerName(
+                          player
+                        )
                       )}
                     </div>
 
                     ${
-                      rating != null
+                      rating !== null
+
                         ? `
+
                           <div
-                            class="bfnd-pitch-rate"
+                            class="bf-new-safe-player-rate"
                           >
                             ⭐ ${esc(
-                              rating.toFixed(1)
+                              Number(
+                                rating
+                              ).toFixed(1)
                             )}
                           </div>
+
                         `
+
                         : ""
                     }
 
@@ -2032,7 +1916,8 @@
                 `;
               }
             )
-            .join("")}
+            .join("")
+          }
 
         </div>
 
@@ -2042,8 +1927,8 @@
   }
 
   /* =========================================================
-     PLAYER LIST
-  ========================================================= */
+     RENDER PLAYERS
+     ========================================================= */
 
   function renderPlayers(
     lineup
@@ -2055,7 +1940,9 @@
 
       return `
 
-        <div class="bfnd-empty">
+        <div
+          class="bf-new-safe-empty"
+        >
           Joueurs indisponibles
         </div>
 
@@ -2065,67 +1952,97 @@
 
     return lineup.players
       .map(
-        p => {
+        player => {
 
           const photo =
-            playerPhoto(p);
+            playerPhoto(
+              player
+            );
 
           const rating =
-            playerRating(p);
+            playerRating(
+              player
+            );
 
           return `
 
             <div
-              class="bfnd-player"
+              class="bf-new-safe-list-player"
             >
 
               ${
                 photo
+
                   ? `
+
                     <img
                       src="${esc(
                         photo
                       )}"
                       alt="${esc(
-                        playerName(p)
+                        playerName(
+                          player
+                        )
                       )}"
                     >
+
                   `
+
                   : `
-                    <div class="bfnd-avatar">
+
+                    <div
+                      class="bf-new-safe-list-avatar"
+                    >
                       ⚽
                     </div>
+
                   `
               }
 
-              <div class="bfnd-num">
+              <div
+                class="bf-new-safe-number"
+              >
                 ${esc(
-                  playerNumber(p)
+                  playerNumber(
+                    player
+                  )
                 )}
               </div>
 
               <div>
 
-                <div class="bfnd-name">
+                <div
+                  class="bf-new-safe-name"
+                >
                   ${esc(
-                    playerName(p)
+                    playerName(
+                      player
+                    )
                   )}
                 </div>
 
-                <div class="bfnd-pos">
+                <div
+                  class="bf-new-safe-pos"
+                >
                   ${esc(
-                    playerPosition(p)
+                    playerPosition(
+                      player
+                    )
                   )}
                 </div>
 
               </div>
 
-              <div class="bfnd-rating">
+              <div
+                class="bf-new-safe-rating"
+              >
 
                 ${
-                  rating != null
+                  rating !== null
                     ? `⭐ ${esc(
-                        rating.toFixed(1)
+                        Number(
+                          rating
+                        ).toFixed(1)
                       )}`
                     : "—"
                 }
@@ -2135,86 +2052,23 @@
             </div>
 
           `;
+
         }
       )
       .join("");
   }
 
   /* =========================================================
-     EVENT ICON
-  ========================================================= */
-
-  function eventIcon(
-    event
-  ) {
-
-    const t =
-      norm(
-        first(
-
-          typeof event?.type ===
-            "object"
-
-            ? event?.type?.name
-
-            : event?.type,
-
-          event?.incidentType,
-
-          event?.kind,
-
-          event?.detail,
-
-          event?.text,
-
-          ""
-        )
-      );
-
-    if (
-      t.includes("goal") ||
-      t.includes("score")
-    ) {
-      return "⚽";
-    }
-
-    if (
-      t.includes("yellow")
-    ) {
-      return "🟨";
-    }
-
-    if (
-      t.includes("red")
-    ) {
-      return "🟥";
-    }
-
-    if (
-      t.includes("sub")
-    ) {
-      return "🔄";
-    }
-
-    return "•";
-  }
-
-  /* =========================================================
-     EVENTS
-  ========================================================= */
+     RENDER EVENTS
+     ========================================================= */
 
   function renderEvents(
     details
   ) {
 
     const events =
-      arr(
-        first(
-          details?.events,
-          details?.incidents,
-          details?.plays,
-          []
-        )
+      getEvents(
+        details
       );
 
     if (
@@ -2223,7 +2077,9 @@
 
       return `
 
-        <div class="bfnd-empty">
+        <div
+          class="bf-new-safe-empty"
+        >
           Aucun événement détaillé disponible.
         </div>
 
@@ -2233,91 +2089,92 @@
 
     return events
       .map(
-        e => {
-
-          const p =
-            first(
-
-              e?.player?.name,
-
-              e?.player_name,
-
-              e?.athlete
-                ?.displayName,
-
-              e?.name,
-
-              e?.participants
-                ?.
-                [0]
-                ?.athlete
-                ?.displayName,
-
-              e?.text,
-
-              e?.detail,
-
-              "Événement"
-            );
+        event => {
 
           const team =
-            first(
-              e?.team?.name,
-              e?.team_name,
-              e?.club?.name,
-              ""
+            String(
+              first(
+                event?.team?.name,
+                event?.team_name,
+                event?.club?.name,
+                ""
+              )
             );
 
-          const minute =
-            first(
-              e?.minute,
-              e?.elapsed,
-              e?.clock
-                ?.displayValue,
-              e?.time
-                ?.elapsed,
-              "-"
+          const assist =
+            eventAssist(
+              event
             );
 
           return `
 
             <div
-              class="bfnd-event"
+              class="bf-new-safe-event"
             >
 
               <div
-                class="bfnd-event-minute"
+                class="bf-new-safe-minute"
               >
                 ${esc(
-                  minute
+                  eventMinute(
+                    event
+                  )
                 )}'
               </div>
 
               <div
-                class="bfnd-event-icon"
+                class="bf-new-safe-icon"
               >
-                ${eventIcon(e)}
+                ${eventIcon(
+                  event
+                )}
               </div>
 
               <div>
 
                 <div
-                  class="bfnd-event-main"
+                  class="bf-new-safe-event-player"
                 >
-                  ${esc(p)}
+                  ${esc(
+                    eventPlayer(
+                      event
+                    )
+                  )}
                 </div>
 
                 ${
                   team
+
                     ? `
+
                       <div
-                        class="bfnd-event-team"
+                        class="bf-new-safe-event-team"
                       >
                         ${esc(
                           team
                         )}
                       </div>
+
                     `
+
+                    : ""
+                }
+
+                ${
+                  assist
+
+                    ? `
+
+                      <div
+                        class="bf-new-safe-assist"
+                      >
+                        🅰️ ${esc(
+                          assist
+                        )}
+                      </div>
+
+                    `
+
                     : ""
                 }
 
@@ -2332,8 +2189,8 @@
   }
 
   /* =========================================================
-     RENDER FULL DETAILS
-  ========================================================= */
+     RENDER DETAILS
+     ========================================================= */
 
   function renderDetails(
     details,
@@ -2345,7 +2202,7 @@
 
     const content =
       document.getElementById(
-        "bfnd-content"
+        "bf-new-safe-content"
       );
 
     const home =
@@ -2374,61 +2231,91 @@
         away
       );
 
-    const league =
-      String(
-        first(
-          details?.league?.name,
-          details?.competition?.name,
-          "Football"
-        )
+    const homeScore =
+      first(
+        details?.score?.home,
+        details?.goals?.home,
+        details?.home_score,
+        "-"
+      );
+
+    const awayScore =
+      first(
+        details?.score?.away,
+        details?.goals?.away,
+        details?.away_score,
+        "-"
+      );
+
+    const competition =
+      first(
+        details?.league?.name,
+        details?.competition?.name,
+        "Football"
       );
 
     const status =
-      String(
-        first(
-          details?.fixture
-            ?.status?.long,
+      first(
+        details?.fixture
+          ?.status?.long,
 
-          details?.fixture
-            ?.status?.short,
+        details?.fixture
+          ?.status?.short,
 
-          details?.status_text,
+        details?.status_text,
 
-          details?.status,
+        details?.status,
 
-          "MATCH"
-        )
+        "MATCH"
       );
 
     const date =
       first(
-        details?.fixture?.date,
+        details?.fixture
+          ?.date,
+
         details?.date,
+
         ""
       );
+
+    const providerText =
+      source ===
+        "sofascore"
+
+        ? "SofaScore"
+
+        : source ===
+            "espn"
+
+          ? "ESPN"
+
+          : "TheSportsDB";
 
     content.innerHTML = `
 
       <div
-        class="bfnd-league"
+        class="bf-new-safe-league"
       >
         🏆 ${esc(
-          league
+          competition
         )}
       </div>
 
 
       <div
-        class="bfnd-head"
+        class="bf-new-safe-head"
       >
 
         <div
-          class="bfnd-team"
+          class="bf-new-safe-team"
         >
 
           ${
             home.logo
+
               ? `
+
                 <img
                   src="${esc(
                     home.logo
@@ -2437,7 +2324,9 @@
                     home.name
                   )}"
                 >
+
               `
+
               : "⚽"
           }
 
@@ -2453,29 +2342,23 @@
         <div>
 
           <div
-            class="bfnd-score"
+            class="bf-new-safe-score"
           >
 
             ${esc(
-              getScore(
-                details,
-                "home"
-              )
+              homeScore
             )}
 
             -
 
             ${esc(
-              getScore(
-                details,
-                "away"
-              )
+              awayScore
             )}
 
           </div>
 
           <div
-            class="bfnd-status"
+            class="bf-new-safe-status"
           >
             ${esc(
               status
@@ -2486,12 +2369,14 @@
 
 
         <div
-          class="bfnd-team"
+          class="bf-new-safe-team"
         >
 
           ${
             away.logo
+
               ? `
+
                 <img
                   src="${esc(
                     away.logo
@@ -2500,7 +2385,9 @@
                     away.name
                   )}"
                 >
+
               `
+
               : "⚽"
           }
 
@@ -2516,12 +2403,14 @@
 
 
       <div
-        class="bfnd-info"
+        class="bf-new-safe-info"
       >
 
         ${
           date
+
             ? `
+
               <span>
                 📅 ${esc(
                   new Date(
@@ -2531,7 +2420,9 @@
                   )
                 )}
               </span>
+
             `
+
             : ""
         }
 
@@ -2539,10 +2430,12 @@
         ${
           details?.fixture
             ?.venue
-            ? `
-              <span>
 
+            ? `
+
+              <span>
                 🏟️ ${esc(
+
                   typeof
                     details
                       .fixture
@@ -2566,35 +2459,35 @@
                     : details
                         .fixture
                         .venue
-                )}
 
+                )}
               </span>
+
             `
+
             : ""
         }
 
 
         <span>
-          🔗 ${esc(
-            source
-          )}
+          🔗 ${providerText}
         </span>
 
       </div>
 
 
       <div
-        class="bfnd-section"
+        class="bf-new-safe-section"
       >
 
         <div
-          class="bfnd-title"
+          class="bf-new-safe-title"
         >
           🧩 Formations & Compositions
         </div>
 
         <div
-          class="bfnd-pitches"
+          class="bf-new-safe-pitches"
         >
 
           ${renderPitch(
@@ -2615,21 +2508,21 @@
 
 
       <div
-        class="bfnd-section"
+        class="bf-new-safe-section"
       >
 
         <div
-          class="bfnd-title"
+          class="bf-new-safe-title"
         >
           👥 Joueurs
         </div>
 
         <div
-          class="bfnd-grid"
+          class="bf-new-safe-columns"
         >
 
           <div
-            class="bfnd-panel"
+            class="bf-new-safe-panel"
           >
 
             <b>
@@ -2646,7 +2539,7 @@
 
 
           <div
-            class="bfnd-panel"
+            class="bf-new-safe-panel"
           >
 
             <b>
@@ -2667,11 +2560,11 @@
 
 
       <div
-        class="bfnd-section"
+        class="bf-new-safe-section"
       >
 
         <div
-          class="bfnd-title"
+          class="bf-new-safe-title"
         >
           ⏱️ Événements
         </div>
@@ -2692,24 +2585,31 @@
   }
 
   /* =========================================================
-     FETCH DETAILS
-  ========================================================= */
+     FETCH THROUGH OUR API ONLY
+     ========================================================= */
 
   async function fetchDetails(
     source
   ) {
 
+    const url =
+      API +
+      encodeURIComponent(
+        source.value
+      ) +
+      "&source=" +
+      encodeURIComponent(
+        source.source
+      );
+
+    console.log(
+      "BAKHIRAFOOT NEW DETAILS REQUEST:",
+      url
+    );
+
     const response =
       await fetch(
-        API +
-          encodeURIComponent(
-            source.value
-          ) +
-          "&source=" +
-          encodeURIComponent(
-            source.provider
-          ),
-
+        url,
         {
           cache:
             "no-store",
@@ -2724,21 +2624,11 @@
     const raw =
       await response.text();
 
-    if (
-      !response.ok
-    ) {
-
-      throw new Error(
-        `API HTTP ${response.status}`
-      );
-
-    }
-
-    let data;
+    let payload;
 
     try {
 
-      data =
+      payload =
         JSON.parse(
           raw
         );
@@ -2751,10 +2641,28 @@
 
     }
 
+    if (
+      !response.ok
+    ) {
+
+      const error =
+        new Error(
+          `API HTTP ${response.status}`
+        );
+
+      error.status =
+        response.status;
+
+      error.payload =
+        payload;
+
+      throw error;
+    }
+
     const details =
-      data?.data ||
-      data?.match ||
-      data;
+      payload?.data ||
+      payload?.match ||
+      payload;
 
     if (
       !details ||
@@ -2774,11 +2682,10 @@
 
   /* =========================================================
      OPEN NEW MATCH
-  ========================================================= */
+     ========================================================= */
 
   async function openNewMatch(
-    index,
-    card
+    index
   ) {
 
     const match =
@@ -2788,12 +2695,35 @@
       return false;
     }
 
+    const sources =
+      getExternalSources(
+        match
+      );
+
+    /*
+     * مهم جداً:
+     *
+     * ماكاين حتى source خارجي؟
+     * ما نديرو والو.
+     *
+     * هكا الماتش القديم
+     * كيمشي للكود القديم ديالو.
+     */
+
+    if (
+      !sources.length
+    ) {
+
+      return false;
+
+    }
+
     const modal =
       ensureModal();
 
     const content =
       document.getElementById(
-        "bfnd-content"
+        "bf-new-safe-content"
       );
 
     modal.style.display =
@@ -2805,117 +2735,106 @@
     content.innerHTML = `
 
       <div
-        class="bfnd-loading"
+        class="bf-new-safe-loading"
+      >
+        ⏳ جاري تحميل تفاصيل المباراة...
+      </div>
+
+    `;
+
+    let lastError =
+      null;
+
+    /*
+     * نجرب المصدر الأول.
+     * إذا ما خدمش نجرب الثاني.
+     */
+
+    for (
+      const source of sources
+    ) {
+
+      try {
+
+        const details =
+          await fetchDetails(
+            source
+          );
+
+        renderDetails(
+          details,
+          source.source
+        );
+
+        return true;
+
+      } catch (error) {
+
+        lastError =
+          error;
+
+        console.warn(
+          "BAKHIRAFOOT SOURCE FAILED:",
+          source,
+          error
+        );
+
+      }
+
+    }
+
+    content.innerHTML = `
+
+      <div
+        class="bf-new-safe-error"
       >
 
-        ⏳ جاري البحث على تفاصيل الماتش...
+        ❌ ما قدرناش نحملو تفاصيل هاد الماتش.
+
+        <br>
+        <br>
+
+        <small>
+          ${esc(
+            lastError?.message ||
+            "Erreur inconnue"
+          )}
+        </small>
 
       </div>
 
     `;
 
-    try {
-
-      const source =
-        await findExternalSource(
-          match,
-          card
-        );
-
-      if (!source) {
-
-        closeModal();
-
-        return false;
-
-      }
-
-      console.log(
-        "BAKHIRAFOOT NEW MATCH SOURCE:",
-        source
-      );
-
-      const details =
-        await fetchDetails(
-          source
-        );
-
-      renderDetails(
-        details,
-
-        source.provider ===
-          "sofascore"
-
-          ? "SofaScore"
-
-          : source.provider ===
-              "espn"
-
-            ? "ESPN"
-
-            : "TheSportsDB"
-      );
-
-      return true;
-
-    } catch (error) {
-
-      console.error(
-        "BAKHIRAFOOT NEW MATCH DETAILS ERROR:",
-        error
-      );
-
-      content.innerHTML = `
-
-        <div
-          class="bfnd-loading"
-        >
-
-          ❌ ما قدرناش نجيبو تفاصيل هاد الماتش دابا.
-
-          <br>
-          <br>
-
-          <small>
-            ${esc(
-              error?.message ||
-                "Erreur inconnue"
-            )}
-          </small>
-
-        </div>
-
-      `;
-
-      return true;
-    }
+    return true;
   }
 
   /* =========================================================
      CLICK INTERCEPTOR
-  ========================================================= */
+     ========================================================= */
 
   document.addEventListener(
     "click",
-
-    async function (event) {
+    async function (
+      event
+    ) {
 
       const target =
         event.target;
 
       if (
-        !target?.closest
+        !target ||
+        !target.closest
       ) {
         return;
       }
 
       const card =
         target.closest(
-
-          ".match-card, " +
-          ".bf-score-pro-card, " +
-          ".bf-score-professional-match"
-
+          [
+            ".match-card",
+            ".bf-score-pro-card",
+            ".bf-score-professional-match"
+          ].join(",")
         );
 
       if (!card) {
@@ -2943,84 +2862,37 @@
         return;
       }
 
-      const hasExternal =
-        collectKnownSources(
-          match,
-          card
-        ).length > 0
-        ||
-        getProvider(
+      const sources =
+        getExternalSources(
           match
-        ) ===
-          "sofascore"
-        ||
-        getProvider(
-          match
-        ) ===
-          "sofa"
-        ||
-        getProvider(
-          match
-        ) ===
-          "espn"
-        ||
-        getProvider(
-          match
-        ) ===
-          "thesportsdb"
-        ||
-        getProvider(
-          match
-        ) ===
-          "tsdb";
+        );
 
       /*
-       * ماتش جديد:
-       * نحبسو onclick القديم
+       * أهم سطر:
+       *
+       * الماتشات القديمة
+       * ما نتدخلوش فيها نهائياً.
        */
 
-      if (!hasExternal) {
-
-        event.preventDefault();
-
-        event.stopImmediatePropagation();
-
-        const worked =
-          await openNewMatch(
-            index,
-            card
-          );
-
-        /*
-         * إلا ما لقا حتى source
-         * نرجعو للقديم
-         */
-
-        if (
-          !worked &&
-          typeof
-            window
-              .bfOldOpenMatchDetails ===
-            "function"
-        ) {
-
-          window
-            .bfOldOpenMatchDetails(
-              index
-            );
-
-        }
+      if (
+        !sources.length
+      ) {
 
         return;
+
       }
+
+      /*
+       * غير هنا
+       * كنوقفو onclick القديم.
+       */
 
       event.preventDefault();
 
       event.stopImmediatePropagation();
 
       await openNewMatch(
-        index,
-        card
+        index
       );
 
     },
@@ -3029,165 +2901,14 @@
   );
 
   /* =========================================================
-     PROGRAMMATIC openMatchDetails(index)
-  ========================================================= */
-
-  const oldOpen =
-    window.openMatchDetails;
-
-  if (
-    !window
-      .bfOldOpenMatchDetails
-  ) {
-
-    window
-      .bfOldOpenMatchDetails =
-      oldOpen;
-
-  }
-
-  window.bfOpenMatchDetails =
-    async function (
-      identifier
-    ) {
-
-      let source =
-        null;
-
-      const value =
-        String(
-          identifier ||
-            ""
-        ).trim();
-
-      if (
-        /^sofa-/i.test(
-          value
-        )
-      ) {
-
-        source = {
-          provider:
-            "sofascore",
-
-          value
-        };
-
-      } else if (
-        /^espn-/i.test(
-          value
-        )
-      ) {
-
-        source = {
-          provider:
-            "espn",
-
-          value
-        };
-
-      } else if (
-        /^tsdb-/i.test(
-          value
-        )
-      ) {
-
-        source = {
-          provider:
-            "thesportsdb",
-
-          value
-        };
-
-      }
-
-      if (!source) {
-        return false;
-      }
-
-      try {
-
-        const details =
-          await fetchDetails(
-            source
-          );
-
-        renderDetails(
-          details,
-
-          source.provider ===
-            "sofascore"
-
-            ? "SofaScore"
-
-            : source.provider ===
-                "espn"
-
-              ? "ESPN"
-
-              : "TheSportsDB"
-        );
-
-        return true;
-
-      } catch (error) {
-
-        console.error(
-          error
-        );
-
-        return false;
-      }
-    };
-
-  window.openMatchDetails =
-    async function (
-      index
-    ) {
-
-      const card =
-        document.querySelector(
-
-          [
-            `.match-card[data-match-index="${index}"]`,
-
-            `.bf-score-pro-card[data-match-index="${index}"]`,
-
-            `.bf-score-professional-match[data-match-index="${index}"]`
-          ].join(",")
-
-        );
-
-      const worked =
-        await openNewMatch(
-          Number(index),
-          card
-        );
-
-      if (
-        !worked &&
-        typeof
-          window
-            .bfOldOpenMatchDetails ===
-          "function"
-      ) {
-
-        return window
-          .bfOldOpenMatchDetails(
-            index
-          );
-
-      }
-    };
-
-  /* =========================================================
-     ESC CLOSE
-  ========================================================= */
+     ESC
+     ========================================================= */
 
   document.addEventListener(
     "keydown",
-
-    event => {
+    function (
+      event
+    ) {
 
       if (
         event.key ===
@@ -3202,7 +2923,7 @@
   );
 
   console.log(
-    "✅ BakhiraFoot New Match Details loaded"
+    "✅ BakhiraFoot NEW MATCH DETAILS SAFE loaded"
   );
 
 })();
