@@ -1541,60 +1541,6 @@ function sortScoreMatches(matches) {
 
 
 /* =========================================================
-   HIDDEN COMPETITIONS
-   هادو مراحل ماشي بطولات
-========================================================= */
-
-function isHiddenCompetition(match) {
-  let name = getLeague(match);
-
-  name = normalizeText(name)
-    .replace(/\s+/g, " ")
-    .trim();
-
-  /*
-     نحيدو رقم المرحلة من الآخر:
-     Regular Season - 7
-     First Round - 2
-     Qualifying Round - 1
-  */
-  name = name.replace(
-    /\s*[-–—:|]\s*\d+\s*$/i,
-    ""
-  ).trim();
-
-  const hidden = [
-    "first round",
-    "second round",
-    "third round",
-    "qualifying round",
-    "qualification round",
-    "league phase",
-    "regular season",
-    "fall season",
-    "spring season",
-    "summer season",
-    "winter season",
-    "group stage",
-    "final",
-    "semi final",
-    "semi-final",
-    "semi finals",
-    "semi-finals",
-    "quarter final",
-    "quarter-final",
-    "quarter finals",
-    "quarter-finals",
-    "playoff",
-    "playoffs",
-    "play-off",
-    "play-offs"
-  ];
-
-  return hidden.includes(name);
-}
-
-/* =========================================================
    BUILD COMPETITIONS
 ========================================================= */
 
@@ -1603,52 +1549,46 @@ function buildCompetitionGroups(matches) {
   const groupsMap =
     new Map();
 
-  matches
-    .filter(
-      match =>
-        !isHiddenCompetition(match)
-    )
-    .forEach(
-      (match, index) => {
+  matches.forEach(
+    (match, index) => {
 
-        const key =
-          getCompetitionGroupKey(
-            match
-          );
+      const key =
+        getCompetitionGroupKey(
+          match
+        );
 
-        if (!groupsMap.has(key)) {
+      if (!groupsMap.has(key)) {
+        groupsMap.set(
+          key,
+          {
+            name:
+              getLeague(match) ||
+              "Football",
 
-          groupsMap.set(
-            key,
-            {
-              name:
-                getLeague(match) ||
-                "Football",
+            logo:
+              getLeagueLogo(match),
 
-              logo:
-                getLeagueLogo(match),
-
-              matches: []
-            }
-          );
-
-        }
-
-        groupsMap
-          .get(key)
-          .matches
-          .push({
-            match,
-            index
-          });
-
+            matches: []
+          }
+        );
       }
-    );
+
+      groupsMap
+        .get(key)
+        .matches
+        .push({
+          match,
+          index
+        });
+    }
+  );
+
 
   const result =
     Array.from(
       groupsMap.values()
     );
+
 
   /* ترتيب المنافسات */
   result.sort(
@@ -1678,11 +1618,11 @@ function buildCompetitionGroups(matches) {
         b.name,
         "fr"
       );
-
     }
   );
 
-  /* ترتيب الماتشات */
+
+  /* ترتيب الماتشات داخل كل Competition */
   result.forEach(
     group => {
 
@@ -1693,6 +1633,7 @@ function buildCompetitionGroups(matches) {
 
     }
   );
+
 
   return result;
 }
@@ -7145,10 +7086,8 @@ function renderMatchInformation(
    LOAD REAL SPORTScore MATCH DETAILS
 ========================================================= */
 
-async function loadRealMatchDetails(
-  fixtureId,
-  provider = "SportScore"
-) {
+async function loadRealMatchDetails(fixtureId) {
+
   const value =
     String(
       fixtureId || ""
@@ -7178,12 +7117,10 @@ async function loadRealMatchDetails(
 
   try {
 
-  const url =
-  `/api?fixture=${encodeURIComponent(
-    value
-  )}&source=${encodeURIComponent(
-    provider
-  )}`;
+    const url =
+      `/api?fixture=${encodeURIComponent(
+        value
+      )}`;
 
     console.log(
       "BAKHIRAFOOT DETAILS REQUEST:",
@@ -8210,18 +8147,12 @@ async function openMatchDetails(index) {
     return;
   }
 
- const provider =
-  match?.provider ||
-  "SportScore";
-
-const fixtureId =
-  match?.fixture?.upstreamId ||
-  match?.upstreamId ||
-  match?.fixture?.id ||
-  match?.id ||
-  match?.fixture?.slug ||
-  match?.slug ||
-  null;
+  const fixtureId =
+    match?.fixture?.slug ||
+    match?.slug ||
+    match?.fixture?.id ||
+    match?.id ||
+    null;
 
   createMatchModal();
 
@@ -8404,11 +8335,11 @@ const fixtureId =
 
   try {
 
-   const raw =
-  await loadRealMatchDetails(
-    fixtureId,
-    provider
-  );
+    const raw =
+      await loadRealMatchDetails(
+        fixtureId
+      );
+
 
     if (
       currentOpenedFixture !==
@@ -9669,52 +9600,6 @@ function startLiveRefresh() {
     60000
   );
 }
-
-/* =========================================================
-   MATCH DETAILS BRIDGE
-   كيخلي Home cards وScore cards بجوج يخدمو
-========================================================= */
-
-window.bfOpenMatchDetails =
-  function (fixtureId) {
-
-    const value =
-      String(
-        fixtureId || ""
-      ).trim();
-
-    if (!value) {
-      toast(
-        "تفاصيل الماتش غير متوفرة"
-      );
-      return;
-    }
-
-    const index =
-      currentMatches.findIndex(
-        match =>
-          String(
-            getFixtureId(match) ||
-            ""
-          ) === value
-      );
-
-    if (
-      index < 0
-    ) {
-
-      toast(
-        "الماتش غير موجود"
-      );
-
-      return;
-    }
-
-    openMatchDetails(
-      index
-    );
-  };
-
 /* =========================================================
    START APP
 ========================================================= */
