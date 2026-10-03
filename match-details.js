@@ -1288,52 +1288,61 @@
     );
   }
 
-  function getPlayerNumber(
-    player
-  ) {
-    if (
-      typeof player === "string"
-    ) {
-      return "-";
-    }
-
-    return first(
-      player?.number,
-      player?.shirt_number,
-      player?.shirtNumber,
-      player?.jersey,
-      player?.player?.number,
-      "-"
-    );
-  }
-
-  function getPlayerPosition(
-    player
-  ) {
-    if (
-      typeof player === "string"
-    ) {
-      return "";
-    }
-
-    return first(
-      player?.position,
-      player?.pos,
-      player?.role,
-      player?.player?.position,
-      ""
-    );
-  }
-
-  function getPlayerPhoto(
+ function getPlayerNumber(
   player
 ) {
   if (!player) {
-    return "";
+    return "-";
   }
 
   if (
-    typeof player === "string"
+    typeof player === "string" ||
+    typeof player === "number"
+  ) {
+    return "-";
+  }
+
+  const p =
+    player?.player &&
+    typeof player.player === "object"
+      ? player.player
+      : player;
+
+  return first(
+
+    /* مباشر */
+    player?.number,
+    player?.shirt_number,
+    player?.shirtNumber,
+    player?.jersey,
+    player?.jersey_number,
+    player?.jerseyNumber,
+
+    /* nested player */
+    p?.number,
+    p?.shirt_number,
+    p?.shirtNumber,
+    p?.jersey,
+    p?.jersey_number,
+    p?.jerseyNumber,
+
+    /* statistics / games */
+    player?.statistics?.shirtNumber,
+    player?.statistics?.jerseyNumber,
+    player?.games?.shirtNumber,
+    player?.games?.jerseyNumber,
+
+    "-"
+  );
+}
+  
+ function getPlayerPosition(
+  player
+) {
+  if (
+    !player ||
+    typeof player === "string" ||
+    typeof player === "number"
   ) {
     return "";
   }
@@ -1344,9 +1353,110 @@
       ? player.player
       : player;
 
+  const position =
+    first(
+
+      /* مباشر */
+      player?.position,
+      player?.pos,
+      player?.role,
+      player?.position_name,
+      player?.positionName,
+
+      /* nested */
+      p?.position,
+      p?.pos,
+      p?.role,
+      p?.position_name,
+      p?.positionName,
+
+      /* statistics */
+      player?.statistics?.position,
+      player?.statistics?.positionName,
+      p?.statistics?.position,
+      p?.statistics?.positionName,
+
+      ""
+    );
+
+  if (
+    position &&
+    typeof position === "object"
+  ) {
+    return first(
+      position?.name,
+      position?.displayName,
+      position?.abbreviation,
+      position?.shortName,
+      ""
+    );
+  }
+
+  return String(
+    position || ""
+  );
+}
+
+  function getPlayerPhoto(
+  player
+) {
+  if (!player) {
+    return "";
+  }
+
+  if (
+    typeof player === "string" ||
+    typeof player === "number"
+  ) {
+    return "";
+  }
+
+  const p =
+    player?.player &&
+    typeof player.player === "object"
+      ? player.player
+      : player;
+
+  function extractImage(
+    value
+  ) {
+    if (!value) {
+      return "";
+    }
+
+    if (
+      typeof value === "string"
+    ) {
+      return value.trim();
+    }
+
+    if (
+      typeof value !== "object"
+    ) {
+      return "";
+    }
+
+    return first(
+      value?.url,
+      value?.src,
+      value?.href,
+      value?.image,
+      value?.photo,
+      value?.picture,
+      value?.avatar,
+      value?.headshot,
+      value?.profile,
+      value?.path,
+      ""
+    );
+  }
+
   return first(
-    /* player direct */
-    player?.logo,
+
+    /* =================================
+       مباشر
+    ================================= */
+
     player?.photo,
     player?.image,
     player?.picture,
@@ -1354,10 +1464,37 @@
     player?.headshot,
     player?.photo_url,
     player?.image_url,
-    player?.player_image,
+    player?.photoUrl,
+    player?.imageUrl,
 
-    /* nested player */
-    p?.logo,
+    /* =================================
+       image object
+    ================================= */
+
+    extractImage(
+      player?.image
+    ),
+
+    extractImage(
+      player?.photo
+    ),
+
+    extractImage(
+      player?.picture
+    ),
+
+    extractImage(
+      player?.avatar
+    ),
+
+    extractImage(
+      player?.headshot
+    ),
+
+    /* =================================
+       nested player
+    ================================= */
+
     p?.photo,
     p?.image,
     p?.picture,
@@ -1365,7 +1502,40 @@
     p?.headshot,
     p?.photo_url,
     p?.image_url,
-    p?.player_image,
+    p?.photoUrl,
+    p?.imageUrl,
+
+    extractImage(
+      p?.image
+    ),
+
+    extractImage(
+      p?.photo
+    ),
+
+    extractImage(
+      p?.picture
+    ),
+
+    extractImage(
+      p?.avatar
+    ),
+
+    extractImage(
+      p?.headshot
+    ),
+
+    /* =================================
+       nested profile
+    ================================= */
+
+    extractImage(
+      p?.profile
+    ),
+
+    extractImage(
+      player?.profile
+    ),
 
     ""
   );
@@ -1379,7 +1549,8 @@ function getPlayerRating(
   }
 
   if (
-    typeof player === "string"
+    typeof player === "string" ||
+    typeof player === "number"
   ) {
     return null;
   }
@@ -1392,28 +1563,54 @@ function getPlayerRating(
 
   const value =
     first(
-      /* direct */
+
+      /* =================================
+         مباشر
+      ================================= */
+
       player?.rating,
       player?.match_rating,
       player?.matchRating,
       player?.rating_value,
       player?.ratingValue,
+      player?.score,
 
-      /* statistics */
+      /* =================================
+         statistics
+      ================================= */
+
       player?.statistics?.rating,
       player?.statistics?.player_rating,
-      player?.performance?.rating,
+      player?.statistics?.match_rating,
+      player?.statistics?.ratingValue,
+      player?.statistics?.score,
 
-      /* nested player */
+      /* =================================
+         performance
+      ================================= */
+
+      player?.performance?.rating,
+      player?.performance?.score,
+
+      /* =================================
+         nested player
+      ================================= */
+
       p?.rating,
       p?.match_rating,
       p?.matchRating,
       p?.rating_value,
       p?.ratingValue,
+      p?.score,
 
       p?.statistics?.rating,
       p?.statistics?.player_rating,
+      p?.statistics?.match_rating,
+      p?.statistics?.ratingValue,
+      p?.statistics?.score,
+
       p?.performance?.rating,
+      p?.performance?.score,
 
       null
     );
@@ -1433,9 +1630,15 @@ function getPlayerRating(
         .trim()
     );
 
-  return Number.isFinite(rating)
-    ? rating
-    : null;
+  if (
+    !Number.isFinite(
+      rating
+    )
+  ) {
+    return null;
+  }
+
+  return rating;
 }
   function playerKey(
     player
@@ -2930,9 +3133,12 @@ function getPlayerRating(
             )
           )}"
           loading="lazy"
-          onerror="
-            this.style.display='none';
-          "
+         onerror="
+  this.onerror=null;
+  this.style.display='none';
+  const fallback=this.parentElement?.querySelector('.bfmd-number');
+  if(fallback) fallback.style.display='flex';
+"
         >
 
         <div class="bfmd-number">
