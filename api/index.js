@@ -1585,6 +1585,238 @@ function findRealCompetition(raw) {
     stage
   };
 }
+
+/* =========================================================
+   COMPETITION RESOLVER
+   IMPORTANT:
+   Competition = البطولة
+   Stage / Round = المرحلة
+========================================================= */
+
+function isGenericStage(value) {
+  const name = String(value || "")
+    .trim()
+    .toLowerCase()
+    .replace(/\s+/g, " ");
+
+  return /^(regular season|fall season|spring season|summer season|winter season|group stage|first round|second round|third round|round of \d+|quarterfinals?|quarter-finals?|semifinals?|semi-finals?|final|playoffs?|play-offs?|league)$/i.test(
+    name
+  );
+}
+
+function competitionNameFromSlug(value) {
+  if (!value) return "";
+
+  let slug = String(value)
+    .toLowerCase()
+    .trim();
+
+  if (!slug) return "";
+
+  slug = slug
+    .replace(
+      /^\d{4}(?:-\d{2})?-?/,
+      ""
+    )
+    .replace(
+      /-(regular-season|fall-season|spring-season|summer-season|winter-season|group-stage|first-round|second-round|third-round|round-of-\d+|quarterfinals?|quarter-finals?|semifinals?|semi-finals?|final|playoffs?|play-offs?)$/,
+      ""
+    )
+    .replace(/-/g, " ")
+    .trim();
+
+  if (
+    !slug ||
+    isGenericStage(slug)
+  ) {
+    return "";
+  }
+
+  return slug
+    .replace(/\b\w/g, char =>
+      char.toUpperCase()
+    );
+}
+
+function getCompetitionText(value) {
+  if (
+    typeof value === "string"
+  ) {
+    return value.trim();
+  }
+
+  if (
+    typeof value === "number"
+  ) {
+    return String(value);
+  }
+
+  if (
+    value &&
+    typeof value === "object"
+  ) {
+    return (
+      value?.name ||
+      value?.displayName ||
+      value?.full_name ||
+      value?.fullName ||
+      value?.title ||
+      value?.label ||
+      ""
+    );
+  }
+
+  return "";
+}
+
+function resolveCompetition(raw) {
+
+  const objects = [
+    raw?.league,
+    raw?.uniqueTournament,
+    raw?.tournament,
+    raw?.competition,
+
+    raw?.league?.uniqueTournament,
+    raw?.league?.tournament,
+    raw?.league?.competition,
+
+    raw?.tournament?.uniqueTournament,
+    raw?.tournament?.competition,
+    raw?.tournament?.league,
+
+    raw?.competition?.uniqueTournament,
+    raw?.competition?.tournament,
+    raw?.competition?.league
+  ];
+
+  let stage =
+    raw?.round ||
+    raw?.round_name ||
+    raw?.stage ||
+    raw?.stage_name ||
+    null;
+
+  /* 1. نقلبو على اسم حقيقي داخل objects */
+  for (
+    const candidate of objects
+  ) {
+
+    const name =
+      getCompetitionText(
+        candidate
+      ).trim();
+
+    if (!name) {
+      continue;
+    }
+
+    if (
+      isGenericStage(name)
+    ) {
+      if (!stage) {
+        stage = name;
+      }
+
+      continue;
+    }
+
+    return {
+      object: candidate,
+      name,
+      id:
+        candidate?.id ??
+        null,
+      stage
+    };
+  }
+
+  /* 2. نقلبو فالأسماء المباشرة */
+  const directNames = [
+    raw?.league_name,
+    raw?.competition_name,
+    raw?.tournament_name,
+    raw?.competitionName,
+    raw?.leagueName
+  ];
+
+  for (
+    const value of directNames
+  ) {
+
+    const name =
+      getCompetitionText(
+        value
+      ).trim();
+
+    if (!name) {
+      continue;
+    }
+
+    if (
+      isGenericStage(name)
+    ) {
+      if (!stage) {
+        stage = name;
+      }
+
+      continue;
+    }
+
+    return {
+      object: {},
+      name,
+      id:
+        raw?.competition_id ||
+        raw?.league_id ||
+        null,
+      stage
+    };
+  }
+
+  /* 3. آخر محاولة: competition slug */
+  const slugCandidates = [
+    raw?.competition_slug,
+    raw?.league_slug,
+    raw?.tournament_slug,
+    raw?.competition?.slug,
+    raw?.league?.slug,
+    raw?.tournament?.slug,
+    raw?.uniqueTournament?.slug
+  ];
+
+  for (
+    const slug of slugCandidates
+  ) {
+
+    const name =
+      competitionNameFromSlug(
+        slug
+      );
+
+    if (name) {
+      return {
+        object: {},
+        name,
+        id:
+          raw?.competition_id ||
+          raw?.league_id ||
+          null,
+        stage
+      };
+    }
+  }
+
+  return {
+    object: {},
+    name: "",
+    id:
+      raw?.competition_id ||
+      raw?.league_id ||
+      null,
+    stage
+  };
+}
      
     function normalizeMatch(item) {
       if (!item) {
@@ -1720,17 +1952,18 @@ function findRealCompetition(raw) {
       }
 
 const competitionInfo =
-  findRealCompetition(raw);
+  resolveCompetition(raw);
 
 const competition =
-  competitionInfo.source;
+  competitionInfo.object;
 
 const competitionName =
-  competitionInfo.name || "Football";
+  competitionInfo.name;
 
 const competitionStage =
-  competitionInfo.stage || null;
-      return {
+  competitionInfo.stage;
+      
+       return {
         id:
           slug ||
           raw?.id ||
@@ -1794,23 +2027,18 @@ const competitionStage =
             null
         },
 
-        league: {
-          id:
-            idOf(competition) ||
-            raw?.competition_id ||
-            raw?.league_id ||
-            null,
-
-       league: {
+    league: {
 
   id:
     idOf(competition) ||
+    competitionInfo.id ||
     raw?.competition_id ||
     raw?.league_id ||
     null,
 
   name:
-    competitionName,
+    competitionName ||
+    "Football",
 
   country:
     competition?.country ||
@@ -1820,23 +2048,20 @@ const competitionStage =
   logo:
     imageOf(competition) ||
     raw?.competition_logo ||
+    raw?.league_logo ||
     "",
 
   round:
     raw?.round ||
     raw?.round_name ||
+    raw?.stage ||
+    raw?.stage_name ||
     competitionStage ||
     null,
 
-  season:
+ season:
     raw?.season ||
     null
-
-},
-          season:
-            raw?.season ||
-            null
-        },
 
         teams: {
           home: normalizeTeam(
