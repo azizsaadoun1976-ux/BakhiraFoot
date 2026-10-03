@@ -5035,38 +5035,42 @@ window.bfOpenMatchDetails = openDetails;
  * لذلك ما نعوضوهاش هنا.
  */
 
-if (
-  typeof window.openMatchDetails !== "function"
-) {
-  window.openMatchDetails =
-    function (index) {
+/* =========================================================
+   GLOBAL OPEN
+   match-details.js هو اللي يتحكم فـ Match Details
+========================================================= */
 
-      const card =
-        document.querySelector(
-          `.match-card[data-match-index="${index}"]`
-        );
+window.bfOpenMatchDetails = openDetails;
 
-      if (!card) {
-        console.error(
-          "BakhiraFoot: match card introuvable",
-          index
-        );
-        return;
-      }
+window.openMatchDetails = function (index) {
 
-      const identifier =
-        getCardIdentifier(card);
+  const card =
+    document.querySelector(
+      `.match-card[data-match-index="${index}"]`
+    );
 
-      if (!identifier) {
-        console.error(
-          "BakhiraFoot: fixture introuvable",
-          card
-        );
-        return;
-      }
+  if (!card) {
+    console.error(
+      "BakhiraFoot: match card introuvable",
+      index
+    );
+    return;
+  }
 
-      openDetails(
-        identifier
-      );
-    };
-}
+  const identifier =
+    getCardIdentifier(card);
+
+  if (!identifier) {
+    console.error(
+      "BakhiraFoot: fixture introuvable",
+      card
+    );
+    return;
+  }
+
+  openDetails(identifier);
+};
+
+}  
+
+ 
