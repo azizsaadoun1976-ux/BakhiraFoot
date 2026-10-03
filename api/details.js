@@ -86,104 +86,87 @@ module.exports = async (req, res) => {
   }
 
 
-  async function getJSON(
-    url
-  ) {
+ async function getJSON(url) {
 
-    const controller =
-      new AbortController();
+  const controller =
+    new AbortController();
 
-    const timer =
-      setTimeout(
-        () => controller.abort(),
-        15000
+  const timer =
+    setTimeout(
+      () => controller.abort(),
+      15000
+    );
+
+  try {
+
+    const response =
+      await fetch(
+        url,
+        {
+          method: "GET",
+
+          headers: {
+            Accept:
+              "application/json, text/plain, */*",
+
+            "User-Agent":
+              "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/154.0.0.0 Safari/537.36",
+
+            Referer:
+              "https://www.sofascore.com/",
+
+            Origin:
+              "https://www.sofascore.com"
+          },
+
+          cache:
+            "no-store",
+
+          signal:
+            controller.signal
+        }
       );
+
+    const raw =
+      await response.text();
+
+    let data;
 
     try {
+      data =
+        JSON.parse(raw);
+    }
+    catch {
+      data = {
+        raw
+      };
+    }
 
-      const response =
-        await fetch(
-          url,
-          {
-            method:
-              "GET",
+    if (!response.ok) {
 
-            headers: {
-
-              Accept:
-                "application/json",
-
-              "User-Agent":
-                "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/154 Safari/537.36"
-            },
-
-            cache:
-              "no-store",
-
-            signal:
-              controller.signal
-          }
+      const error =
+        new Error(
+          `HTTP ${response.status}`
         );
 
+      error.status =
+        response.status;
 
-      const raw =
-        await response.text();
+      error.data =
+        data;
 
-
-      let data;
-
-
-      try {
-
-        data =
-          JSON.parse(
-            raw
-          );
-
-      }
-
-      catch (_) {
-
-        data = {
-          raw
-        };
-
-      }
-
-
-      if (
-        !response.ok
-      ) {
-
-        const error =
-          new Error(
-            `HTTP ${response.status}`
-          );
-
-        error.status =
-          response.status;
-
-        error.data =
-          data;
-
-        throw error;
-      }
-
-
-      return data;
-
+      throw error;
     }
 
-    finally {
-
-      clearTimeout(
-        timer
-      );
-
-    }
+    return data;
 
   }
+  finally {
 
+    clearTimeout(timer);
+
+  }
+}
 
   /* =====================================================
      SOURCE DETECTION
@@ -379,14 +362,49 @@ function sourceOf() {
     }
 
 
-    const eventBody =
+   let eventBody = null;
+let lastSofaError = null;
+
+const sofaHosts = [
+  "https://www.sofascore.com/api/v1",
+  "https://api.sofascore.com/api/v1"
+];
+
+for (const host of sofaHosts) {
+
+  try {
+
+    eventBody =
       await getJSON(
-
-        `https://api.sofascore.com/api/v1/event/${encodeURIComponent(
-          id
-        )}`
-
+        `${host}/event/${encodeURIComponent(id)}`
       );
+
+    if (eventBody?.event) {
+
+  eventBody.__host =
+    host;
+
+  break;
+}
+
+  }
+  catch (error) {
+
+    lastSofaError =
+      error;
+
+  }
+}
+
+if (!eventBody?.event) {
+
+  throw (
+    lastSofaError ||
+    new Error(
+      "SofaScore match introuvable"
+    )
+  );
+}
 
 
     const event =
@@ -404,34 +422,30 @@ function sourceOf() {
     }
 
 
-    const results =
-      await Promise.allSettled([
+const sofaBase =
+  eventBody?.event
+    ? (
+        eventBody.__host ||
+        "https://www.sofascore.com/api/v1"
+      )
+    : "https://www.sofascore.com/api/v1";
 
-        getJSON(
+const [incidentsResult, lineupsResult, statsResult] =
+  await Promise.allSettled([
 
-          `https://api.sofascore.com/api/v1/event/${encodeURIComponent(
-            id
-          )}/incidents`
+    getJSON(
+      `${sofaBase}/event/${encodeURIComponent(id)}/incidents`
+    ),
 
-        ),
+    getJSON(
+      `${sofaBase}/event/${encodeURIComponent(id)}/lineups`
+    ),
 
-        getJSON(
+    getJSON(
+      `${sofaBase}/event/${encodeURIComponent(id)}/statistics`
+    )
 
-          `https://api.sofascore.com/api/v1/event/${encodeURIComponent(
-            id
-          )}/lineups`
-
-        ),
-
-        getJSON(
-
-          `https://api.sofascore.com/api/v1/event/${encodeURIComponent(
-            id
-          )}/statistics`
-
-        )
-
-      ]);
+  ]);
 
 
     const incidentsBody =
