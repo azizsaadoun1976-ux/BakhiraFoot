@@ -5019,161 +5019,1326 @@ module.exports = async (req, res) => {
       };
     }
 
-    /* =====================================================
-       MATCH DETAILS ROUTER
-    ===================================================== */
+/* =====================================================
+   EXTERNAL MATCH DETAILS
+   SportScore / SofaScore / ESPN / TheSportsDB
+===================================================== */
 
-    if (fixture) {
+async function getSofaDetails(eventId) {
+  const id = String(eventId || "")
+    .replace(/^sofa-/i, "")
+    .trim();
 
-      const source =
-        inferSource(
-          fixture,
-          requestedSource
+  if (!id) {
+    throw new Error("SofaScore event ID manquant");
+  }
+
+  const eventBody = await getJSON(
+    `https://www.sofascore.com/api/v1/event/${encodeURIComponent(id)}`
+  );
+
+  const event =
+    eventBody?.event ||
+    {};
+
+  if (!event?.id) {
+    throw new Error("SofaScore match introuvable");
+  }
+
+  const [
+    incidentsBody,
+    lineupsBody,
+    statisticsBody
+  ] = await Promise.allSettled([
+    getJSON(
+      `https://www.sofascore.com/api/v1/event/${encodeURIComponent(id)}/incidents`
+    ),
+    getJSON(
+      `https://www.sofascore.com/api/v1/event/${encodeURIComponent(id)}/lineups`
+    ),
+    getJSON(
+      `https://www.sofascore.com/api/v1/event/${encodeURIComponent(id)}/statistics`
+    )
+  ]);
+
+  const incidents =
+    incidentsBody.status === "fulfilled"
+      ? incidentsBody.value
+      : {};
+
+  const lineups =
+    lineupsBody.status === "fulfilled"
+      ? lineupsBody.value
+      : {};
+
+  const statistics =
+    statisticsBody.status === "fulfilled"
+      ? statisticsBody.value
+      : {};
+
+  const home =
+    event?.homeTeam ||
+    {};
+
+  const away =
+    event?.awayTeam ||
+    {};
+
+  const tournament =
+    event?.tournament ||
+    {};
+
+  const uniqueTournament =
+    tournament?.uniqueTournament ||
+    {};
+
+  const category =
+    tournament?.category ||
+    {};
+
+  function team(teamRaw) {
+    return {
+      id:
+        teamRaw?.id ||
+        null,
+
+      name:
+        teamRaw?.name ||
+        teamRaw?.shortName ||
+        "Équipe",
+
+      logo:
+        teamRaw?.logo ||
+        (
+          teamRaw?.id
+            ? `https://api.sofascore.com/api/v1/team/${teamRaw.id}/image`
+            : ""
+        )
+    };
+  }
+
+  function sofaStatus() {
+    const type =
+      String(
+        event?.status?.type ||
+        ""
+      ).toLowerCase();
+
+    if (type === "inprogress") {
+      return "LIVE";
+    }
+
+    if (type === "halftime") {
+      return "HT";
+    }
+
+    if (type === "finished") {
+      return "FT";
+    }
+
+    if (type === "postponed") {
+      return "PST";
+    }
+
+    if (
+      type === "canceled" ||
+      type === "cancelled"
+    ) {
+      return "CANC";
+    }
+
+    return "NS";
+  }
+
+  const homeTeam =
+    team(home);
+
+  const awayTeam =
+    team(away);
+
+  const outputLineups = [];
+
+  if (
+    lineups?.home
+  ) {
+    outputLineups.push({
+      team:
+        homeTeam,
+
+      formation:
+        lineups.home?.formation ||
+        "—",
+
+      coach:
+        lineups.home?.manager?.name ||
+        null,
+
+      players:
+        Array.isArray(
+          lineups.home?.players
+        )
+          ? lineups.home.players
+          : [],
+
+      substitutes:
+        []
+    });
+  }
+
+  if (
+    lineups?.away
+  ) {
+    outputLineups.push({
+      team:
+        awayTeam,
+
+      formation:
+        lineups.away?.formation ||
+        "—",
+
+      coach:
+        lineups.away?.manager?.name ||
+        null,
+
+      players:
+        Array.isArray(
+          lineups.away?.players
+        )
+          ? lineups.away.players
+          : [],
+
+      substitutes:
+        []
+    });
+  }
+
+  return {
+    fixture: {
+      id:
+        id,
+
+      slug:
+        `sofa-${id}`,
+
+      upstreamId:
+        id,
+
+      date:
+        event?.startTimestamp
+          ? new Date(
+              Number(
+                event.startTimestamp
+              ) * 1000
+            ).toISOString()
+          : null,
+
+      status: {
+        short:
+          sofaStatus(),
+
+        long:
+          event?.status?.description ||
+          "Match",
+
+        elapsed:
+          null
+      },
+
+      venue:
+        event?.venue?.name ||
+        null,
+
+      referee:
+        event?.referee?.name ||
+        null
+    },
+
+    competition: {
+      id:
+        uniqueTournament?.id ||
+        tournament?.id ||
+        null,
+
+      name:
+        uniqueTournament?.name ||
+        tournament?.name ||
+        "Football",
+
+      country:
+        category?.name ||
+        "",
+
+      logo:
+        uniqueTournament?.id
+          ? `https://api.sofascore.com/api/v1/unique-tournament/${uniqueTournament.id}/image`
+          : ""
+    },
+
+    league: {
+      id:
+        uniqueTournament?.id ||
+        tournament?.id ||
+        null,
+
+      name:
+        uniqueTournament?.name ||
+        tournament?.name ||
+        "Football",
+
+      country:
+        category?.name ||
+        "",
+
+      logo:
+        uniqueTournament?.id
+          ? `https://api.sofascore.com/api/v1/unique-tournament/${uniqueTournament.id}/image`
+          : "",
+
+      round:
+        event?.roundInfo?.name ||
+        event?.roundInfo?.round ||
+        null,
+
+      season:
+        event?.season?.name ||
+        null
+    },
+
+    home_team:
+      homeTeam,
+
+    away_team:
+      awayTeam,
+
+    teams: {
+      home:
+        homeTeam,
+
+      away:
+        awayTeam
+    },
+
+    home_score:
+      event?.homeScore?.current ??
+      null,
+
+    away_score:
+      event?.awayScore?.current ??
+      null,
+
+    score: {
+      home:
+        event?.homeScore?.current ??
+        null,
+
+      away:
+        event?.awayScore?.current ??
+        null,
+
+      halftime: {
+        home:
+          event?.homeScore?.period1 ??
+          null,
+
+        away:
+          event?.awayScore?.period1 ??
+          null
+      },
+
+      fulltime: {
+        home:
+          event?.homeScore?.current ??
+          null,
+
+        away:
+          event?.awayScore?.current ??
+          null
+      }
+    },
+
+    incidents:
+      Array.isArray(
+        incidents?.incidents
+      )
+        ? incidents.incidents
+        : [],
+
+    events:
+      Array.isArray(
+        incidents?.incidents
+      )
+        ? incidents.incidents
+        : [],
+
+    lineups:
+      outputLineups,
+
+    statistics:
+      Array.isArray(
+        statistics?.statistics
+      )
+        ? statistics.statistics
+        : [],
+
+    players: [],
+
+    provider:
+      "SofaScore"
+  };
+}
+
+
+async function getESPNDetails(
+  eventId
+) {
+  const id =
+    String(eventId || "")
+      .replace(/^espn-/i, "")
+      .trim();
+
+  if (!id) {
+    throw new Error(
+      "ESPN event ID manquant"
+    );
+  }
+
+  const body =
+    await getJSON(
+      `https://site.api.espn.com/apis/site/v2/sports/soccer/all/summary?event=${encodeURIComponent(id)}`
+    );
+
+  const header =
+    body?.header ||
+    {};
+
+  const competition =
+    Array.isArray(
+      header?.competitions
+    )
+      ? header.competitions[0]
+      : null;
+
+  const competitors =
+    Array.isArray(
+      competition?.competitors
+    )
+      ? competition.competitors
+      : [];
+
+  const home =
+    competitors.find(
+      item =>
+        item?.homeAway ===
+        "home"
+    );
+
+  const away =
+    competitors.find(
+      item =>
+        item?.homeAway ===
+        "away"
+    );
+
+  const homeTeam = {
+    id:
+      home?.team?.id ||
+      null,
+
+    name:
+      home?.team?.displayName ||
+      home?.team?.name ||
+      "Domicile",
+
+    logo:
+      home?.team?.logo ||
+      (
+        home?.team?.id
+          ? `https://a.espncdn.com/i/teamlogos/soccer/500/${home.team.id}.png`
+          : ""
+      )
+  };
+
+  const awayTeam = {
+    id:
+      away?.team?.id ||
+      null,
+
+    name:
+      away?.team?.displayName ||
+      away?.team?.name ||
+      "Extérieur",
+
+    logo:
+      away?.team?.logo ||
+      (
+        away?.team?.id
+          ? `https://a.espncdn.com/i/teamlogos/soccer/500/${away.team.id}.png`
+          : ""
+      )
+  };
+
+  let status = "NS";
+
+  const state =
+    String(
+      competition?.status
+        ?.type?.state ||
+      ""
+    ).toLowerCase();
+
+  if (state === "in") {
+    status = "LIVE";
+  }
+
+  else if (state === "post") {
+    status = "FT";
+  }
+
+  const homeScore =
+    home?.score !==
+      undefined
+      ? Number(
+          home.score
+        )
+      : null;
+
+  const awayScore =
+    away?.score !==
+      undefined
+      ? Number(
+          away.score
+        )
+      : null;
+
+  const leagueName =
+    header?.league?.name ||
+    competition?.league?.name ||
+    header?.season?.displayName ||
+    "Football";
+
+  const events =
+    Array.isArray(
+      body?.plays
+    )
+      ? body.plays.map(
+          play => ({
+            time: {
+              elapsed:
+                play?.clock?.displayValue ||
+                null,
+
+              extra:
+                null
+            },
+
+            team: {
+              id:
+                play?.team?.id ||
+                null,
+
+              name:
+                play?.team?.displayName ||
+                play?.team?.name ||
+                ""
+            },
+
+            player: {
+              id:
+                play?.participants?.[0]?.athlete?.id ||
+                null,
+
+              name:
+                play?.participants?.[0]?.athlete
+                  ?.displayName ||
+                ""
+            },
+
+            assist: {
+              id:
+                play?.participants?.[1]?.athlete?.id ||
+                null,
+
+              name:
+                play?.participants?.[1]?.athlete
+                  ?.displayName ||
+                ""
+            },
+
+            type:
+              play?.type?.text ||
+              play?.type?.id ||
+              "Other",
+
+            detail:
+              play?.text ||
+              ""
+          })
+        )
+      : [];
+
+  const lineups = [];
+
+  if (
+    Array.isArray(
+      body?.rosters
+    )
+  ) {
+
+    body.rosters.forEach(
+      roster => {
+
+        const rosterTeam =
+          roster?.team ||
+          {};
+
+        const isHome =
+          String(
+            rosterTeam?.id ||
+            ""
+          ) ===
+          String(
+            homeTeam.id ||
+            ""
+          );
+
+        const target =
+          isHome
+            ? homeTeam
+            : awayTeam;
+
+        const players =
+          Array.isArray(
+            roster?.roster
+          )
+            ? roster.roster
+            : [];
+
+        if (
+          players.length
+        ) {
+
+          lineups.push({
+            team:
+              target,
+
+            formation:
+              "—",
+
+            coach:
+              null,
+
+            players,
+
+            substitutes:
+              []
+          });
+        }
+      }
+    );
+  }
+
+  return {
+    fixture: {
+      id:
+        id,
+
+      slug:
+        `espn-${id}`,
+
+      upstreamId:
+        id,
+
+      date:
+        competition?.date ||
+        header?.competitions?.[0]?.date ||
+        null,
+
+      status: {
+        short:
+          status,
+
+        long:
+          competition?.status
+            ?.type?.description ||
+          status,
+
+        elapsed:
+          competition?.status
+            ?.displayClock ||
+          null
+      },
+
+      venue:
+        competition?.venue?.fullName ||
+        competition?.venue?.displayName ||
+        null
+    },
+
+    competition: {
+      id:
+        header?.league?.id ||
+        null,
+
+      name:
+        leagueName,
+
+      country:
+        "World",
+
+      logo:
+        ""
+    },
+
+    league: {
+      id:
+        header?.league?.id ||
+        null,
+
+      name:
+        leagueName,
+
+      country:
+        "World",
+
+      logo:
+        "",
+
+      round:
+        header?.season?.displayName ||
+        null,
+
+      season:
+        header?.season?.displayName ||
+        null
+    },
+
+    home_team:
+      homeTeam,
+
+    away_team:
+      awayTeam,
+
+    teams: {
+      home:
+        homeTeam,
+
+      away:
+        awayTeam
+    },
+
+    home_score:
+      homeScore,
+
+    away_score:
+      awayScore,
+
+    score: {
+      home:
+        homeScore,
+
+      away:
+        awayScore,
+
+      halftime: {
+        home:
+          null,
+
+        away:
+          null
+      },
+
+      fulltime: {
+        home:
+          homeScore,
+
+        away:
+          awayScore
+      }
+    },
+
+    events,
+
+    incidents:
+      events,
+
+    lineups,
+
+    statistics:
+      [],
+
+    players: [],
+
+    provider:
+      "ESPN"
+  };
+}
+
+
+async function getTheSportsDBDetails(
+  eventId
+) {
+  const id =
+    String(eventId || "")
+      .replace(/^tsdb-/i, "")
+      .trim();
+
+  if (!id) {
+    throw new Error(
+      "TheSportsDB event ID manquant"
+    );
+  }
+
+  const event =
+    await getTheSportsDBEvent(
+      id
+    );
+
+  if (!event) {
+    throw new Error(
+      "Match TheSportsDB introuvable"
+    );
+  }
+
+  const homeTeam = {
+    id:
+      event?.idHomeTeam ||
+      null,
+
+    name:
+      event?.strHomeTeam ||
+      "Domicile",
+
+    logo:
+      event?.strHomeTeamBadge ||
+      ""
+  };
+
+  const awayTeam = {
+    id:
+      event?.idAwayTeam ||
+      null,
+
+    name:
+      event?.strAwayTeam ||
+      "Extérieur",
+
+    logo:
+      event?.strAwayTeamBadge ||
+      ""
+  };
+
+  let homeScore =
+    event?.intHomeScore;
+
+  let awayScore =
+    event?.intAwayScore;
+
+  homeScore =
+    homeScore === "" ||
+    homeScore === null ||
+    homeScore === undefined
+      ? null
+      : Number(
+          homeScore
         );
+
+  awayScore =
+    awayScore === "" ||
+    awayScore === null ||
+    awayScore === undefined
+      ? null
+      : Number(
+          awayScore
+        );
+
+  const rawStatus =
+    String(
+      event?.strStatus ||
+      event?.strProgress ||
+      ""
+    ).toLowerCase();
+
+  let status =
+    "NS";
+
+  if (
+    rawStatus.includes(
+      "finished"
+    ) ||
+    rawStatus === "ft"
+  ) {
+    status =
+      "FT";
+  }
+
+  else if (
+    rawStatus.includes(
+      "half"
+    ) ||
+    rawStatus === "ht"
+  ) {
+    status =
+      "HT";
+  }
+
+  else if (
+    rawStatus.includes(
+      "live"
+    ) ||
+    rawStatus.includes(
+      "progress"
+    )
+  ) {
+    status =
+      "LIVE";
+  }
+
+  const events = [];
+
+  function addGoal(
+    value,
+    team
+  ) {
+    if (!value) {
+      return;
+    }
+
+    String(value)
+      .split(
+        /[;,|]+/
+      )
+      .map(
+        x =>
+          x.trim()
+      )
+      .filter(Boolean)
+      .forEach(
+        goal => {
+
+          const match =
+            goal.match(
+              /(.+?)\s*(?:\((\d+)'?\)|(\d+)'?)?$/
+            );
+
+          events.push({
+            time: {
+              elapsed:
+                match?.[2] ||
+                match?.[3] ||
+                null,
+
+              extra:
+                null
+            },
+
+            team,
+
+            player: {
+              id:
+                null,
+
+              name:
+                match?.[1] ||
+                goal
+            },
+
+            assist: {
+              id:
+                null,
+
+              name:
+                ""
+            },
+
+            type:
+              "Goal",
+
+            detail:
+              "Goal"
+          });
+        }
+      );
+  }
+
+  addGoal(
+    event?.strHomeGoalDetails,
+    homeTeam
+  );
+
+  addGoal(
+    event?.strAwayGoalDetails,
+    awayTeam
+  );
+
+  return {
+    fixture: {
+
+      id:
+        id,
+
+      slug:
+        `tsdb-${id}`,
+
+      upstreamId:
+        id,
+
+      date:
+        event?.dateEvent &&
+        event?.strTime
+          ? `${event.dateEvent}T${event.strTime}`
+          : event?.dateEvent ||
+            null,
+
+      status: {
+
+        short:
+          status,
+
+        long:
+          event?.strStatus ||
+          status,
+
+        elapsed:
+          null
+      },
+
+      venue:
+        event?.strVenue ||
+        null,
+
+      referee:
+        event?.strReferee ||
+        null
+    },
+
+    competition: {
+
+      id:
+        event?.idLeague ||
+        null,
+
+      name:
+        event?.strLeague ||
+        "Football",
+
+      country:
+        event?.strCountry ||
+        "",
+
+      logo:
+        event?.strLeagueBadge ||
+        ""
+    },
+
+    league: {
+
+      id:
+        event?.idLeague ||
+        null,
+
+      name:
+        event?.strLeague ||
+        "Football",
+
+      country:
+        event?.strCountry ||
+        "",
+
+      logo:
+        event?.strLeagueBadge ||
+        "",
+
+      round:
+        event?.intRound ||
+        null,
+
+      season:
+        event?.strSeason ||
+        null
+    },
+
+    home_team:
+      homeTeam,
+
+    away_team:
+      awayTeam,
+
+    teams: {
+
+      home:
+        homeTeam,
+
+      away:
+        awayTeam
+    },
+
+    home_score:
+      homeScore,
+
+    away_score:
+      awayScore,
+
+    score: {
+
+      home:
+        homeScore,
+
+      away:
+        awayScore,
+
+      halftime: {
+
+        home:
+          null,
+
+        away:
+          null
+      },
+
+      fulltime: {
+
+        home:
+          homeScore,
+
+        away:
+          awayScore
+      }
+    },
+
+    events,
+
+    incidents:
+      events,
+
+    lineups:
+      [],
+
+    statistics:
+      [],
+
+    players:
+      [],
+
+    provider:
+      "TheSportsDB"
+  };
+}
+
+   /* =====================================================
+   MATCH DETAILS
+===================================================== */
+
+if (fixture) {
+
+  const fixtureValue =
+    String(
+      fixture || ""
+    ).trim();
+
+  if (!fixtureValue) {
+
+    return output(
+      400,
+      {
+        error:
+          "Match slug manquant",
+
+        data:
+          []
+      }
+    );
+  }
+
+  /*
+    كنحددو المصدر من prefix ديال ID:
+
+    sofa-123
+    espn-123
+    tsdb-123
+    slug عادي = SportScore
+  */
+
+  let source =
+    requestedSource;
+
+  if (!source) {
+
+    if (
+      fixtureValue
+        .toLowerCase()
+        .startsWith(
+          "sofa-"
+        )
+    ) {
+      source =
+        "sofascore";
+    }
+
+    else if (
+      fixtureValue
+        .toLowerCase()
+        .startsWith(
+          "espn-"
+        )
+    ) {
+      source =
+        "espn";
+    }
+
+    else if (
+      fixtureValue
+        .toLowerCase()
+        .startsWith(
+          "tsdb-"
+        )
+    ) {
+      source =
+        "thesportsdb";
+    }
+
+    else {
+      source =
+        "sportscore";
+    }
+
+  }
+
+  try {
+
+    /* =================================================
+       SOFASCORE
+    ================================================= */
+
+    if (
+      source ===
+      "sofascore"
+    ) {
+
+      const details =
+        await getSofaDetails(
+          fixtureValue
+        );
+
+      return output(
+        200,
+        {
+          data:
+            details,
+
+          provider:
+            "SofaScore"
+        }
+      );
+    }
+
+    /* =================================================
+       ESPN
+    ================================================= */
+
+    if (
+      source ===
+      "espn"
+    ) {
+
+      const details =
+        await getESPNDetails(
+          fixtureValue
+        );
+
+      return output(
+        200,
+        {
+          data:
+            details,
+
+          provider:
+            "ESPN"
+        }
+      );
+    }
+
+    /* =================================================
+       THE SPORTs DB
+    ================================================= */
+
+    if (
+      source ===
+        "thesportsdb" ||
+      source ===
+        "tsdb"
+    ) {
+
+      const details =
+        await getTheSportsDBDetails(
+          fixtureValue
+        );
+
+      return output(
+        200,
+        {
+          data:
+            details,
+
+          provider:
+            "TheSportsDB"
+        }
+      );
+    }
+
+    /* =================================================
+       SPORTScore
+       الكود القديم ديالك
+    ================================================= */
+
+    const slug =
+      fixtureValue;
+
+    let body;
+    let firstError =
+      null;
+
+    try {
+
+      body =
+        await getJSON(
+          `${SPORTSCORE}/match/?sport=football&slug=${encodeURIComponent(
+            slug
+          )}`
+        );
+
+    }
+
+    catch (error) {
+
+      firstError =
+        error;
+
+      console.warn(
+        "PRIMARY MATCH ENDPOINT FAILED:",
+        error.message
+      );
 
       try {
 
-        if (
-          source ===
-          "sofascore"
-        ) {
-
-          const details =
-            await getSofaScoreDetails(
-              fixture
-            );
-
-          console.log(
-            "SOFASCORE DETAILS OK:",
-            fixture
+        body =
+          await getJSON(
+            `${WIDGET}/match/?sport=football&slug=${encodeURIComponent(
+              slug
+            )}`
           );
-
-          return output(
-            200,
-            {
-              data:
-                details,
-
-              provider:
-                "SofaScore"
-            }
-          );
-        }
-
-        if (
-          source ===
-          "thesportsdb"
-        ) {
-
-          const details =
-            await getTheSportsDBDetails(
-              fixture
-            );
-
-          console.log(
-            "THESPORTSDB DETAILS OK:",
-            fixture
-          );
-
-          return output(
-            200,
-            {
-              data:
-                details,
-
-              provider:
-                "TheSportsDB"
-            }
-          );
-        }
-
-        if (
-          source ===
-          "espn"
-        ) {
-
-          const details =
-            await getESPNDetails(
-              fixture
-            );
-
-          console.log(
-            "ESPN DETAILS OK:",
-            fixture
-          );
-
-          return output(
-            200,
-            {
-              data:
-                details,
-
-              provider:
-                "ESPN"
-            }
-          );
-        }
-
-        /* ===============================================
-           SPORTScore DETAILS
-        =============================================== */
-
-        const slug =
-          String(
-            fixture
-          ).trim();
-
-        if (!slug) {
-
-          return output(
-            400,
-            {
-              error:
-                "Match slug manquant",
-
-              data:
-                []
-            }
-          );
-        }
-
-        const details =
-          await getSportScoreDetails(
-            slug
-          );
-
-        console.log(
-          "SPORTSCORE DETAILS OK:",
-          slug
-        );
-
-        return output(
-          200,
-          {
-            data:
-              details,
-
-            provider:
-              "SportScore"
-          }
-        );
 
       }
 
-      catch (error) {
+      catch (widgetError) {
 
-        console.error(
-          "MATCH DETAILS ERROR:",
-          {
-            fixture,
-            source,
-            message:
-              error?.message
-          }
+        console.warn(
+          "WIDGET MATCH ENDPOINT FAILED:",
+          widgetError.message
         );
 
         return output(
-          error?.status ||
+          widgetError?.status ||
+            firstError?.status ||
             502,
 
           {
@@ -5181,11 +6346,9 @@ module.exports = async (req, res) => {
               "Impossible de charger le match",
 
             details:
-              error?.data ||
+              widgetError?.data ||
+              firstError?.data ||
               null,
-
-            provider:
-              source,
 
             data:
               []
@@ -5193,6 +6356,429 @@ module.exports = async (req, res) => {
         );
       }
     }
+
+    const root =
+      getDetailRoot(
+        body
+      );
+
+    if (
+      !root ||
+      typeof root !==
+        "object"
+    ) {
+
+      return output(
+        404,
+        {
+          error:
+            "Match introuvable",
+
+          data:
+            []
+        }
+      );
+    }
+
+    const basic =
+      normalizeMatch(
+        root
+      );
+
+    if (!basic) {
+
+      return output(
+        404,
+        {
+          error:
+            "Match introuvable",
+
+          data:
+            []
+        }
+      );
+    }
+
+    const homeTeam =
+      normalizeTeam(
+        first(
+          root?.home_team,
+          root?.homeTeam,
+          root?.teams?.home,
+          basic.teams.home
+        ),
+
+        basic.teams.home.name,
+
+        basic.teams.home.logo
+      );
+
+    const awayTeam =
+      normalizeTeam(
+        first(
+          root?.away_team,
+          root?.awayTeam,
+          root?.teams?.away,
+          basic.teams.away
+        ),
+
+        basic.teams.away.name,
+
+        basic.teams.away.logo
+      );
+
+    const lineups =
+      getLineups(
+        root,
+        homeTeam,
+        awayTeam
+      );
+
+    const events =
+      normalizeEvents(
+        root
+      );
+
+    const statistics =
+      normalizeStatistics(
+        root,
+        homeTeam,
+        awayTeam
+      );
+
+    const players =
+      buildPlayers(
+        lineups
+      );
+
+    const score =
+      obj(
+        root?.score
+      );
+
+    const homeScore =
+      first(
+        root?.home_score,
+        root?.homeScore,
+        score?.home,
+        score?.fulltime?.home,
+        basic.goals.home,
+        null
+      );
+
+    const awayScore =
+      first(
+        root?.away_score,
+        root?.awayScore,
+        score?.away,
+        score?.fulltime?.away,
+        basic.goals.away,
+        null
+      );
+
+    const competition =
+      first(
+        root?.competition,
+        root?.league,
+        {}
+      );
+
+    const referee =
+      first(
+        root?.referee,
+        basic.fixture.referee,
+        null
+      );
+
+    const rawStatusText =
+      String(
+        first(
+          root?.status_text,
+          root?.status?.long,
+          root?.status,
+          basic.fixture
+            .status.long,
+          ""
+        )
+      ).toLowerCase();
+
+    let statusShort =
+      String(
+        first(
+          root?.status_code,
+          root?.short_status,
+          root?.status?.short,
+          basic.fixture
+            .status.short,
+          "NS"
+        )
+      );
+
+    if (
+      /live|in play|inplay/.test(
+        rawStatusText
+      )
+    ) {
+      statusShort =
+        "LIVE";
+    }
+
+    else if (
+      /half|halftime|ht/.test(
+        rawStatusText
+      )
+    ) {
+      statusShort =
+        "HT";
+    }
+
+    else if (
+      /finish|finished|ended|ft/.test(
+        rawStatusText
+      )
+    ) {
+      statusShort =
+        "FT";
+    }
+
+    const details = {
+
+      fixture: {
+
+        id:
+          slug,
+
+        slug,
+
+        upstreamId:
+          first(
+            root?.id,
+            root?.match_id,
+            root?.fixture_id,
+            basic.fixture
+              .upstreamId,
+            slug
+          ),
+
+        date:
+          first(
+            root?.time,
+            root?.date,
+            root?.start_time,
+            root?.kickoff,
+            basic.fixture.date,
+            null
+          ),
+
+        timezone:
+          first(
+            root?.timezone,
+            null
+          ),
+
+        status: {
+
+          short:
+            statusShort,
+
+          long:
+            first(
+              root?.status_text,
+              root?.status?.long,
+              root?.status,
+              basic.fixture
+                .status.long,
+              "Match"
+            ),
+
+          elapsed:
+            first(
+              root?.minute,
+              root?.elapsed,
+              root?.status?.elapsed,
+              basic.fixture
+                .status.elapsed,
+              null
+            )
+        },
+
+        venue:
+          first(
+            root?.venue,
+            basic.fixture
+              .venue,
+            null
+          ),
+
+        referee:
+          typeof referee ===
+            "object"
+            ? first(
+                referee?.name,
+                ""
+              )
+            : referee
+      },
+
+      league: {
+
+        id:
+          idOf(
+            competition
+          ) ||
+          basic.league.id ||
+          null,
+
+        name:
+          nameOf(
+            competition
+          ) ||
+          root?.competition_name ||
+          root?.league_name ||
+          basic.league.name ||
+          "Football",
+
+        country:
+          competition?.country ||
+          root?.country ||
+          basic.league
+            .country ||
+          "",
+
+        logo:
+          imageOf(
+            competition
+          ) ||
+          basic.league.logo ||
+          "",
+
+        round:
+          root?.round ||
+          root?.round_name ||
+          basic.league.round ||
+          null,
+
+        season:
+          root?.season?.name ||
+          root?.season ||
+          basic.league.season ||
+          null
+      },
+
+      teams: {
+
+        home:
+          homeTeam,
+
+        away:
+          awayTeam
+      },
+
+      goals: {
+
+        home:
+          homeScore,
+
+        away:
+          awayScore
+      },
+
+      score: {
+
+        home:
+          homeScore,
+
+        away:
+          awayScore,
+
+        halftime: {
+
+          home:
+            first(
+              score?.halftime?.home,
+              score?.ht?.home,
+              null
+            ),
+
+          away:
+            first(
+              score?.halftime?.away,
+              score?.ht?.away,
+              null
+            )
+        },
+
+        fulltime: {
+
+          home:
+            homeScore,
+
+          away:
+            awayScore
+        }
+      },
+
+      events,
+
+      lineups,
+
+      statistics,
+
+      players,
+
+      provider:
+        "SportScore"
+    };
+
+    return output(
+      200,
+      {
+        data:
+          details,
+
+        provider:
+          "SportScore"
+      }
+    );
+
+  }
+
+  catch (error) {
+
+    console.error(
+      "MATCH DETAILS ERROR:",
+      {
+        fixture:
+          fixtureValue,
+
+        source,
+
+        message:
+          error?.message
+      }
+    );
+
+    return output(
+      error?.status ||
+        502,
+
+      {
+        error:
+          "Impossible de charger le match",
+
+        details:
+          error?.data ||
+          null,
+
+        provider:
+          source,
+
+        data:
+          []
+      }
+    );
+  }
+}
 
     /* =====================================================
        LIVE
