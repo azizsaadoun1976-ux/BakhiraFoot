@@ -14,7 +14,9 @@ module.exports = async (req, res) => {
     const SPORTSCORE = "https://sportscore.com/api/v1";
     const WIDGET = "https://sportscore.com/api/widget";
     const today = new Date().toISOString().split("T")[0];
-
+   const ESPN = "https://site.api.espn.com/apis/site/v2";
+    const SOFA = "https://api.sofascore.com/api/v1"; 
+     const TSDB = "https://www.thesportsdb.com/api/v1/json/123";
     function output(status, data) {
       res.setHeader(
         "Cache-Control",
