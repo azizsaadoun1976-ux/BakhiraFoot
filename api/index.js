@@ -4193,6 +4193,154 @@ catch (error) {
    وما نضيعوش matches من competitions مختلفة
 ========================================= */
 
+/* =========================================
+   FIX ESPN STAGE NAMES
+   Stage ماشي Competition
+========================================= */
+
+const stageNames = new Set([
+  "fall season",
+  "spring season",
+  "summer season",
+  "winter season",
+  "group stage",
+  "first round",
+  "second round",
+  "third round",
+  "round of 16",
+  "round of 32",
+  "round of 64",
+  "quarterfinal",
+  "quarterfinals",
+  "semifinal",
+  "semifinals",
+  "final"
+]);
+
+for (const match of matches) {
+
+  const leagueName =
+    String(
+      match?.league?.name ||
+      ""
+    )
+      .trim()
+      .toLowerCase();
+
+  if (
+    !stageNames.has(
+      leagueName
+    )
+  ) {
+    continue;
+  }
+
+  const home =
+    norm(
+      match?.teams?.home?.name
+    );
+
+  const away =
+    norm(
+      match?.teams?.away?.name
+    );
+
+  const date =
+    toISODate(
+      match?.fixture?.date ||
+      match?.time
+    ) || matchDate;
+
+  if (
+    !home ||
+    !away
+  ) {
+    continue;
+  }
+
+  const replacement =
+    matches.find(
+      other => {
+
+        if (
+          other === match
+        ) {
+          return false;
+        }
+
+        const otherLeague =
+          String(
+            other?.league?.name ||
+            ""
+          )
+            .trim()
+            .toLowerCase();
+
+        if (
+          !otherLeague ||
+          stageNames.has(
+            otherLeague
+          ) ||
+          otherLeague === "football"
+        ) {
+          return false;
+        }
+
+        const otherHome =
+          norm(
+            other?.teams?.home?.name
+          );
+
+        const otherAway =
+          norm(
+            other?.teams?.away?.name
+          );
+
+        const otherDate =
+          toISODate(
+            other?.fixture?.date ||
+            other?.time
+          ) || matchDate;
+
+        return (
+          otherHome === home &&
+          otherAway === away &&
+          otherDate === date
+        );
+
+      }
+    );
+
+  if (replacement) {
+
+    match.league = {
+      ...match.league,
+      name:
+        replacement?.league?.name ||
+        match.league.name,
+
+      id:
+        replacement?.league?.id ||
+        match.league.id,
+
+      logo:
+        replacement?.league?.logo ||
+        match.league.logo,
+
+      country:
+        replacement?.league?.country ||
+        match.league.country,
+
+      round:
+        match.league.round ||
+        match?.round ||
+        null
+    };
+
+  }
+
+}
+     
 const finalUnique = new Map();
 
 for (const match of matches) {
