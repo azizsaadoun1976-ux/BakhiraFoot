@@ -1421,6 +1421,170 @@ function getRealCompetition(raw) {
     name: "Football"
   };
 }
+
+/* =========================================================
+   REAL COMPETITION NAME
+   Stage ≠ Competition
+========================================================= */
+
+const GENERIC_STAGE_REGEX =
+  /^(regular season|fall season|spring season|summer season|winter season|group stage|first round|second round|third round|round of \d+|quarterfinal|quarterfinals|quarter-final|quarter-finals|semifinal|semifinals|semi-final|semi-finals|final|playoff|playoffs|play-off|play-offs)(?:\s*[-–—:|]\s*\d+)?$/i;
+
+function cleanCompetitionValue(value) {
+  if (
+    value === null ||
+    value === undefined
+  ) {
+    return "";
+  }
+
+  let name = "";
+
+  if (typeof value === "string") {
+    name = value.trim();
+  }
+
+  else if (typeof value === "number") {
+    name = String(value);
+  }
+
+  else if (
+    typeof value === "object"
+  ) {
+    name =
+      value?.name ||
+      value?.displayName ||
+      value?.full_name ||
+      value?.fullName ||
+      value?.title ||
+      value?.label ||
+      "";
+  }
+
+  name =
+    String(name || "")
+      .replace(/\s+/g, " ")
+      .trim();
+
+  if (!name) {
+    return "";
+  }
+
+  /* 
+     مثال:
+     Premier League - Regular Season - 7
+     => Premier League
+  */
+  name =
+    name.replace(
+      /\s*[-–—:|]\s*(regular season|fall season|spring season|summer season|winter season|group stage|first round|second round|third round|round of \d+|quarterfinals?|quarter-finals?|semifinals?|semi-finals?|final|playoffs?|play-offs?)\s*(?:[-–—:|]\s*\d+)?\s*$/i,
+      ""
+    )
+    .trim();
+
+  /*
+     Regular Season - 7
+     Final
+     Group Stage
+     => ماشي competition
+  */
+  if (
+    !name ||
+    GENERIC_STAGE_REGEX.test(name)
+  ) {
+    return "";
+  }
+
+  return name;
+}
+
+function findRealCompetition(raw) {
+
+  const candidates = [
+    raw?.league,
+    raw?.tournament,
+    raw?.uniqueTournament,
+    raw?.competition,
+
+    raw?.league?.tournament,
+    raw?.league?.uniqueTournament,
+    raw?.league?.competition,
+
+    raw?.tournament?.uniqueTournament,
+    raw?.tournament?.competition,
+    raw?.tournament?.league,
+
+    raw?.competition?.tournament,
+    raw?.competition?.uniqueTournament,
+    raw?.competition?.league,
+
+    raw?.competition_name,
+    raw?.league_name,
+    raw?.tournament_name
+  ];
+
+  let stage = "";
+
+  for (
+    const candidate of candidates
+  ) {
+
+    const cleaned =
+      cleanCompetitionValue(
+        candidate
+      );
+
+    if (cleaned) {
+      return {
+        name: cleaned,
+        source: candidate,
+        stage
+      };
+    }
+
+    /*
+      إذا كان الاسم Stage،
+      نخليه للـround ونكملو نقلبو على الحقيقي.
+    */
+    let rawName = "";
+
+    if (
+      typeof candidate === "string"
+    ) {
+      rawName =
+        candidate.trim();
+    }
+
+    else if (
+      candidate &&
+      typeof candidate === "object"
+    ) {
+      rawName =
+        candidate?.name ||
+        candidate?.displayName ||
+        candidate?.title ||
+        "";
+    }
+
+    if (
+      rawName &&
+      GENERIC_STAGE_REGEX.test(
+        String(rawName)
+          .trim()
+      )
+    ) {
+      stage =
+        String(rawName)
+          .trim();
+    }
+  }
+
+  return {
+    name: "",
+    source: {},
+    stage
+  };
+}
      
     function normalizeMatch(item) {
       if (!item) {
@@ -1556,13 +1720,16 @@ function getRealCompetition(raw) {
       }
 
 const competitionInfo =
-  getRealCompetition(raw);
+  findRealCompetition(raw);
 
 const competition =
-  competitionInfo.value;
+  competitionInfo.source;
 
 const competitionName =
-  competitionInfo.name;
+  competitionInfo.name || "Football";
+
+const competitionStage =
+  competitionInfo.stage || null;
       return {
         id:
           slug ||
@@ -1634,38 +1801,38 @@ const competitionName =
             raw?.league_id ||
             null,
 
-        name:
-  competitionName ||
-  "Football",
+       league: {
 
-          country:
-            competition?.country ||
-            raw?.country ||
-            null,
+  id:
+    idOf(competition) ||
+    raw?.competition_id ||
+    raw?.league_id ||
+    null,
 
-          logo:
-            imageOf(competition) ||
-            raw?.competition_logo ||
-            "",
+  name:
+    competitionName,
 
-         round:
-  raw?.round ||
-  raw?.round_name ||
-  raw?.stage ||
-  raw?.stage_name ||
-  (
-    isStageCompetitionName(
-      nameOf(
-        raw?.competition
-      )
-    )
-      ? nameOf(
-          raw?.competition
-        )
-      : null
-  ) ||
-  null,
+  country:
+    competition?.country ||
+    raw?.country ||
+    null,
 
+  logo:
+    imageOf(competition) ||
+    raw?.competition_logo ||
+    "",
+
+  round:
+    raw?.round ||
+    raw?.round_name ||
+    competitionStage ||
+    null,
+
+  season:
+    raw?.season ||
+    null
+
+},
           season:
             raw?.season ||
             null
