@@ -400,10 +400,44 @@ function getAwayScore(match) {
 }
 
 function getLeague(match) {
+  const league =
+    match?.league;
+
+  const competition =
+    match?.competition;
+
+  const candidates = [
+    typeof league?.name === "string"
+      ? league.name
+      : "",
+
+    typeof competition?.name === "string"
+      ? competition.name
+      : "",
+
+    typeof match?.league_name === "string"
+      ? match.league_name
+      : "",
+
+    typeof match?.competition_name === "string"
+      ? match.competition_name
+      : "",
+
+    typeof league === "string"
+      ? league
+      : "",
+
+    typeof competition === "string"
+      ? competition
+      : ""
+  ];
+
   return (
-    match?.league?.name ||
-    match?.competition?.name ||
-    match?.league ||
+    candidates
+      .map(name =>
+        String(name || "").trim()
+      )
+      .find(Boolean) ||
     "Football"
   );
 }
