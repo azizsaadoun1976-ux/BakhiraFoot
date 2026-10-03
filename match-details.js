@@ -2773,33 +2773,246 @@ function buildLineup(
     return n;
   }
 
-  function getGrid(player) {
+function getGrid(player) {
 
-    const p =
-      unwrap(player);
+  const p =
+    unwrap(player);
 
-    const raw =
-      first(
-        p?.grid,
-        player?.grid,
+  /*
+   * كنقلبو فكل البلايص الممكنة ديال grid
+   */
 
-        p?.position_grid,
-        player?.position_grid,
+  const position =
+    p?.position ||
+    player?.position ||
+    {};
 
-        p?.positionGrid,
-        player?.positionGrid,
+  const rawPosition =
+    typeof position === "object"
+      ? position
+      : {};
 
-        null
+  const raw =
+    first(
+
+      /* =========================
+         PLAYER DIRECT
+      ========================= */
+
+      player?.grid,
+      player?.position_grid,
+      player?.positionGrid,
+
+      /* =========================
+         UNWRAPPED PLAYER
+      ========================= */
+
+      p?.grid,
+      p?.position_grid,
+      p?.positionGrid,
+
+      /* =========================
+         POSITION OBJECT
+      ========================= */
+
+      rawPosition?.grid,
+      rawPosition?.position_grid,
+      rawPosition?.positionGrid,
+
+      /* =========================
+         NESTED PLAYER
+      ========================= */
+
+      player?.player?.grid,
+      player?.player?.position_grid,
+      player?.player?.positionGrid,
+
+      player?.player?.position?.grid,
+
+      /* =========================
+         RAW OBJECT
+      ========================= */
+
+      player?.raw?.grid,
+      player?.raw?.position_grid,
+      player?.raw?.positionGrid,
+      player?.raw?.position?.grid,
+
+      /* =========================
+         STATS / TACTICS
+      ========================= */
+
+      player?.statistics?.grid,
+      player?.statistics?.position?.grid,
+
+      p?.statistics?.grid,
+      p?.statistics?.position?.grid,
+
+      null
+    );
+
+  if (
+    raw === null ||
+    raw === undefined ||
+    raw === ""
+  ) {
+    return null;
+  }
+
+  /*
+   * ==========================================
+   * GRID OBJECT
+   * ==========================================
+   *
+   * مثال:
+   * { row: 2, column: 3 }
+   * { row: 2, col: 3 }
+   * { x: 2, y: 3 }
+   */
+
+  if (
+    typeof raw === "object"
+  ) {
+
+    const row =
+      numberValue(
+        first(
+          raw?.row,
+          raw?.line,
+          raw?.x,
+          raw?.position,
+          raw?.r,
+          null
+        )
+      );
+
+    const col =
+      numberValue(
+        first(
+          raw?.column,
+          raw?.col,
+          raw?.y,
+          raw?.slot,
+          raw?.c,
+          null
+        )
       );
 
     if (
-      raw === null ||
-      raw === undefined ||
-      raw === ""
+      row !== null &&
+      col !== null &&
+      row > 0 &&
+      col > 0
     ) {
-      return null;
+
+      return {
+        row,
+        col
+      };
+
     }
 
+    /*
+     * بعض formats:
+     * { position: { row, col } }
+     */
+
+    if (
+      raw?.position &&
+      typeof raw.position === "object"
+    ) {
+
+      const row2 =
+        numberValue(
+          first(
+            raw.position?.row,
+            raw.position?.line,
+            raw.position?.x,
+            null
+          )
+        );
+
+      const col2 =
+        numberValue(
+          first(
+            raw.position?.column,
+            raw.position?.col,
+            raw.position?.y,
+            raw.position?.slot,
+            null
+          )
+        );
+
+      if (
+        row2 !== null &&
+        col2 !== null &&
+        row2 > 0 &&
+        col2 > 0
+      ) {
+
+        return {
+          row: row2,
+          col: col2
+        };
+
+      }
+
+    }
+
+    return null;
+  }
+
+  /*
+   * ==========================================
+   * GRID STRING
+   * ==========================================
+   *
+   * أمثلة:
+   * 1:1
+   * 2:3
+   * 3:2
+   * 4-2
+   * 3/3
+   * 2,4
+   */
+
+  const value =
+    String(raw)
+      .trim();
+
+  const match =
+    value.match(
+      /(\d+)\s*[:;,/_-]\s*(\d+)/
+    );
+
+  if (!match) {
+    return null;
+  }
+
+  const row =
+    Number(
+      match[1]
+    );
+
+  const col =
+    Number(
+      match[2]
+    );
+
+  if (
+    !Number.isFinite(row) ||
+    !Number.isFinite(col) ||
+    row <= 0 ||
+    col <= 0
+  ) {
+    return null;
+  }
+
+  return {
+    row,
+    col
+  };
+}
     /*
      * grid ممكن تكون:
      * 1:1
