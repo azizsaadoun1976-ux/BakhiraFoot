@@ -1990,69 +1990,32 @@ const competition = first(
   raw?.uniqueTournament,
   {}
 );
+       return {
+        id:
+          slug ||
+          raw?.id ||
+          raw?.match_id ||
+          null,
 
-const provider =
-  raw?.provider ||
-  item?.provider ||
-  "SportScore";
+        slug,
 
-const externalPrefix =
-  provider === "SofaScore"
-    ? "sofa-"
-    : provider === "ESPN"
-      ? "espn-"
-      : provider === "TheSportsDB"
-        ? "tsdb-"
-        : "";
+        fixture: {
+          id:
+            slug ||
+            raw?.id ||
+            raw?.match_id ||
+            raw?.fixture_id ||
+            null,
 
-const originalUpstreamId =
+          slug,
+
+          upstreamId:
   raw?.id ||
   raw?.match_id ||
   raw?.fixture_id ||
   raw?.event_id ||
-  null;
-
-const sourceFixtureId =
-  externalPrefix && originalUpstreamId !== null
-    ? `${externalPrefix}${originalUpstreamId}`
-    : null;
-       
-       return {
-      id:
-  sourceFixtureId ||
-  slug ||
-  raw?.id ||
-  raw?.match_id ||
   null,
 
-slug:
-  sourceFixtureId ||
-  slug,
-
-provider,
-
-fixture: {
-
-  id:
-    sourceFixtureId ||
-    slug ||
-    raw?.id ||
-    raw?.match_id ||
-    raw?.fixture_id ||
-    raw?.event_id ||
-    null,
-
-  slug:
-    sourceFixtureId ||
-    slug,
-
-  upstreamId:
-    sourceFixtureId ||
-    raw?.id ||
-    raw?.match_id ||
-    raw?.fixture_id ||
-    raw?.event_id ||
-    null,
           date: first(
             raw?.time,
             raw?.date,
@@ -2171,7 +2134,11 @@ league: {
             home: homeScore,
             away: awayScore
       },
-           
+           provider:
+  raw?.provider ||
+  item?.provider ||
+  "SportScore",
+        }
       };
     }
 
