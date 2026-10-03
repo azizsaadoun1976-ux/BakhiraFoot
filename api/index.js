@@ -704,6 +704,9 @@ events.splice(
             slug:
               `espn-${event?.id || ""}`,
 
+             provider:
+  "ESPN",
+             
             homeTeam: {
 
               id:
@@ -1000,6 +1003,9 @@ function adaptSofaWorldMatch(event) {
       event?.slug ||
       `sofa-${event?.id || ""}`,
 
+     provider: "SofaScore",
+
+     
     home_team: {
 
       id:
@@ -1080,7 +1086,7 @@ function adaptSofaWorldMatch(event) {
 
     time:
       matchDate
-
+ 
   };
 
 }
@@ -2004,10 +2010,11 @@ const competition = first(
           slug,
 
           upstreamId:
-            raw?.id ||
-            raw?.match_id ||
-            raw?.fixture_id ||
-            null,
+  raw?.id ||
+  raw?.match_id ||
+  raw?.fixture_id ||
+  raw?.event_id ||
+  null,
 
           date: first(
             raw?.time,
@@ -2126,7 +2133,11 @@ league: {
           fulltime: {
             home: homeScore,
             away: awayScore
-          }
+      },
+           provider:
+  raw?.provider ||
+  item?.provider ||
+  "SportScore",
         }
       };
     }
@@ -4260,7 +4271,9 @@ try {
 
           slug:
             `tsdb-${eventId}`,
-
+provider:
+  "TheSportsDB",
+           
           fixture: {
 
             id:
