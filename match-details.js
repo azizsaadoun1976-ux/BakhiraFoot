@@ -4619,30 +4619,6 @@ else if (
     "&source=thesportsdb";
 }
 
-const value =
-  String(identifier || "").trim();
-
-let detailsUrl =
-  `${DETAILS_API}${encodeURIComponent(value)}`;
-
-if (
-  value.toLowerCase().startsWith("sofa-")
-) {
-  detailsUrl += "&source=sofascore";
-}
-
-else if (
-  value.toLowerCase().startsWith("espn-")
-) {
-  detailsUrl += "&source=espn";
-}
-
-else if (
-  value.toLowerCase().startsWith("tsdb-")
-) {
-  detailsUrl += "&source=thesportsdb";
-}
-
 const response =
   await fetch(
     detailsUrl,
@@ -4654,7 +4630,6 @@ const response =
       }
     }
   );
-      
       const rawText =
         await response.text();
 
