@@ -1951,18 +1951,13 @@ function resolveCompetition(raw) {
         }
       }
 
-const competitionInfo =
-  resolveCompetition(raw);
-
-const competition =
-  competitionInfo.object;
-
-const competitionName =
-  competitionInfo.name;
-
-const competitionStage =
-  competitionInfo.stage;
-      
+const competition = first(
+  raw?.competition,
+  raw?.league,
+  raw?.tournament,
+  raw?.uniqueTournament,
+  {}
+);
        return {
         id:
           slug ||
@@ -2027,17 +2022,17 @@ const competitionStage =
             null
         },
 
-    league: {
-
+league: {
   id:
     idOf(competition) ||
-    competitionInfo.id ||
     raw?.competition_id ||
     raw?.league_id ||
     null,
 
   name:
-    competitionName ||
+    nameOf(competition) ||
+    raw?.competition_name ||
+    raw?.league_name ||
     "Football",
 
   country:
@@ -2048,21 +2043,17 @@ const competitionStage =
   logo:
     imageOf(competition) ||
     raw?.competition_logo ||
-    raw?.league_logo ||
     "",
 
   round:
     raw?.round ||
     raw?.round_name ||
-    raw?.stage ||
-    raw?.stage_name ||
-    competitionStage ||
     null,
 
- season:
+  season:
     raw?.season ||
     null
-
+},
         teams: {
           home: normalizeTeam(
             homeRaw,
