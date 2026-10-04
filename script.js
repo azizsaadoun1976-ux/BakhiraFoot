@@ -5872,11 +5872,14 @@ let y;
                       player
                   );
 
-                const offsets = [
-                  -7,
-                  0,
-                  7
-                ];
+             const offsets =
+  samePosition.length === 2
+    ? [-16, 16]
+    : samePosition.length === 3
+      ? [-18, 0, 18]
+      : samePosition.length === 4
+        ? [-24, -8, 8, 24]
+        : [0];
 
                 x =
                   exactX +
