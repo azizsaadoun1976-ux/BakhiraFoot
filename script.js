@@ -6087,34 +6087,101 @@ let y;
                     ) === exactX
                 );
 
-              if (
-                samePosition.length > 1
-              ) {
-                const localIndex =
-                  samePosition.findIndex(
-                    other =>
-                      other.item ===
-                      player
-                  );
+if (
+  samePosition.length > 1
+) {
+  const localIndex =
+    samePosition.findIndex(
+      other =>
+        other.item === player
+    );
 
-             const offsets =
-  samePosition.length === 2
-    ? [-16, 16]
-    : samePosition.length === 3
-      ? [-18, 0, 18]
-      : samePosition.length === 4
-        ? [-24, -8, 8, 24]
-        : [0];
+  /*
+   * نستعملو grid column إلا كان موجود
+   * باش اللاعبين بنفس position
+   * يتوزعو حسب المكان الحقيقي ديالهم.
+   */
+  const cols =
+    samePosition
+      .map(other => {
+        const match =
+          String(
+            other.item?._grid || ""
+          ).match(
+            /(\d+)\s*:\s*(\d+)/
+          );
 
-                x =
-                  exactX +
-                  (
-                    offsets[
-                      localIndex
-                    ] ??
-                    0
-                  );
-              }
+        return match
+          ? Number(match[2])
+          : null;
+      })
+      .filter(
+        value =>
+          Number.isFinite(value)
+      );
+
+  if (
+    cols.length === samePosition.length &&
+    new Set(cols).size === cols.length
+  ) {
+    const currentCol =
+      Number(
+        String(
+          player?._grid || ""
+        )
+          .match(
+            /(\d+)\s*:\s*(\d+)/
+          )?.[2] || 0
+      );
+
+    const minCol =
+      Math.min(...cols);
+
+    const maxCol =
+      Math.max(...cols);
+
+    if (
+      currentCol &&
+      minCol !== maxCol
+    ) {
+      x =
+        12 +
+        (
+          (
+            currentCol -
+            minCol
+          ) /
+          (
+            maxCol -
+            minCol
+          )
+        ) *
+        76;
+    }
+  }
+  else {
+    /*
+     * fallback إلا ما كانش grid صالح
+     */
+    const offsets =
+      samePosition.length === 2
+        ? [-20, 20]
+        : samePosition.length === 3
+          ? [-22, 0, 22]
+          : samePosition.length === 4
+            ? [-27, -9, 9, 27]
+            : [0];
+
+    x =
+      exactX +
+      (
+        offsets[
+          localIndex
+        ] ??
+        0
+      );
+  }
+}
             }
 
             /*
