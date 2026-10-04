@@ -5406,48 +5406,290 @@ function makePitchCoordinates(
   pitchPlayers,
   side
 ) {
+  if (!Array.isArray(pitchPlayers)) {
+    return [];
+  }
 
   const rows = {};
 
-  pitchPlayers.forEach(item => {
+  /* =====================================================
+     POSITION -> X
+  ===================================================== */
 
-    const match =
-      String(
-        item?._grid || ""
-      ).match(
-        /(\d+)\s*:\s*(\d+)/
-      );
+  function positionX(position) {
+    const p =
+      normalizeText(
+        position
+      )
+        .replace(/_/g, " ")
+        .replace(/-/g, " ")
+        .trim();
 
-    let row = 0;
-    let col = 0;
-
-    if (match) {
-      row = Number(match[1]);
-      col = Number(match[2]);
+    /*
+     * GOALKEEPER
+     */
+    if (
+      p === "g" ||
+      p === "gk" ||
+      p.includes("goalkeeper") ||
+      p.includes("gardien") ||
+      p.includes("keeper")
+    ) {
+      return 50;
     }
 
-    if (!row) {
-      row =
-        getPositionRow(
-          getPlayerPosition(item)
-        );
+    /*
+     * LEFT DEFENCE
+     */
+    if (
+      p === "lb" ||
+      p === "lwb" ||
+      p.includes("left back") ||
+      p.includes("left wing back")
+    ) {
+      return p === "lwb" ||
+        p.includes("wing back")
+        ? 8
+        : 12;
     }
 
-    if (!col) {
-      col = 1;
+    if (
+      p === "lcb" ||
+      p.includes("left centre back") ||
+      p.includes("left center back")
+    ) {
+      return 32;
     }
 
-    if (!rows[row]) {
-      rows[row] = [];
+    /*
+     * CENTRE DEFENCE
+     */
+    if (
+      p === "cb" ||
+      p === "d" ||
+      p === "df" ||
+      p === "def"
+    ) {
+      return 50;
     }
 
-    rows[row].push({
+    /*
+     * RIGHT DEFENCE
+     */
+    if (
+      p === "rcb" ||
+      p.includes("right centre back") ||
+      p.includes("right center back")
+    ) {
+      return 68;
+    }
+
+    if (
+      p === "rb" ||
+      p === "rwb" ||
+      p.includes("right back") ||
+      p.includes("right wing back")
+    ) {
+      return p === "rwb" ||
+        p.includes("wing back")
+        ? 92
+        : 88;
+    }
+
+    /*
+     * DEFENSIVE MIDFIELD
+     */
+    if (
+      p === "ldm"
+    ) {
+      return 35;
+    }
+
+    if (
+      p === "dm" ||
+      p === "cdm"
+    ) {
+      return 50;
+    }
+
+    if (
+      p === "rdm"
+    ) {
+      return 65;
+    }
+
+    /*
+     * WIDE MIDFIELD
+     */
+    if (
+      p === "lm" ||
+      p === "lwm" ||
+      p.includes("left midfield")
+    ) {
+      return 12;
+    }
+
+    if (
+      p === "rm" ||
+      p === "rwm" ||
+      p.includes("right midfield")
+    ) {
+      return 88;
+    }
+
+    /*
+     * CENTRAL MIDFIELD
+     */
+    if (
+      p === "lcm"
+    ) {
+      return 35;
+    }
+
+    if (
+      p === "cm" ||
+      p === "mc" ||
+      p === "m" ||
+      p === "mf" ||
+      p.includes("central midfield")
+    ) {
+      return 50;
+    }
+
+    if (
+      p === "rcm"
+    ) {
+      return 65;
+    }
+
+    /*
+     * ATTACKING MIDFIELD
+     */
+    if (
+      p === "lam"
+    ) {
+      return 32;
+    }
+
+    if (
+      p === "am" ||
+      p === "cam"
+    ) {
+      return 50;
+    }
+
+    if (
+      p === "ram"
+    ) {
+      return 68;
+    }
+
+    /*
+     * LEFT WING
+     */
+    if (
+      p === "lw" ||
+      p === "lf" ||
+      p.includes("left wing") ||
+      p.includes("left winger")
+    ) {
+      return 10;
+    }
+
+    /*
+     * RIGHT WING
+     */
+    if (
+      p === "rw" ||
+      p === "rf" ||
+      p.includes("right wing") ||
+      p.includes("right winger")
+    ) {
+      return 90;
+    }
+
+    /*
+     * STRIKER / CENTRE FORWARD
+     */
+    if (
+      p === "st" ||
+      p === "cf" ||
+      p === "ss" ||
+      p === "f" ||
+      p === "fw" ||
+      p === "att" ||
+      p.includes("striker") ||
+      p.includes("centre forward") ||
+      p.includes("center forward") ||
+      p.includes("forward")
+    ) {
+      return 50;
+    }
+
+    return null;
+  }
+
+  /* =====================================================
+     READ GRID
+  ===================================================== */
+
+  pitchPlayers.forEach(
+    (
       item,
-      row,
-      col
-    });
+      index
+    ) => {
 
-  });
+      const match =
+        String(
+          item?._grid || ""
+        ).match(
+          /(\d+)\s*:\s*(\d+)/
+        );
+
+      let row = 0;
+      let col = 0;
+
+      if (match) {
+        row =
+          Number(
+            match[1]
+          );
+
+        col =
+          Number(
+            match[2]
+          );
+      }
+
+      if (!row) {
+        row =
+          getPositionRow(
+            getPlayerPosition(item)
+          );
+      }
+
+      if (!row) {
+        row = 3;
+      }
+
+      if (!col) {
+        col =
+          index + 1;
+      }
+
+      if (!rows[row]) {
+        rows[row] = [];
+      }
+
+      rows[row].push({
+        item,
+        row,
+        col,
+        index
+      });
+
+    }
+  );
 
   const maxRow =
     Math.max(
@@ -5458,73 +5700,211 @@ function makePitchCoordinates(
 
   const coordinates = [];
 
+  /* =====================================================
+     BUILD ROWS
+  ===================================================== */
+
   Object.keys(rows)
     .map(Number)
-    .sort((a, b) => a - b)
-    .forEach(row => {
+    .sort(
+      (a, b) =>
+        a - b
+    )
+    .forEach(
+      row => {
 
-      const list =
-        rows[row]
-          .sort(
-            (a, b) =>
-              a.col - b.col
-          );
+        const list =
+          rows[row];
 
-      const count =
-        list.length;
+        /*
+         * داخل نفس الخط:
+         * اليسار -> الوسط -> اليمين
+         */
+        list.sort(
+          (a, b) => {
 
-      list.forEach(
-        (entry, positionIndex) => {
-
-          let x;
-
-          if (count === 1) {
-            x = 50;
-          } else {
-            x =
-              18 +
-              (
-                64 *
-                (
-                  positionIndex /
-                  (count - 1)
+            const ax =
+              positionX(
+                getPlayerPosition(
+                  a.item
                 )
               );
-          }
 
-          let y =
-            9 +
-            (
-              78 *
-              (
-                (row - 1) /
-                Math.max(
-                  1,
-                  maxRow - 1
+            const bx =
+              positionX(
+                getPlayerPosition(
+                  b.item
                 )
-              )
+              );
+
+            /*
+             * إلا كان عندنا مركز حقيقي
+             */
+            if (
+              ax !== null &&
+              bx !== null &&
+              ax !== bx
+            ) {
+              return ax - bx;
+            }
+
+            /*
+             * fallback: grid column
+             */
+            return (
+              a.col - b.col
             );
-
-          if (side === "away") {
-            y = 100 - y;
           }
+        );
 
-          coordinates.push({
-            ...entry.item,
-            _x: Math.max(
-              7,
-              Math.min(93, x)
-            ),
-            _y: Math.max(
-              7,
-              Math.min(93, y)
-            )
-          });
+        const count =
+          list.length;
 
-        }
-      );
+        list.forEach(
+          (
+            entry,
+            positionIndex
+          ) => {
 
-    });
+            const player =
+              entry.item;
+
+            const exactX =
+              positionX(
+                getPlayerPosition(
+                  player
+                )
+              );
+
+            let x;
+
+            /*
+             * POSITION الحقيقي
+             */
+            if (
+              exactX !== null
+            ) {
+              x = exactX;
+
+              /*
+               * إذا كان أكثر من لاعب عند
+               * نفس المركز العام، نعطيهم
+               * فرق صغير.
+               */
+              const samePosition =
+                list.filter(
+                  other =>
+                    positionX(
+                      getPlayerPosition(
+                        other.item
+                      )
+                    ) === exactX
+                );
+
+              if (
+                samePosition.length > 1
+              ) {
+                const localIndex =
+                  samePosition.findIndex(
+                    other =>
+                      other.item ===
+                      player
+                  );
+
+                const offsets = [
+                  -7,
+                  0,
+                  7
+                ];
+
+                x =
+                  exactX +
+                  (
+                    offsets[
+                      localIndex
+                    ] ??
+                    0
+                  );
+              }
+            }
+
+            /*
+             * FALLBACK GRID
+             */
+            else if (
+              count === 1
+            ) {
+              x = 50;
+            }
+            else {
+              x =
+                12 +
+                (
+                  (
+                    positionIndex /
+                    (
+                      count - 1
+                    )
+                  ) *
+                  76
+                );
+            }
+
+            /*
+             * Y حسب الخط
+             */
+            let y =
+              9 +
+              (
+                78 *
+                (
+                  (
+                    row - 1
+                  ) /
+                  Math.max(
+                    1,
+                    maxRow - 1
+                  )
+                )
+              );
+
+            /*
+             * Away كيلعب مقلوب
+             */
+            if (
+              side === "away"
+            ) {
+              y =
+                100 - y;
+            }
+
+            coordinates.push({
+              ...player,
+
+              _x:
+                Math.max(
+                  5,
+                  Math.min(
+                    95,
+                    x
+                  )
+                ),
+
+              _y:
+                Math.max(
+                  7,
+                  Math.min(
+                    93,
+                    y
+                  )
+                )
+            });
+
+          }
+        );
+
+      }
+    );
 
   return coordinates;
 }
