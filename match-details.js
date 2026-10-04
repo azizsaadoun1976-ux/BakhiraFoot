@@ -2822,818 +2822,454 @@ function buildLineup(
     return "unknown";
   }
 
-function pitchPositions(
-  lineup,
-  side
-) {
-  const players =
-    arr(lineup?.xi).slice(0, 11);
+function pitchPositions(lineup, side) {
+  const players = arr(lineup?.xi).slice(0, 11);
 
-  if (!players.length) {
-    return [];
-  }
+  if (!players.length) return [];
 
-  /* =====================================================
-     HELPERS
-  ===================================================== */
+  const formation = normalizeFormation(
+    lineup?.formation || "4-3-3"
+  );
 
-  function cleanRole(player) {
-    return norm(
-      getPlayerPosition(player)
-    )
-      .replace(/[_-]/g, " ")
-      .trim();
-  }
-
-  function group(role) {
-    if (
-      [
-        "gk",
-        "g",
-        "goalkeeper",
-        "keeper"
-      ].includes(role)
-    ) {
-      return "gk";
-    }
-
-    if (
-      role === "d" ||
-      role === "df" ||
-      role === "def" ||
-      role.includes("back") ||
-      role.includes("centre back") ||
-      role.includes("center back") ||
-      role.includes("def")
-    ) {
-      return "def";
-    }
-
-    if (
-      role === "m" ||
-      role === "mf" ||
-      role === "mid" ||
-      role.includes("mid") ||
-      role === "dm" ||
-      role === "cdm" ||
-      role === "ldm" ||
-      role === "rdm" ||
-      role === "cm" ||
-      role === "lcm" ||
-      role === "rcm" ||
-      role === "lm" ||
-      role === "rm" ||
-      role === "am" ||
-      role === "cam" ||
-      role === "lam" ||
-      role === "ram"
-    ) {
-      return "mid";
-    }
-
-    if (
-      role === "f" ||
-      role === "fw" ||
-      role === "att" ||
-      role.includes("forw") ||
-      role.includes("strik") ||
-      role.includes("wing") ||
-      role === "st" ||
-      role === "cf" ||
-      role === "ss" ||
-      role === "lw" ||
-      role === "rw" ||
-      role === "lf" ||
-      role === "rf"
-    ) {
-      return "fwd";
-    }
-
-    return "unknown";
-  }
-
-  function isLeft(role) {
-    return (
-      role.startsWith("l") ||
-      role.includes("left")
-    );
-  }
-
-  function isRight(role) {
-    return (
-      role.startsWith("r") ||
-      role.includes("right")
-    );
-  }
-
-  function isCenter(role) {
-    return !isLeft(role) && !isRight(role);
-  }
-
-  function clamp(value) {
-    return Math.max(
-      5,
-      Math.min(
-        95,
-        value
-      )
-    );
-  }
-
-  /* =====================================================
-     FORMATION
-  ===================================================== */
-
-  let formation =
-    normalizeFormation(
-      lineup?.formation ||
-      "4-3-3"
-    );
-
-  let rows =
-    formation
-      .split("-")
-      .map(Number)
-      .filter(
-        n =>
-          Number.isFinite(n) &&
-          n > 0
-      );
-
-  if (
-    !rows.length ||
-    rows.reduce(
-      (a, b) =>
-        a + b,
-      0
-    ) !== 10
-  ) {
-    formation = "4-3-3";
-    rows = [4, 3, 3];
-  }
-
-  /* =====================================================
-     EXACT TACTICAL SLOTS
-  ===================================================== */
-
-  const templates = {
+  const FORMATIONS = {
     "4-3-3": [
-      ["LB","LCB","RCB","RB"],
-      ["LCM","CM","RCM"],
-      ["LW","ST","RW"]
+      { role: ["LB"], x: 10, y: 27 },
+      { role: ["LCB"], x: 33, y: 27 },
+      { role: ["RCB"], x: 67, y: 27 },
+      { role: ["RB"], x: 90, y: 27 },
+
+      { role: ["LCM","LDM"], x: 32, y: 50 },
+      { role: ["CM","DM","CDM"], x: 50, y: 46 },
+      { role: ["RCM","RDM"], x: 68, y: 50 },
+
+      { role: ["LW","LF"], x: 12, y: 78 },
+      { role: ["ST","CF"], x: 50, y: 84 },
+      { role: ["RW","RF"], x: 88, y: 78 }
     ],
 
     "4-2-3-1": [
-      ["LB","LCB","RCB","RB"],
-      ["LDM","RDM"],
-      ["LW","CAM","RW"],
-      ["ST"]
+      { role: ["LB"], x: 10, y: 27 },
+      { role: ["LCB"], x: 33, y: 27 },
+      { role: ["RCB"], x: 67, y: 27 },
+      { role: ["RB"], x: 90, y: 27 },
+
+      { role: ["LDM","DM","CDM"], x: 37, y: 45 },
+      { role: ["RDM","DM","CDM"], x: 63, y: 45 },
+
+      { role: ["LW","LF"], x: 12, y: 67 },
+      { role: ["LAM","AM","CAM"], x: 50, y: 64 },
+      { role: ["RW","RF"], x: 88, y: 67 },
+
+      { role: ["ST","CF"], x: 50, y: 84 }
     ],
 
     "4-4-2": [
-      ["LB","LCB","RCB","RB"],
-      ["LM","LCM","RCM","RM"],
-      ["LST","RST"]
-    ],
+      { role: ["LB"], x: 10, y: 27 },
+      { role: ["LCB"], x: 33, y: 27 },
+      { role: ["RCB"], x: 67, y: 27 },
+      { role: ["RB"], x: 90, y: 27 },
 
-    "4-1-4-1": [
-      ["LB","LCB","RCB","RB"],
-      ["DM"],
-      ["LM","LCM","RCM","RM"],
-      ["ST"]
-    ],
+      { role: ["LM","LWB"], x: 10, y: 52 },
+      { role: ["LCM","CM"], x: 36, y: 52 },
+      { role: ["RCM","CM"], x: 64, y: 52 },
+      { role: ["RM","RWB"], x: 90, y: 52 },
 
-    "4-5-1": [
-      ["LB","LCB","RCB","RB"],
-      ["LM","LCM","CM","RCM","RM"],
-      ["ST"]
-    ],
-
-    "4-3-1-2": [
-      ["LB","LCB","RCB","RB"],
-      ["LCM","CM","RCM"],
-      ["CAM"],
-      ["LST","RST"]
-    ],
-
-    "4-3-2-1": [
-      ["LB","LCB","RCB","RB"],
-      ["LCM","CM","RCM"],
-      ["LF","RF"],
-      ["ST"]
-    ],
-
-    "4-4-1-1": [
-      ["LB","LCB","RCB","RB"],
-      ["LM","LCM","RCM","RM"],
-      ["CF"],
-      ["ST"]
+      { role: ["LST","ST","CF"], x: 38, y: 82 },
+      { role: ["RST","ST","CF"], x: 62, y: 82 }
     ],
 
     "3-5-2": [
-      ["LCB","CB","RCB"],
-      ["LWB","LCM","CM","RCM","RWB"],
-      ["LST","RST"]
+      { role: ["LCB"], x: 25, y: 27 },
+      { role: ["CB"], x: 50, y: 27 },
+      { role: ["RCB"], x: 75, y: 27 },
+
+      { role: ["LWB"], x: 8, y: 46 },
+      { role: ["LCM","LDM"], x: 30, y: 50 },
+      { role: ["CM","DM","CDM"], x: 50, y: 47 },
+      { role: ["RCM","RDM"], x: 70, y: 50 },
+      { role: ["RWB"], x: 92, y: 46 },
+
+      { role: ["LST","ST","CF"], x: 38, y: 82 },
+      { role: ["RST","ST","CF"], x: 62, y: 82 }
     ],
 
     "3-4-3": [
-      ["LCB","CB","RCB"],
-      ["LM","LCM","RCM","RM"],
-      ["LW","ST","RW"]
-    ],
+      { role: ["LCB"], x: 25, y: 27 },
+      { role: ["CB"], x: 50, y: 27 },
+      { role: ["RCB"], x: 75, y: 27 },
 
-    "3-4-1-2": [
-      ["LCB","CB","RCB"],
-      ["LM","LCM","RCM","RM"],
-      ["CAM"],
-      ["LST","RST"]
-    ],
+      { role: ["LM","LWB"], x: 12, y: 50 },
+      { role: ["LCM","CM"], x: 38, y: 50 },
+      { role: ["RCM","CM"], x: 62, y: 50 },
+      { role: ["RM","RWB"], x: 88, y: 50 },
 
-    "3-5-1-1": [
-      ["LCB","CB","RCB"],
-      ["LWB","LCM","CM","RCM","RWB"],
-      ["CAM"],
-      ["ST"]
+      { role: ["LW","LF"], x: 12, y: 78 },
+      { role: ["ST","CF"], x: 50, y: 84 },
+      { role: ["RW","RF"], x: 88, y: 78 }
     ],
 
     "5-3-2": [
-      ["LWB","LCB","CB","RCB","RWB"],
-      ["LCM","CM","RCM"],
-      ["LST","RST"]
+      { role: ["LWB","LB"], x: 7, y: 30 },
+      { role: ["LCB"], x: 28, y: 27 },
+      { role: ["CB"], x: 50, y: 25 },
+      { role: ["RCB"], x: 72, y: 27 },
+      { role: ["RWB","RB"], x: 93, y: 30 },
+
+      { role: ["LCM","LDM"], x: 32, y: 50 },
+      { role: ["CM","DM","CDM"], x: 50, y: 46 },
+      { role: ["RCM","RDM"], x: 68, y: 50 },
+
+      { role: ["LST","ST","CF"], x: 38, y: 83 },
+      { role: ["RST","ST","CF"], x: 62, y: 83 }
     ],
 
     "5-4-1": [
-      ["LWB","LCB","CB","RCB","RWB"],
-      ["LM","LCM","RCM","RM"],
-      ["ST"]
-    ],
+      { role: ["LWB","LB"], x: 7, y: 30 },
+      { role: ["LCB"], x: 28, y: 27 },
+      { role: ["CB"], x: 50, y: 25 },
+      { role: ["RCB"], x: 72, y: 27 },
+      { role: ["RWB","RB"], x: 93, y: 30 },
 
-    "5-2-3": [
-      ["LWB","LCB","CB","RCB","RWB"],
-      ["LDM","RDM"],
-      ["LW","ST","RW"]
+      { role: ["LM"], x: 10, y: 52 },
+      { role: ["LCM","CM"], x: 36, y: 52 },
+      { role: ["RCM","CM"], x: 64, y: 52 },
+      { role: ["RM"], x: 90, y: 52 },
+
+      { role: ["ST","CF"], x: 50, y: 84 }
     ]
   };
 
-  let slotRows =
-    templates[formation] || null;
+  const slots =
+    FORMATIONS[formation] ||
+    FORMATIONS["4-3-3"];
 
-  /* =====================================================
-     GENERIC FORMATION FALLBACK
-  ===================================================== */
+  function roleOf(player) {
+    return norm(
+      getPlayerPosition(player)
+    )
+      .replace(/_/g, " ")
+      .replace(/-/g, " ")
+      .trim()
+      .toUpperCase();
+  }
 
-  function genericSlots() {
-    return rows.map(
-      (
-        count,
-        rowIndex
-      ) => {
-
-        /*
-         * DEFENSE
-         */
-        if (
-          rowIndex === 0
-        ) {
-
-          if (count === 3) {
-            return [
-              "LCB",
-              "CB",
-              "RCB"
-            ];
-          }
-
-          if (count === 4) {
-            return [
-              "LB",
-              "LCB",
-              "RCB",
-              "RB"
-            ];
-          }
-
-          if (count === 5) {
-            return [
-              "LWB",
-              "LCB",
-              "CB",
-              "RCB",
-              "RWB"
-            ];
-          }
-
-          if (count === 2) {
-            return [
-              "LCB",
-              "RCB"
-            ];
-          }
-
-          return ["CB"];
-        }
-
-        /*
-         * ATTACK
-         */
-        if (
-          rowIndex ===
-          rows.length - 1
-        ) {
-
-          if (count === 1) {
-            return ["ST"];
-          }
-
-          if (count === 2) {
-            return [
-              "LST",
-              "RST"
-            ];
-          }
-
-          if (count === 3) {
-            return [
-              "LW",
-              "ST",
-              "RW"
-            ];
-          }
-
-          if (count === 4) {
-            return [
-              "LW",
-              "LAM",
-              "RAM",
-              "RW"
-            ];
-          }
-
-          return [
-            "LW",
-            "LAM",
-            "ST",
-            "RAM",
-            "RW"
-          ];
-        }
-
-        /*
-         * MIDFIELD
-         */
-        if (count === 1) {
-          return ["DM"];
-        }
-
-        if (count === 2) {
-          return [
-            "LDM",
-            "RDM"
-          ];
-        }
-
-        if (count === 3) {
-          return [
-            "LCM",
-            "CM",
-            "RCM"
-          ];
-        }
-
-        if (count === 4) {
-          return [
-            "LM",
-            "LCM",
-            "RCM",
-            "RM"
-          ];
-        }
-
-        return [
-          "LM",
-          "LCM",
-          "CM",
-          "RCM",
-          "RM"
-        ];
-      }
+  function isGK(player) {
+    const r = roleOf(player);
+    return (
+      r === "GK" ||
+      r === "G" ||
+      r === "GOALKEEPER" ||
+      r === "KEEPER"
     );
   }
 
-  if (!slotRows) {
-    slotRows =
-      genericSlots();
-  }
-
-  /* =====================================================
-     GOALKEEPER
-  ===================================================== */
-
-  let keeper =
-    players.find(
-      player =>
-        group(
-          cleanRole(player)
-        ) === "gk"
-    );
-
-  if (!keeper) {
-    keeper =
-      players[0];
-  }
+  const keeper =
+    players.find(isGK) ||
+    players[0];
 
   const fieldPlayers =
     players.filter(
-      player =>
-        player !== keeper
+      player => player !== keeper
     );
 
-  const result = [
-    {
-      player: keeper,
-      x: 50,
-      y:
-        side === "away"
-          ? 92
-          : 8
-    }
-  ];
+  const result = [];
 
-  /* =====================================================
-     SLOT Y
-  ===================================================== */
+  result.push({
+    player: keeper,
+    x: 50,
+    y: side === "away" ? 92 : 8
+  });
 
-  const rowCount =
-    slotRows.length;
+  const used =
+    new Set([keeper]);
 
-  function rowY(index) {
-    if (rowCount === 1) {
-      return 50;
-    }
+  /*
+   * كنربط كل لاعب بالـslot ديالو
+   * حسب المركز الحقيقي ديالو.
+   */
+  slots.forEach(slot => {
+    let bestPlayer = null;
+    let bestScore = -1;
 
-    return (
-      18 +
-      (
-        index /
-        (
-          rowCount - 1
-        )
-      ) *
-      65
-    );
-  }
+    fieldPlayers.forEach(player => {
+      if (used.has(player)) return;
 
-  /* =====================================================
-     SLOT X
-  ===================================================== */
+      const r = roleOf(player);
 
-  function slotX(slot, count) {
+      let score = 0;
 
-    /*
-     * EXACT ROLE POSITIONS
-     */
-
-    const exact = {
-      LB: 10,
-      LWB: 7,
-
-      LCB: 30,
-      CB: 50,
-      RCB: 70,
-
-      RB: 90,
-      RWB: 93,
-
-      LDM: 30,
-      DM: 50,
-      RDM: 70,
-
-      LM: 10,
-      LCM: 32,
-      CM: 50,
-      RCM: 68,
-      RM: 90,
-
-      LAM: 32,
-      AM: 50,
-      CAM: 50,
-      RAM: 68,
-
-      LW: 10,
-      LF: 22,
-
-      CF: 50,
-      SS: 50,
-
-      RF: 78,
-      RW: 90,
-
-      LST: 38,
-      ST: 50,
-      RST: 62
-    };
-
-    if (
-      exact[
-        slot
-      ] !== undefined
-    ) {
-      return exact[slot];
-    }
-
-    /*
-     * Generic fallback
-     */
-    if (count === 1) {
-      return 50;
-    }
-
-    return (
-      10 +
-      (
-        (
-          slotRows
-            .find(
-              row =>
-                row.includes(slot)
-            )
-            ?.indexOf(slot) || 0
-        ) /
-        Math.max(
-          1,
-          count - 1
-        )
-      ) *
-      80
-    );
-  }
-
-  /* =====================================================
-     PLAYER <-> SLOT MATCHING
-  ===================================================== */
-
-  function slotScore(
-    player,
-    slot
-  ) {
-
-    const role =
-      cleanRole(player);
-
-    const g =
-      group(role);
-
-    let score = 0;
-
-    /*
-     * EXACT
-     */
-    if (
-      role === norm(slot)
-    ) {
-      score += 1000;
-    }
-
-    /*
-     * LEFT / RIGHT
-     */
-    if (
-      slot.startsWith("L") &&
-      isLeft(role)
-    ) {
-      score += 150;
-    }
-
-    if (
-      slot.startsWith("R") &&
-      isRight(role)
-    ) {
-      score += 150;
-    }
-
-    /*
-     * CENTER
-     */
-    if (
-      ["CB","CM","DM","AM","CAM","ST","CF","SS"]
-        .includes(slot) &&
-      isCenter(role)
-    ) {
-      score += 80;
-    }
-
-    /*
-     * GROUP
-     */
-    if (
-      slot === "GK" &&
-      g === "gk"
-    ) {
-      score += 500;
-    }
-
-    if (
-      (
-        slot.includes("B") ||
-        slot === "CB"
-      ) &&
-      g === "def"
-    ) {
-      score += 100;
-    }
-
-    if (
-      [
-        "DM",
-        "LDM",
-        "RDM",
-        "LM",
-        "LCM",
-        "CM",
-        "RCM",
-        "RM",
-        "LAM",
-        "AM",
-        "CAM",
-        "RAM"
-      ].includes(slot) &&
-      g === "mid"
-    ) {
-      score += 100;
-    }
-
-    if (
-      [
-        "LW",
-        "LF",
-        "RW",
-        "RF",
-        "LST",
-        "ST",
-        "RST",
-        "CF",
-        "SS"
-      ].includes(slot) &&
-      g === "fwd"
-    ) {
-      score += 100;
-    }
-
-    /*
-     * WINGERS
-     */
-    if (
-      (
-        slot === "LW" ||
-        slot === "LWB"
-      ) &&
-      isLeft(role)
-    ) {
-      score += 100;
-    }
-
-    if (
-      (
-        slot === "RW" ||
-        slot === "RWB"
-      ) &&
-      isRight(role)
-    ) {
-      score += 100;
-    }
-
-    return score;
-  }
-
-  const unused =
-    fieldPlayers.slice();
-
-  /* =====================================================
-     BUILD EACH LINE
-  ===================================================== */
-
-  slotRows.forEach(
-    (
-      slots,
-      rowIndex
-    ) => {
-
-      const yBase =
-        rowY(rowIndex);
-
-      slots.forEach(
-        slot => {
-
-          if (!unused.length) {
-            return;
-          }
-
-          let bestIndex = 0;
-          let bestScore =
-            -Infinity;
-
-          unused.forEach(
-            (
-              player,
-              index
-            ) => {
-
-              const score =
-                slotScore(
-                  player,
-                  slot
-                );
-
-              if (
-                score >
-                bestScore
-              ) {
-                bestScore =
-                  score;
-
-                bestIndex =
-                  index;
-              }
-
-            }
-          );
-
-          const player =
-            unused.splice(
-              bestIndex,
-              1
-            )[0];
-
-          let y =
-            yBase;
-
-          if (
-            side === "away"
-          ) {
-            y =
-              100 - y;
-          }
-
-          result.push({
-            player,
-
-            x:
-              clamp(
-                slotX(
-                  slot,
-                  slots.length
-                )
-              ),
-
-            y:
-              clamp(y)
-          });
-        }
-      );
-    }
-  );
-
-  /* =====================================================
-     ANY LEFTOVER PLAYERS
-  ===================================================== */
-
-  if (unused.length) {
-
-    unused.forEach(
-      (
-        player,
-        index
-      ) => {
-
-        let x =
-          25 +
-          (
-            index *
-            25
-          );
-
-        let y =
-          side === "away"
-            ? 70
-            : 30;
-
-        result.push({
-          player,
-
-          x:
-            clamp(x),
-
-          y:
-            clamp(y)
-        });
+      if (slot.role.includes(r)) {
+        score = 1000;
       }
-    );
-  }
 
-  return result.slice(
-    0,
-    11
+      /*
+       * دفاع
+       */
+      if (
+        (
+          r === "LB" ||
+          r === "LWB"
+        ) &&
+        (
+          slot.role.includes("LB") ||
+          slot.role.includes("LWB")
+        )
+      ) {
+        score = Math.max(score, 900);
+      }
+
+      if (
+        (
+          r === "RB" ||
+          r === "RWB"
+        ) &&
+        (
+          slot.role.includes("RB") ||
+          slot.role.includes("RWB")
+        )
+      ) {
+        score = Math.max(score, 900);
+      }
+
+      if (
+        (
+          r === "CB" ||
+          r === "LCB" ||
+          r === "RCB"
+        ) &&
+        slot.role.some(x =>
+          ["CB","LCB","RCB"].includes(x)
+        )
+      ) {
+        score = Math.max(score, 850);
+      }
+
+      /*
+       * وسط
+       */
+      if (
+        (
+          r === "LM" ||
+          r === "LWB"
+        ) &&
+        slot.role.includes("LM")
+      ) {
+        score = Math.max(score, 850);
+      }
+
+      if (
+        (
+          r === "RM" ||
+          r === "RWB"
+        ) &&
+        slot.role.includes("RM")
+      ) {
+        score = Math.max(score, 850);
+      }
+
+      if (
+        (
+          r === "LDM" ||
+          r === "LDМ" ||
+          r === "LCM"
+        ) &&
+        slot.role.some(x =>
+          ["LDM","LCM","CM"].includes(x)
+        )
+      ) {
+        score = Math.max(score, 820);
+      }
+
+      if (
+        (
+          r === "RDM" ||
+          r === "RCM"
+        ) &&
+        slot.role.some(x =>
+          ["RDM","RCM","CM"].includes(x)
+        )
+      ) {
+        score = Math.max(score, 820);
+      }
+
+      if (
+        (
+          r === "DM" ||
+          r === "CDM"
+        ) &&
+        slot.role.some(x =>
+          ["DM","CDM"].includes(x)
+        )
+      ) {
+        score = Math.max(score, 900);
+      }
+
+      /*
+       * أجنحة
+       */
+      if (
+        (
+          r === "LW" ||
+          r === "LF"
+        ) &&
+        slot.role.some(x =>
+          ["LW","LF"].includes(x)
+        )
+      ) {
+        score = Math.max(score, 950);
+      }
+
+      if (
+        (
+          r === "RW" ||
+          r === "RF"
+        ) &&
+        slot.role.some(x =>
+          ["RW","RF"].includes(x)
+        )
+      ) {
+        score = Math.max(score, 950);
+      }
+
+      /*
+       * مهاجم
+       */
+      if (
+        (
+          r === "ST" ||
+          r === "CF" ||
+          r === "SS"
+        ) &&
+        slot.role.some(x =>
+          ["ST","CF","LST","RST"].includes(x)
+        )
+      ) {
+        score = Math.max(score, 900);
+      }
+
+      if (score > bestScore) {
+        bestScore = score;
+        bestPlayer = player;
+      }
+    });
+
+    if (bestPlayer) {
+      used.add(bestPlayer);
+
+      let y = slot.y;
+
+      if (side === "away") {
+        y = 100 - y;
+      }
+
+      result.push({
+        player: bestPlayer,
+        x: slot.x,
+        y: Math.max(
+          5,
+          Math.min(95, y)
+        )
+      });
+    }
+  });
+
+  /*
+   * أي لاعب ما تـربطش بـslot
+   * ما نخليوهش يختفي.
+   */
+  const remaining =
+    fieldPlayers.filter(
+      player => !used.has(player)
+    );
+
+  remaining.forEach(
+    (player, index) => {
+      const r = roleOf(player);
+
+      let x = 50;
+      let y = 50;
+
+      if (
+        r === "LB" ||
+        r === "LWB"
+      ) {
+        x = 10;
+        y = 30;
+      }
+      else if (
+        r === "RB" ||
+        r === "RWB"
+      ) {
+        x = 90;
+        y = 30;
+      }
+      else if (
+        r === "LW" ||
+        r === "LF"
+      ) {
+        x = 12;
+        y = 78;
+      }
+      else if (
+        r === "RW" ||
+        r === "RF"
+      ) {
+        x = 88;
+        y = 78;
+      }
+      else if (
+        r === "DM" ||
+        r === "CDM"
+      ) {
+        x = 50;
+        y = 45;
+      }
+      else if (
+        r === "LM"
+      ) {
+        x = 12;
+        y = 52;
+      }
+      else if (
+        r === "RM"
+      ) {
+        x = 88;
+        y = 52;
+      }
+      else if (
+        r === "ST" ||
+        r === "CF"
+      ) {
+        x = 50;
+        y = 84;
+      }
+      else {
+        x =
+          30 +
+          (index * 20);
+
+        y = 52;
+      }
+
+      if (side === "away") {
+        y = 100 - y;
+      }
+
+      result.push({
+        player,
+        x: Math.max(
+          5,
+          Math.min(95, x)
+        ),
+        y: Math.max(
+          5,
+          Math.min(95, y)
+        )
+      });
+    }
   );
+
+  return result.slice(0, 11);
 }
   
   /* =========================================================
