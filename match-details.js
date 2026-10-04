@@ -1336,14 +1336,8 @@
   );
 }
   
- function getPlayerPosition(
-  player
-) {
-  if (
-    !player ||
-    typeof player === "string" ||
-    typeof player === "number"
-  ) {
+function getPlayerPosition(player) {
+  if (typeof player === "string") {
     return "";
   }
 
@@ -1353,23 +1347,126 @@
       ? player.player
       : player;
 
-  const position =
+  const pos =
     first(
-
-      /* مباشر */
-      player?.position,
       player?.pos,
-      player?.role,
-      player?.position_name,
-      player?.positionName,
+      player?.position?.abbreviation,
+      player?.position?.shortName,
+      player?.position?.short_name,
+      player?.position?.name,
 
-      /* nested */
-      p?.position,
       p?.pos,
-      p?.role,
-      p?.position_name,
-      p?.positionName,
+      p?.position?.abbreviation,
+      p?.position?.shortName,
+      p?.position?.short_name,
+      p?.position?.name,
 
+      player?.role,
+      p?.role,
+      ""
+    );
+
+  if (pos && typeof pos !== "object") {
+    const value = norm(pos);
+
+    const map = {
+      "g": "GK",
+      "gk": "GK",
+      "goalkeeper": "GK",
+
+      "lb": "LB",
+      "left back": "LB",
+
+      "lcb": "LCB",
+      "left centre back": "LCB",
+      "left center back": "LCB",
+
+      "cb": "CB",
+      "centre back": "CB",
+      "center back": "CB",
+
+      "rcb": "RCB",
+      "right centre back": "RCB",
+      "right center back": "RCB",
+
+      "rb": "RB",
+      "right back": "RB",
+
+      "lwb": "LWB",
+      "left wing back": "LWB",
+
+      "rwb": "RWB",
+      "right wing back": "RWB",
+
+      "ldm": "LDM",
+      "dm": "DM",
+      "cdm": "DM",
+      "rdm": "RDM",
+
+      "lm": "LM",
+      "lcm": "LCM",
+      "cm": "CM",
+      "rcm": "RCM",
+      "rm": "RM",
+
+      "lam": "LAM",
+      "am": "AM",
+      "cam": "AM",
+      "ram": "RAM",
+
+      "lw": "LW",
+      "left wing": "LW",
+
+      "rw": "RW",
+      "right wing": "RW",
+
+      "lf": "LF",
+      "rf": "RF",
+
+      "st": "ST",
+      "cf": "CF",
+      "ss": "SS"
+    };
+
+    if (map[value]) {
+      return map[value];
+    }
+
+    /* إلا كان المصدر ما عطاش role دقيق */
+    if (
+      value === "d" ||
+      value === "df" ||
+      value === "def" ||
+      value.includes("def")
+    ) {
+      return "DEF";
+    }
+
+    if (
+      value === "m" ||
+      value === "mf" ||
+      value === "mid" ||
+      value.includes("mid")
+    ) {
+      return "MID";
+    }
+
+    if (
+      value === "f" ||
+      value === "fw" ||
+      value === "att" ||
+      value.includes("forw") ||
+      value.includes("strik") ||
+      value.includes("wing")
+    ) {
+      return "FWD";
+    }
+
+    return String(pos);
+  }
+
+  return "";
+}
       /* statistics */
       player?.statistics?.position,
       player?.statistics?.positionName,
