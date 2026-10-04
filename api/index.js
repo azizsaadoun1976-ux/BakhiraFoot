@@ -2339,36 +2339,66 @@ function normalizeMatch(item) {
         ""
       );
 
-      const grid = first(
-        wrapper?.grid,
-        wrapper?.position_grid,
-        wrapper?.positionGrid,
-        raw?.grid,
-        raw?.position_grid,
-        raw?.positionGrid,
-        ""
-      );
+     const grid = first(
+  wrapper?.grid,
+  wrapper?.position_grid,
+  wrapper?.positionGrid,
+  wrapper?.position?.grid,
+  wrapper?.position?.position_grid,
+  wrapper?.position?.positionGrid,
 
-      const x = first(
-        wrapper?.x,
-        wrapper?.coord_x,
-        wrapper?.coordinate_x,
-        raw?.x,
-        raw?.coord_x,
-        raw?.coordinate_x,
-        null
-      );
+  raw?.grid,
+  raw?.position_grid,
+  raw?.positionGrid,
+  raw?.position?.grid,
+  raw?.position?.position_grid,
+  raw?.position?.positionGrid,
 
-      const y = first(
-        wrapper?.y,
-        wrapper?.coord_y,
-        wrapper?.coordinate_y,
-        raw?.y,
-        raw?.coord_y,
-        raw?.coordinate_y,
-        null
-      );
+  wrapper?.coordinates?.grid,
+  raw?.coordinates?.grid,
 
+  ""
+);
+
+    const x = first(
+  wrapper?.x,
+  wrapper?.coord_x,
+  wrapper?.coordinate_x,
+  wrapper?.position?.x,
+  wrapper?.position?.coord_x,
+  wrapper?.position?.coordinate_x,
+  wrapper?.coordinates?.x,
+
+  raw?.x,
+  raw?.coord_x,
+  raw?.coordinate_x,
+  raw?.position?.x,
+  raw?.position?.coord_x,
+  raw?.position?.coordinate_x,
+  raw?.coordinates?.x,
+
+  null
+);
+
+    const y = first(
+  wrapper?.y,
+  wrapper?.coord_y,
+  wrapper?.coordinate_y,
+  wrapper?.position?.y,
+  wrapper?.position?.coord_y,
+  wrapper?.position?.coordinate_y,
+  wrapper?.coordinates?.y,
+
+  raw?.y,
+  raw?.coord_y,
+  raw?.coordinate_y,
+  raw?.position?.y,
+  raw?.position?.coord_y,
+  raw?.position?.coordinate_y,
+  raw?.coordinates?.y,
+
+  null
+);
       const rating = first(
         wrapper?.rating,
         wrapper?.performance?.rating,
@@ -3248,12 +3278,25 @@ function normalizeMatch(item) {
         kind = "substitution";
       }
 
-      else if (
-        typeNorm.includes("var") ||
-        detailNorm.includes("var")
-      ) {
-        kind = "var";
-      }
+    else if (
+  typeNorm.includes("var") ||
+  detailNorm.includes("var")
+) {
+  kind = "var";
+}
+
+else if (
+  typeNorm.includes("injur") ||
+  detailNorm.includes("injur") ||
+  typeNorm.includes("medical") ||
+  detailNorm.includes("medical") ||
+  typeNorm.includes("bless") ||
+  detailNorm.includes("bless") ||
+  typeNorm.includes("lesion") ||
+  detailNorm.includes("lesion")
+) {
+  kind = "injury";
+}
 
       const playerRaw = first(
         raw?.player,
