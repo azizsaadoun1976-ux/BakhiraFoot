@@ -5415,17 +5415,13 @@ function getPositionRow(position) {
   return 4;
 }
 
-function getPitchPlayers(
-  lineup
-) {
+function getPitchPlayers(lineup) {
   if (!lineup) {
     return [];
   }
 
   const starters =
-    Array.isArray(
-      lineup?.startXI
-    )
+    Array.isArray(lineup?.startXI)
       ? lineup.startXI
       : [];
 
@@ -5433,16 +5429,9 @@ function getPitchPlayers(
     return [];
   }
 
-  /*
-   * =====================================================
-   * FORMATION
-   * =====================================================
-   */
-
   const formation =
     String(
-      lineup?.formation ||
-      "4-3-3"
+      lineup?.formation || "4-3-3"
     )
       .trim()
       .replace(/\s+/g, "");
@@ -5458,36 +5447,23 @@ function getPitchPlayers(
       );
 
   if (
+    formationRows.length === 0 ||
     formationRows.reduce(
-      (sum, n) =>
-        sum + n,
+      (sum, n) => sum + n,
       0
     ) !== 10
   ) {
-    formationRows =
-      [4, 3, 3];
+    formationRows = [4, 3, 3];
   }
-
-  /*
-   * Formation:
-   * 1 GK
-   * + lines ديال formation
-   */
 
   const expectedRows = [
     1,
     ...formationRows
   ];
 
-  /*
-   * =====================================================
-   * READ PROVIDED GRIDS
-   * =====================================================
-   */
-
-  const prepared =
+  const players =
     starters.map(
-      entry => {
+      (entry, index) => {
 
         const player =
           entry?.player ||
@@ -5495,9 +5471,7 @@ function getPitchPlayers(
           {};
 
         const rawGrid =
-          getPlayerGrid(
-            entry
-          );
+          getPlayerGrid(entry);
 
         let row = null;
         let col = null;
@@ -5510,183 +5484,124 @@ function getPitchPlayers(
           );
 
         if (match) {
-          row =
-            Number(
-              match[1]
-            );
-
-          col =
-            Number(
-              match[2]
-            );
+          row = Number(match[1]);
+          col = Number(match[2]);
         }
 
         return {
-          ...entry,
+          entry,
           player,
-          _row: row,
-          _col: col,
-          _gridValid:
-            row !== null &&
-            col !== null &&
-            row > 0 &&
-            col > 0
+          index,
+          row,
+          col
         };
       }
     );
 
-  /*
-   * =====================================================
-   * VALIDATE GRID
-   *
-   * كنقبلوه غير إلا كان فعلاً كيشبه
-   * للـformation ديال الماتش.
-   * =====================================================
-   */
+  /* =====================================================
+     CHECK GRID
+  ===================================================== */
 
-  const allHaveGrid =
-    prepared.every(
+  const gridOK =
+    players.every(
       item =>
-        item._gridValid
+        Number.isFinite(item.row) &&
+        Number.isFinite(item.col) &&
+        item.row >= 1 &&
+        item.col >= 1
     );
 
-  let gridIsGood =
-    allHaveGrid;
+  let validGrid = gridOK;
 
-  if (gridIsGood) {
-
-    /*
-     * كل grid خاصو يكون unique
-     */
-    const unique =
-      new Set(
-        prepared.map(
-          item =>
-            `${item._row}:${item._col}`
-        )
+  if (validGrid) {
+    const positions =
+      players.map(
+        item =>
+          `${item.row}:${item.col}`
       );
 
     if (
-      unique.size !==
-      prepared.length
+      new Set(positions).size !==
+      positions.length
     ) {
-      gridIsGood = false;
+      validGrid = false;
     }
   }
 
-  if (gridIsGood) {
+  if (validGrid) {
+    const counts = {};
 
-    /*
-     * عدد اللاعبين فكل row
-     */
-    const rowCounts = {};
-
-    prepared.forEach(
+    players.forEach(
       item => {
-
-        rowCounts[item._row] =
-          (
-            rowCounts[item._row] ||
-            0
-          ) + 1;
-
+        counts[item.row] =
+          (counts[item.row] || 0) + 1;
       }
     );
 
     const actualRows =
-      Object.keys(rowCounts)
+      Object.keys(counts)
         .map(Number)
         .sort(
-          (a, b) =>
-            a - b
+          (a, b) => a - b
         );
 
     const actualCounts =
       actualRows.map(
-        row =>
-          rowCounts[row]
+        row => counts[row]
       );
 
-    /*
-     * خاص عدد الـrows واللاعبين
-     * يوافق formation.
-     */
     if (
       actualCounts.length !==
       expectedRows.length
     ) {
-      gridIsGood = false;
+      validGrid = false;
     }
     else {
-
       for (
         let i = 0;
         i < expectedRows.length;
         i++
       ) {
-
         if (
           actualCounts[i] !==
           expectedRows[i]
         ) {
-          gridIsGood = false;
+          validGrid = false;
           break;
         }
-
       }
-
     }
   }
 
-  /*
-   * =====================================================
-   * GRID صالح
-   *
-   * نخليه كما عطاه SportScore.
-   * هاد الماتشات المزيانين ما نلمسوهمش.
-   * =====================================================
-   */
+  /* =====================================================
+     GRID صحيح
+  ===================================================== */
 
-  if (gridIsGood) {
-
-    return prepared.map(
+  if (validGrid) {
+    return players.map(
       item => ({
-        ...item,
-
+        ...item.entry,
+        player: item.player,
         _grid:
-          `${item._row}:${item._col}`
+          `${item.row}:${item.col}`
       })
     );
   }
 
-  /*
-   * =====================================================
-   * GRID خاسر
-   *
-   * كنحيدوه فقط لهاد الماتش.
-   * من بعد makePitchCoordinates()
-   * غادي تعتمد على position fallback.
-   * =====================================================
-   */
+  /* =====================================================
+     GRID خاسر
+     نخليه فارغ باش makePitchCoordinates
+     تعتمد على position
+  ===================================================== */
 
-  return starters.map(
-    (entry, index) => {
-
-      return {
-        ...entry,
-
-        player:
-          entry?.player ||
-          entry ||
-          {},
-
-        _grid: ""
-      };
-
-    }
+  return players.map(
+    item => ({
+      ...item.entry,
+      player: item.player,
+      _grid: ""
+    })
   );
 }
-
 function makePitchCoordinates(
   pitchPlayers,
   side
