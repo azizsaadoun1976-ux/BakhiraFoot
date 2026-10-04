@@ -362,12 +362,12 @@
          SUMMARY
       ===================================================== */
 
-      .bfmd-summary {
-        display: grid;
-        grid-template-columns:
-          repeat(4,1fr);
-        gap: 9px;
-      }
+    .bfmd-summary {
+  display: grid;
+  grid-template-columns:
+    repeat(6,1fr);
+  gap: 9px;
+}
 
       .bfmd-summary-box {
         padding: 13px;
@@ -571,6 +571,19 @@
   white-space: nowrap;
   overflow: hidden;
   text-overflow: ellipsis;
+}
+.bfmd-role {
+  margin-top: 2px;
+  padding: 2px 6px;
+  border-radius: 5px;
+  background: rgba(255,255,255,.90);
+  color: #111827;
+  font-size: 8px;
+  line-height: 1;
+  font-weight: 950;
+  text-align: center;
+  box-shadow:
+    0 2px 6px rgba(0,0,0,.16);
 }
 
 .bfmd-rating {
@@ -825,7 +838,12 @@
           grid-template-columns: 1fr 1fr;
         }
       }
-
+@media(max-width:1000px) {
+  .bfmd-summary {
+    grid-template-columns:
+      repeat(3,1fr);
+  }
+}
       @media(max-width:600px) {
         .bfmd-box {
           padding: 20px 12px;
@@ -5314,91 +5332,118 @@ ${
      SUMMARY
   ========================================================= */
 
-  function renderSummary(
-    events
-  ) {
-    const goals =
-      events.filter(
-        event =>
-          event.kind ===
-          "goal"
-      ).length;
+ function renderSummary(events) {
+  const goals =
+    events.filter(
+      event =>
+        event.kind === "goal"
+    ).length;
 
-    const yellow =
-      events.filter(
-        event =>
-          event.kind ===
-          "yellow"
-      ).length;
+  const assists =
+    events.filter(
+      event =>
+        event.kind === "goal" &&
+        event.assist
+    ).length;
 
-    const red =
-      events.filter(
-        event =>
-          event.kind ===
-          "red"
-      ).length;
+  const yellow =
+    events.filter(
+      event =>
+        event.kind === "yellow"
+    ).length;
 
-    const substitutions =
-      events.filter(
-        event =>
-          event.kind ===
-          "substitution"
-      ).length;
+  const red =
+    events.filter(
+      event =>
+        event.kind === "red"
+    ).length;
 
-    return `
-      <div class="bfmd-section">
+  const substitutions =
+    events.filter(
+      event =>
+        event.kind === "substitution"
+    ).length;
 
-        <div class="bfmd-title">
-          📊 Résumé
+  const injuries =
+    events.filter(
+      event =>
+        event.kind === "injury"
+    ).length;
+
+  return `
+    <div class="bfmd-section">
+
+      <div class="bfmd-title">
+        📊 Résumé du match
+      </div>
+
+      <div class="bfmd-summary">
+
+        <div class="bfmd-summary-box">
+          <div class="bfmd-summary-value">
+            ${goals}
+          </div>
+
+          <div class="bfmd-summary-label">
+            ⚽ Buts
+          </div>
         </div>
 
-        <div class="bfmd-summary">
-
-          <div class="bfmd-summary-box">
-            <div class="bfmd-summary-value">
-              ${goals}
-            </div>
-
-            <div class="bfmd-summary-label">
-              Buts
-            </div>
+        <div class="bfmd-summary-box">
+          <div class="bfmd-summary-value">
+            ${assists}
           </div>
 
-          <div class="bfmd-summary-box">
-            <div class="bfmd-summary-value">
-              ${yellow}
-            </div>
+          <div class="bfmd-summary-label">
+            🅰️ Assists
+          </div>
+        </div>
 
-            <div class="bfmd-summary-label">
-              Cartons jaunes
-            </div>
+        <div class="bfmd-summary-box">
+          <div class="bfmd-summary-value">
+            ${yellow}
           </div>
 
-          <div class="bfmd-summary-box">
-            <div class="bfmd-summary-value">
-              ${red}
-            </div>
+          <div class="bfmd-summary-label">
+            🟨 Cartons jaunes
+          </div>
+        </div>
 
-            <div class="bfmd-summary-label">
-              Cartons rouges
-            </div>
+        <div class="bfmd-summary-box">
+          <div class="bfmd-summary-value">
+            ${red}
           </div>
 
-          <div class="bfmd-summary-box">
-            <div class="bfmd-summary-value">
-              ${substitutions}
-            </div>
+          <div class="bfmd-summary-label">
+            🟥 Cartons rouges
+          </div>
+        </div>
 
-            <div class="bfmd-summary-label">
-              Remplacements
-            </div>
+        <div class="bfmd-summary-box">
+          <div class="bfmd-summary-value">
+            ${substitutions}
           </div>
 
+          <div class="bfmd-summary-label">
+            🔄 Remplacements
+          </div>
+        </div>
+
+        <div class="bfmd-summary-box">
+          <div class="bfmd-summary-value">
+            ${injuries}
+          </div>
+
+          <div class="bfmd-summary-label">
+            🤕 Blessures
+          </div>
         </div>
 
       </div>
-    `;
-  }
+
+    </div>
+  `;
+}
 
   /* =========================================================
      MAN OF THE MATCH
