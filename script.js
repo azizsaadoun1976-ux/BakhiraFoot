@@ -5850,33 +5850,151 @@ function makePitchCoordinates(
                 );
             }
 
-            /*
-             * Y حسب الخط
-             */
-            let y =
-              9 +
-              (
-                78 *
-                (
-                  (
-                    row - 1
-                  ) /
-                  Math.max(
-                    1,
-                    maxRow - 1
-                  )
-                )
-              );
+           /* =====================================================
+   Y حسب المركز الكروي
+   ===================================================== */
 
-            /*
-             * Away كيلعب مقلوب
-             */
-            if (
-              side === "away"
-            ) {
-              y =
-                100 - y;
-            }
+const pos =
+  normalizeText(
+    getPlayerPosition(player)
+  )
+    .replace(/_/g, " ")
+    .replace(/-/g, " ")
+    .trim();
+
+/*
+ * GK
+ */
+if (
+  pos === "gk" ||
+  pos === "g" ||
+  pos.includes("goalkeeper") ||
+  pos.includes("keeper")
+) {
+  y = 8;
+}
+
+/*
+ * DEFENCE
+ */
+else if (
+  pos === "lb" ||
+  pos === "lwb" ||
+  pos === "rb" ||
+  pos === "rwb" ||
+  pos === "cb" ||
+  pos === "lcb" ||
+  pos === "rcb" ||
+  pos === "d" ||
+  pos === "df" ||
+  pos === "def"
+) {
+  y = 27;
+}
+
+/*
+ * DEFENSIVE MIDFIELD
+ */
+else if (
+  pos === "dm" ||
+  pos === "cdm" ||
+  pos === "ldm" ||
+  pos === "rdm"
+) {
+  y = 43;
+}
+
+/*
+ * CENTRAL / WIDE MIDFIELD
+ */
+else if (
+  pos === "lm" ||
+  pos === "rm" ||
+  pos === "lcm" ||
+  pos === "cm" ||
+  pos === "mc" ||
+  pos === "rcm" ||
+  pos === "am" ||
+  pos === "cam" ||
+  pos === "lam" ||
+  pos === "ram" ||
+  pos === "m" ||
+  pos === "mf"
+) {
+  y = 52;
+}
+
+/*
+ * ATTACKING MIDFIELD
+ */
+else if (
+  pos.includes("attacking midfield")
+) {
+  y = 64;
+}
+
+/*
+ * WINGS
+ */
+else if (
+  pos === "lw" ||
+  pos === "lf" ||
+  pos.includes("left wing")
+) {
+  y = 76;
+}
+
+else if (
+  pos === "rw" ||
+  pos === "rf" ||
+  pos.includes("right wing")
+) {
+  y = 76;
+}
+
+/*
+ * FORWARDS
+ */
+else if (
+  pos === "st" ||
+  pos === "cf" ||
+  pos === "ss" ||
+  pos === "f" ||
+  pos === "fw" ||
+  pos === "att" ||
+  pos.includes("striker") ||
+  pos.includes("forward")
+) {
+  y = 84;
+}
+
+/*
+ * Fallback
+ */
+else {
+  y =
+    9 +
+    (
+      78 *
+      (
+        (row - 1) /
+        Math.max(
+          1,
+          maxRow - 1
+        )
+      )
+    );
+}
+
+/*
+ * Away كيلعب مقلوب
+ */
+if (
+  side === "away"
+) {
+  y =
+    100 - y;
+}
 
             coordinates.push({
               ...player,
