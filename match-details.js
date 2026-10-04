@@ -2822,7 +2822,10 @@ function buildLineup(
     return "unknown";
   }
 
-function pitchPositions(lineup, side) {
+function pitchPositions(
+  lineup,
+  side
+) {
   const players =
     arr(lineup?.xi).slice(0, 11);
 
@@ -2834,203 +2837,7 @@ function pitchPositions(lineup, side) {
      HELPERS
   ===================================================== */
 
-  function unwrap(player) {
-    if (
-      player?.player &&
-      typeof player.player === "object"
-    ) {
-      return {
-        ...player.player,
-        ...player
-      };
-    }
-
-    return player || {};
-  }
-
-  function number(value) {
-    if (
-      value === null ||
-      value === undefined ||
-      value === ""
-    ) {
-      return null;
-    }
-
-    const n =
-      Number(
-        String(value)
-          .replace(",", ".")
-          .trim()
-      );
-
-    return Number.isFinite(n)
-      ? n
-      : null;
-  }
-
-  function percent(value) {
-    const n = number(value);
-
-    if (n === null) {
-      return null;
-    }
-
-    return n >= 0 && n <= 1
-      ? n * 100
-      : n;
-  }
-
-  function clamp(value) {
-    return Math.max(
-      5,
-      Math.min(95, value)
-    );
-  }
-
-  /* =====================================================
-     REAL GRID
-  ===================================================== */
-
-  function readGrid(player) {
-    const p = unwrap(player);
-
-    const position =
-      p?.position;
-
-    const positionObj =
-      position &&
-      typeof position === "object"
-        ? position
-        : {};
-
-    const raw =
-      first(
-        player?.grid,
-        p?.grid,
-
-        positionObj?.grid,
-
-        player?.player?.grid,
-        player?.player?.position?.grid,
-
-        player?.position_grid,
-        p?.position_grid,
-
-        player?.positionGrid,
-        p?.positionGrid,
-
-        null
-      );
-
-    if (
-      raw === null ||
-      raw === undefined ||
-      raw === ""
-    ) {
-      return null;
-    }
-
-    if (
-      typeof raw === "object"
-    ) {
-      const row =
-        number(
-          first(
-            raw?.row,
-            raw?.line,
-            raw?.r,
-            null
-          )
-        );
-
-      const col =
-        number(
-          first(
-            raw?.column,
-            raw?.col,
-            raw?.c,
-            null
-          )
-        );
-
-      if (
-        row !== null &&
-        col !== null &&
-        row > 0 &&
-        col > 0
-      ) {
-        return {
-          row,
-          col
-        };
-      }
-
-      return null;
-    }
-
-    const match =
-      String(raw)
-        .trim()
-        .match(
-          /(\d+)\s*[:;,/_-]\s*(\d+)/
-        );
-
-    if (!match) {
-      return null;
-    }
-
-    return {
-      row:
-        Number(match[1]),
-      col:
-        Number(match[2])
-    };
-  }
-
-  /* =====================================================
-     REAL X/Y
-  ===================================================== */
-
-  function readXY(player) {
-    const p = unwrap(player);
-
-    const x =
-      percent(
-        first(
-          player?.x,
-          p?.x,
-          null
-        )
-      );
-
-    const y =
-      percent(
-        first(
-          player?.y,
-          p?.y,
-          null
-        )
-      );
-
-    if (
-      x === null ||
-      y === null
-    ) {
-      return null;
-    }
-
-    return {
-      x,
-      y
-    };
-  }
-
-  /* =====================================================
-     ROLE
-  ===================================================== */
-
-  function role(player) {
+  function cleanRole(player) {
     return norm(
       getPlayerPosition(player)
     )
@@ -3038,155 +2845,66 @@ function pitchPositions(lineup, side) {
       .trim();
   }
 
-  /* =====================================================
-     ROLE ORDER
-     اليسار -> الوسط -> اليمين
-  ===================================================== */
-
-  const roleOrder = {
-    lb: 1,
-    lwb: 1,
-    lcb: 2,
-
-    lm: 1,
-    ldm: 1,
-    lcm: 2,
-    lam: 2,
-    lw: 1,
-    lf: 1,
-
-    gk: 5,
-    g: 5,
-    goalkeeper: 5,
-
-    cb: 5,
-    dm: 5,
-    cdm: 5,
-    cm: 5,
-    mc: 5,
-    am: 5,
-    cam: 5,
-    cf: 5,
-    st: 5,
-    ss: 5,
-    striker: 5,
-
-    rcb: 8,
-    rb: 9,
-    rwb: 9,
-
-    rdm: 8,
-    rcm: 8,
-    rm: 9,
-    ram: 8,
-
-    rw: 9,
-    rf: 9
-  };
-
-  function sortByRole(a, b) {
-    const ra =
-      roleOrder[role(a)] ??
-      5;
-
-    const rb =
-      roleOrder[role(b)] ??
-      5;
-
-    return ra - rb;
-  }
-
-  /* =====================================================
-     BROAD GROUP
-  ===================================================== */
-
-  function group(player) {
-    const p =
-      role(player);
-
+  function group(role) {
     if (
       [
         "gk",
         "g",
         "goalkeeper",
         "keeper"
-      ].includes(p)
+      ].includes(role)
     ) {
       return "gk";
     }
 
     if (
-      [
-        "lb",
-        "lcb",
-        "cb",
-        "rcb",
-        "rb",
-        "def",
-        "df",
-        "rwb",
-        "lwb"
-      ].includes(p)
+      role === "d" ||
+      role === "df" ||
+      role === "def" ||
+      role.includes("back") ||
+      role.includes("centre back") ||
+      role.includes("center back") ||
+      role.includes("def")
     ) {
       return "def";
     }
 
     if (
-      [
-        "ldm",
-        "dm",
-        "cdm",
-        "rdm",
-        "lm",
-        "lcm",
-        "cm",
-        "mc",
-        "rcm",
-        "rm",
-        "lam",
-        "am",
-        "cam",
-        "ram",
-        "mid",
-        "mf"
-      ].includes(p)
+      role === "m" ||
+      role === "mf" ||
+      role === "mid" ||
+      role.includes("mid") ||
+      role === "dm" ||
+      role === "cdm" ||
+      role === "ldm" ||
+      role === "rdm" ||
+      role === "cm" ||
+      role === "lcm" ||
+      role === "rcm" ||
+      role === "lm" ||
+      role === "rm" ||
+      role === "am" ||
+      role === "cam" ||
+      role === "lam" ||
+      role === "ram"
     ) {
       return "mid";
     }
 
     if (
-      [
-        "lw",
-        "lf",
-        "rw",
-        "rf",
-        "st",
-        "cf",
-        "ss",
-        "fwd",
-        "fw",
-        "att"
-      ].includes(p)
-    ) {
-      return "fwd";
-    }
-
-    if (
-      p.includes("def")
-    ) {
-      return "def";
-    }
-
-    if (
-      p.includes("mid")
-    ) {
-      return "mid";
-    }
-
-    if (
-      p.includes("forw") ||
-      p.includes("strik") ||
-      p.includes("wing")
+      role === "f" ||
+      role === "fw" ||
+      role === "att" ||
+      role.includes("forw") ||
+      role.includes("strik") ||
+      role.includes("wing") ||
+      role === "st" ||
+      role === "cf" ||
+      role === "ss" ||
+      role === "lw" ||
+      role === "rw" ||
+      role === "lf" ||
+      role === "rf"
     ) {
       return "fwd";
     }
@@ -3194,343 +2912,39 @@ function pitchPositions(lineup, side) {
     return "unknown";
   }
 
-  /* =====================================================
-     1) GRID SPORT SCORE
-  ===================================================== */
+  function isLeft(role) {
+    return (
+      role.startsWith("l") ||
+      role.includes("left")
+    );
+  }
 
-  const gridPlayers =
-    players
-      .map(player => ({
-        player,
-        grid:
-          readGrid(player)
-      }))
-      .filter(
-        item =>
-          !!item.grid
-      );
+  function isRight(role) {
+    return (
+      role.startsWith("r") ||
+      role.includes("right")
+    );
+  }
 
-  /*
-   * إلا كان grid حاضر عند أغلب اللاعبين
-   * نستعملو مباشرة.
-   */
-  if (
-    gridPlayers.length >=
-    Math.max(
-      9,
-      Math.ceil(
-        players.length * 0.8
+  function isCenter(role) {
+    return !isLeft(role) && !isRight(role);
+  }
+
+  function clamp(value) {
+    return Math.max(
+      5,
+      Math.min(
+        95,
+        value
       )
-    )
-  ) {
-
-    const rows =
-      [
-        ...new Set(
-          gridPlayers.map(
-            item =>
-              item.grid.row
-          )
-        )
-      ].sort(
-        (a, b) =>
-          a - b
-      );
-
-    const minRow =
-      rows[0];
-
-    const maxRow =
-      rows[rows.length - 1];
-
-    const result = [];
-
-    rows.forEach(row => {
-
-      const line =
-        gridPlayers
-          .filter(
-            item =>
-              item.grid.row === row
-          )
-          .sort(
-            (a, b) =>
-              a.grid.col -
-              b.grid.col
-          );
-
-      const cols =
-        line.map(
-          item =>
-            item.grid.col
-        );
-
-      const minCol =
-        Math.min(...cols);
-
-      const maxCol =
-        Math.max(...cols);
-
-      line.forEach(
-        (item, index) => {
-
-          let x;
-
-          if (
-            minCol !== maxCol
-          ) {
-            x =
-              10 +
-              (
-                (
-                  item.grid.col -
-                  minCol
-                ) /
-                (
-                  maxCol -
-                  minCol
-                )
-              ) *
-              80;
-          }
-          else if (
-            line.length === 1
-          ) {
-            x = 50;
-          }
-          else {
-            x =
-              10 +
-              (
-                index /
-                (
-                  line.length - 1
-                )
-              ) *
-              80;
-          }
-
-          let y;
-
-          if (
-            minRow === maxRow
-          ) {
-            y = 50;
-          }
-          else {
-            y =
-              8 +
-              (
-                (
-                  item.grid.row -
-                  minRow
-                ) /
-                (
-                  maxRow -
-                  minRow
-                )
-              ) *
-              84;
-          }
-
-          if (
-            side === "away"
-          ) {
-            y =
-              100 - y;
-          }
-
-          result.push({
-            player:
-              item.player,
-            x:
-              clamp(x),
-            y:
-              clamp(y)
-          });
-        }
-      );
-    });
-
-    /*
-     * players li ma3ndhomch grid
-     * نحطوهم حسب role بلا overlap كبير.
-     */
-    const placedPlayers =
-      new Set(
-        result.map(
-          item =>
-            item.player
-        )
-      );
-
-    const missing =
-      players.filter(
-        player =>
-          !placedPlayers.has(
-            player
-          )
-      );
-
-    const fallbackRoleXY = {
-      gk: [50, 8],
-
-      lb: [12, 27],
-      lwb: [9, 32],
-      lcb: [32, 28],
-      cb: [50, 27],
-      rcb: [68, 28],
-      rb: [88, 27],
-      rwb: [91, 32],
-
-      ldm: [35, 43],
-      dm: [50, 43],
-      cdm: [50, 43],
-      rdm: [65, 43],
-
-      lm: [12, 50],
-      lcm: [32, 50],
-      cm: [50, 50],
-      mc: [50, 50],
-      rcm: [68, 50],
-      rm: [88, 50],
-
-      lam: [28, 64],
-      am: [50, 64],
-      cam: [50, 64],
-      ram: [72, 64],
-
-      lw: [12, 79],
-      lf: [15, 77],
-      rw: [88, 79],
-      rf: [85, 77],
-
-      ss: [50, 75],
-      cf: [50, 81],
-      st: [50, 86],
-      striker: [50, 86]
-    };
-
-    missing.forEach(
-      (player, index) => {
-
-        const pair =
-          fallbackRoleXY[
-            role(player)
-          ] || [
-            50,
-            group(player) === "def"
-              ? 28
-              : group(player) === "mid"
-              ? 52
-              : 78
-          ];
-
-        let x = pair[0];
-        let y = pair[1];
-
-        if (
-          side === "away"
-        ) {
-          y =
-            100 - y;
-        }
-
-        /*
-         * حاول نتفادى نفس المكان.
-         */
-        let tries = 0;
-
-        while (
-          result.some(
-            item =>
-              Math.abs(item.x - x) <
-                7 &&
-              Math.abs(item.y - y) <
-                6
-          ) &&
-          tries < 8
-        ) {
-          x =
-            clamp(
-              x +
-                (
-                  index % 2 === 0
-                    ? 8
-                    : -8
-                )
-            );
-
-          tries++;
-        }
-
-        result.push({
-          player,
-          x:
-            clamp(x),
-          y:
-            clamp(y)
-        });
-      }
-    );
-
-    return result.slice(
-      0,
-      11
     );
   }
 
   /* =====================================================
-     2) REAL X/Y
+     FORMATION
   ===================================================== */
 
-  const xyPlayers =
-    players.map(
-      player => ({
-        player,
-        xy:
-          readXY(player)
-      })
-    );
-
-  if (
-    xyPlayers.every(
-      item =>
-        !!item.xy
-    )
-  ) {
-    return xyPlayers.map(
-      item => {
-
-        let {
-          x,
-          y
-        } = item.xy;
-
-        if (
-          side === "away"
-        ) {
-          y =
-            100 - y;
-        }
-
-        return {
-          player:
-            item.player,
-          x:
-            clamp(x),
-          y:
-            clamp(y)
-        };
-      }
-    );
-  }
-
-  /* =====================================================
-     3) FORMATION FALLBACK
-  ===================================================== */
-
-  const formation =
+  let formation =
     normalizeFormation(
       lineup?.formation ||
       "4-3-3"
@@ -3549,12 +2963,266 @@ function pitchPositions(lineup, side) {
   if (
     !rows.length ||
     rows.reduce(
-      (sum, value) =>
-        sum + value,
+      (a, b) =>
+        a + b,
       0
     ) !== 10
   ) {
+    formation = "4-3-3";
     rows = [4, 3, 3];
+  }
+
+  /* =====================================================
+     EXACT TACTICAL SLOTS
+  ===================================================== */
+
+  const templates = {
+    "4-3-3": [
+      ["LB","LCB","RCB","RB"],
+      ["LCM","CM","RCM"],
+      ["LW","ST","RW"]
+    ],
+
+    "4-2-3-1": [
+      ["LB","LCB","RCB","RB"],
+      ["LDM","RDM"],
+      ["LW","CAM","RW"],
+      ["ST"]
+    ],
+
+    "4-4-2": [
+      ["LB","LCB","RCB","RB"],
+      ["LM","LCM","RCM","RM"],
+      ["LST","RST"]
+    ],
+
+    "4-1-4-1": [
+      ["LB","LCB","RCB","RB"],
+      ["DM"],
+      ["LM","LCM","RCM","RM"],
+      ["ST"]
+    ],
+
+    "4-5-1": [
+      ["LB","LCB","RCB","RB"],
+      ["LM","LCM","CM","RCM","RM"],
+      ["ST"]
+    ],
+
+    "4-3-1-2": [
+      ["LB","LCB","RCB","RB"],
+      ["LCM","CM","RCM"],
+      ["CAM"],
+      ["LST","RST"]
+    ],
+
+    "4-3-2-1": [
+      ["LB","LCB","RCB","RB"],
+      ["LCM","CM","RCM"],
+      ["LF","RF"],
+      ["ST"]
+    ],
+
+    "4-4-1-1": [
+      ["LB","LCB","RCB","RB"],
+      ["LM","LCM","RCM","RM"],
+      ["CF"],
+      ["ST"]
+    ],
+
+    "3-5-2": [
+      ["LCB","CB","RCB"],
+      ["LWB","LCM","CM","RCM","RWB"],
+      ["LST","RST"]
+    ],
+
+    "3-4-3": [
+      ["LCB","CB","RCB"],
+      ["LM","LCM","RCM","RM"],
+      ["LW","ST","RW"]
+    ],
+
+    "3-4-1-2": [
+      ["LCB","CB","RCB"],
+      ["LM","LCM","RCM","RM"],
+      ["CAM"],
+      ["LST","RST"]
+    ],
+
+    "3-5-1-1": [
+      ["LCB","CB","RCB"],
+      ["LWB","LCM","CM","RCM","RWB"],
+      ["CAM"],
+      ["ST"]
+    ],
+
+    "5-3-2": [
+      ["LWB","LCB","CB","RCB","RWB"],
+      ["LCM","CM","RCM"],
+      ["LST","RST"]
+    ],
+
+    "5-4-1": [
+      ["LWB","LCB","CB","RCB","RWB"],
+      ["LM","LCM","RCM","RM"],
+      ["ST"]
+    ],
+
+    "5-2-3": [
+      ["LWB","LCB","CB","RCB","RWB"],
+      ["LDM","RDM"],
+      ["LW","ST","RW"]
+    ]
+  };
+
+  let slotRows =
+    templates[formation] || null;
+
+  /* =====================================================
+     GENERIC FORMATION FALLBACK
+  ===================================================== */
+
+  function genericSlots() {
+    return rows.map(
+      (
+        count,
+        rowIndex
+      ) => {
+
+        /*
+         * DEFENSE
+         */
+        if (
+          rowIndex === 0
+        ) {
+
+          if (count === 3) {
+            return [
+              "LCB",
+              "CB",
+              "RCB"
+            ];
+          }
+
+          if (count === 4) {
+            return [
+              "LB",
+              "LCB",
+              "RCB",
+              "RB"
+            ];
+          }
+
+          if (count === 5) {
+            return [
+              "LWB",
+              "LCB",
+              "CB",
+              "RCB",
+              "RWB"
+            ];
+          }
+
+          if (count === 2) {
+            return [
+              "LCB",
+              "RCB"
+            ];
+          }
+
+          return ["CB"];
+        }
+
+        /*
+         * ATTACK
+         */
+        if (
+          rowIndex ===
+          rows.length - 1
+        ) {
+
+          if (count === 1) {
+            return ["ST"];
+          }
+
+          if (count === 2) {
+            return [
+              "LST",
+              "RST"
+            ];
+          }
+
+          if (count === 3) {
+            return [
+              "LW",
+              "ST",
+              "RW"
+            ];
+          }
+
+          if (count === 4) {
+            return [
+              "LW",
+              "LAM",
+              "RAM",
+              "RW"
+            ];
+          }
+
+          return [
+            "LW",
+            "LAM",
+            "ST",
+            "RAM",
+            "RW"
+          ];
+        }
+
+        /*
+         * MIDFIELD
+         */
+        if (count === 1) {
+          return ["DM"];
+        }
+
+        if (count === 2) {
+          return [
+            "LDM",
+            "RDM"
+          ];
+        }
+
+        if (count === 3) {
+          return [
+            "LCM",
+            "CM",
+            "RCM"
+          ];
+        }
+
+        if (count === 4) {
+          return [
+            "LM",
+            "LCM",
+            "RCM",
+            "RM"
+          ];
+        }
+
+        return [
+          "LM",
+          "LCM",
+          "CM",
+          "RCM",
+          "RM"
+        ];
+      }
+    );
+  }
+
+  if (!slotRows) {
+    slotRows =
+      genericSlots();
   }
 
   /* =====================================================
@@ -3564,234 +3232,340 @@ function pitchPositions(lineup, side) {
   let keeper =
     players.find(
       player =>
-        group(player) === "gk"
+        group(
+          cleanRole(player)
+        ) === "gk"
     );
 
   if (!keeper) {
     keeper =
-      players.find(
-        player =>
-          ["gk","g","goalkeeper"]
-            .includes(
-              role(player)
-            )
-      );
+      players[0];
   }
 
-  if (!keeper) {
-    keeper = players[0];
-  }
-
-  const remaining =
+  const fieldPlayers =
     players.filter(
       player =>
         player !== keeper
     );
 
-  const result = [];
+  const result = [
+    {
+      player: keeper,
+      x: 50,
+      y:
+        side === "away"
+          ? 92
+          : 8
+    }
+  ];
 
-  result.push({
-    player: keeper,
-    x: 50,
-    y:
-      side === "away"
-        ? 92
-        : 8
-  });
+  /* =====================================================
+     SLOT Y
+  ===================================================== */
 
-  /*
-   * المجموعة المطلوبة لكل خط
-   */
-  function targetGroup(
-    rowIndex
-  ) {
-    if (
-      rowIndex === 0
-    ) {
-      return "def";
+  const rowCount =
+    slotRows.length;
+
+  function rowY(index) {
+    if (rowCount === 1) {
+      return 50;
     }
 
-    if (
-      rowIndex ===
-      rows.length - 1
-    ) {
-      return "fwd";
-    }
-
-    return "mid";
+    return (
+      18 +
+      (
+        index /
+        (
+          rowCount - 1
+        )
+      ) *
+      65
+    );
   }
 
-  /*
-   * واش اللاعب مناسب للخط؟
-   */
-  function compatible(
+  /* =====================================================
+     SLOT X
+  ===================================================== */
+
+  function slotX(slot, count) {
+
+    /*
+     * EXACT ROLE POSITIONS
+     */
+
+    const exact = {
+      LB: 10,
+      LWB: 7,
+
+      LCB: 30,
+      CB: 50,
+      RCB: 70,
+
+      RB: 90,
+      RWB: 93,
+
+      LDM: 30,
+      DM: 50,
+      RDM: 70,
+
+      LM: 10,
+      LCM: 32,
+      CM: 50,
+      RCM: 68,
+      RM: 90,
+
+      LAM: 32,
+      AM: 50,
+      CAM: 50,
+      RAM: 68,
+
+      LW: 10,
+      LF: 22,
+
+      CF: 50,
+      SS: 50,
+
+      RF: 78,
+      RW: 90,
+
+      LST: 38,
+      ST: 50,
+      RST: 62
+    };
+
+    if (
+      exact[
+        slot
+      ] !== undefined
+    ) {
+      return exact[slot];
+    }
+
+    /*
+     * Generic fallback
+     */
+    if (count === 1) {
+      return 50;
+    }
+
+    return (
+      10 +
+      (
+        (
+          slotRows
+            .find(
+              row =>
+                row.includes(slot)
+            )
+            ?.indexOf(slot) || 0
+        ) /
+        Math.max(
+          1,
+          count - 1
+        )
+      ) *
+      80
+    );
+  }
+
+  /* =====================================================
+     PLAYER <-> SLOT MATCHING
+  ===================================================== */
+
+  function slotScore(
     player,
-    target,
-    rowIndex
+    slot
   ) {
-    const r =
-      role(player);
+
+    const role =
+      cleanRole(player);
 
     const g =
-      group(player);
+      group(role);
 
+    let score = 0;
+
+    /*
+     * EXACT
+     */
     if (
-      target === "def"
+      role === norm(slot)
     ) {
-      return (
-        g === "def" ||
-        (
-          rowIndex === 0 &&
-          (
-            r === "lwb" ||
-            r === "rwb"
-          )
-        )
-      );
+      score += 1000;
+    }
+
+    /*
+     * LEFT / RIGHT
+     */
+    if (
+      slot.startsWith("L") &&
+      isLeft(role)
+    ) {
+      score += 150;
     }
 
     if (
-      target === "mid"
+      slot.startsWith("R") &&
+      isRight(role)
     ) {
-      return (
-        g === "mid" ||
-        r === "lwb" ||
-        r === "rwb"
-      );
+      score += 150;
+    }
+
+    /*
+     * CENTER
+     */
+    if (
+      ["CB","CM","DM","AM","CAM","ST","CF","SS"]
+        .includes(slot) &&
+      isCenter(role)
+    ) {
+      score += 80;
+    }
+
+    /*
+     * GROUP
+     */
+    if (
+      slot === "GK" &&
+      g === "gk"
+    ) {
+      score += 500;
     }
 
     if (
-      target === "fwd"
+      (
+        slot.includes("B") ||
+        slot === "CB"
+      ) &&
+      g === "def"
     ) {
-      return (
-        g === "fwd" ||
-        r === "lam" ||
-        r === "am" ||
-        r === "cam" ||
-        r === "ram"
-      );
+      score += 100;
     }
 
-    return false;
+    if (
+      [
+        "DM",
+        "LDM",
+        "RDM",
+        "LM",
+        "LCM",
+        "CM",
+        "RCM",
+        "RM",
+        "LAM",
+        "AM",
+        "CAM",
+        "RAM"
+      ].includes(slot) &&
+      g === "mid"
+    ) {
+      score += 100;
+    }
+
+    if (
+      [
+        "LW",
+        "LF",
+        "RW",
+        "RF",
+        "LST",
+        "ST",
+        "RST",
+        "CF",
+        "SS"
+      ].includes(slot) &&
+      g === "fwd"
+    ) {
+      score += 100;
+    }
+
+    /*
+     * WINGERS
+     */
+    if (
+      (
+        slot === "LW" ||
+        slot === "LWB"
+      ) &&
+      isLeft(role)
+    ) {
+      score += 100;
+    }
+
+    if (
+      (
+        slot === "RW" ||
+        slot === "RWB"
+      ) &&
+      isRight(role)
+    ) {
+      score += 100;
+    }
+
+    return score;
   }
 
-  let available =
-    remaining.slice();
+  const unused =
+    fieldPlayers.slice();
 
-  rows.forEach(
+  /* =====================================================
+     BUILD EACH LINE
+  ===================================================== */
+
+  slotRows.forEach(
     (
-      count,
+      slots,
       rowIndex
     ) => {
 
-      const target =
-        targetGroup(
-          rowIndex
-        );
+      const yBase =
+        rowY(rowIndex);
 
-      let line =
-        available.filter(
-          player =>
-            compatible(
+      slots.forEach(
+        slot => {
+
+          if (!unused.length) {
+            return;
+          }
+
+          let bestIndex = 0;
+          let bestScore =
+            -Infinity;
+
+          unused.forEach(
+            (
               player,
-              target,
-              rowIndex
-            )
-        );
+              index
+            ) => {
 
-      line.sort(
-        sortByRole
-      );
+              const score =
+                slotScore(
+                  player,
+                  slot
+                );
 
-      /*
-       * إلا ماكفاوش اللاعبين
-       * نكملو بالباقي.
-       */
-      if (
-        line.length < count
-      ) {
+              if (
+                score >
+                bestScore
+              ) {
+                bestScore =
+                  score;
 
-        const extra =
-          available
-            .filter(
-              player =>
-                !line.includes(
-                  player
-                )
-            )
-            .sort(
-              sortByRole
-            );
+                bestIndex =
+                  index;
+              }
 
-        line =
-          [
-            ...line,
-            ...extra
-          ];
-      }
+            }
+          );
 
-      line =
-        line.slice(
-          0,
-          count
-        );
+          const player =
+            unused.splice(
+              bestIndex,
+              1
+            )[0];
 
-      line.forEach(
-        (player, index) => {
-
-          let x;
-
-          if (
-            count === 1
-          ) {
-            x = 50;
-          }
-          else {
-            x =
-              12 +
-              (
-                index /
-                (
-                  count - 1
-                )
-              ) *
-              76;
-          }
-
-          /*
-           * الخطوط:
-           * دفاع 18
-           * وسط 42 / 58
-           * هجوم 82
-           *
-           * تتوزع أوتوماتيكياً
-           * حسب عدد الخطوط.
-           */
-          const firstY = 20;
-          const lastY = 83;
-
-          let y;
-
-          if (
-            rows.length === 1
-          ) {
-            y = 50;
-          }
-          else {
-            y =
-              firstY +
-              (
-                (
-                  rowIndex /
-                  (
-                    rows.length - 1
-                  )
-                ) *
-                (
-                  lastY - firstY
-                )
-              );
-          }
+          let y =
+            yBase;
 
           if (
             side === "away"
@@ -3802,35 +3576,30 @@ function pitchPositions(lineup, side) {
 
           result.push({
             player,
+
             x:
-              clamp(x),
+              clamp(
+                slotX(
+                  slot,
+                  slots.length
+                )
+              ),
+
             y:
               clamp(y)
           });
         }
       );
-
-      /*
-       * نحيدو اللي تلعبو
-       */
-      available =
-        available.filter(
-          player =>
-            !line.includes(
-              player
-            )
-        );
     }
   );
 
-  /*
-   * إلا بقا شي لاعب
-   */
-  if (
-    available.length
-  ) {
+  /* =====================================================
+     ANY LEFTOVER PLAYERS
+  ===================================================== */
 
-    available.forEach(
+  if (unused.length) {
+
+    unused.forEach(
       (
         player,
         index
@@ -3840,18 +3609,20 @@ function pitchPositions(lineup, side) {
           25 +
           (
             index *
-            20
+            25
           );
 
         let y =
           side === "away"
-            ? 68
-            : 32;
+            ? 70
+            : 30;
 
         result.push({
           player,
+
           x:
             clamp(x),
+
           y:
             clamp(y)
         });
