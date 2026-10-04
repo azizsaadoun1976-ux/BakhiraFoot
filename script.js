@@ -5418,7 +5418,6 @@ function getPositionRow(position) {
 function getPitchPlayers(
   lineup
 ) {
-
   if (!lineup) {
     return [];
   }
@@ -5430,32 +5429,258 @@ function getPitchPlayers(
       ? lineup.startXI
       : [];
 
+  if (!starters.length) {
+    return [];
+  }
+
+  /*
+   * =====================================================
+   * FORMATION
+   * =====================================================
+   */
+
+  const formation =
+    String(
+      lineup?.formation ||
+      "4-3-3"
+    )
+      .trim()
+      .replace(/\s+/g, "");
+
+  let formationRows =
+    formation
+      .split("-")
+      .map(Number)
+      .filter(
+        n =>
+          Number.isFinite(n) &&
+          n > 0
+      );
+
+  if (
+    formationRows.reduce(
+      (sum, n) =>
+        sum + n,
+      0
+    ) !== 10
+  ) {
+    formationRows =
+      [4, 3, 3];
+  }
+
+  /*
+   * Formation:
+   * 1 GK
+   * + lines ديال formation
+   */
+
+  const expectedRows = [
+    1,
+    ...formationRows
+  ];
+
+  /*
+   * =====================================================
+   * READ PROVIDED GRIDS
+   * =====================================================
+   */
+
+  const prepared =
+    starters.map(
+      entry => {
+
+        const player =
+          entry?.player ||
+          entry ||
+          {};
+
+        const rawGrid =
+          getPlayerGrid(
+            entry
+          );
+
+        let row = null;
+        let col = null;
+
+        const match =
+          String(
+            rawGrid || ""
+          ).match(
+            /(\d+)\s*:\s*(\d+)/
+          );
+
+        if (match) {
+          row =
+            Number(
+              match[1]
+            );
+
+          col =
+            Number(
+              match[2]
+            );
+        }
+
+        return {
+          ...entry,
+          player,
+          _row: row,
+          _col: col,
+          _gridValid:
+            row !== null &&
+            col !== null &&
+            row > 0 &&
+            col > 0
+        };
+      }
+    );
+
+  /*
+   * =====================================================
+   * VALIDATE GRID
+   *
+   * كنقبلوه غير إلا كان فعلاً كيشبه
+   * للـformation ديال الماتش.
+   * =====================================================
+   */
+
+  const allHaveGrid =
+    prepared.every(
+      item =>
+        item._gridValid
+    );
+
+  let gridIsGood =
+    allHaveGrid;
+
+  if (gridIsGood) {
+
+    /*
+     * كل grid خاصو يكون unique
+     */
+    const unique =
+      new Set(
+        prepared.map(
+          item =>
+            `${item._row}:${item._col}`
+        )
+      );
+
+    if (
+      unique.size !==
+      prepared.length
+    ) {
+      gridIsGood = false;
+    }
+  }
+
+  if (gridIsGood) {
+
+    /*
+     * عدد اللاعبين فكل row
+     */
+    const rowCounts = {};
+
+    prepared.forEach(
+      item => {
+
+        rowCounts[item._row] =
+          (
+            rowCounts[item._row] ||
+            0
+          ) + 1;
+
+      }
+    );
+
+    const actualRows =
+      Object.keys(rowCounts)
+        .map(Number)
+        .sort(
+          (a, b) =>
+            a - b
+        );
+
+    const actualCounts =
+      actualRows.map(
+        row =>
+          rowCounts[row]
+      );
+
+    /*
+     * خاص عدد الـrows واللاعبين
+     * يوافق formation.
+     */
+    if (
+      actualCounts.length !==
+      expectedRows.length
+    ) {
+      gridIsGood = false;
+    }
+    else {
+
+      for (
+        let i = 0;
+        i < expectedRows.length;
+        i++
+      ) {
+
+        if (
+          actualCounts[i] !==
+          expectedRows[i]
+        ) {
+          gridIsGood = false;
+          break;
+        }
+
+      }
+
+    }
+  }
+
+  /*
+   * =====================================================
+   * GRID صالح
+   *
+   * نخليه كما عطاه SportScore.
+   * هاد الماتشات المزيانين ما نلمسوهمش.
+   * =====================================================
+   */
+
+  if (gridIsGood) {
+
+    return prepared.map(
+      item => ({
+        ...item,
+
+        _grid:
+          `${item._row}:${item._col}`
+      })
+    );
+  }
+
+  /*
+   * =====================================================
+   * GRID خاسر
+   *
+   * كنحيدوه فقط لهاد الماتش.
+   * من بعد makePitchCoordinates()
+   * غادي تعتمد على position fallback.
+   * =====================================================
+   */
+
   return starters.map(
     (entry, index) => {
 
-      const player =
-        entry?.player ||
-        entry ||
-        {};
-
-      let grid =
-        getPlayerGrid(entry);
-
-      if (!grid) {
-
-        const row =
-          getPositionRow(
-            getPlayerPosition(entry)
-          );
-
-        grid =
-          `${row}:${index + 1}`;
-      }
-
       return {
         ...entry,
-        player,
-        _grid: grid
+
+        player:
+          entry?.player ||
+          entry ||
+          {},
+
+        _grid: ""
       };
 
     }
