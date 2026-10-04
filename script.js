@@ -5769,14 +5769,15 @@ function makePitchCoordinates(
             const player =
               entry.item;
 
-            const exactX =
-              positionX(
-                getPlayerPosition(
-                  player
-                )
-              );
+          const exactX =
+  positionX(
+    getPlayerPosition(
+      player
+    )
+  );
 
-            let x;
+let x;
+let y;
 
             /*
              * POSITION الحقيقي
