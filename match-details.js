@@ -1337,160 +1337,173 @@
 }
   
 function getPlayerPosition(player) {
-  if (typeof player === "string") {
+  if (
+    !player ||
+    typeof player === "string" ||
+    typeof player === "number"
+  ) {
     return "";
   }
 
   const p =
     player?.player &&
     typeof player.player === "object"
-      ? player.player
+      ? {
+          ...player.player,
+          ...player
+        }
       : player;
 
-  const pos =
+  let raw =
     first(
+      /* direct */
+      player?.position,
       player?.pos,
-      player?.position?.abbreviation,
-      player?.position?.shortName,
-      player?.position?.short_name,
-      player?.position?.name,
-
-      p?.pos,
-      p?.position?.abbreviation,
-      p?.position?.shortName,
-      p?.position?.short_name,
-      p?.position?.name,
-
       player?.role,
-      p?.role,
-      ""
-    );
+      player?.positionName,
+      player?.position_name,
 
-  if (pos && typeof pos !== "object") {
-    const value = norm(pos);
+      /* nested */
+      player?.player?.position,
+      player?.player?.pos,
+      player?.player?.role,
 
-    const map = {
-      "g": "GK",
-      "gk": "GK",
-      "goalkeeper": "GK",
-
-      "lb": "LB",
-      "left back": "LB",
-
-      "lcb": "LCB",
-      "left centre back": "LCB",
-      "left center back": "LCB",
-
-      "cb": "CB",
-      "centre back": "CB",
-      "center back": "CB",
-
-      "rcb": "RCB",
-      "right centre back": "RCB",
-      "right center back": "RCB",
-
-      "rb": "RB",
-      "right back": "RB",
-
-      "lwb": "LWB",
-      "left wing back": "LWB",
-
-      "rwb": "RWB",
-      "right wing back": "RWB",
-
-      "ldm": "LDM",
-      "dm": "DM",
-      "cdm": "DM",
-      "rdm": "RDM",
-
-      "lm": "LM",
-      "lcm": "LCM",
-      "cm": "CM",
-      "rcm": "RCM",
-      "rm": "RM",
-
-      "lam": "LAM",
-      "am": "AM",
-      "cam": "AM",
-      "ram": "RAM",
-
-      "lw": "LW",
-      "left wing": "LW",
-
-      "rw": "RW",
-      "right wing": "RW",
-
-      "lf": "LF",
-      "rf": "RF",
-
-      "st": "ST",
-      "cf": "CF",
-      "ss": "SS"
-    };
-
-    if (map[value]) {
-      return map[value];
-    }
-
-    /* إلا كان المصدر ما عطاش role دقيق */
-    if (
-      value === "d" ||
-      value === "df" ||
-      value === "def" ||
-      value.includes("def")
-    ) {
-      return "DEF";
-    }
-
-    if (
-      value === "m" ||
-      value === "mf" ||
-      value === "mid" ||
-      value.includes("mid")
-    ) {
-      return "MID";
-    }
-
-    if (
-      value === "f" ||
-      value === "fw" ||
-      value === "att" ||
-      value.includes("forw") ||
-      value.includes("strik") ||
-      value.includes("wing")
-    ) {
-      return "FWD";
-    }
-
-    return String(pos);
-  }
-
-  return "";
-}
       /* statistics */
       player?.statistics?.position,
       player?.statistics?.positionName,
-      p?.statistics?.position,
-      p?.statistics?.positionName,
+
+      p?.position,
+      p?.pos,
+      p?.role,
 
       ""
     );
 
   if (
-    position &&
-    typeof position === "object"
+    raw &&
+    typeof raw === "object"
   ) {
-    return first(
-      position?.name,
-      position?.displayName,
-      position?.abbreviation,
-      position?.shortName,
-      ""
-    );
+    raw =
+      first(
+        raw?.abbreviation,
+        raw?.shortName,
+        raw?.short_name,
+        raw?.displayName,
+        raw?.name,
+        ""
+      );
+  }
+
+  const value =
+    norm(raw);
+
+  const map = {
+    g: "GK",
+    gk: "GK",
+    goalkeeper: "GK",
+    keeper: "GK",
+
+    lb: "LB",
+    "left back": "LB",
+    "left fullback": "LB",
+    "left full back": "LB",
+
+    lwb: "LWB",
+    "left wing back": "LWB",
+
+    lcb: "LCB",
+    "left centre back": "LCB",
+    "left center back": "LCB",
+
+    cb: "CB",
+    "centre back": "CB",
+    "center back": "CB",
+    "central defender": "CB",
+
+    rcb: "RCB",
+    "right centre back": "RCB",
+    "right center back": "RCB",
+
+    rb: "RB",
+    "right back": "RB",
+    "right fullback": "RB",
+    "right full back": "RB",
+
+    rwb: "RWB",
+    "right wing back": "RWB",
+
+    ldm: "LDM",
+    dm: "DM",
+    cdm: "DM",
+    rdm: "RDM",
+
+    lm: "LM",
+    lcm: "LCM",
+    cm: "CM",
+    mc: "CM",
+    rcm: "RCM",
+    rm: "RM",
+
+    lam: "LAM",
+    am: "AM",
+    cam: "AM",
+    ram: "RAM",
+
+    lw: "LW",
+    lf: "LF",
+    "left wing": "LW",
+    "left winger": "LW",
+
+    rw: "RW",
+    rf: "RF",
+    "right wing": "RW",
+    "right winger": "RW",
+
+    st: "ST",
+    cf: "CF",
+    ss: "SS",
+    striker: "ST",
+    "centre forward": "CF",
+    "center forward": "CF"
+  };
+
+  if (
+    map[value]
+  ) {
+    return map[value];
+  }
+
+  if (
+    value === "d" ||
+    value === "df" ||
+    value === "def" ||
+    value.includes("def")
+  ) {
+    return "DEF";
+  }
+
+  if (
+    value === "m" ||
+    value === "mf" ||
+    value === "mid" ||
+    value.includes("mid")
+  ) {
+    return "MID";
+  }
+
+  if (
+    value === "f" ||
+    value === "fw" ||
+    value === "att" ||
+    value.includes("forw") ||
+    value.includes("strik") ||
+    value.includes("wing")
+  ) {
+    return "FWD";
   }
 
   return String(
-    position || ""
+    raw || ""
   );
 }
 
@@ -1735,8 +1748,9 @@ function getPlayerRating(
     return null;
   }
 
-  return rating;
-}
+return rating > 0
+  ? rating
+  : null;}
   function playerKey(
     player
   ) {
@@ -2801,7 +2815,6 @@ function pitchPositions(
   lineup,
   side
 ) {
-
   const players =
     arr(
       lineup?.xi
@@ -2820,8 +2833,9 @@ function pitchPositions(
      BASIC
   ===================================================== */
 
-  function unwrap(player) {
-
+  function unwrap(
+    player
+  ) {
     if (
       player?.player &&
       typeof player.player === "object"
@@ -2835,8 +2849,9 @@ function pitchPositions(
     return player || {};
   }
 
-  function num(value) {
-
+  function number(
+    value
+  ) {
     if (
       value === null ||
       value === undefined ||
@@ -2857,14 +2872,38 @@ function pitchPositions(
       : null;
   }
 
+  function percent(
+    value
+  ) {
+    const n =
+      number(value);
+
+    if (
+      n === null
+    ) {
+      return null;
+    }
+
+    return (
+      n >= 0 &&
+      n <= 1
+    )
+      ? n * 100
+      : n;
+  }
+
   /* =====================================================
-     EXACT GRID
+     GRID RÉEL
+     الأولوية للـposition الحقيقي من الـAPI
   ===================================================== */
 
-  function exactGrid(player) {
-
+  function readGrid(
+    player
+  ) {
     const p =
-      unwrap(player);
+      unwrap(
+        player
+      );
 
     const position =
       p?.position;
@@ -2878,25 +2917,23 @@ function pitchPositions(
     const raw =
       first(
 
-        /* normalized API */
+        /* normalized */
+        player?.grid,
         p?.grid,
 
-        /* source object */
-        player?.grid,
-
-        /* position object */
+        /* position.grid */
         positionObj?.grid,
 
         /* nested */
-        player?.player?.position?.grid,
         player?.player?.grid,
+        player?.player?.position?.grid,
 
-        /* alternate */
-        p?.position_grid,
-        p?.positionGrid,
-
+        /* alternatives */
         player?.position_grid,
+        p?.position_grid,
+
         player?.positionGrid,
+        p?.positionGrid,
 
         null
       );
@@ -2909,33 +2946,37 @@ function pitchPositions(
       return null;
     }
 
+    /*
+     * grid object
+     */
     if (
       typeof raw === "object"
     ) {
-
       const row =
-        num(
+        number(
           first(
             raw?.row,
             raw?.line,
-            raw?.x,
+            raw?.r,
             null
           )
         );
 
       const col =
-        num(
+        number(
           first(
             raw?.column,
             raw?.col,
-            raw?.y,
+            raw?.c,
             null
           )
         );
 
       if (
         row !== null &&
-        col !== null
+        col !== null &&
+        row > 0 &&
+        col > 0
       ) {
         return {
           row,
@@ -2946,599 +2987,441 @@ function pitchPositions(
       return null;
     }
 
-    const value =
-      String(raw)
-        .trim();
-
+    /*
+     * grid string:
+     * 1:1
+     * 2:1
+     * 2:2
+     * etc.
+     */
     const match =
-      value.match(
-        /(\d+)\s*[:;,/_-]\s*(\d+)/
-      );
+      String(raw)
+        .trim()
+        .match(
+          /(\d+)\s*[:;,/_-]\s*(\d+)/
+        );
 
-    if (!match) {
+    if (
+      !match
+    ) {
       return null;
     }
 
     return {
       row:
-        Number(match[1]),
+        Number(
+          match[1]
+        ),
       col:
-        Number(match[2])
+        Number(
+          match[2]
+        )
     };
   }
 
   /* =====================================================
-     EXACT POSITION CODE
+     REAL X / Y
   ===================================================== */
 
-  function exactRole(player) {
-
+  function readXY(
+    player
+  ) {
     const p =
-      unwrap(player);
-
-    const position =
-      p?.position;
-
-    const positionObj =
-      position &&
-      typeof position === "object"
-        ? position
-        : {};
-
-    const value =
-      first(
-
-        /*
-         * IMPORTANT:
-         * pos غالباً هو abbreviation الحقيقي
-         * فـAPI normalized
-         */
-
-        p?.pos,
-        player?.pos,
-
-        p?.position?.abbreviation,
-        player?.position?.abbreviation,
-
-        p?.position?.shortName,
-        player?.position?.shortName,
-
-        p?.position?.short_name,
-        player?.position?.short_name,
-
-        p?.role,
-        player?.role,
-
-        typeof position === "string"
-          ? position
-          : null,
-
-        positionObj?.name,
-
-        ""
+      unwrap(
+        player
       );
 
-    return norm(
-      value
-    );
-  }
-
-  /* =====================================================
-     ROLE -> POSITION
-  ===================================================== */
-
-  function roleToXY(
-    role
-  ) {
-
-    const r =
-      norm(role)
-        .replace(
-          /[_]/g,
-          " "
+    const x =
+      percent(
+        first(
+          player?.x,
+          p?.x,
+          null
         )
-        .trim();
+      );
 
-    /*
-     * ==========================================
-     * GOALKEEPER
-     * ==========================================
-     */
-
-    if (
-      [
-        "gk",
-        "g",
-        "goalkeeper",
-        "keeper",
-        "goalie"
-      ].includes(r)
-    ) {
-
-      return {
-        x: 50,
-        y: 8
-      };
-
-    }
-
-    /*
-     * ==========================================
-     * DEFENCE
-     * ==========================================
-     */
+    const y =
+      percent(
+        first(
+          player?.y,
+          p?.y,
+          null
+        )
+      );
 
     if (
-      [
-        "lb",
-        "l b",
-        "left back",
-        "leftback",
-        "left fullback",
-        "left full back"
-      ].includes(r)
+      x === null ||
+      y === null
     ) {
-
-      return {
-        x: 10,
-        y: 28
-      };
-
+      return null;
     }
 
-    if (
-      [
-        "lcb",
-        "left centre back",
-        "left center back",
-        "left centreback",
-        "left centerback"
-      ].includes(r)
-    ) {
-
-      return {
-        x: 35,
-        y: 27
-      };
-
-    }
-
-    if (
-      [
-        "cb",
-        "c b",
-        "centre back",
-        "center back",
-        "central defender",
-        "central back"
-      ].includes(r)
-    ) {
-
-      return {
-        x: 50,
-        y: 27
-      };
-
-    }
-
-    if (
-      [
-        "rcb",
-        "right centre back",
-        "right center back",
-        "right centreback",
-        "right centerback"
-      ].includes(r)
-    ) {
-
-      return {
-        x: 65,
-        y: 27
-      };
-
-    }
-
-    if (
-      [
-        "rb",
-        "r b",
-        "right back",
-        "rightback",
-        "right fullback",
-        "right full back"
-      ].includes(r)
-    ) {
-
-      return {
-        x: 90,
-        y: 28
-      };
-
-    }
-
-    /*
-     * ==========================================
-     * WING BACKS
-     * ==========================================
-     */
-
-    if (
-      [
-        "lwb",
-        "left wing back",
-        "left wingback"
-      ].includes(r)
-    ) {
-
-      return {
-        x: 7,
-        y: 35
-      };
-
-    }
-
-    if (
-      [
-        "rwb",
-        "right wing back",
-        "right wingback"
-      ].includes(r)
-    ) {
-
-      return {
-        x: 93,
-        y: 35
-      };
-
-    }
-
-    /*
-     * ==========================================
-     * DEFENSIVE MIDFIELD
-     * ==========================================
-     */
-
-    if (
-      [
-        "ldm",
-        "l dm",
-        "left dm",
-        "left defensive midfield"
-      ].includes(r)
-    ) {
-
-      return {
-        x: 35,
-        y: 48
-      };
-
-    }
-
-    if (
-      [
-        "dm",
-        "d m",
-        "cdm",
-        "c dm",
-        "defensive midfield",
-        "defensive midfielder"
-      ].includes(r)
-    ) {
-
-      return {
-        x: 50,
-        y: 48
-      };
-
-    }
-
-    if (
-      [
-        "rdm",
-        "r dm",
-        "right dm",
-        "right defensive midfield"
-      ].includes(r)
-    ) {
-
-      return {
-        x: 65,
-        y: 48
-      };
-
-    }
-
-    /*
-     * ==========================================
-     * MIDFIELD
-     * ==========================================
-     */
-
-    if (
-      [
-        "lm",
-        "l m",
-        "left midfield",
-        "left midfielder"
-      ].includes(r)
-    ) {
-
-      return {
-        x: 12,
-        y: 52
-      };
-
-    }
-
-    if (
-      [
-        "lcm",
-        "left cm",
-        "left central midfield",
-        "left central midfielder"
-      ].includes(r)
-    ) {
-
-      return {
-        x: 30,
-        y: 52
-      };
-
-    }
-
-    if (
-      [
-        "cm",
-        "c m",
-        "mc",
-        "m c",
-        "central midfield",
-        "central midfielder",
-        "midfield",
-        "midfielder"
-      ].includes(r)
-    ) {
-
-      return {
-        x: 50,
-        y: 52
-      };
-
-    }
-
-    if (
-      [
-        "rcm",
-        "right cm",
-        "right central midfield",
-        "right central midfielder"
-      ].includes(r)
-    ) {
-
-      return {
-        x: 70,
-        y: 52
-      };
-
-    }
-
-    if (
-      [
-        "rm",
-        "r m",
-        "right midfield",
-        "right midfielder"
-      ].includes(r)
-    ) {
-
-      return {
-        x: 88,
-        y: 52
-      };
-
-    }
-
-    /*
-     * ==========================================
-     * ATTACKING MIDFIELD
-     * ==========================================
-     */
-
-    if (
-      [
-        "lam",
-        "left am",
-        "left attacking midfield"
-      ].includes(r)
-    ) {
-
-      return {
-        x: 28,
-        y: 68
-      };
-
-    }
-
-    if (
-      [
-        "am",
-        "a m",
-        "cam",
-        "c am",
-        "acm",
-        "attacking midfield",
-        "attacking midfielder"
-      ].includes(r)
-    ) {
-
-      return {
-        x: 50,
-        y: 67
-      };
-
-    }
-
-    if (
-      [
-        "ram",
-        "right am",
-        "right attacking midfield"
-      ].includes(r)
-    ) {
-
-      return {
-        x: 72,
-        y: 68
-      };
-
-    }
-
-    /*
-     * ==========================================
-     * WINGS
-     * ==========================================
-     */
-
-    if (
-      [
-        "lw",
-        "l w",
-        "left wing",
-        "left winger",
-        "lf"
-      ].includes(r)
-    ) {
-
-      return {
-        x: 10,
-        y: 78
-      };
-
-    }
-
-    if (
-      [
-        "rw",
-        "r w",
-        "right wing",
-        "right winger",
-        "rf"
-      ].includes(r)
-    ) {
-
-      return {
-        x: 90,
-        y: 78
-      };
-
-    }
-
-    /*
-     * ==========================================
-     * STRIKER
-     * ==========================================
-     */
-
-    if (
-      [
-        "st",
-        "s t",
-        "cf",
-        "c f",
-        "centre forward",
-        "center forward",
-        "striker",
-        "forward"
-      ].includes(r)
-    ) {
-
-      return {
-        x: 50,
-        y: 82
-      };
-
-    }
-
-    /*
-     * SECOND STRIKER
-     */
-
-    if (
-      [
-        "ss",
-        "second striker"
-      ].includes(r)
-    ) {
-
-      return {
-        x: 50,
-        y: 75
-      };
-
-    }
-
-    return null;
+    return {
+      x,
+      y
+    };
   }
 
   /* =====================================================
-     1) EXACT ROLE FIRST
+     ROLE
   ===================================================== */
 
-  const rolePositions =
-    players.map(
-      player => {
-
-        const role =
-          exactRole(
-            player
-          );
-
-        const xy =
-          roleToXY(
-            role
-          );
-
-        return {
-          player,
-          role,
-          xy
-        };
-
-      }
-    );
-
-  const knownRoles =
-    rolePositions.filter(
-      item =>
-        !!item.xy
-    );
+  function getRole(
+    player
+  ) {
+    return norm(
+      getPlayerPosition(
+        player
+      )
+    )
+      .replace(
+        /[_-]/g,
+        " "
+      )
+      .trim();
+  }
 
   /*
-   * إلا عرفنا المراكز ديال اللاعبين،
-   * كنستعملوها مباشرة.
+   * Exact role -> exact football position
    */
+  const roleXY = {
 
+    /* GK */
+    gk: [50, 8],
+    g: [50, 8],
+    goalkeeper: [50, 8],
+    keeper: [50, 8],
+
+    /* DEFENCE */
+    lb: [10, 27],
+    "left back": [10, 27],
+
+    lwb: [7, 34],
+    "left wing back": [7, 34],
+
+    lcb: [33, 27],
+    "left centre back": [33, 27],
+    "left center back": [33, 27],
+
+    cb: [50, 27],
+    "centre back": [50, 27],
+    "center back": [50, 27],
+
+    rcb: [67, 27],
+    "right centre back": [67, 27],
+    "right center back": [67, 27],
+
+    rb: [90, 27],
+    "right back": [90, 27],
+
+    rwb: [93, 34],
+    "right wing back": [93, 34],
+
+    /* DEFENSIVE MIDFIELD */
+    ldm: [34, 45],
+    dm: [50, 45],
+    cdm: [50, 45],
+    rdm: [66, 45],
+
+    /* MIDFIELD */
+    lm: [12, 51],
+    lcm: [30, 51],
+    cm: [50, 51],
+    mc: [50, 51],
+    rcm: [70, 51],
+    rm: [88, 51],
+
+    /* ATTACKING MIDFIELD */
+    lam: [28, 65],
+    am: [50, 65],
+    cam: [50, 65],
+    ram: [72, 65],
+
+    /* WINGS */
+    lw: [10, 77],
+    lf: [10, 77],
+    "left wing": [10, 77],
+
+    rw: [90, 77],
+    rf: [90, 77],
+    "right wing": [90, 77],
+
+    /* ATTACK */
+    st: [50, 84],
+    cf: [50, 82],
+    ss: [50, 75],
+    striker: [50, 84]
+  };
+
+  /* =====================================================
+     1) GRID EXACT
+  ===================================================== */
+
+  const gridPlayers =
+    players
+      .map(
+        player => ({
+          player,
+          grid:
+            readGrid(
+              player
+            )
+        })
+      )
+      .filter(
+        item =>
+          !!item.grid
+      );
+
+  /*
+   * Ila l-API عطانا grid
+   * كنستعملوه قبل أي تخمين.
+   */
   if (
-    knownRoles.length >= 7
+    gridPlayers.length >=
+    Math.max(
+      7,
+      Math.ceil(
+        players.length * 0.7
+      )
+    )
   ) {
+
+    const rows =
+      [
+        ...new Set(
+          gridPlayers.map(
+            item =>
+              item.grid.row
+          )
+        )
+      ]
+        .sort(
+          (a,b) =>
+            a - b
+        );
+
+    const minRow =
+      rows[0];
+
+    const maxRow =
+      rows[
+        rows.length - 1
+      ];
 
     const result =
       [];
 
-    rolePositions.forEach(
+    rows.forEach(
+      row => {
+
+        const line =
+          gridPlayers
+            .filter(
+              item =>
+                item.grid.row === row
+            )
+            .sort(
+              (a,b) =>
+                a.grid.col -
+                b.grid.col
+            );
+
+        line.forEach(
+          (
+            item,
+            index
+          ) => {
+
+            let x;
+
+            if (
+              line.length === 1
+            ) {
+              x = 50;
+            }
+            else {
+              x =
+                10 +
+                (
+                  80 *
+                  (
+                    index /
+                    (
+                      line.length - 1
+                    )
+                  )
+                );
+            }
+
+            let y;
+
+            if (
+              rows.length === 1
+            ) {
+              y = 50;
+            }
+            else {
+              y =
+                8 +
+                (
+                  84 *
+                  (
+                    (row - minRow) /
+                    Math.max(
+                      1,
+                      maxRow - minRow
+                    )
+                  )
+                );
+            }
+
+            if (
+              side === "away"
+            ) {
+              y =
+                100 - y;
+            }
+
+            result.push({
+              player:
+                item.player,
+
+              x:
+                Math.max(
+                  5,
+                  Math.min(
+                    95,
+                    x
+                  )
+                ),
+
+              y:
+                Math.max(
+                  5,
+                  Math.min(
+                    95,
+                    y
+                  )
+                )
+            });
+
+          }
+        );
+
+      }
+    );
+
+    /*
+     * players li ma3ndhomch grid
+     * n7awlo nkmlouhom b exact role.
+     */
+    const used =
+      new Set(
+        result.map(
+          item =>
+            item.player
+        )
+      );
+
+    players
+      .filter(
+        player =>
+          !used.has(
+            player
+          )
+      )
+      .forEach(
+        player => {
+
+          const pair =
+            roleXY[
+              getRole(
+                player
+              )
+            ];
+
+          if (
+            !pair
+          ) {
+            return;
+          }
+
+          let y =
+            pair[1];
+
+          if (
+            side === "away"
+          ) {
+            y =
+              100 - y;
+          }
+
+          result.push({
+            player,
+
+            x:
+              pair[0],
+
+            y:
+              Math.max(
+                5,
+                Math.min(
+                  95,
+                  y
+                )
+              )
+          });
+
+        }
+      );
+
+    /*
+     * ila وصلنا للـXI كاملين
+     * رجعهم كاملين.
+     */
+    if (
+      result.length >=
+      players.length
+    ) {
+      return result.slice(
+        0,
+        11
+      );
+    }
+  }
+
+  /* =====================================================
+     2) REAL X / Y
+  ===================================================== */
+
+  const xyPlayers =
+    players.map(
+      player => ({
+        player,
+
+        xy:
+          readXY(
+            player
+          )
+      })
+    );
+
+  if (
+    xyPlayers.every(
+      item =>
+        !!item.xy
+    )
+  ) {
+
+    return xyPlayers.map(
       item => {
 
-        if (
-          !item.xy
-        ) {
-          return;
-        }
-
-        let x =
-          item.xy.x;
-
-        let y =
-          item.xy.y;
+        let {
+          x,
+          y
+        } =
+          item.xy;
 
         if (
           side === "away"
@@ -3547,8 +3430,7 @@ function pitchPositions(
             100 - y;
         }
 
-        result.push({
-
+        return {
           player:
             item.player,
 
@@ -3569,94 +3451,356 @@ function pitchPositions(
                 y
               )
             )
+        };
 
-        });
+      }
+    );
+  }
+
+  /* =====================================================
+     3) EXACT ROLE
+  ===================================================== */
+
+  const rolePlayers =
+    players.map(
+      player => {
+
+        const role =
+          getRole(
+            player
+          );
+
+        return {
+          player,
+          role,
+          pair:
+            roleXY[
+              role
+            ]
+        };
 
       }
     );
 
-    /*
-     * إذا كانو بعض اللاعبين
-     * بلا position code واضح،
-     * كنكمّلوهم بالـgrid.
-     */
+  const exactPlayers =
+    rolePlayers.filter(
+      item =>
+        !!item.pair
+    );
 
-    rolePositions
-      .filter(
-        item =>
-          !item.xy
-      )
-      .forEach(
-        item => {
+  if (
+    exactPlayers.length >= 7
+  ) {
 
-          const grid =
-            exactGrid(
-              item.player
-            );
+    return exactPlayers.map(
+      item => {
 
-          if (!grid) {
-            return;
-          }
+        let y =
+          item.pair[1];
 
-          const maxRow =
-            5;
+        if (
+          side === "away"
+        ) {
+          y =
+            100 - y;
+        }
 
-          let x =
-            50;
+        return {
+          player:
+            item.player,
 
-          let y =
-            8 +
-            (
-              84 *
-              (
-                (grid.row - 1) /
-                Math.max(
-                  1,
-                  maxRow - 1
-                )
+          x:
+            item.pair[0],
+
+          y:
+            Math.max(
+              5,
+              Math.min(
+                95,
+                y
               )
-            );
+            )
+        };
 
-          /*
-           * ما دام column معروف،
-           * نستعملوه مباشرة.
-           */
+      }
+    );
+  }
 
-          if (
-            grid.col <= 1
-          ) {
-            x = 10;
-          }
-          else if (
-            grid.col === 2
-          ) {
-            x = 30;
-          }
-          else if (
-            grid.col === 3
-          ) {
-            x = 50;
-          }
-          else if (
-            grid.col === 4
-          ) {
-            x = 70;
-          }
-          else {
-            x = 90;
-          }
+  /* =====================================================
+     4) FORMATION FALLBACK
+     ===================================================== */
 
-          if (
-            side === "away"
-          ) {
-            y =
-              100 - y;
-          }
+  const formation =
+    normalizeFormation(
+      lineup?.formation ||
+      "4-3-3"
+    );
+
+  let rows =
+    formation
+      .split("-")
+      .map(Number)
+      .filter(
+        n =>
+          Number.isFinite(n) &&
+          n > 0
+      );
+
+  if (
+    !rows.length ||
+    rows.reduce(
+      (a,b) =>
+        a + b,
+      0
+    ) !== 10
+  ) {
+    rows =
+      [4,3,3];
+  }
+
+  const keeper =
+    players.find(
+      player =>
+        ["GK","gk","G","g"]
+          .includes(
+            getPlayerPosition(
+              player
+            )
+          )
+    ) ||
+    players[0];
+
+  const result =
+    [];
+
+  if (
+    keeper
+  ) {
+    result.push({
+      player:
+        keeper,
+
+      x: 50,
+
+      y:
+        side === "away"
+          ? 92
+          : 8
+    });
+  }
+
+  const others =
+    players.filter(
+      player =>
+        player !== keeper
+    );
+
+  /*
+   * Classification
+   */
+  const defenders =
+    [];
+
+  const mids =
+    [];
+
+  const forwards =
+    [];
+
+  const unknown =
+    [];
+
+  others.forEach(
+    player => {
+
+      const value =
+        norm(
+          getPlayerPosition(
+            player
+          )
+        );
+
+      if (
+        value === "d" ||
+        value === "df" ||
+        value === "def" ||
+        value.includes(
+          "def"
+        )
+      ) {
+        defenders.push(
+          player
+        );
+      }
+
+      else if (
+        value === "m" ||
+        value === "mf" ||
+        value === "mid" ||
+        value.includes(
+          "mid"
+        )
+      ) {
+        mids.push(
+          player
+        );
+      }
+
+      else if (
+        value === "f" ||
+        value === "fw" ||
+        value === "att" ||
+        value.includes(
+          "forw"
+        ) ||
+        value.includes(
+          "strik"
+        ) ||
+        value.includes(
+          "wing"
+        )
+      ) {
+        forwards.push(
+          player
+        );
+      }
+
+      else {
+        unknown.push(
+          player
+        );
+      }
+
+    }
+  );
+
+  let dIndex = 0;
+  let mIndex = 0;
+  let fIndex = 0;
+  let uIndex = 0;
+
+  rows.forEach(
+    (
+      count,
+      rowIndex
+    ) => {
+
+      let source =
+        [];
+
+      /*
+       * DEFENSE
+       */
+      if (
+        rowIndex === 0
+      ) {
+        source =
+          defenders.slice(
+            dIndex,
+            dIndex + count
+          );
+
+        dIndex +=
+          source.length;
+      }
+
+      /*
+       * ATTACK
+       */
+      else if (
+        rowIndex ===
+        rows.length - 1
+      ) {
+        source =
+          forwards.slice(
+            fIndex,
+            fIndex + count
+          );
+
+        fIndex +=
+          source.length;
+      }
+
+      /*
+       * MIDFIELD
+       */
+      else {
+        source =
+          mids.slice(
+            mIndex,
+            mIndex + count
+          );
+
+        mIndex +=
+          source.length;
+      }
+
+      /*
+       * Unknown players
+       */
+      while (
+        source.length <
+          count &&
+        uIndex <
+          unknown.length
+      ) {
+
+        source.push(
+          unknown[
+            uIndex++
+          ]
+        );
+
+      }
+
+      if (
+        source.length <
+          count
+      ) {
+        return;
+      }
+
+      let y =
+        8 +
+        (
+          84 *
+          (
+            (rowIndex + 1) /
+            rows.length
+          )
+        );
+
+      if (
+        side === "away"
+      ) {
+        y =
+          100 - y;
+      }
+
+      source.forEach(
+        (
+          player,
+          index
+        ) => {
+
+          const x =
+            count === 1
+              ? 50
+              : (
+                  10 +
+                  (
+                    80 *
+                    (
+                      index /
+                      (
+                        count - 1
+                      )
+                    )
+                  )
+                );
 
           result.push({
-
-            player:
-              item.player,
+            player,
 
             x:
               Math.max(
@@ -3675,174 +3819,6 @@ function pitchPositions(
                   y
                 )
               )
-
-          });
-
-        }
-      );
-
-    if (
-      result.length >= 7
-    ) {
-
-      return result;
-
-    }
-
-  }
-
-  /* =====================================================
-     2) FORMATION FALLBACK
-     ===================================================== */
-
-  let formation =
-    normalizeFormation(
-      lineup?.formation
-    );
-
-  let rows =
-    formation
-      .split("-")
-      .map(Number)
-      .filter(
-        n =>
-          Number.isFinite(n) &&
-          n > 0
-      );
-
-  if (
-    !rows.length ||
-    rows.reduce(
-      (a,b) => a + b,
-      0
-    ) !== 10
-  ) {
-
-    rows =
-      [4,3,3];
-
-  }
-
-  const result = [];
-
-  const goalkeeper =
-    players[0];
-
-  let index =
-    1;
-
-  /*
-   * GK
-   */
-
-  if (
-    goalkeeper
-  ) {
-
-    let y =
-      8;
-
-    if (
-      side === "away"
-    ) {
-      y =
-        92;
-    }
-
-    result.push({
-
-      player:
-        goalkeeper,
-
-      x:
-        50,
-
-      y
-
-    });
-
-  }
-
-  /*
-   * خطوط اللاعبين
-   */
-
-  rows.forEach(
-    (
-      count,
-      rowIndex
-    ) => {
-
-      const rowPlayers =
-        players.slice(
-          index,
-          index + count
-        );
-
-      index +=
-        count;
-
-      if (
-        !rowPlayers.length
-      ) {
-        return;
-      }
-
-      let y =
-        8 +
-        (
-          84 *
-          (
-            (rowIndex + 1) /
-            (rows.length)
-          )
-        );
-
-      if (
-        side === "away"
-      ) {
-        y =
-          100 - y;
-      }
-
-      rowPlayers.forEach(
-        (
-          player,
-          i
-        ) => {
-
-          let x;
-
-          if (
-            count === 1
-          ) {
-            x = 50;
-          }
-
-          else {
-
-            x =
-              10 +
-              (
-                80 *
-                (
-                  i /
-                  (
-                    count - 1
-                  )
-                )
-              );
-
-          }
-
-          result.push({
-
-            player,
-
-            x,
-
-            y
-
           });
 
         }
@@ -3851,7 +3827,46 @@ function pitchPositions(
     }
   );
 
-  return result;
+  /*
+   * أي لاعب بقى
+   * نحطوه فـمكان آمن بلا duplicate.
+   */
+  const used =
+    new Set(
+      result.map(
+        item =>
+          item.player
+      )
+    );
+
+  players
+    .filter(
+      player =>
+        !used.has(
+          player
+        )
+    )
+    .forEach(
+      player => {
+
+        result.push({
+          player,
+
+          x: 50,
+
+          y:
+            side === "away"
+              ? 68
+              : 32
+        });
+
+      }
+    );
+
+  return result.slice(
+    0,
+    11
+  );
 }
   
   /* =========================================================
@@ -4116,6 +4131,15 @@ function pitchPositions(
     ) {
       kind = "substitution";
     }
+else if (
+  type.includes("injur") ||
+  detail.includes("injur") ||
+  type.includes("medical") ||
+  detail.includes("medical")
+) {
+  kind = "injury";
+}
+      
     else if (
       type.includes("var") ||
       detail.includes("var")
@@ -4327,7 +4351,16 @@ function pitchPositions(
               player.in++;
             }
           }
+if (
+  event.kind === "injury"
+) {
+  const player =
+    data(event.name);
 
+  if (player) {
+    player.injury++;
+  }
+}
           if (
             event.playerOut
           ) {
@@ -4403,6 +4436,13 @@ function pitchPositions(
       `🟥 ${Number(stats.red)}`
     );
   }
+    stats.injury
+  ? `
+    <span class="bfmd-badge">
+      🤕
+    </span>
+  `
+  : ""
 
   if (
     Number(stats.in) > 0
@@ -4873,6 +4913,9 @@ function pitchPositions(
       case "var":
         return "🎥";
 
+      case "injury":
+        return "🤕";  
+        
       default:
         return "📌";
     }
@@ -5395,57 +5438,195 @@ function pitchPositions(
      MAN OF THE MATCH
   ========================================================= */
 
-  function manOfTheMatch(
-    details
+function manOfTheMatch(
+  details,
+  lineups = []
+) {
+
+  const explicit =
+    first(
+      details?.player_of_match,
+      details?.playerOfMatch,
+      details?.man_of_the_match,
+      details?.manOfTheMatch,
+      details?.mvp,
+      details?.best_player
+    );
+
+  let name = "";
+  let rating = null;
+  let photo = "";
+  let label =
+    "Joueur du match";
+
+  if (
+    explicit
   ) {
-    const value =
-      first(
-        details?.player_of_match,
-        details?.playerOfMatch,
-        details?.man_of_the_match,
-        details?.manOfTheMatch,
-        details?.mvp,
-        details?.best_player
-      );
 
-    if (!value) {
-      return "";
-    }
-
-    const name =
-      typeof value ===
+    name =
+      typeof explicit ===
       "string"
-        ? value
+        ? explicit
         : first(
-            value?.name,
-            value?.player?.name,
+            explicit?.name,
+            explicit?.player?.name,
+            explicit?.player_name,
             ""
           );
 
-    if (!name) {
-      return "";
+    if (
+      typeof explicit ===
+      "object"
+    ) {
+      rating =
+        getPlayerRating(
+          explicit
+        );
+
+      photo =
+        getPlayerPhoto(
+          explicit
+        );
     }
-
-    return `
-      <div class="bfmd-section">
-
-        <div class="bfmd-motm">
-
-          <span class="bfmd-motm-star">
-            ⭐
-          </span>
-
-          <span>
-            Joueur du match :
-            ${esc(name)}
-          </span>
-
-        </div>
-
-      </div>
-    `;
   }
 
+  /*
+   * FALLBACK:
+   * أعلى rating بين اللاعبين
+   */
+  if (
+    !name
+  ) {
+
+    let best =
+      null;
+
+    lineups.forEach(
+      lineup => {
+
+        arr(
+          lineup?.xi
+        ).forEach(
+          player => {
+
+            const r =
+              getPlayerRating(
+                player
+              );
+
+            if (
+              r === null
+            ) {
+              return;
+            }
+
+            if (
+              !best ||
+              r >
+                best.rating
+            ) {
+              best = {
+                player,
+                rating: r
+              };
+            }
+
+          }
+        );
+
+      }
+    );
+
+    if (
+      best
+    ) {
+
+      name =
+        getPlayerName(
+          best.player
+        );
+
+      rating =
+        best.rating;
+
+      photo =
+        getPlayerPhoto(
+          best.player
+        );
+
+      label =
+        "Meilleure note";
+    }
+  }
+
+  if (
+    !name
+  ) {
+    return "";
+  }
+
+  return `
+    <div class="bfmd-section">
+
+      <div class="bfmd-motm">
+
+        ${
+          photo
+            ? `
+              <img
+                src="${esc(
+                  photo
+                )}"
+                alt="${esc(
+                  name
+                )}"
+                style="
+                  width:46px;
+                  height:46px;
+                  object-fit:cover;
+                  border-radius:50%;
+                "
+                loading="lazy"
+              >
+            `
+            : ""
+        }
+
+        <span
+          class="bfmd-motm-star"
+        >
+          ⭐
+        </span>
+
+        <span>
+          ${esc(
+            label
+          )}
+          :
+          <strong>
+            ${esc(
+              name
+            )}
+          </strong>
+
+          ${
+            rating !== null
+              ? `
+                · ${esc(
+                  Number(
+                    rating
+                  ).toFixed(1)
+                )}
+              `
+              : ""
+          }
+        </span>
+
+      </div>
+
+    </div>
+  `;
+}
   /* =========================================================
      SCORE
   ========================================================= */
@@ -5593,17 +5774,7 @@ const response =
       }
     }
   );
-const response =
-  await fetch(
-    detailsUrl,
-    {
-      cache: "no-store",
-      headers: {
-        Accept:
-          "application/json"
-      }
-    }
-  );
+
       
       const rawText =
         await response.text();
@@ -5965,10 +6136,13 @@ const response =
           teams
         )}
 
-        ${manOfTheMatch(
-          details
-        )}
-
+     ${manOfTheMatch(
+  details,
+  [
+    homeLineup,
+    awayLineup
+  ]
+)}
       `;
 
     }
