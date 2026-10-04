@@ -5315,44 +5315,104 @@ function getLineupForTeam(
 function getPositionRow(position) {
 
   const pos =
-    normalizeText(position);
+    normalizeText(position)
+      .replace(/_/g, " ")
+      .replace(/-/g, " ")
+      .trim();
 
+  /* GK */
   if (
     pos === "g" ||
+    pos === "gk" ||
     pos.includes("goalkeeper") ||
-    pos.includes("gardien")
+    pos.includes("gardien") ||
+    pos.includes("keeper")
   ) {
     return 1;
   }
 
+  /* DEFENCE */
   if (
+    pos === "lb" ||
+    pos === "lwb" ||
+    pos === "lcb" ||
+    pos === "cb" ||
+    pos === "rcb" ||
+    pos === "rb" ||
+    pos === "rwb" ||
     pos === "d" ||
+    pos === "df" ||
+    pos === "def" ||
+    pos.includes("back") ||
     pos.includes("defender") ||
-    pos.includes("defense") ||
-    pos.includes("back")
+    pos.includes("defense")
   ) {
     return 2;
   }
 
+  /* DEFENSIVE MIDFIELD */
   if (
-    pos === "m" ||
-    pos.includes("midfielder") ||
-    pos.includes("milieu")
+    pos === "ldm" ||
+    pos === "dm" ||
+    pos === "cdm" ||
+    pos === "rdm"
   ) {
     return 3;
   }
 
+  /* CENTRAL / WIDE MIDFIELD */
   if (
-    pos === "f" ||
-    pos.includes("forward") ||
-    pos.includes("attacker") ||
-    pos.includes("striker") ||
-    pos.includes("attaque")
+    pos === "lm" ||
+    pos === "lcm" ||
+    pos === "cm" ||
+    pos === "mc" ||
+    pos === "rcm" ||
+    pos === "rm" ||
+    pos === "m" ||
+    pos === "mf"
   ) {
     return 4;
   }
 
-  return 3;
+  /* ATTACKING MIDFIELD */
+  if (
+    pos === "lam" ||
+    pos === "am" ||
+    pos === "cam" ||
+    pos === "ram"
+  ) {
+    return 5;
+  }
+
+  /* WINGS */
+  if (
+    pos === "lw" ||
+    pos === "lf" ||
+    pos === "rw" ||
+    pos === "rf" ||
+    pos.includes("wing") ||
+    pos.includes("winger")
+  ) {
+    return 6;
+  }
+
+  /* FORWARDS */
+  if (
+    pos === "st" ||
+    pos === "cf" ||
+    pos === "ss" ||
+    pos === "f" ||
+    pos === "fw" ||
+    pos === "att" ||
+    pos.includes("forward") ||
+    pos.includes("striker") ||
+    pos.includes("attaque")
+  ) {
+    return 7;
+  }
+
+  /* UNKNOWN */
+  return 4;
 }
 
 function getPitchPlayers(
