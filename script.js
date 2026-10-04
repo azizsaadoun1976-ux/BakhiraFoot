@@ -1070,10 +1070,9 @@ if (date) {
         fixtureId || ""
       )}"
 onclick="
-  window.openMatchDetails(
-    Number(this.dataset.matchIndex)
-  )
-"    >
+  openMatchDetails(${index})
+"   
+>
 
       <div
         class="bf-score-card-header"
