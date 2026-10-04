@@ -1070,8 +1070,8 @@ if (date) {
         fixtureId || ""
       )}"
 onclick="
-  window.bfOpenMatchDetails(
-    this.dataset.fixtureId
+  window.openMatchDetails(
+    Number(this.dataset.matchIndex)
   )
 "    >
 
