@@ -3366,12 +3366,33 @@ if (
     }
 
 
-    selectedCompetitionIndex =
-      0;
+    const previousCompetitionName =
+  scoreCompetitionGroups[
+    selectedCompetitionIndex
+  ]?.name || "";
 
-    renderScoreCompetitions(
-      matches
-    );
+const previousCompetitionKey =
+  canonicalCompetitionName(
+    previousCompetitionName
+  );
+
+const updatedGroups =
+  buildCompetitionGroups(matches);
+
+const restoredIndex =
+  updatedGroups.findIndex(
+    group =>
+      canonicalCompetitionName(
+        group.name
+      ) === previousCompetitionKey
+  );
+
+selectedCompetitionIndex =
+  restoredIndex >= 0
+    ? restoredIndex
+    : 0;
+
+renderScoreCompetitions(matches);
 
   }
 
