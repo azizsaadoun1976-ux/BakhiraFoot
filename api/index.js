@@ -4325,6 +4325,7 @@ catch (error) {
   );
 
 }
+     if (false) {
 /* =====================================================
    THE SPORTS DB - AJOUT DES MATCHES DU JOUR
 ===================================================== */
@@ -4803,6 +4804,7 @@ catch (error) {
     "SOFASCORE WORLD MERGE:",
     error.message
   );
+   }
 
 }
 
@@ -5029,6 +5031,256 @@ for (const match of matches) {
   }
 
 }
+     /* =====================================================
+   BAKHIRAFOOT - MAJOR COMPETITIONS PRIORITY
+   SportScore ONLY
+===================================================== */
+
+const majorCompetitions = [
+  {
+    slug: "fifa-world-cup",
+    name: "FIFA World Cup",
+    priority: 150
+  },
+  {
+    slug: "uefa-euro",
+    name: "UEFA Euro",
+    priority: 140
+  },
+  {
+    slug: "uefa-champions-league",
+    name: "UEFA Champions League",
+    priority: 130
+  },
+  {
+    slug: "uefa-europa-league",
+    name: "UEFA Europa League",
+    priority: 120
+  },
+  {
+    slug: "uefa-europa-conference-league",
+    name: "UEFA Conference League",
+    priority: 110
+  },
+  {
+    slug: "premier-league",
+    name: "Premier League",
+    priority: 100
+  },
+  {
+    slug: "la-liga",
+    name: "La Liga",
+    priority: 95
+  },
+  {
+    slug: "serie-a",
+    name: "Serie A",
+    priority: 90
+  },
+  {
+    slug: "bundesliga",
+    name: "Bundesliga",
+    priority: 70
+  },
+  {
+    slug: "ligue-1",
+    name: "Ligue 1",
+    priority: 65
+  }
+];
+
+/* جلب البطولات بالتوازي */
+const majorResults = await Promise.all(
+  majorCompetitions.map(async competition => {
+    try {
+      const body = await getJSON(
+        `${SPORTSCORE}/fixtures/?sport=football&date=${encodeURIComponent(
+          matchDate
+        )}&competition=${encodeURIComponent(
+          competition.slug
+        )}&limit=200`
+      );
+
+      return {
+        competition,
+        matches: getMatches(body)
+          .map(normalizeMatch)
+          .filter(Boolean)
+      };
+
+    } catch (error) {
+      console.warn(
+        "MAJOR COMPETITION ERROR:",
+        competition.slug,
+        error.message
+      );
+
+      return {
+        competition,
+        matches: []
+      };
+    }
+  })
+);
+
+/* إضافة المباريات اللي ما كانتش فاللائحة العامة */
+for (const result of majorResults) {
+  for (const match of result.matches) {
+
+    const leagueName = norm(
+      match?.league?.name || ""
+    );
+
+    if (
+      !leagueName ||
+      leagueName === "football" ||
+      /^(group stage|regular season|league phase|first round|qualifying round)$/.test(
+        leagueName
+      )
+    ) {
+      match.league = {
+        ...(match.league || {}),
+        name: result.competition.name
+      };
+    }
+
+    matches.push(match);
+  }
+}
+
+/* ترتيب البطولات الكبرى فالأول */
+function getMajorPriority(match) {
+  const name = norm(
+    match?.league?.name ||
+    match?.competition?.name ||
+    ""
+  );
+
+  const country = norm(
+    match?.league?.country || ""
+  );
+
+  if (
+    name === "fifa world cup" ||
+    name === "world cup"
+  ) return 150;
+
+  if (
+    name === "uefa euro" ||
+    name === "european championship"
+  ) return 140;
+
+  if (
+    name === "uefa champions league" ||
+    name === "champions league"
+  ) return 130;
+
+  if (
+    name === "uefa europa league" ||
+    name === "europa league"
+  ) return 120;
+
+  if (
+    name === "uefa conference league" ||
+    name === "uefa europa conference league" ||
+    name === "conference league"
+  ) return 110;
+
+  if (
+    name === "premier league" &&
+    (!country || country === "england")
+  ) return 100;
+
+  if (
+    (name === "la liga" || name === "laliga") &&
+    (!country || country === "spain")
+  ) return 95;
+
+  if (
+    name === "serie a" &&
+    (!country || country === "italy")
+  ) return 90;
+
+  if (
+    name === "bundesliga" &&
+    (!country || country === "germany")
+  ) return 70;
+
+  if (
+    name === "ligue 1" &&
+    (!country || country === "france")
+  ) return 65;
+
+  if (
+    name === "botola pro" ||
+    name === "botola pro inwi" ||
+    name === "botola pro 1"
+  ) return 55;
+
+  return 0;
+}
+
+function isLiveForPriority(match) {
+  const status = norm(
+    match?.fixture?.status?.short ||
+    match?.status ||
+    ""
+  );
+
+  return [
+    "live",
+    "ht",
+    "1h",
+    "2h",
+    "et",
+    "bt",
+    "inprogress"
+  ].includes(status);
+}
+
+matches.sort((a, b) => {
+  const priorityDifference =
+    getMajorPriority(b) -
+    getMajorPriority(a);
+
+  if (priorityDifference !== 0) {
+    return priorityDifference;
+  }
+
+  /* المباريات المباشرة أولاً داخل نفس الأولوية */
+  const liveDifference =
+    Number(isLiveForPriority(b)) -
+    Number(isLiveForPriority(a));
+
+  if (liveDifference !== 0) {
+    return liveDifference;
+  }
+
+  const timeA = Date.parse(
+    a?.fixture?.date || a?.time || ""
+  );
+
+  const timeB = Date.parse(
+    b?.fixture?.date || b?.time || ""
+  );
+
+  if (
+    Number.isFinite(timeA) &&
+    Number.isFinite(timeB)
+  ) {
+    return timeA - timeB;
+  }
+
+  return 0;
+});
+
+console.log(
+  "BAKHIRAFOOT PRIORITY:",
+  majorResults.map(result => ({
+    competition: result.competition.name,
+    matches: result.matches.length
+  }))
+);
      
 const finalUnique = new Map();
 
