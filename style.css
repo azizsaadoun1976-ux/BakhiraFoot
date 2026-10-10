@@ -13869,3 +13869,263 @@ body.dark #scoreList .bf-score-pro-no-matches strong {
     flex: 0 0 auto !important;
   }
 }
+
+/* ==========================================
+   BAKHIRAFOOT — PREMIUM DATE PICKER
+   ========================================== */
+
+#scores .scores-date-section {
+  position: relative;
+  isolation: isolate;
+  overflow: hidden;
+  margin: 20px 0 24px !important;
+  padding: 20px !important;
+  border: 1px solid #dcece2 !important;
+  border-radius: 20px !important;
+  background: linear-gradient(
+    135deg,
+    #ffffff 0%,
+    #f4fbf6 100%
+  ) !important;
+  box-shadow: 0 12px 30px rgba(14, 60, 39, 0.07) !important;
+}
+
+#scores .scores-date-section::before {
+  content: "";
+  position: absolute;
+  inset: 0 auto 0 0;
+  width: 4px;
+  background: linear-gradient(
+    180deg,
+    #22c55e,
+    #059669
+  );
+  border-radius: 20px 0 0 20px;
+  pointer-events: none;
+}
+
+/* العنوان */
+#scores .scores-date-title {
+  position: relative;
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 12px !important;
+  margin: 0 0 16px !important;
+}
+
+#scores .scores-date-title strong {
+  display: inline-flex;
+  align-items: center;
+  gap: 10px;
+  color: #153325 !important;
+  font-size: 17px !important;
+  font-weight: 900 !important;
+  letter-spacing: -0.3px;
+}
+
+#scores .scores-date-title strong::before {
+  content: "⚽";
+  display: grid;
+  place-items: center;
+  width: 38px;
+  height: 38px;
+  flex-shrink: 0;
+  border-radius: 12px;
+  background: #dcfce7;
+  font-size: 19px;
+}
+
+#scores .scores-date-title span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: #64748b !important;
+  font-size: 12px !important;
+  font-weight: 700;
+  opacity: 1 !important;
+}
+
+#scores .scores-date-title span::before {
+  content: "📅";
+}
+
+/* شريط اختيار التاريخ والأيام */
+#scores #dateBar.dates {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  align-items: stretch !important;
+  gap: 9px !important;
+  width: 100%;
+  margin: 0 !important;
+  padding: 0 !important;
+  overflow: visible !important;
+}
+
+/* الكالندر */
+#scores #dateBar #bfDatePicker {
+  flex: 0 0 205px !important;
+  width: 205px !important;
+  min-width: 170px !important;
+  max-width: 230px !important;
+  height: 46px !important;
+  padding: 10px 12px !important;
+  border: 1px solid #cfe2d5 !important;
+  border-radius: 13px !important;
+  outline: none !important;
+  background: #ffffff !important;
+  color: #153325 !important;
+  color-scheme: light;
+  font-family: Inter, Arial, sans-serif !important;
+  font-size: 12px !important;
+  font-weight: 800 !important;
+  box-shadow: 0 3px 10px rgba(15, 23, 42, 0.04) !important;
+  cursor: pointer;
+  transition: border-color 0.2s, box-shadow 0.2s;
+}
+
+#scores #dateBar #bfDatePicker:hover,
+#scores #dateBar #bfDatePicker:focus {
+  border-color: #16a34a !important;
+  box-shadow: 0 0 0 3px rgba(22, 163, 74, 0.12) !important;
+}
+
+/* أزرار الأيام */
+#scores #dateBar.dates button {
+  flex: 1 1 85px !important;
+  min-width: 78px !important;
+  min-height: 46px !important;
+  padding: 10px 12px !important;
+  border: 1px solid #e0e9e3 !important;
+  border-radius: 13px !important;
+  background: #ffffff !important;
+  color: #52645a !important;
+  font-family: Inter, Arial, sans-serif !important;
+  font-size: 11px !important;
+  font-weight: 850 !important;
+  white-space: nowrap;
+  cursor: pointer;
+  box-shadow: 0 3px 9px rgba(15, 23, 42, 0.025);
+  transition:
+    transform 0.18s ease,
+    background 0.18s ease,
+    border-color 0.18s ease,
+    box-shadow 0.18s ease;
+}
+
+#scores #dateBar.dates button:hover {
+  transform: translateY(-2px);
+  border-color: #86d9a5 !important;
+  background: #f0fdf4 !important;
+  color: #087e43 !important;
+  box-shadow: 0 7px 16px rgba(22, 163, 74, 0.10);
+}
+
+/* النهار المختار */
+#scores #dateBar.dates button.selected,
+#scores #dateBar.dates button.active {
+  border-color: #16a34a !important;
+  background: linear-gradient(
+    135deg,
+    #16a34a,
+    #087e50
+  ) !important;
+  color: #ffffff !important;
+  box-shadow: 0 6px 15px rgba(22, 163, 74, 0.23) !important;
+}
+
+/* Dark Mode */
+body.dark #scores .scores-date-section {
+  border-color: #293c32 !important;
+  background: linear-gradient(
+    135deg,
+    #17251e,
+    #111b17
+  ) !important;
+  box-shadow: none !important;
+}
+
+body.dark #scores .scores-date-title strong {
+  color: #f0faf3 !important;
+}
+
+body.dark #scores .scores-date-title strong::before {
+  background: #20432d;
+}
+
+body.dark #scores .scores-date-title span {
+  color: #a9bdb0 !important;
+}
+
+body.dark #scores #dateBar #bfDatePicker {
+  border-color: #354a3d !important;
+  background: #1c2b22 !important;
+  color: #edf8f0 !important;
+  color-scheme: dark;
+}
+
+body.dark #scores #dateBar.dates button {
+  border-color: #304237 !important;
+  background: #1b2a21 !important;
+  color: #c0d0c5 !important;
+  box-shadow: none;
+}
+
+body.dark #scores #dateBar.dates button:hover {
+  border-color: #368955 !important;
+  background: #243b2c !important;
+  color: #ffffff !important;
+}
+
+body.dark #scores #dateBar.dates button.selected,
+body.dark #scores #dateBar.dates button.active {
+  border-color: #22c55e !important;
+  background: linear-gradient(
+    135deg,
+    #16a34a,
+    #087e50
+  ) !important;
+  color: #ffffff !important;
+}
+
+/* الهواتف */
+@media (max-width: 600px) {
+  #scores .scores-date-section {
+    margin: 14px 0 18px !important;
+    padding: 15px !important;
+    border-radius: 16px !important;
+  }
+
+  #scores .scores-date-title {
+    align-items: flex-start !important;
+    flex-direction: column !important;
+    gap: 7px !important;
+    margin-bottom: 13px !important;
+  }
+
+  #scores .scores-date-title strong {
+    font-size: 15px !important;
+  }
+
+  #scores #dateBar.dates {
+    gap: 7px !important;
+  }
+
+  #scores #dateBar #bfDatePicker {
+    flex: 1 1 100% !important;
+    width: 100% !important;
+    max-width: none !important;
+    min-width: 0 !important;
+    height: 45px !important;
+  }
+
+  #scores #dateBar.dates button {
+    flex: 1 1 calc(33.333% - 7px) !important;
+    min-width: 0 !important;
+    min-height: 42px !important;
+    padding: 9px 5px !important;
+    font-size: 10px !important;
+  }
+}
+
