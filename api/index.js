@@ -5172,7 +5172,7 @@ for (const match of matches) {
   );
 
 const key =
-  `${home}__${away}__${matchDay}__${competitionName}`;
+  `${home}__${away}__${roundedTime}__${competitionName}`;
 
     if (
       !finalUnique.has(
