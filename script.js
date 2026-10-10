@@ -2994,11 +2994,15 @@ async function loadMatches(date) {
       .toISOString()
       .split("T")[0];
 
+if (
+  !Array.isArray(currentMatches) ||
+  currentMatches.length === 0
+) {
   list.innerHTML =
     emptyCard(
       "Chargement des matchs..."
     );
-
+}
   try {
 
     const response =
