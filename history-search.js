@@ -169,20 +169,22 @@
   function addStyle() {
     const css = `
       #bf-history-open {
-        position: fixed;
-        right: 20px;
-        bottom: 22px;
-        z-index: 10001;
-        border: 0;
-        border-radius: 999px;
-        padding: 13px 18px;
-        background: #16a34a;
-        color: #fff;
-        font-weight: 800;
-        box-shadow: 0 8px 28px #0005;
-        cursor: pointer;
-        font: 700 14px system-ui, sans-serif;
-      }
+  position: static;
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  flex-shrink: 0;
+  border: 0;
+  border-radius: 999px;
+  padding: 9px 13px;
+  background: #16a34a;
+  color: #fff;
+  font-weight: 800;
+  box-shadow: 0 8px 20px #0002;
+  cursor: pointer;
+  font: 700 12px system-ui, sans-serif;
+  white-space: nowrap;
+}
 
       #bf-history-overlay {
         position: fixed;
@@ -358,11 +360,10 @@
       }
 
       @media (max-width: 640px) {
-        #bf-history-open {
-          right: 12px;
-          bottom: 12px;
-          padding: 11px 14px;
-        }
+       #bf-history-open {
+  padding: 9px 12px;
+  align-self: flex-start;
+}
 
         .bfh-filters {
           grid-template-columns: 1fr;
@@ -516,7 +517,17 @@
 
     panel.append(status, results, source);
     overlay.appendChild(panel);
-    document.body.append(openButton, overlay);
+    const dateTitle = document.querySelector(
+  "#scores .scores-date-title"
+);
+
+if (dateTitle) {
+  dateTitle.appendChild(openButton);
+} else {
+  document.body.appendChild(openButton);
+}
+
+document.body.appendChild(overlay);
 
     openButton.addEventListener("click", () => {
       overlay.hidden = false;
