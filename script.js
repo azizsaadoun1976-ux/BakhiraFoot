@@ -486,10 +486,40 @@ function getCompetitionPriority(match) {
   );
 
 const starts = (...names) =>
-  names.some(name =>
-    league === normalizeText(name)
-  );
+  names.some(name => {
+    const n = normalizeText(name)
+      .replace(/[_–—-]+/g, " ")
+      .replace(/\s+/g, " ")
+      .trim();
 
+    if (league === n) return true;
+
+    if (!league.startsWith(n + " ")) {
+      return false;
+    }
+
+    const suffix = league
+      .slice(n.length)
+      .trim();
+
+    // كنقبلو غير اختلافات البلد والأسماء المعروفة
+    return [
+      "england",
+      "english",
+      "spain",
+      "spanish",
+      "italy",
+      "italian",
+      "germany",
+      "german",
+      "france",
+      "french",
+      "morocco",
+      "maroc",
+      "europe",
+      "inwi"
+    ].includes(suffix);
+  });
  const countryIs = (...names) =>
   Boolean(country) &&
   names.some(name => {
