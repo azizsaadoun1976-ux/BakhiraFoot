@@ -33,37 +33,7 @@ module.exports = async (req, res) => {
 // BAKHIRAFOOT - TEST HISTORICAL DATA SOURCE
 const historyAction = String(req?.query?.history || "");
 
-if (historyAction === "test") {
-  try {
-    const response = await fetch(
-      "https://raw.githubusercontent.com/openfootball/football.json/master/2015-16/en.1.json"
-    );
 
-    if (!response.ok) {
-      return output(502, {
-        ok: false,
-        error: `OpenFootball HTTP ${response.status}`
-      });
-    }
-
-    const data = await response.json();
-
-    return output(200, {
-      ok: true,
-      source: "OpenFootball",
-      competition: data.name,
-      matchesCount: Array.isArray(data.matches)
-        ? data.matches.length
-        : 0,
-      firstMatch: data.matches?.[0] || null
-    });
-  } catch (error) {
-    return output(502, {
-      ok: false,
-      error: error.message
-    });
-  }
-}
      
     async function getJSON(url) {
       console.log("SPORTSCORE REQUEST:", url);
