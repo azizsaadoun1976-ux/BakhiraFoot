@@ -485,19 +485,21 @@ function getCompetitionPriority(match) {
       : rawCountry?.name || ""
   );
 
-  const starts = (...names) =>
-    names.some(name => {
-      const n = normalizeText(name);
-      return league === n || league.startsWith(n + " ");
-    });
+const starts = (...names) =>
+  names.some(name =>
+    league === normalizeText(name)
+  );
 
-  const countryIs = (...names) =>
-    !country ||
-    names.some(name =>
-      country === normalizeText(name) ||
-      country.includes(normalizeText(name))
+ const countryIs = (...names) =>
+  Boolean(country) &&
+  names.some(name => {
+    const normalized = normalizeText(name);
+
+    return (
+      country === normalized ||
+      country.includes(normalized)
     );
-
+  });
   /*
    * QUALIFIERS: ما نخلطوهمش مع البطولة النهائية
    */
