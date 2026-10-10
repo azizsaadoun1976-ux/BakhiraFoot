@@ -30,11 +30,6 @@ module.exports = async (req, res) => {
       return res.status(status).json(data);
     }
 
-// BAKHIRAFOOT - TEST HISTORICAL DATA SOURCE
-const historyAction = String(req?.query?.history || "");
-
-
-     
     async function getJSON(url) {
       console.log("SPORTSCORE REQUEST:", url);
 
