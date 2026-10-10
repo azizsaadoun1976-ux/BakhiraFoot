@@ -9584,30 +9584,48 @@ function createDateBar() {
   bar.innerHTML = "";
 
   const today = new Date();
-  const year = today.getFullYear();
+  const todayISO = today.toISOString().split("T")[0];
+  const selectedDate = currentDate || todayISO;
 
-  function localISO(date) {
-    const y = date.getFullYear();
-    const m = String(date.getMonth() + 1).padStart(2, "0");
-    const d = String(date.getDate()).padStart(2, "0");
+  // اختيار أي تاريخ من الكالندر
+  const picker = document.createElement("input");
+  picker.type = "date";
+  picker.id = "bfDatePicker";
+  picker.value = selectedDate;
+  picker.setAttribute(
+    "aria-label",
+    "Choisir une date historique"
+  );
+  picker.title = "Choisir une date de n'importe quelle année";
+  picker.style.cssText =
+    "flex:0 0 auto;min-width:155px;max-width:190px;" +
+    "padding:9px 10px;border:1px solid #cbd5e1;" +
+    "border-radius:9px;font-size:12px;font-weight:700;";
 
-    return `${y}-${m}-${d}`;
-  }
+  picker.addEventListener("change", () => {
+    const chosenDate = picker.value;
+    if (!chosenDate) return;
 
-  const todayISO = localISO(today);
+    currentDate = chosenDate;
 
-  const selectedDate =
-    currentDate &&
-    currentDate.startsWith(`${year}-`)
-      ? currentDate
-      : todayISO;
+    bar.querySelectorAll("button").forEach(button => {
+      button.classList.toggle(
+        "selected",
+        button.dataset.date === chosenDate
+      );
+    });
 
-  /* الأيام السريعة */
+    loadMatches(chosenDate);
+  });
+
+  bar.appendChild(picker);
+
+  // نخليو أزرار الأيام العادية كيفما كانو
   for (let i = -2; i <= 4; i++) {
     const date = new Date(today);
     date.setDate(today.getDate() + i);
 
-    const iso = localISO(date);
+    const iso = date.toISOString().split("T")[0];
 
     let label;
 
@@ -9626,103 +9644,29 @@ function createDateBar() {
     }
 
     const button = document.createElement("button");
-
     button.type = "button";
-    button.textContent = label;
     button.dataset.date = iso;
+    button.textContent = label;
 
     if (iso === selectedDate) {
       button.classList.add("selected");
     }
 
     button.addEventListener("click", () => {
-      currentDate = iso;
-      picker.value = iso;
-
       bar.querySelectorAll("button").forEach(btn => {
-        btn.classList.toggle(
-          "selected",
-          btn.dataset.date === iso
-        );
+        btn.classList.remove("selected");
       });
+
+      button.classList.add("selected");
+      picker.value = iso;
+      currentDate = iso;
 
       loadMatches(iso);
     });
 
     bar.appendChild(button);
   }
-
-  /* التقويم الكامل ديال العام الحالي */
-  const pickerWrap = document.createElement("label");
-
-  pickerWrap.style.cssText = `
-    display:flex;
-    align-items:center;
-    gap:7px;
-    flex:0 0 auto;
-    white-space:nowrap;
-    padding:6px 9px;
-    border:1px solid #dfe6ea;
-    border-radius:9px;
-    background:var(--card,#fff);
-    color:var(--text,#172027);
-    font-size:12px;
-    font-weight:800;
-  `;
-
-  pickerWrap.innerHTML = `
-    <span>📅 Choisir une date</span>
-  `;
-
-  const picker = document.createElement("input");
-
-  picker.type = "date";
-  picker.id = "bfYearDatePicker";
-  picker.min = `${year}-01-01`;
-  picker.max = `${year}-12-31`;
-  picker.value = selectedDate;
-  picker.setAttribute("aria-label", "Choisir une date de l'année");
-
-  picker.style.cssText = `
-    width:145px;
-    max-width:42vw;
-    padding:5px;
-    border:1px solid #dfe6ea;
-    border-radius:6px;
-    font:inherit;
-    color:inherit;
-    background:transparent;
-  `;
-
-  picker.addEventListener("change", () => {
-    const chosen = picker.value;
-
-    if (
-      !chosen ||
-      chosen < picker.min ||
-      chosen > picker.max
-    ) {
-      return;
-    }
-
-    currentDate = chosen;
-
-    bar.querySelectorAll("button").forEach(btn => {
-      btn.classList.toggle(
-        "selected",
-        btn.dataset.date === chosen
-      );
-    });
-
-    loadMatches(chosen);
-  });
-
-  pickerWrap.appendChild(picker);
-  bar.appendChild(pickerWrap);
-
-  currentDate = selectedDate;
 }
-
 /* =========================================================
    LEAGUES
 ========================================================= */
