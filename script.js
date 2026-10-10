@@ -9576,35 +9576,38 @@ async function openMatchDetails(index) {
    DATE BAR
 ========================================================= */
 
+
 function createDateBar() {
-
-  const bar =
-    $("dateBar");
-
+  const bar = $("dateBar");
   if (!bar) return;
 
   bar.innerHTML = "";
 
-  const today =
-    new Date();
+  const today = new Date();
+  const year = today.getFullYear();
 
-  for (
-    let i = -2;
-    i <= 4;
-    i++
-  ) {
+  function localISO(date) {
+    const y = date.getFullYear();
+    const m = String(date.getMonth() + 1).padStart(2, "0");
+    const d = String(date.getDate()).padStart(2, "0");
 
-    const date =
-      new Date(today);
+    return `${y}-${m}-${d}`;
+  }
 
-    date.setDate(
-      today.getDate() + i
-    );
+  const todayISO = localISO(today);
 
-    const iso =
-      date
-        .toISOString()
-        .split("T")[0];
+  const selectedDate =
+    currentDate &&
+    currentDate.startsWith(`${year}-`)
+      ? currentDate
+      : todayISO;
+
+  /* الأيام السريعة */
+  for (let i = -2; i <= 4; i++) {
+    const date = new Date(today);
+    date.setDate(today.getDate() + i);
+
+    const iso = localISO(date);
 
     let label;
 
@@ -9615,68 +9618,109 @@ function createDateBar() {
     } else if (i === 1) {
       label = "Demain";
     } else {
-      label =
-        date.toLocaleDateString(
-          "fr-FR",
-          {
-            weekday: "short",
-            day: "numeric",
-            month: "short"
-          }
-        );
+      label = date.toLocaleDateString("fr-FR", {
+        weekday: "short",
+        day: "numeric",
+        month: "short"
+      });
     }
 
-    const button =
-      document.createElement(
-        "button"
-      );
+    const button = document.createElement("button");
 
-    button.textContent =
-      label;
+    button.type = "button";
+    button.textContent = label;
+    button.dataset.date = iso;
+
+    if (iso === selectedDate) {
+      button.classList.add("selected");
+    }
+
+    button.addEventListener("click", () => {
+      currentDate = iso;
+      picker.value = iso;
+
+      bar.querySelectorAll("button").forEach(btn => {
+        btn.classList.toggle(
+          "selected",
+          btn.dataset.date === iso
+        );
+      });
+
+      loadMatches(iso);
+    });
+
+    bar.appendChild(button);
+  }
+
+  /* التقويم الكامل ديال العام الحالي */
+  const pickerWrap = document.createElement("label");
+
+  pickerWrap.style.cssText = `
+    display:flex;
+    align-items:center;
+    gap:7px;
+    flex:0 0 auto;
+    white-space:nowrap;
+    padding:6px 9px;
+    border:1px solid #dfe6ea;
+    border-radius:9px;
+    background:var(--card,#fff);
+    color:var(--text,#172027);
+    font-size:12px;
+    font-weight:800;
+  `;
+
+  pickerWrap.innerHTML = `
+    <span>📅 Choisir une date</span>
+  `;
+
+  const picker = document.createElement("input");
+
+  picker.type = "date";
+  picker.id = "bfYearDatePicker";
+  picker.min = `${year}-01-01`;
+  picker.max = `${year}-12-31`;
+  picker.value = selectedDate;
+  picker.setAttribute("aria-label", "Choisir une date de l'année");
+
+  picker.style.cssText = `
+    width:145px;
+    max-width:42vw;
+    padding:5px;
+    border:1px solid #dfe6ea;
+    border-radius:6px;
+    font:inherit;
+    color:inherit;
+    background:transparent;
+  `;
+
+  picker.addEventListener("change", () => {
+    const chosen = picker.value;
 
     if (
-      iso ===
-      (
-        currentDate ||
-        today
-          .toISOString()
-          .split("T")[0]
-      )
+      !chosen ||
+      chosen < picker.min ||
+      chosen > picker.max
     ) {
-      button.classList.add(
-        "selected"
-      );
+      return;
     }
 
-    button.addEventListener(
-      "click",
-      () => {
+    currentDate = chosen;
 
-        bar
-          .querySelectorAll("button")
-          .forEach(btn =>
-            btn.classList.remove(
-              "selected"
-            )
-          );
+    bar.querySelectorAll("button").forEach(btn => {
+      btn.classList.toggle(
+        "selected",
+        btn.dataset.date === chosen
+      );
+    });
 
-        button.classList.add(
-          "selected"
-        );
+    loadMatches(chosen);
+  });
 
-        currentDate =
-          iso;
+  pickerWrap.appendChild(picker);
+  bar.appendChild(pickerWrap);
 
-        loadMatches(
-          iso
-        );
-      }
-    );
-
-    bar.appendChild(
-      button
-    );
-  }
+  currentDate = selectedDate;
 }
 
 /* =========================================================
