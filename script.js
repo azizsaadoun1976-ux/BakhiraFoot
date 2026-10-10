@@ -9583,27 +9583,35 @@ function createDateBar() {
 
   bar.innerHTML = "";
 
-  const today = new Date();
-  const todayISO = today.toISOString().split("T")[0];
-  const selectedDate = currentDate || todayISO;
+  // التاريخ المحلي بلا مشاكل اختلاف التوقيت
+  function toISODate(date) {
+    const year = date.getFullYear();
+    const month = String(date.getMonth() + 1).padStart(2, "0");
+    const day = String(date.getDate()).padStart(2, "0");
 
-  // اختيار أي تاريخ من الكالندر
+    return `${year}-${month}-${day}`;
+  }
+
+  const today = new Date();
+  const todayISO = toISODate(today);
+
+  const initialDate =
+    /^\d{4}-\d{2}-\d{2}$/.test(currentDate || "")
+      ? currentDate
+      : todayISO;
+
+  // اختيار التاريخ من الكالندر
   const picker = document.createElement("input");
+
   picker.type = "date";
   picker.id = "bfDatePicker";
-  picker.value = selectedDate;
-  picker.setAttribute(
-    "aria-label",
-    "Choisir une date historique"
-  );
-  picker.title = "Choisir une date de n'importe quelle année";
-  picker.style.cssText =
-    "flex:0 0 auto;min-width:155px;max-width:190px;" +
-    "padding:9px 10px;border:1px solid #cbd5e1;" +
-    "border-radius:9px;font-size:12px;font-weight:700;";
+  picker.value = initialDate;
+  picker.setAttribute("aria-label", "Choisir une date");
+  picker.title = "Choisir la date des matchs";
 
   picker.addEventListener("change", () => {
     const chosenDate = picker.value;
+
     if (!chosenDate) return;
 
     currentDate = chosenDate;
@@ -9620,16 +9628,16 @@ function createDateBar() {
 
   bar.appendChild(picker);
 
-  // نخليو أزرار الأيام العادية كيفما كانو
+  // نخليو أزرار الأيام السبعة الموجودة
   for (let i = -2; i <= 4; i++) {
     const date = new Date(today);
     date.setDate(today.getDate() + i);
 
-    const iso = date.toISOString().split("T")[0];
+    const iso = toISODate(date);
 
     let label;
 
-    if (i === 0) {
+    if (iso === todayISO) {
       label = "Aujourd'hui";
     } else if (i === -1) {
       label = "Hier";
@@ -9644,22 +9652,25 @@ function createDateBar() {
     }
 
     const button = document.createElement("button");
+
     button.type = "button";
     button.dataset.date = iso;
     button.textContent = label;
 
-    if (iso === selectedDate) {
+    if (iso === initialDate) {
       button.classList.add("selected");
     }
 
     button.addEventListener("click", () => {
-      bar.querySelectorAll("button").forEach(btn => {
-        btn.classList.remove("selected");
-      });
-
-      button.classList.add("selected");
-      picker.value = iso;
       currentDate = iso;
+      picker.value = iso;
+
+      bar.querySelectorAll("button").forEach(btn => {
+        btn.classList.toggle(
+          "selected",
+          btn.dataset.date === iso
+        );
+      });
 
       loadMatches(iso);
     });
