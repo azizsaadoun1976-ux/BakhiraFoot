@@ -521,7 +521,7 @@ const starts = (...names) =>
     ].includes(suffix);
   });
  const countryIs = (...names) =>
-  Boolean(country) &&
+  !country ||
   names.some(name => {
     const normalized = normalizeText(name);
 
