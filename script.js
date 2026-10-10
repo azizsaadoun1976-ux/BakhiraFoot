@@ -436,152 +436,179 @@ function getFixtureId(match) {
    MATCH IMPORTANCE
 ========================================================= */
 
+
 function getCompetitionPriority(match) {
-  const leagueId = Number(
-    match?.league?.id ??
-    match?.competition?.id ??
-    match?.league_id ??
-    match?.competition_id ??
-    0
+  /*
+   * BAKHIRAFOOT
+   * ترتيب البطولات بالاسم
+   * ماشي بالـID، حيث المصادر مختلفة
+   */
+
+  const rawLeague = getLeague(match);
+
+  const original = normalizeText(
+    typeof rawLeague === "string"
+      ? rawLeague
+      : rawLeague?.name || ""
+  )
+    .replace(/[’']/g, "")
+    .replace(/[_–—-]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+
+  const league = original
+    .replace(
+      /\b(?:19|20)\d{2}(?:[-/](?:\d{2}|(?:19|20)\d{2}))?\b/g,
+      " "
+    )
+    .replace(
+      /\b(league phase|group stage|regular season|fall season|spring season|first round|second round|third round|qualifying round)\b/g,
+      " "
+    )
+    .replace(
+      /\b(ea sports|santander)\b/g,
+      " "
+    )
+    .replace(/\s+/g, " ")
+    .trim();
+
+  const rawCountry =
+    match?.league?.country?.name ||
+    match?.league?.country ||
+    match?.competition?.country?.name ||
+    match?.competition?.country ||
+    "";
+
+  const country = normalizeText(
+    typeof rawCountry === "string"
+      ? rawCountry
+      : rawCountry?.name || ""
   );
 
+  const starts = (...names) =>
+    names.some(name => {
+      const n = normalizeText(name);
+      return league === n || league.startsWith(n + " ");
+    });
 
-const league = normalizeText(getLeague(match))
-  .replace(/[’']/g, "")
-  .replace(/[_–—-]+/g, " ")
-  .replace(/[.,:]/g, " ")
-  .replace(/\b(league phase|group stage|regular season|fall season|spring season|summer season|winter season|first round|second round|third round|round of \d+|quarterfinals?|semifinals?)\b/g, " ")
-  .replace(/\b(ea sports|santander)\b/g, " ")
-  .replace(/\s+(england|spain|italy|germany|france|morocco|maroc|europe)$/i, "")
-  .replace(/\b(?:19|20)\d{2}(?:[-/](?:\d{2}|(?:19|20)\d{2}))?\b/g, " ")
-  .replace(/^uefa\s+/i, "")
-  .replace(/\s+/g, " ")
-  .trim();
+  const countryIs = (...names) =>
+    !country ||
+    names.some(name =>
+      country === normalizeText(name) ||
+      country.includes(normalizeText(name))
+    );
 
   /*
-   * =========================================
-   * PRIORITY PAR ID
-   * API-Football League IDs
-   * =========================================
+   * QUALIFIERS: ما نخلطوهمش مع البطولة النهائية
    */
-
-  const priorityById = {
-    /* Coupes du monde */
-    1: 150,   // FIFA World Cup
-
-    /* Euro */
-    4: 140,   // UEFA Euro
-
-    /* Champions League */
-    2: 130,   // UEFA Champions League
-
-    /* Europa League */
-    3: 120,   // UEFA Europa League
-
-    /* Conference League */
-    848: 110, // UEFA Conference League
-
-    /* Angleterre */
-    39: 100,  // Premier League
-
-    /* Espagne */
-    140: 95,  // La Liga
-
-    /* Italie */
-    135: 90,  // Serie A
-
-    /* Allemagne */
-    78: 70,   // Bundesliga
-
-    /* France */
-    61: 65,   // Ligue 1
-
-    /* Maroc */
-    200: 55   // Botola Pro
-  };
-
   if (
-    leagueId &&
-    Object.prototype.hasOwnProperty.call(
-      priorityById,
-      leagueId
-    )
+    /\b(qualifiers?|qualification|qualifying)\b/.test(original)
   ) {
-    return priorityById[leagueId];
+    if (/\b(world cup|coupe du monde)\b/.test(original)) {
+      return 65;
+    }
+
+    if (/\b(euro|european championship)\b/.test(original)) {
+      return 60;
+    }
   }
 
   /*
-   * =========================================
-   * FALLBACK PAR NOM EXACT
-   * مهم:
-   * ما نستعملوش includes() هنا للبطولات
-   * باش ما نخلطوش البطولات المتشابهة.
-   * =========================================
+   * COMPÉTITIONS INTERNATIONALES
    */
-
-  const exactPriority = {
-    "world cup": 150,
-    "fifa world cup": 150,
-    "coupe du monde": 150,
-
-    "euro": 140,
-    "uefa euro": 140,
-    "european championship": 140,
-
-    "champions league": 130,
-    "uefa champions league": 130,
-
-    "europa league": 120,
-    "uefa europa league": 120,
-
-    "conference league": 110,
-    "uefa conference league": 110,
-
-    "premier league": 100,
-    "english premier league": 100,
-
-    "la liga": 95,
-    "laliga": 95,
-
-    "serie a": 90,
-    "italian serie a": 90,
-
-    "afcon": 85,
-    "africa cup of nations": 85,
-    "african cup of nations": 85,
-
-    "copa america": 80,
-
-    "nations league": 75,
-    "uefa nations league": 75,
-
-    "bundesliga": 70,
-    "german bundesliga": 70,
-
-    "ligue 1": 65,
-    "french ligue 1": 65,
-
-    "world cup qualifier": 60,
-    "world cup qualifiers": 60,
-    "world cup qualification": 60,
-
-    "botola": 55,
-    "botola pro": 55,
-    "botola pro maroc": 55
-  };
-
-  if (
-    Object.prototype.hasOwnProperty.call(
-      exactPriority,
-      league
-    )
-  ) {
-    return exactPriority[league];
-  }
+  if (starts("fifa club world cup", "club world cup")) return 270;
+  if (starts("fifa world cup", "world cup", "coupe du monde")) return 300;
+  if (starts("uefa european championship", "european championship", "uefa euro", "euro")) return 290;
+  if (starts("uefa champions league", "champions league")) return 280;
+  if (starts("copa america")) return 275;
+  if (starts("africa cup of nations", "african cup of nations", "afcon")) return 270;
+  if (starts("copa libertadores", "conmebol libertadores")) return 260;
+  if (starts("uefa nations league", "nations league")) return 255;
+  if (starts("afc asian cup", "asian cup")) return 250;
+  if (starts("uefa europa league", "europa league")) return 245;
+  if (starts("concacaf gold cup", "gold cup")) return 240;
+  if (starts("caf champions league")) return 235;
+  if (starts("afc champions league")) return 230;
+  if (starts("uefa conference league", "europa conference league", "conference league")) return 220;
 
   /*
-   * أي بطولة أخرى:
-   * ما تاخد حتى أولوية ديال بطولة كبيرة
+   * LIGUES LOCALES
+   * الدوريات المتشابهة خاصها البلد الصحيح
+   */
+
+  if (
+    starts("english premier league") ||
+    (
+      starts("premier league") &&
+      countryIs("england", "united kingdom", "eng")
+    )
+  ) return 200;
+
+  if (
+    starts("laliga", "la liga", "spanish la liga") &&
+    !starts("la liga 2", "laliga 2") &&
+    countryIs("spain", "esp")
+  ) return 195;
+
+  if (
+    starts("italian serie a") ||
+    (
+      starts("serie a") &&
+      countryIs("italy", "ita")
+    )
+  ) return 190;
+
+  if (
+    starts("german bundesliga") ||
+    (
+      starts("bundesliga") &&
+      countryIs("germany", "ger", "deu")
+    )
+  ) return 185;
+
+  if (
+    starts("french ligue 1") ||
+    (
+      starts("ligue 1") &&
+      countryIs("france", "fra")
+    )
+  ) return 180;
+
+  if (
+    starts("campeonato brasileiro serie a", "brasileirao serie a", "brazilian serie a")
+  ) return 175;
+
+  if (starts("saudi pro league", "roshan saudi league")) return 170;
+  if (starts("major league soccer", "mls")) return 165;
+  if (starts("eredivisie")) return 160;
+  if (starts("liga portugal", "primeira liga")) return 155;
+  if (starts("botola pro", "botola")) return 150;
+  if (starts("egyptian premier league")) return 145;
+  if (starts("liga mx")) return 140;
+  if (starts("argentine primera division", "liga profesional argentina")) return 135;
+  if (starts("efl championship", "english championship")) return 120;
+  if (starts("scottish premiership")) return 115;
+  if (starts("j1 league", "j league")) return 110;
+
+  /*
+   * الكؤوس المحلية المعروفة
+   */
+  if (
+    starts(
+      "fa cup",
+      "english fa cup",
+      "copa del rey",
+      "coppa italia",
+      "dfb pokal",
+      "coupe de france",
+      "copa do brasil",
+      "moroccan throne cup",
+      "coupe du trone"
+    )
+  ) return 100;
+
+  /*
+   * باقي البطولات كتبقى موجودة
    */
   return 10;
 }
