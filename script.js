@@ -10226,46 +10226,595 @@ function initFilters() {
    SEARCH
 ========================================================= */
 
+
 function initSearch() {
-
-  const input =
-    $("search");
-
+  const input = $("search");
   if (!input) return;
 
-  input.addEventListener(
-    "input",
-    () => {
+  const host =
+    input.closest(".tools") ||
+    input.parentElement;
 
-      const value =
-        input.value
-          .trim()
-          .toLowerCase();
+  if (!host) return;
 
-      if (!value) {
-        renderTeams();
+  host.style.position = "relative";
+
+  let panel = $("bfSearchResults");
+
+  if (!panel) {
+    panel = document.createElement("div");
+    panel.id = "bfSearchResults";
+    host.appendChild(panel);
+  }
+
+  /* CSS ديال نتائج البحث */
+  if (!$("bfSearchStyles")) {
+    const style = document.createElement("style");
+    style.id = "bfSearchStyles";
+
+    style.textContent = `
+      #bfSearchResults {
+        display: none;
+        position: absolute;
+        top: calc(100% + 8px);
+        right: 0;
+        width: min(420px, calc(100vw - 24px));
+        max-height: 65vh;
+        overflow-y: auto;
+        padding: 9px;
+        border: 1px solid rgba(127,127,127,.25);
+        border-radius: 14px;
+        background: var(--card, #fff);
+        color: var(--text, #111827);
+        box-shadow: 0 16px 45px rgba(0,0,0,.22);
+        z-index: 999999;
+      }
+
+      .bf-search-title {
+        padding: 9px 8px 5px;
+        font-size: 10px;
+        font-weight: 950;
+        opacity: .62;
+        text-transform: uppercase;
+      }
+
+      .bf-search-result {
+        display: block;
+        width: 100%;
+        padding: 10px;
+        margin: 2px 0;
+        border: 0;
+        border-radius: 9px;
+        text-align: left;
+        background: transparent;
+        color: inherit;
+        cursor: pointer;
+      }
+
+      .bf-search-result:hover {
+        background: rgba(100,160,130,.14);
+      }
+
+      .bf-search-result strong {
+        display: block;
+        font-size: 12px;
+        font-weight: 900;
+      }
+
+      .bf-search-result small {
+        display: block;
+        margin-top: 4px;
+        font-size: 10px;
+        opacity: .65;
+      }
+
+      .bf-search-empty {
+        padding: 16px 10px;
+        font-size: 12px;
+        opacity: .65;
+        text-align: center;
+      }
+    `;
+
+    document.head.appendChild(style);
+  }
+
+  let cachedDate = "";
+  let searchMatches = [];
+  let requestNumber = 0;
+
+  function key(value) {
+    return normalizeText(value)
+      .replace(/\s+/g, " ")
+      .trim();
+  }
+
+  /* جلب جميع مباريات التاريخ المختار
+     بلا تغيير currentMatches ديال الموقع */
+  async function loadSearchMatches() {
+    const date =
+      currentDate ||
+      new Date().toISOString().slice(0, 10);
+
+    if (cachedDate === date) return;
+
+    const response = await fetch(
+      `${API_BASE}/api?date=${encodeURIComponent(date)}`,
+      { cache: "no-store" }
+    );
+
+    if (!response.ok) {
+      throw new Error(
+        `Search HTTP ${response.status}`
+      );
+    }
+
+    const data = await response.json();
+
+    searchMatches = normalizeMatches(data);
+    cachedDate = date;
+  }
+
+  /* دمج نتائج البحث مع المباريات الموجودة */
+  function getAllMatches() {
+    const result = [];
+    const seen = new Set();
+
+    const all = [
+      ...searchMatches,
+      ...(Array.isArray(currentMatches)
+        ? currentMatches
+        : [])
+    ];
+
+    all.forEach(match => {
+      const id = getFixtureId(match);
+
+      const identity = id
+        ? `id:${id}`
+        : [
+            key(getHome(match)),
+            key(getAway(match)),
+            key(getLeague(match)),
+            match?.fixture?.date || match?.date || ""
+          ].join("|");
+
+      if (seen.has(identity)) return;
+
+      seen.add(identity);
+      result.push(match);
+    });
+
+    return result;
+  }
+
+  function playerName(value) {
+    if (typeof value === "string") {
+      return value;
+    }
+
+    if (!value || typeof value !== "object") {
+      return "";
+    }
+
+    return (
+      value?.player?.name ||
+      value?.name ||
+      value?.player_name ||
+      value?.full_name ||
+      value?.short_name ||
+      value?.scorer_name ||
+      ""
+    );
+  }
+
+  function collectPlayers(matches) {
+    const found = new Map();
+
+    function add(name, matchIndex) {
+      const clean = String(name || "").trim();
+      const k = key(clean);
+
+      if (!k || k.length < 2) return;
+
+      if (!found.has(k)) {
+        found.set(k, {
+          name: clean,
+          matchIndex
+        });
+      }
+    }
+
+    function scan(node, matchIndex, depth = 0) {
+      if (!node || depth > 5) return;
+
+      if (Array.isArray(node)) {
+        node.forEach(item =>
+          scan(item, matchIndex, depth + 1)
+        );
         return;
       }
+
+      if (typeof node !== "object") return;
+
+      const p =
+        node?.player &&
+        typeof node.player === "object"
+          ? { ...node.player, ...node }
+          : node;
+
+      const name = playerName(p);
+
+      const isPlayer =
+        !!node?.player ||
+        !!p?.position ||
+        !!p?.pos ||
+        !!p?.player_id ||
+        !!p?.playerId ||
+        !!p?.shirt_number ||
+        !!p?.shirtNumber ||
+        p?.jersey_number != null;
+
+      if (name && isPlayer) {
+        add(name, matchIndex);
+      }
+
+      const containers = [
+        "players",
+        "lineups",
+        "lineup",
+        "compositions",
+        "home",
+        "away",
+        "startXI",
+        "startingXI",
+        "starters",
+        "substitutes",
+        "subs",
+        "bench",
+        "player"
+      ];
+
+      Object.entries(node).forEach(([prop, value]) => {
+        if (containers.includes(prop)) {
+          scan(value, matchIndex, depth + 1);
+        }
+      });
+    }
+
+    matches.forEach((match, index) => {
+      scan(match?.players, index);
+      scan(match?.lineups, index);
+      scan(match?.lineup, index);
+
+      const events =
+        match?.events ||
+        match?.incidents ||
+        match?.timeline ||
+        [];
+
+      if (Array.isArray(events)) {
+        events.forEach(event => {
+          add(
+            playerName(event?.player) ||
+            event?.player_name ||
+            event?.scorer_name,
+            index
+          );
+
+          add(
+            playerName(event?.assist) ||
+            event?.assist_name,
+            index
+          );
+        });
+      }
+    });
+
+    return Array.from(found.values());
+  }
+
+  function resultButton(type, name, subtitle, index, extra = "") {
+    return `
+      <button
+        type="button"
+        class="bf-search-result"
+        data-search-type="${escapeHTML(type)}"
+        data-search-value="${escapeHTML(name)}"
+        ${index != null
+          ? `data-match-index="${index}"`
+          : ""}
+        ${extra}
+      >
+        <strong>${escapeHTML(name)}</strong>
+        ${subtitle
+          ? `<small>${escapeHTML(subtitle)}</small>`
+          : ""}
+      </button>
+    `;
+  }
+
+  function section(title, items) {
+    if (!items.length) return "";
+
+    return `
+      <div class="bf-search-title">
+        ${escapeHTML(title)}
+      </div>
+      ${items.join("")}
+    `;
+  }
+
+  function renderResults(query) {
+    const q = key(query);
+    if (!q) {
+      panel.style.display = "none";
+      return;
+    }
+
+    const matches = getAllMatches();
+
+    /* الفرق: من اللائحة الحالية ومن مباريات اليوم */
+    const teamMap = new Map();
+
+    function addTeam(name, country = "", isStatic = false) {
+      if (!name) return;
+
+      const k = key(name);
+      if (!k) return;
+
+      const existing = teamMap.get(k);
+
+      if (!existing || isStatic) {
+        teamMap.set(k, {
+          name,
+          country,
+          isStatic
+        });
+      }
+    }
+
+    if (Array.isArray(teams)) {
+      teams.forEach(team =>
+        addTeam(team.name, team.country, true)
+      );
+    }
+
+    matches.forEach(match => {
+      addTeam(getHome(match));
+      addTeam(getAway(match));
+    });
+
+    const matchingTeams =
+      Array.from(teamMap.values())
+        .filter(team =>
+          key(team.name).includes(q) ||
+          key(team.country).includes(q)
+        )
+        .slice(0, 5)
+        .map(team =>
+          resultButton(
+            "team",
+            team.name,
+            team.country || "Équipe",
+            null,
+            `data-static-team="${team.isStatic}"`
+          )
+        );
+
+    /* البطولات */
+    const competitionMap = new Map();
+
+    matches.forEach(match => {
+      const name = String(getLeague(match) || "").trim();
+      const k = key(name);
+
+      if (k && !competitionMap.has(k)) {
+        competitionMap.set(k, {
+          name,
+          count: 0
+        });
+      }
+
+      if (k) {
+        competitionMap.get(k).count++;
+      }
+    });
+
+    const matchingCompetitions =
+      Array.from(competitionMap.values())
+        .filter(item => key(item.name).includes(q))
+        .slice(0, 5)
+        .map(item =>
+          resultButton(
+            "competition",
+            item.name,
+            `${item.count} match(s)`,
+            null
+          )
+        );
+
+    /* المباريات */
+    const matchingMatches =
+      matches
+        .map((match, index) => ({ match, index }))
+        .filter(({ match }) => {
+          const searchable = key([
+            getHome(match),
+            getAway(match),
+            getLeague(match),
+            getStatus(match)
+          ].join(" "));
+
+          return searchable.includes(q);
+        })
+        .slice(0, 7)
+        .map(({ match, index }) =>
+          resultButton(
+            "match",
+            `${getHome(match)} — ${getAway(match)}`,
+            `${getLeague(match)} • ${statusLabel(match)} • ${getHomeScore(match)}-${getAwayScore(match)}`,
+            index
+          )
+        );
+
+    /* اللاعبون المتوفرون فعلاً فالبيانات */
+    const matchingPlayers =
+      collectPlayers(matches)
+        .filter(player => key(player.name).includes(q))
+        .slice(0, 5)
+        .map(player => {
+          const match = matches[player.matchIndex];
+
+          return resultButton(
+            "player",
+            player.name,
+            match
+              ? `${getHome(match)} — ${getAway(match)}`
+              : "Joueur",
+            player.matchIndex
+          );
+        });
+
+    const html = [
+      section("Équipes", matchingTeams),
+      section("Compétitions", matchingCompetitions),
+      section("Matchs", matchingMatches),
+      section("Joueurs disponibles", matchingPlayers)
+    ].join("");
+
+    panel.innerHTML = html ||
+      `<div class="bf-search-empty">
+        Aucun résultat dans les données chargées.
+      </div>`;
+
+    panel.style.display = "block";
+  }
+
+  function openSearchMatch(match) {
+    if (!match) return;
+
+    const id = getFixtureId(match);
+
+    let index = id
+      ? currentMatches.findIndex(
+          item =>
+            String(getFixtureId(item)) === String(id)
+        )
+      : -1;
+
+    if (index < 0) {
+      currentMatches = [
+        ...(Array.isArray(currentMatches)
+          ? currentMatches
+          : []),
+        match
+      ];
+
+      index = currentMatches.length - 1;
+    }
+
+    panel.style.display = "none";
+    input.blur();
+
+    openMatchDetails(index);
+  }
+
+  async function runSearch() {
+    const q = input.value.trim();
+    const token = ++requestNumber;
+
+    if (!q) {
+      panel.style.display = "none";
+
+      if ($("teams")?.classList.contains("active")) {
+        renderTeams();
+      }
+
+      return;
+    }
+
+    panel.style.display = "block";
+    panel.innerHTML =
+      `<div class="bf-search-empty">Recherche...</div>`;
+
+    try {
+      await loadSearchMatches();
+    } catch (error) {
+      console.warn("BAKHIRAFOOT SEARCH:", error);
+    }
+
+    if (token !== requestNumber) return;
+
+    renderResults(q);
+  }
+
+  input.addEventListener("input", runSearch);
+
+  input.addEventListener("focus", () => {
+    if (input.value.trim()) {
+      runSearch();
+    }
+  });
+
+  input.addEventListener("keydown", event => {
+    if (event.key === "Escape") {
+      panel.style.display = "none";
+      input.blur();
+    }
+  });
+
+  panel.addEventListener("click", event => {
+    const button =
+      event.target.closest("[data-search-type]");
+
+    if (!button) return;
+
+    const type = button.dataset.searchType;
+    const value = button.dataset.searchValue;
+
+    if (type === "match" || type === "player") {
+      const matches = getAllMatches();
+      const index = Number(button.dataset.matchIndex);
+
+      openSearchMatch(matches[index]);
+      return;
+    }
+
+    if (
+      type === "team" &&
+      button.dataset.staticTeam === "true"
+    ) {
+      input.value = value;
 
       go("teams");
 
       document
-        .querySelectorAll(
-          "#teamGrid .card"
-        )
+        .querySelectorAll("#teamGrid .card")
         .forEach(card => {
-
           card.style.display =
-            card.textContent
-              .toLowerCase()
-              .includes(value)
+            key(card.textContent).includes(key(value))
               ? ""
               : "none";
         });
 
+      panel.style.display = "none";
+      return;
     }
-  );
+
+    input.value = value;
+    runSearch();
+  });
+
+  document.addEventListener("click", event => {
+    if (
+      !host.contains(event.target)
+    ) {
+      panel.style.display = "none";
+    }
+  });
 }
+
 
 /* =========================================================
    THEME
