@@ -2673,307 +2673,215 @@ return `
    LOAD LIVE
 ========================================================= */
 
+
 async function loadLive() {
   const liveElement = $("live");
 
-  /*
-   * إلا ما عندناش matches ديال النهار،
-   * ما نحاولوش نعوضوهم بـ LIVE فقط.
-   */
-  if (
-    !Array.isArray(currentMatches) ||
-    !currentMatches.length
-  ) {
-    if (liveElement) {
-      liveElement.textContent =
-        "⚪ Live indisponible";
-    }
+  const previousCompetition =
+    scoreCompetitionGroups[
+      selectedCompetitionIndex
+    ]?.name || "";
 
-    return [];
-  }
-
-  /*
-   * Live endpoint
-   */
   try {
-
-    if (liveElement) {
-      liveElement.textContent =
-        "🟡 Actualisation du LIVE...";
-    }
-
-    const response =
-      await fetch(
-        `${API_BASE}/api?live=all`,
-        {
-          cache: "no-store"
-        }
-      );
-
-    if (!response.ok) {
-      throw new Error(
-        `HTTP ${response.status}`
-      );
-    }
-
- const data =
-  await response.json();
-
-let matches =
-  Array.isArray(currentMatches) &&
-  currentMatches.length
-    ? [...currentMatches]
-    : normalizeMatches(data);
-
-    /*
-     * Index LIVE par fixture ID
-     */
-    const liveById =
-      new Map();
-
-    /*
-     * Fallback par équipes
-     */
-    const liveByTeams =
-      new Map();
-
-    liveMatches.forEach(
-      live => {
-
-        const id =
-          getFixtureId(live);
-
-        if (id) {
-          liveById.set(
-            String(id),
-            live
-          );
-        }
-
-        const home =
-          normalizeText(
-            getHome(live)
-          );
-
-        const away =
-          normalizeText(
-            getAway(live)
-          );
-
-        if (home && away) {
-          liveByTeams.set(
-            `${home}__${away}`,
-            live
-          );
-        }
-
-      }
+    const response = await fetch(
+      `${API_BASE}/api?live=all`,
+      { cache: "no-store" }
     );
 
-    /*
-     * مهم:
-     * كنحتافظو بجميع matches اللي عندنا.
-     * غير كنحدّثو الماتشات اللي ولات LIVE.
-     */
-    const updatedMatches =
-      currentMatches.map(
-        match => {
-
-          const id =
-            getFixtureId(match);
-
-          const home =
-            normalizeText(
-              getHome(match)
-            );
-
-          const away =
-            normalizeText(
-              getAway(match)
-            );
-
-          const live =
-            (
-              id &&
-              liveById.get(
-                String(id)
-              )
-            ) ||
-            liveByTeams.get(
-              `${home}__${away}`
-            );
-
-          /*
-           * ما كاينش update:
-           * نخليو الماتش كيف كان.
-           */
-          if (!live) {
-            return match;
-          }
-
-          /*
-           * Merge آمن
-           */
-          return {
-            ...match,
-
-            teams:
-              live.teams ||
-              match.teams,
-
-            goals:
-              live.goals ||
-              match.goals,
-
-            score:
-              live.score ||
-              match.score,
-
-            fixture: {
-              ...match.fixture,
-              ...live.fixture,
-
-              status: {
-                ...match.fixture?.status,
-                ...live.fixture?.status
-              }
-            }
-          };
-
-        }
-      );
-
-               const existingLiveIds =
-            new Set(
-              matches
-                .map(
-                  match =>
-                    getFixtureId(
-                      match
-                    )
-                )
-                .filter(Boolean)
-                .map(String)
-            );
-
-          liveMatches.forEach(
-            live => {
-
-              const id =
-                getFixtureId(
-                  live
-                );
-
-              if (
-                id &&
-                !existingLiveIds.has(
-                  String(id)
-                )
-              ) {
-
-                matches.push(
-                  live
-                );
-
-              }
-
-            }
-          );
-
-
-    /*
-     * Sort فقط من بعد الـmerge
-     */
-    const sortedMatches =
-      sortMatchesByImportance(
-        updatedMatches
-      );
-
-    /*
-     * currentMatches كيبقى فيه
-     * جميع مباريات النهار.
-     */
-    currentMatches =
-      sortedMatches;
-
-
-    /*
-     * عدد LIVE الحقيقي
-     */
-    const liveCount =
-      currentMatches.filter(
-        match => {
-
-          const status =
-            getStatus(match);
-
-          return (
-            status === "LIVE" ||
-            status === "HT"
-          );
-
-        }
-      ).length;
-
-
-    if (liveElement) {
-
-      liveElement.textContent =
-        liveCount
-          ? `🔴 ${liveCount} MATCH(S) LIVE`
-          : "⚪ Aucun match live";
-
+    if (!response.ok) {
+      throw new Error(`HTTP ${response.status}`);
     }
 
+    const data = await response.json();
+    const liveMatches = normalizeMatches(data);
 
-    /*
-     * نعاودو نرسمو Scores
-     * بنفس جميع matches.
-     */
-    if (
-      $("scores")?.classList.contains(
-        "active"
-      )
-    ) {
+    const matches = Array.isArray(currentMatches)
+      ? [...currentMatches]
+      : [];
 
-      selectedCompetitionIndex =
-        Math.max(
-          0,
-          Math.min(
-            selectedCompetitionIndex,
-            scoreCompetitionGroups.length - 1
-          )
-        );
+    function teamKey(match) {
+      const home = normalizeText(getHome(match));
+      const away = normalizeText(getAway(match));
 
-      renderScoreCompetitions(
-        currentMatches
+      if (
+        !home ||
+        !away ||
+        home === "domicile" ||
+        away === "exterieur"
+      ) {
+        return "";
+      }
+
+      return `${home}__${away}`;
+    }
+
+    const liveById = new Map();
+    const liveByTeams = new Map();
+
+    for (const live of liveMatches) {
+      const id = getFixtureId(live);
+      const key = teamKey(live);
+
+      if (id) {
+        liveById.set(String(id), live);
+      }
+
+      if (key) {
+        liveByTeams.set(key, live);
+      }
+    }
+
+    /* تحديث الماتشات الموجودة */
+    const mergedMatches = matches.map(match => {
+      const id = getFixtureId(match);
+      const key = teamKey(match);
+
+      const live =
+        (id && liveById.get(String(id))) ||
+        (key && liveByTeams.get(key));
+
+      if (!live) {
+        return match;
+      }
+
+      return {
+        ...match,
+
+        teams: live.teams ?? match.teams,
+        goals: live.goals ?? match.goals,
+        score: live.score ?? match.score,
+        league: live.league ?? match.league,
+
+        status: live.status ?? match.status,
+
+        status_text:
+          live.status_text ?? match.status_text,
+
+        fixture: {
+          ...(match.fixture || {}),
+          ...(live.fixture || {}),
+
+          status: {
+            ...(typeof match.fixture?.status === "object"
+              ? match.fixture.status
+              : {}),
+            ...(typeof live.fixture?.status === "object"
+              ? live.fixture.status
+              : {})
+          }
+        }
+      };
+    });
+
+    /* إضافة مباريات LIVE الناقصة بلا تكرار */
+    const existingIds = new Set(
+      mergedMatches
+        .map(getFixtureId)
+        .filter(Boolean)
+        .map(String)
+    );
+
+    const existingTeams = new Set(
+      mergedMatches
+        .map(teamKey)
+        .filter(Boolean)
+    );
+
+    for (const live of liveMatches) {
+      const id = getFixtureId(live);
+      const key = teamKey(live);
+
+      const existsById =
+        id && existingIds.has(String(id));
+
+      const existsByTeams =
+        key && existingTeams.has(key);
+
+      if (existsById || existsByTeams) {
+        continue;
+      }
+
+      mergedMatches.push(live);
+
+      if (id) {
+        existingIds.add(String(id));
+      }
+
+      if (key) {
+        existingTeams.add(key);
+      }
+    }
+
+    /* ترتيب نهائي وتحديث اللائحة */
+    currentMatches =
+      sortMatchesByImportance(mergedMatches);
+
+    const liveCount = currentMatches.filter(match => {
+      const state = getScoreState(match);
+
+      return (
+        state === "live" ||
+        state === "halftime"
       );
+    }).length;
 
+    if (liveElement) {
+      liveElement.textContent = liveCount
+        ? `🔴 ${liveCount} MATCH(S) LIVE`
+        : "⚪ Aucun match live";
+    }
+
+    /* الحفاظ على البطولة المختارة */
+    if (
+      $("scores")?.classList.contains("active")
+    ) {
+      if (previousCompetition) {
+        const previousKey =
+          canonicalCompetitionName(previousCompetition);
+
+        const nextGroups =
+          buildCompetitionGroups(currentMatches);
+
+        const nextIndex =
+          nextGroups.findIndex(
+            group =>
+              canonicalCompetitionName(group.name) ===
+              previousKey
+          );
+
+        if (nextIndex >= 0) {
+          selectedCompetitionIndex = nextIndex;
+        }
+      }
+
+      renderScoreCompetitions(currentMatches);
     }
 
     return currentMatches;
 
-  }
-  catch (error) {
+  } catch (error) {
+    console.error("LIVE ERROR:", error);
 
-    console.error(
-      "LIVE ERROR:",
-      error
-    );
-
-    /*
-     * مهم:
-     * حتى إلا LIVE فشل،
-     * ما نمسحوش matches الموجودة.
-     */
+    /* ما نمسحوش المباريات إلا فشل التحديث */
     if (liveElement) {
-      liveElement.textContent =
-        "⚪ Live indisponible";
+      const liveCount = currentMatches.filter(match => {
+        const state = getScoreState(match);
+
+        return (
+          state === "live" ||
+          state === "halftime"
+        );
+      }).length;
+
+      liveElement.textContent = liveCount
+        ? `🔴 ${liveCount} MATCH(S) LIVE`
+        : "⚠️ Actualisation LIVE impossible";
     }
 
     return currentMatches;
   }
 }
+
 
 /* =========================================================
    LOAD MATCHES BY DATE
