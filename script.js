@@ -445,7 +445,18 @@ function getCompetitionPriority(match) {
     0
   );
 
-  const league = normalizeText(getLeague(match));
+
+const league = normalizeText(getLeague(match))
+  .replace(/[’']/g, "")
+  .replace(/[_–—-]+/g, " ")
+  .replace(/[.,:]/g, " ")
+  .replace(/\b(league phase|group stage|regular season|fall season|spring season|summer season|winter season|first round|second round|third round|round of \d+|quarterfinals?|semifinals?)\b/g, " ")
+  .replace(/\b(ea sports|santander)\b/g, " ")
+  .replace(/\s+(england|spain|italy|germany|france|morocco|maroc|europe)$/i, "")
+  .replace(/\b(?:19|20)\d{2}(?:[-/](?:\d{2}|(?:19|20)\d{2}))?\b/g, " ")
+  .replace(/^uefa\s+/i, "")
+  .replace(/\s+/g, " ")
+  .trim();
 
   /*
    * =========================================
