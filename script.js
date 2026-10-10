@@ -9611,6 +9611,7 @@ const initialDate =
   picker.type = "date";
   picker.id = "bfDatePicker";
   picker.value = initialDate;
+  picker.max = maxDate; 
   picker.setAttribute("aria-label", "Choisir une date");
   picker.title = "Choisir la date des matchs";
 
