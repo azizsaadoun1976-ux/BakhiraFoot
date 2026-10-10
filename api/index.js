@@ -4288,6 +4288,68 @@ try {
   getMatches(body)
     .map(normalizeMatch)
     .filter(Boolean);
+
+     /* =====================================================
+   BAKHIRAFOOT - MAJOR COMPETITIONS
+   SportScore ONLY
+===================================================== */
+
+const majorCompetitionSlugs = [
+  "fifa-world-cup",
+  "uefa-euro",
+  "uefa-champions-league",
+  "uefa-europa-league",
+  "uefa-europa-conference-league",
+  "premier-league",
+  "la-liga",
+  "serie-a",
+  "bundesliga",
+  "ligue-1"
+];
+
+const majorCompetitionResults =
+  await Promise.all(
+    majorCompetitionSlugs.map(
+      async slug => {
+        try {
+          const result = await getJSON(
+            `${SPORTSCORE}/fixtures/?sport=football&date=${encodeURIComponent(
+              matchDate
+            )}&competition=${encodeURIComponent(
+              slug
+            )}&limit=200`
+          );
+
+          const list =
+            getMatches(result)
+              .map(normalizeMatch)
+              .filter(Boolean);
+
+          console.log(
+            "BAKHIRAFOOT MAJOR:",
+            slug,
+            list.length
+          );
+
+          return list;
+
+        } catch (error) {
+          console.warn(
+            "MAJOR COMPETITION ERROR:",
+            slug,
+            error.message
+          );
+
+          return [];
+        }
+      }
+    )
+  );
+
+/* دمج النتائج مع المباريات الأصلية */
+for (const list of majorCompetitionResults) {
+  matches.push(...list);
+}
 /* =========================================
    MOROCCO - THE BOTOLA PRO
    Fetch competition directly
@@ -4331,10 +4393,7 @@ catch (error) {
 
 try {
 
-  const tsdbEvents =
-    await getTheSportsDBDayMatches(
-      matchDate
-    );
+  const tsdbEvents = [];
 
   const tsdbMatches =
     tsdbEvents
@@ -4660,11 +4719,7 @@ catch (error) {
 
 try {
 
-  const sofaEvents =
-    await getSofaWorldMatches(
-      matchDate
-    );
-
+ const sofaEvents = [];
   const sofaMatches =
     sofaEvents
       .map(
