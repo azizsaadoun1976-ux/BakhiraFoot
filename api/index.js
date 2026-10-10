@@ -4296,15 +4296,16 @@ try {
 
 const majorCompetitionSlugs = [
   "fifa-world-cup",
-  "uefa-euro",
+  "uefa-european-championship",
   "uefa-champions-league",
   "uefa-europa-league",
   "uefa-europa-conference-league",
-  "premier-league",
-  "la-liga",
-  "serie-a",
+
+  "english-premier-league",
+  "spanish-la-liga",
+  "italian-serie-a",
   "bundesliga",
-  "ligue-1"
+  "french-ligue-1"
 ];
 
 const majorCompetitionResults =
