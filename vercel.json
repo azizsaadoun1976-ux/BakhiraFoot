@@ -1,6 +1,11 @@
+
 {
   "version": 2,
   "routes": [
+    {
+      "src": "/api/history",
+      "dest": "/api/history.js"
+    },
     {
       "src": "/api/(.*)",
       "dest": "/api/index.js"
