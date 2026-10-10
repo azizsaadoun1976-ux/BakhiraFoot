@@ -9595,10 +9595,15 @@ function createDateBar() {
   const today = new Date();
   const todayISO = toISODate(today);
 
-  const initialDate =
-    /^\d{4}-\d{2}-\d{2}$/.test(currentDate || "")
-      ? currentDate
-      : todayISO;
+ const maxDate = `${today.getFullYear()}-12-31`;
+
+const savedDate =
+  /^\d{4}-\d{2}-\d{2}$/.test(currentDate || "")
+    ? currentDate
+    : todayISO;
+
+const initialDate =
+  savedDate > maxDate ? todayISO : savedDate;
 
   // اختيار التاريخ من الكالندر
   const picker = document.createElement("input");
