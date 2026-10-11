@@ -99,8 +99,9 @@ const competitions = [
     logo: "https://commons.wikimedia.org/wiki/Special:Redirect/file/UEFA_Euro_2024_logo.svg"
   },
   {
-    name: "Africa Cup of Nations",
-    slug: "africa-cup-of-nations",
+    name: "CAF Africa Cup of Nations",
+    slug: "caf-africa-cup-of-nations",
+    fallbackSlugs: ["africa-cup-of-nations"],
     country: "Afrique",
     logo: "https://commons.wikimedia.org/wiki/Special:Redirect/file/Africa_Cup_of_Nations_logo.svg"
   },
@@ -112,7 +113,8 @@ const competitions = [
   },
   {
     name: "Copa América",
-    slug: "copa-america",
+    slug: "conmebol-copa-america",
+    fallbackSlugs: ["copa-america"],
     country: "Amérique du Sud",
     logo: ""
   },
@@ -605,6 +607,192 @@ async function loadTodayMatches() {
     return [];
   }
 
+
+  /* =========================================================
+     EXTRACTION DES TABLEAUX PAR GROUPE
+     - Garde le comportement des ligues à tableau unique
+     - Récupère tous les groupes des compétitions nationales
+     ========================================================= */
+
+  function isStandingRow(item) {
+    if (!item || typeof item !== "object" || Array.isArray(item)) {
+      return false;
+    }
+
+    const hasRankOrPoints = [
+      "position", "rank", "place", "points", "pts",
+      "played", "matches", "p", "games"
+    ].some(key => item[key] !== undefined && item[key] !== null);
+
+    const hasTeam = [
+      "team", "team_name", "teamName", "club", "name", "title"
+    ].some(key => item[key] !== undefined && item[key] !== null);
+
+    return hasRankOrPoints && hasTeam;
+  }
+
+  function groupNameFrom(value) {
+    if (typeof value === "string" && value.trim()) {
+      return value.trim();
+    }
+
+    if (value && typeof value === "object") {
+      for (const key of ["name", "title", "label", "short_name", "display_name"]) {
+        if (typeof value[key] === "string" && value[key].trim()) {
+          return value[key].trim();
+        }
+      }
+    }
+
+    return "";
+  }
+
+  function rowGroupName(row) {
+    if (!row || typeof row !== "object") return "";
+
+    return (
+      groupNameFrom(row.group_name) ||
+      groupNameFrom(row.groupName) ||
+      groupNameFrom(row.group_title) ||
+      groupNameFrom(row.groupTitle) ||
+      groupNameFrom(row.pool_name) ||
+      groupNameFrom(row.poolName) ||
+      groupNameFrom(row.group) ||
+      groupNameFrom(row.pool) ||
+      ""
+    );
+  }
+
+  function looksLikeStandingTable(node) {
+    return Array.isArray(node) && node.length > 0 && node.some(isStandingRow);
+  }
+
+  function findStandingGroups(root) {
+    const groups = [];
+    const seenArrays = new Set();
+    const seenSignatures = new Set();
+
+    function hasStandingsChild(node) {
+      if (!node || typeof node !== "object" || Array.isArray(node)) return false;
+      return Object.keys(node).some(key =>
+        /^(standings?|tables?|rows|entries|teams|group_standings|groupStandings)$/i.test(key)
+      );
+    }
+
+    function explicitGroupName(node) {
+      if (!node || typeof node !== "object" || Array.isArray(node)) return "";
+      return (
+        groupNameFrom(node.group_name) ||
+        groupNameFrom(node.groupName) ||
+        groupNameFrom(node.group_title) ||
+        groupNameFrom(node.groupTitle) ||
+        groupNameFrom(node.pool_name) ||
+        groupNameFrom(node.poolName) ||
+        groupNameFrom(node.group) ||
+        groupNameFrom(node.pool) ||
+        ""
+      );
+    }
+
+    function addTable(rows, label) {
+      if (!looksLikeStandingTable(rows)) return;
+      if (seenArrays.has(rows)) return;
+      seenArrays.add(rows);
+
+      // Some APIs return one flat array with a group property on every row.
+      const byGroup = new Map();
+      for (const row of rows) {
+        const rowGroup = rowGroupName(row);
+        if (!rowGroup) continue;
+        if (!byGroup.has(rowGroup)) byGroup.set(rowGroup, []);
+        byGroup.get(rowGroup).push(row);
+      }
+
+      if (byGroup.size > 1) {
+        for (const [groupName, groupRows] of byGroup.entries()) {
+          const signature = `${groupName}::${groupRows.map(teamName).join("|")}`;
+          if (!seenSignatures.has(signature)) {
+            seenSignatures.add(signature);
+            groups.push({ name: groupName, rows: groupRows });
+          }
+        }
+        return;
+      }
+
+      const inferredName = label || (byGroup.size === 1 ? byGroup.keys().next().value : "");
+      const signature = `${inferredName}::${rows.map(teamName).join("|")}`;
+      if (!seenSignatures.has(signature)) {
+        seenSignatures.add(signature);
+        groups.push({ name: inferredName, rows });
+      }
+    }
+
+    function walk(node, inheritedLabel = "", parentKey = "", depth = 0) {
+      if (!node || depth > 14) return;
+
+      if (Array.isArray(node)) {
+        if (looksLikeStandingTable(node)) {
+          addTable(node, inheritedLabel);
+          return;
+        }
+
+        for (const item of node) {
+          let nextLabel = inheritedLabel;
+          if (item && typeof item === "object" && !Array.isArray(item)) {
+            const explicit = explicitGroupName(item);
+            if (explicit) {
+              nextLabel = explicit;
+            } else if (hasStandingsChild(item)) {
+              // A named item inside groups[] is a group wrapper, not a team row.
+              const possibleName = groupNameFrom(item.name) || groupNameFrom(item.title) || groupNameFrom(item.label);
+              if (possibleName && !isStandingRow(item)) nextLabel = possibleName;
+            }
+          }
+          walk(item, nextLabel, parentKey, depth + 1);
+        }
+        return;
+      }
+
+      if (typeof node !== "object") return;
+
+      const ownGroupName = explicitGroupName(node);
+      const currentLabel = ownGroupName || inheritedLabel;
+
+      for (const [key, child] of Object.entries(node)) {
+        if (!child || typeof child !== "object") continue;
+
+        let childLabel = currentLabel;
+        const isGroupContainer = /^(groups?|pools?)$/i.test(parentKey);
+
+        // Supports responses such as { groups: { "Group A": [...], "Group B": [...] } }.
+        if (
+          isGroupContainer &&
+          !/^\d+$/.test(key) &&
+          !/^(standings?|tables?|rows|entries|teams)$/i.test(key) &&
+          looksLikeStandingTable(child)
+        ) {
+          childLabel = key;
+        }
+
+        // Supports { groups: [{ name: "Group A", standings: [...] }, ...] }.
+        if (/^(group|pool|groups|pools)$/i.test(key)) {
+          walk(child, childLabel, key, depth + 1);
+        } else {
+          walk(child, childLabel, key, depth + 1);
+        }
+      }
+    }
+
+    walk(root);
+
+    // Fallback to the original extractor to preserve existing league standings.
+    if (!groups.length) {
+      const rows = findRows(root);
+      if (rows.length) groups.push({ name: "", rows });
+    }
+
+    return groups.filter(group => Array.isArray(group.rows) && group.rows.length);
+  }
 
   function teamName(row) {
 
@@ -2326,173 +2514,148 @@ async function loadRealPlayerPhotos(card) {
      UNE COMPÉTITION
      ========================================================= */
 
-  async function loadCompetition(
-    competition
-  ) {
+  async function fetchCompetitionEndpoint(endpoint, competition, extraQuery = "") {
+    const slugs = [competition.slug, ...(competition.fallbackSlugs || [])]
+      .filter((slug, index, list) => slug && list.indexOf(slug) === index);
 
-    const [
-      standingsData,
-      goalsData,
-      assistsData
-    ] =
-      await Promise.allSettled([
+    let lastData;
+    let lastError;
 
-        fetchJSON(
-          `${API}/v1/standings/?sport=football&slug=${encodeURIComponent(competition.slug)}&src=${SRC}`
-        ),
+    for (const slug of slugs) {
+      try {
+        const data = await fetchJSON(
+          `${API}/v1/${endpoint}/?sport=football&slug=${encodeURIComponent(slug)}${extraQuery}&src=${SRC}`
+        );
 
-        fetchJSON(
-          `${API}/v1/topscorers/?sport=football&slug=${encodeURIComponent(competition.slug)}&limit=5&stat=goals&src=${SRC}`
-        ),
+        if (endpoint !== "standings" || findStandingGroups(data).length > 0) {
+          return data;
+        }
 
-        fetchJSON(
-          `${API}/v1/topscorers/?sport=football&slug=${encodeURIComponent(competition.slug)}&limit=5&stat=assists&src=${SRC}`
-        )
+        // Keep the empty response in case every alternate slug is also empty.
+        lastData = data;
+      } catch (error) {
+        lastError = error;
+      }
+    }
 
-      ]);
-
-
-    const standings =
-      standingsData.status === "fulfilled"
-        ? findRows(
-            standingsData.value
-          )
-        : [];
-
-
-    const goals =
-      goalsData.status === "fulfilled"
-        ? findPlayers(
-            goalsData.value
-          )
-        : [];
-
-
-    const assists =
-      assistsData.status === "fulfilled"
-        ? findPlayers(
-            assistsData.value
-          )
-        : [];
-
-
-    return {
-
-      competition,
-
-      standings,
-
-      goals,
-
-      assists
-
-    };
-
+    if (lastData !== undefined) return lastData;
+    throw lastError || new Error(`Impossible de charger ${endpoint} pour ${competition.name}`);
   }
 
+  async function loadCompetition(competition) {
+    const [standingsData, goalsData, assistsData] = await Promise.allSettled([
+      fetchCompetitionEndpoint("standings", competition),
+      fetchCompetitionEndpoint("topscorers", competition, "&limit=5&stat=goals"),
+      fetchCompetitionEndpoint("topscorers", competition, "&limit=5&stat=assists")
+    ]);
+
+    const standingGroups = standingsData.status === "fulfilled"
+      ? findStandingGroups(standingsData.value)
+      : [];
+
+    const standings = standingGroups.flatMap(group => group.rows);
+
+    const goals = goalsData.status === "fulfilled"
+      ? findPlayers(goalsData.value)
+      : [];
+
+    const assists = assistsData.status === "fulfilled"
+      ? findPlayers(assistsData.value)
+      : [];
+
+    return {
+      competition,
+      standings,
+      standingGroups,
+      goals,
+      assists
+    };
+  }
 
   /* =========================================================
      AFFICHER TOUTES LES COMPÉTITIONS
      ========================================================= */
 
- function renderCompetition(result) {
+ function renderStandingTable(rows, title, competition) {
+  const rowHTML = rows
+    .map((row, index) => renderStandingRow(row, index, competition))
+    .join("");
 
+  return `
+    <section class="ss-standing-group">
+      ${title ? `<h3 class="ss-standing-group-title">${escapeHTML(title)}</h3>` : ""}
+      <div class="ss-table-scroll">
+        <div class="ss-table">
+          <div class="ss-standing-row ss-table-header">
+            <span>#</span>
+            <span>Équipe</span>
+            <span>J</span>
+            <span>G</span>
+            <span>N</span>
+            <span>P</span>
+            <span>BP</span>
+            <span>BC</span>
+            <span>Diff</span>
+            <span>Pts</span>
+          </div>
+          ${rowHTML}
+        </div>
+      </div>
+    </section>
+  `;
+}
+
+ function renderCompetition(result) {
   const {
     competition,
     standings,
+    standingGroups = [],
     goals,
     assists
   } = result;
 
- const rows = standings
-    .map((row, index) =>
-      renderStandingRow(row, index, competition)
-    )
-    .join("");
+  const usefulGroups = standingGroups.filter(group => group.rows && group.rows.length);
+  const needsGroupTitles = usefulGroups.length > 1 || usefulGroups.some(group => group.name);
+
+  const tablesHTML = usefulGroups.map((group, index) => {
+    const title = group.name || (needsGroupTitles ? `Groupe ${String.fromCharCode(65 + index)}` : "");
+    return renderStandingTable(group.rows, title, competition);
+  }).join("");
 
   return `
     <details class="bf-competition">
-
       <summary class="bf-competition-summary">
-
         <div class="bf-competition-brand">
-
           <div class="bf-competition-logo">
             <img
-  src="${escapeHTML(competition.logo)}"
-  alt="${escapeHTML(competition.name)}"
-  loading="lazy"
-  onerror="this.onerror=null;this.style.display='none';this.parentElement.textContent='🏆';"
->
+              src="${escapeHTML(competition.logo)}"
+              alt="${escapeHTML(competition.name)}"
+              loading="lazy"
+              onerror="this.onerror=null;this.style.display='none';this.parentElement.textContent='🏆';"
+            >
           </div>
-
           <div class="bf-competition-info">
-
-            <small>
-              ${escapeHTML(competition.country)}
-            </small>
-
-            <h2>
-              ${escapeHTML(competition.name)}
-            </h2>
-
-            <span>
-              ${standings.length} équipes
-            </span>
-
+            <small>${escapeHTML(competition.country)}</small>
+            <h2>${escapeHTML(competition.name)}</h2>
+            <span>${standings.length} équipes${usefulGroups.length > 1 ? ` · ${usefulGroups.length} groupes` : ""}</span>
           </div>
-
         </div>
-
         <span class="bf-competition-arrow">›</span>
-
       </summary>
 
       <div class="bf-competition-content">
-${renderQualificationLegend(standings, competition)}
-        <div class="ss-table-scroll">
-
-          <div class="ss-table">
-
-            <div class="ss-standing-row ss-table-header">
-              <span>#</span>
-              <span>Équipe</span>
-              <span>J</span>
-              <span>G</span>
-              <span>N</span>
-              <span>P</span>
-              <span>BP</span>
-              <span>BC</span>
-              <span>Diff</span>
-              <span>Pts</span>
-            </div>
-
-            ${rows}
-
+        ${renderQualificationLegend(standings, competition)}
+        ${tablesHTML || `
+          <div class="ss-no-data">
+            Classement indisponible pour le moment. SportScore ne renvoie pas de tableau pour ce slug.
           </div>
-
-        </div>
+        `}
 
         <div class="ss-players-grid">
-
-          ${renderPlayers(
-            goals,
-            "goals",
-            "Meilleurs buteurs",
-            "⚽"
-          )}
-
-          ${renderPlayers(
-            assists,
-            "assists",
-            "Meilleurs passeurs",
-            "🎯"
-          )}
-
+          ${renderPlayers(goals, "goals", "Meilleurs buteurs", "⚽")}
+          ${renderPlayers(assists, "assists", "Meilleurs passeurs", "🎯")}
         </div>
-
       </div>
-
     </details>
   `;
 }
@@ -2884,6 +3047,34 @@ body.dark .bf-competition-content {
   border-top-color: rgba(255,255,255,.07);
 }
 
+
+/* =========================================
+   TABLES PAR GROUPE
+   ========================================= */
+
+.ss-standing-group + .ss-standing-group {
+  border-top: 1px solid rgba(16,35,48,.09);
+}
+
+body.dark .ss-standing-group + .ss-standing-group {
+  border-top-color: rgba(255,255,255,.09);
+}
+
+.ss-standing-group-title {
+  margin: 0;
+  padding: 14px 18px;
+  font-size: 14px;
+  font-weight: 900;
+  color: #166534;
+  background: #f0fdf4;
+  border-bottom: 1px solid rgba(16,35,48,.07);
+}
+
+body.dark .ss-standing-group-title {
+  color: #86efac;
+  background: #10291f;
+  border-bottom-color: rgba(255,255,255,.07);
+}
 
 /* =========================================
    TABLE
