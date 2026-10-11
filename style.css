@@ -14379,3 +14379,191 @@ body.dark #leagues .ss-qualification-legend .ss-zone-legend-item > span {
     grid-template-columns: minmax(0, 1fr) !important;
   }
 }
+
+/* BAKHIRAFOOT — DESIGN PRO BUTEURS & PASSEURS */
+
+#realStandings .bf-competition .ss-players-grid {
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  gap: 16px !important;
+  padding: 16px !important;
+  background: transparent !important;
+}
+
+#realStandings .bf-competition .ss-player-card {
+  min-width: 0 !important;
+  padding: 17px !important;
+  overflow: hidden !important;
+  border: 1px solid #e3eaf0 !important;
+  border-radius: 18px !important;
+  background: linear-gradient(145deg, #ffffff, #f5f9fc) !important;
+  box-shadow: 0 7px 20px rgba(15, 23, 42, .06) !important;
+}
+
+#realStandings .bf-competition .ss-player-card-head {
+  display: flex !important;
+  justify-content: space-between !important;
+  align-items: center !important;
+  gap: 10px !important;
+  padding-bottom: 13px !important;
+  margin-bottom: 5px !important;
+  border-bottom: 1px solid #e7edf2 !important;
+}
+
+#realStandings .bf-competition .ss-player-card-head strong {
+  font-size: 15px !important;
+  font-weight: 850 !important;
+  color: #172b38 !important;
+}
+
+#realStandings .bf-competition .ss-player-row {
+  display: grid !important;
+  grid-template-columns: 26px minmax(0, 1fr) 48px !important;
+  align-items: center !important;
+  gap: 9px !important;
+  min-height: 60px !important;
+  padding: 9px 0 !important;
+  border-top: 1px solid #e9eff4 !important;
+}
+
+#realStandings .bf-competition .ss-player-rank {
+  display: flex !important;
+  width: 25px !important;
+  height: 25px !important;
+  align-items: center !important;
+  justify-content: center !important;
+  border-radius: 8px !important;
+  background: #edf2f7 !important;
+  color: #475569 !important;
+  font-size: 11px !important;
+  font-weight: 900 !important;
+}
+
+#realStandings .bf-competition .ss-player-row:nth-child(2)
+.ss-player-rank {
+  background: #fef3c7 !important;
+  color: #92400e !important;
+}
+
+#realStandings .bf-competition .ss-player {
+  display: flex !important;
+  align-items: center !important;
+  gap: 9px !important;
+  width: 100% !important;
+  min-width: 0 !important;
+  overflow: hidden !important;
+}
+
+#realStandings .bf-competition .ss-player img,
+#realStandings .bf-competition .ss-player-fallback {
+  width: 42px !important;
+  height: 42px !important;
+  flex: 0 0 42px !important;
+  border: 2px solid #e2e8f0 !important;
+  border-radius: 50% !important;
+  object-fit: cover !important;
+}
+
+#realStandings .bf-competition .ss-player-fallback {
+  align-items: center;
+  justify-content: center;
+  background: #eaf0f5 !important;
+}
+
+#realStandings .bf-competition .ss-player strong {
+  display: block !important;
+  flex: 1 1 auto !important;
+  min-width: 0 !important;
+  overflow: visible !important;
+  white-space: normal !important;
+  overflow-wrap: anywhere !important;
+  text-overflow: clip !important;
+  color: #172b38 !important;
+  font-size: 12px !important;
+  line-height: 1.4 !important;
+}
+
+#realStandings .bf-competition .ss-player-value {
+  display: block !important;
+  width: 48px !important;
+  padding: 7px 5px !important;
+  border-radius: 10px !important;
+  background: #dcfce7 !important;
+  color: #166534 !important;
+  text-align: center !important;
+  font-size: 15px !important;
+  font-weight: 900 !important;
+}
+
+#realStandings .bf-competition .ss-player-card--assists
+.ss-player-value {
+  background: #dbeafe !important;
+  color: #1d4ed8 !important;
+}
+
+/* DARK MODE */
+
+body.dark #realStandings .bf-competition .ss-player-card {
+  background: linear-gradient(145deg, #172631, #101b24) !important;
+  border-color: #30414d !important;
+  box-shadow: 0 8px 22px rgba(0, 0, 0, .16) !important;
+}
+
+body.dark #realStandings .bf-competition .ss-player-card-head {
+  border-bottom-color: #30414d !important;
+}
+
+body.dark #realStandings .bf-competition .ss-player-card-head strong,
+body.dark #realStandings .bf-competition .ss-player strong {
+  color: #edf4f8 !important;
+}
+
+body.dark #realStandings .bf-competition .ss-player-row {
+  border-top-color: #293944 !important;
+}
+
+body.dark #realStandings .bf-competition .ss-player-rank {
+  background: #283944 !important;
+  color: #e2e8f0 !important;
+}
+
+body.dark #realStandings .bf-competition .ss-player-row:nth-child(2)
+.ss-player-rank {
+  background: #713f12 !important;
+  color: #fef3c7 !important;
+}
+
+body.dark #realStandings .bf-competition .ss-player img {
+  border-color: #425461 !important;
+}
+
+body.dark #realStandings .bf-competition .ss-player-fallback {
+  background: #283944 !important;
+  border-color: #425461 !important;
+  color: #edf4f8 !important;
+}
+
+body.dark #realStandings .bf-competition .ss-player-value {
+  background: #14532d !important;
+  color: #bbf7d0 !important;
+}
+
+body.dark #realStandings .bf-competition .ss-player-card--assists
+.ss-player-value {
+  background: #1e3a8a !important;
+  color: #dbeafe !important;
+}
+
+/* MOBILE */
+
+@media (max-width: 700px) {
+  #realStandings .bf-competition .ss-players-grid {
+    grid-template-columns: minmax(0, 1fr) !important;
+    gap: 12px !important;
+    padding: 12px !important;
+  }
+
+  #realStandings .bf-competition .ss-player-card {
+    padding: 14px !important;
+  }
+}
