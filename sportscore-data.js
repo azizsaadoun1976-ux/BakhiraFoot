@@ -1453,6 +1453,22 @@ function playerPhoto(row) {
     row.photo,
     row.image
   ];
+   const sources = [
+  player.logo,
+  player.photo_url,
+  player.photoUrl,
+  player.image_url,
+  player.imageUrl,
+  player.headshot,
+  player.portrait,
+  player.avatar,
+  player.photo,
+  player.image,
+  row.photo_url,
+  row.image_url,
+  row.photo,
+  row.image
+];
 
   for (const candidate of candidates) {
     const url = normaliseImageURL(candidate);
@@ -1724,7 +1740,62 @@ async function fetchPlayerProfilePhoto(slug) {
     } catch {
       return "";
     }
+     
+const sportsDbPhotoCache = new Map();
+
+async function fetchTheSportsDBPhoto(name) {
+  const key = normalisePlayerName(name);
+  if (!key) return "";
+
+  if (sportsDbPhotoCache.has(key)) {
+    return sportsDbPhotoCache.get(key);
+  }
+
+  const request = (async () => {
+    try {
+      const query = String(name).trim().replace(/\s+/g, "_");
+
+      const data = await fetchJSON(
+        `https://www.thesportsdb.com/api/v1/json/123/searchplayers.php?p=${encodeURIComponent(query)}`
+      );
+
+      const players = Array.isArray(data?.player)
+        ? data.player
+        : [];
+
+      const exact = players.find(
+        p => normalisePlayerName(p.strPlayer) === key
+      );
+
+      const expanded = players.find(p => {
+        const candidate = normalisePlayerName(p.strPlayer);
+
+        return (
+          key.length >= 8 &&
+          candidate.startsWith(key + " ")
+        );
+      });
+
+      const player = exact || expanded;
+      if (!player) return "";
+
+      return normaliseImageURL(
+        player.strCutout ||
+        player.strThumb ||
+        player.strRender ||
+        ""
+      );
+    } catch {
+      return "";
+    }
   })();
+
+  sportsDbPhotoCache.set(key, request);
+  return request;
+}
+
+  })();
+   
 
   playerProfileCache.set(slug, request);
   return request;
@@ -1779,7 +1850,7 @@ function renderPlayers(players, stat, title, icon) {
     .join("");
 
   return `
-    <div class="ss-player-card">
+    <div class="ss-player-card ss-player-card--${stat}">
       <div class="ss-player-card-head">
         <div>
           <span class="ss-stat-icon">${icon}</span>
