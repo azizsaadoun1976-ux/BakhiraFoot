@@ -3123,7 +3123,13 @@ async function loadConferenceLeaguePhaseStandings() {
     rows
   }];
 }
-   
+   function sortTopPlayersByStat(data, stat) {
+  const players = findPlayers(data);
+
+  return [...players].sort((a, b) => {
+    return statValue(b, stat) - statValue(a, stat);
+  }).slice(0, 5);
+}
 async function loadCompetition(competition) {
   const isConferenceLeague =
     competition.slug === "uefa-europa-conference-league";
@@ -3134,17 +3140,17 @@ async function loadCompetition(competition) {
         ? loadConferenceLeaguePhaseStandings()
         : fetchCompetitionEndpoint("standings", competition),
 
-      fetchCompetitionEndpoint(
-        "topscorers",
-        competition,
-        "&limit=5&stat=goals"
-      ),
+fetchCompetitionEndpoint(
+  "topscorers",
+  competition,
+  "&limit=5&stat=goals"
+),
 
-      fetchCompetitionEndpoint(
-        "topscorers",
-        competition,
-        "&limit=5&stat=assists"
-      )
+fetchCompetitionEndpoint(
+  "topscorers",
+  competition,
+  "&limit=5&stat=assists"
+)
     ]);
 
   const standingGroups =
@@ -3160,15 +3166,15 @@ async function loadCompetition(competition) {
     group => group.rows
   );
 
-  const goals =
-    goalsData.status === "fulfilled"
-      ? findPlayers(goalsData.value)
-      : [];
+ const goals =
+  goalsData.status === "fulfilled"
+    ? sortTopPlayersByStat(goalsData.value, "goals")
+    : [];
 
-  const assists =
-    assistsData.status === "fulfilled"
-      ? findPlayers(assistsData.value)
-      : [];
+const assists =
+  assistsData.status === "fulfilled"
+    ? sortTopPlayersByStat(assistsData.value, "assists")
+    : [];
 
   return {
     competition,
@@ -3260,7 +3266,7 @@ async function loadCompetition(competition) {
 
         <div class="ss-players-grid">
           ${renderPlayers(goals, "goals", "Meilleurs buteurs", "⚽")}
-          ${renderPlayers(assists, "assists", "Meilleurs passeurs", "🎯")}
+${renderPlayers(assists, "assists", "Meilleurs passeurs", "🎯")}
         </div>
       </div>
     </details>
