@@ -1268,19 +1268,43 @@ function getProviderQualificationZone(row) {
 }
 
 function getQualificationZone(row, competition, position) {
-   if (row?._bfDisableQualificationZone) return null;
-  // الأولوية لأي معلومة تأهل صريحة جاية من SportScore.
+  const slug = competition?.slug;
+
+  // UEFA Conference League : phase de ligue à 36 équipes
+  if (slug === "uefa-europa-conference-league") {
+    if (position >= 1 && position <= 8) {
+      return {
+        key: "stage-direct",
+        label: "Zone de qualification directe — positions 1 à 8"
+      };
+    }
+
+    if (position >= 9 && position <= 24) {
+      return {
+        key: "stage-playoff",
+        label: "Zone de barrages — positions 9 à 24"
+      };
+    }
+
+    if (position >= 25 && position <= 36) {
+      return {
+        key: "eliminated",
+        label: "Hors des places de qualification — positions 25 à 36"
+      };
+    }
+
+    return null;
+  }
+
+  // Les autres compétitions gardent leurs règles actuelles.
   const providerZone = getProviderQualificationZone(row);
 
   if (providerZone) return providerZone;
 
-  const slug = competition?.slug;
-
-  // نظام مرحلة الدوري الأوروبية: 36 فريقاً.
+  // Format de la phase de ligue européenne.
   if (
     slug === "uefa-champions-league" ||
-    slug === "uefa-europa-league" ||
-    slug === "uefa-europa-conference-league"
+    slug === "uefa-europa-league"
   ) {
     if (position >= 1 && position <= 8) {
       return {
@@ -1312,7 +1336,6 @@ function getQualificationZone(row, competition, position) {
     rule => position >= rule.from && position <= rule.to
   ) || null;
 }
-
 function renderQualificationLegend(groupsOrRows, competition) {
   const zones = new Map();
 
