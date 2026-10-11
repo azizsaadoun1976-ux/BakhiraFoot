@@ -14128,4 +14128,67 @@ body.dark #scores #dateBar.dates button.active {
     font-size: 10px !important;
   }
 }
+/* BAKHIRAFOOT — Qualification labels DARK MODE FIX */
+
+html.dark body.dark #realStandings .ss-qualification-legend {
+  display: flex !important;
+  flex-wrap: wrap !important;
+  gap: 12px 18px !important;
+  padding: 15px !important;
+  background: #101c29 !important;
+  color: #f1f5f9 !important;
+  border: 1px solid #334155 !important;
+  border-radius: 10px !important;
+}
+
+html.dark body.dark #realStandings .ss-qualification-legend .ss-zone-legend-item {
+  display: inline-flex !important;
+  align-items: flex-start !important;
+  gap: 8px !important;
+  color: #f1f5f9 !important;
+  font-size: 13px !important;
+  font-weight: 800 !important;
+  line-height: 1.6 !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+}
+
+html.dark body.dark #realStandings .ss-qualification-legend .ss-zone-legend-item > span {
+  display: inline-block !important;
+  color: #f1f5f9 !important;
+  font-size: 13px !important;
+  font-weight: 800 !important;
+  white-space: normal !important;
+  overflow: visible !important;
+  overflow-wrap: anywhere !important;
+  text-overflow: clip !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+  filter: none !important;
+}
+
+/* ضمان بقاء الألوان واضحة كذلك في Light Mode */
+
+html:not(.dark) #realStandings .ss-qualification-legend {
+  color: #243746 !important;
+  background: #f8fafc !important;
+}
+
+html:not(.dark) #realStandings .ss-qualification-legend .ss-zone-legend-item,
+html:not(.dark) #realStandings .ss-qualification-legend .ss-zone-legend-item > span {
+  color: #243746 !important;
+  opacity: 1 !important;
+  visibility: visible !important;
+}
+
+@media (max-width: 600px) {
+  #realStandings .ss-qualification-legend {
+    gap: 10px !important;
+    padding: 12px !important;
+  }
+
+  #realStandings .ss-qualification-legend .ss-zone-legend-item > span {
+    font-size: 12px !important;
+  }
+}
 
