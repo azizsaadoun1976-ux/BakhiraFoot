@@ -110,18 +110,18 @@ const competitions = [
     country: "Égypte",
     logo: "https://flagcdn.com/w80/eg.png"
   },
-  {
-    name: "Saudi Pro League",
-    slug: "saudi-pro-league",
-    country: "Arabie saoudite",
-    logo: "https://flagcdn.com/w80/sa.png"
-  },
-  {
-    name: "Primeira Liga",
-    slug: "portuguese-primeira-liga",
-    country: "Portugal",
-    logo: "https://flagcdn.com/w80/pt.png"
-  },
+ {
+  name: "Saudi Professional League",
+  slug: "saudi-professional-league",
+  country: "Arabie saoudite",
+  logo: "https://upload.wikimedia.org/wikipedia/commons/thumb/4/42/Saudi_Pro_League_Logo.svg/3840px-Saudi_Pro_League_Logo.svg.png"
+},
+ {
+  name: "Primeira Liga",
+  slug: "portuguese-primera-liga",
+  country: "Portugal",
+  logo: "https://www.ligaportugal.pt/backoffice/assets/ic_ligabetclic_c07b64a3af.png"
+},
   {
     name: "Süper Lig",
     slug: "turkish-super-league",
@@ -1263,33 +1263,96 @@ const rankClass =
 
 
   function playerPhoto(row) {
-
-    if (!row) {
-      return "";
-    }
-
-
-    if (
-      row.player &&
-      typeof row.player === "object"
-    ) {
-
-      return (
-        row.player.photo ||
-        row.player.image ||
-        ""
-      );
-
-    }
-
-
-    return (
-      row.photo ||
-      row.image ||
-      ""
-    );
+  if (!row || typeof row !== "object") {
+    return "";
   }
 
+  const nested = [
+    row.player,
+    row.player_data,
+    row.playerData,
+    row.person
+  ].find(
+    item => item && typeof item === "object"
+  ) || {};
+
+  const sources = [
+    row.photo,
+    row.image,
+    row.avatar,
+    row.picture,
+    row.portrait,
+    row.photo_url,
+    row.photoUrl,
+    row.image_url,
+    row.imageUrl,
+    row.avatar_url,
+    row.avatarUrl,
+    row.profile_image,
+    row.profile_picture,
+    row.player_photo,
+    row.player_image,
+    row.player_photo_url,
+    row.player_image_url,
+    row.playerPhoto,
+    row.playerImage,
+
+    nested.photo,
+    nested.image,
+    nested.avatar,
+    nested.picture,
+    nested.portrait,
+    nested.photo_url,
+    nested.photoUrl,
+    nested.image_url,
+    nested.imageUrl,
+    nested.avatar_url,
+    nested.avatarUrl,
+    nested.profile_image,
+    nested.profile_picture,
+    nested.thumbnail,
+    nested.thumb
+  ];
+
+  for (const source of sources) {
+    let url = "";
+
+    if (typeof source === "string") {
+      url = source.trim();
+    } else if (
+      source &&
+      typeof source === "object"
+    ) {
+      url =
+        source.url ||
+        source.src ||
+        source.original ||
+        source.large ||
+        source.thumbnail ||
+        "";
+    }
+
+    if (!url || typeof url !== "string") {
+      continue;
+    }
+
+    url = url.trim();
+
+    if (url.startsWith("//")) {
+      return `https:${url}`;
+    }
+
+    if (url.startsWith("/")) {
+      return `https://sportscore.com${url}`;
+    }
+
+    if (/^https?:\/\//i.test(url)) {
+      return url;
+    }
+  }
+
+  return "";
+}
 
   function statValue(
     row,
@@ -1362,21 +1425,28 @@ const rankClass =
 
                 <div class="ss-player">
 
-                  ${
-                    photo
-                      ? `
-                        <img
-                          src="${escapeHTML(photo)}"
-                          alt=""
-                          loading="lazy"
-                        >
-                      `
-                      : `
-                        <div class="ss-player-fallback">
-                          👤
-                        </div>
-                      `
-                  }
+                 ${
+  photo
+    ? `
+      <img
+        src="${escapeHTML(photo)}"
+        alt="${escapeHTML(name)}"
+        loading="lazy"
+        onerror="
+          this.onerror=null;
+          this.style.display='none';
+          this.nextElementSibling.style.display='flex';
+        "
+      >
+      <div
+        class="ss-player-fallback"
+        style="display:none"
+      >👤</div>
+    `
+    : `
+      <div class="ss-player-fallback">👤</div>
+    `
+}
 
                   <strong>
                     ${escapeHTML(name)}
