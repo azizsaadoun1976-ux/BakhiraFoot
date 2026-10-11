@@ -2801,6 +2801,99 @@ body.dark .bf-competition-summary:focus-visible {
         }
 
       }
+      /* =========================================
+   BAKHIRAFOOT — FIX QUALIFICATION LABELS
+   DARK MODE + LIGHT MODE
+========================================= */
+
+.ss-qualification-legend {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-start;
+  gap: 12px 18px;
+  padding: 15px 16px;
+  background: #f8fafc !important;
+  color: #243746;
+  border-bottom: 1px solid rgba(100, 116, 139, .22);
+}
+
+.ss-zone-legend-item {
+  display: inline-flex;
+  align-items: flex-start;
+  gap: 8px;
+  min-width: 0;
+  font-size: 12px !important;
+  font-weight: 800;
+  line-height: 1.45;
+  color: #243746 !important;
+  filter: none !important;
+}
+
+.ss-zone-legend-item > span:last-child {
+  min-width: 0;
+  max-width: 300px;
+  white-space: normal !important;
+  overflow-wrap: anywhere;
+}
+
+.ss-zone-swatch {
+  flex: 0 0 10px;
+  width: 10px;
+  height: 10px;
+  margin-top: 4px;
+  border-radius: 50%;
+}
+
+.ss-zone-caption {
+  display: block;
+  width: fit-content;
+  max-width: 100%;
+  padding: 4px 7px;
+  margin-top: 3px;
+  border-radius: 6px;
+  font-size: 11px !important;
+  font-weight: 850;
+  line-height: 1.4;
+  white-space: normal !important;
+  overflow: visible !important;
+  overflow-wrap: anywhere;
+  text-overflow: clip !important;
+  filter: none !important;
+}
+
+/* DARK MODE */
+body.dark .ss-qualification-legend {
+  background: #101c26 !important;
+  color: #e5edf4 !important;
+  border-bottom-color: rgba(255, 255, 255, .12);
+}
+
+body.dark .ss-zone-legend-item {
+  color: #e5edf4 !important;
+  filter: none !important;
+}
+
+body.dark .ss-zone-caption {
+  filter: none !important;
+}
+
+/* MOBILE */
+@media (max-width: 600px) {
+  .ss-qualification-legend {
+    gap: 10px 12px;
+    padding: 12px;
+  }
+
+  .ss-zone-legend-item {
+    font-size: 11px !important;
+  }
+
+  .ss-zone-caption {
+    font-size: 10px !important;
+    padding: 3px 6px;
+    white-space: normal !important;
+  }
+}
 
     `;
 
