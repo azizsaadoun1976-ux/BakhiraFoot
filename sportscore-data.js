@@ -670,61 +670,6 @@ async function loadTodayMatches() {
 
 // القواعد الأساسية؛ معلومات التأهل من المصدر عند توفرها عندها الأولوية.
 const QUALIFICATION_RULES = {
-  "english-premier-league": [
-    { from: 1, to: 4, key: "ucl", label: "Champions League" },
-    { from: 5, to: 5, key: "uel", label: "Europa League — place de base" },
-    { from: 6, to: 6, key: "uecl", label: "Conference League — place de base" },
-    { from: 18, to: 20, key: "relegation", label: "Relégation" }
-  ],
-
-  "spanish-la-liga": [
-    { from: 1, to: 4, key: "ucl", label: "Champions League" },
-    { from: 5, to: 5, key: "uel", label: "Europa League — place de base" },
-    { from: 6, to: 6, key: "uecl", label: "Conference League — place de base" },
-    { from: 18, to: 20, key: "relegation", label: "Relégation" }
-  ],
-
-  "italian-serie-a": [
-    { from: 1, to: 4, key: "ucl", label: "Champions League" },
-    { from: 5, to: 5, key: "uel", label: "Europa League" },
-    { from: 6, to: 6, key: "uecl", label: "Conference League — place de base" },
-    { from: 18, to: 20, key: "relegation", label: "Relégation" }
-  ],
-
-  "bundesliga": [
-    { from: 1, to: 4, key: "ucl", label: "Champions League" },
-    { from: 5, to: 5, key: "uel", label: "Europa League — place de base" },
-    { from: 6, to: 6, key: "uecl", label: "Conference League — place de base" },
-    { from: 16, to: 16, key: "relegation-playoff", label: "Barrage de relégation" },
-    { from: 17, to: 18, key: "relegation", label: "Relégation" }
-  ],
-
-  "french-ligue-1": [
-    { from: 1, to: 3, key: "ucl", label: "Champions League" },
-    { from: 4, to: 4, key: "ucl-playoff", label: "Qualifications Champions League" },
-    { from: 5, to: 5, key: "uel", label: "Europa League — place de base" },
-    { from: 6, to: 6, key: "uecl", label: "Conference League — place de base" },
-    { from: 16, to: 16, key: "relegation-playoff", label: "Barrage de relégation" },
-    { from: 17, to: 18, key: "relegation", label: "Relégation" }
-  ],
-
-  "netherlands-eredivisie": [
-    { from: 1, to: 1, key: "ucl", label: "Champions League" },
-    { from: 2, to: 2, key: "ucl-playoff", label: "Qualifications Champions League" },
-    { from: 3, to: 3, key: "uel", label: "Qualifications Europa League" },
-    { from: 4, to: 7, key: "europe-playoff", label: "Play-offs européens — zone indicative" },
-    { from: 16, to: 16, key: "relegation-playoff", label: "Barrage de relégation" },
-    { from: 17, to: 18, key: "relegation", label: "Relégation" }
-  ],
-
-  "the-botola-pro": [
-    { from: 1, to: 2, key: "caf-cl", label: "Ligue des champions CAF — places de base" },
-    { from: 3, to: 3, key: "caf-confed", label: "Coupe de la Confédération CAF — place indicative" },
-    { from: 15, to: 16, key: "relegation", label: "Relégation" }
-  ]
-};
-
-const QUALIFICATION_RULES = {
   /* =======================
      COMPÉTITIONS EXISTANTES
      ======================= */
