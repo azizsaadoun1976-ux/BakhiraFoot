@@ -141,10 +141,10 @@ const competitions = [
     logo: "https://flagcdn.com/w80/gb-sct.png"
   },
   {
-    name: "Argentine Primera División",
-    slug: "argentine-primera-division",
-    country: "Argentine",
-    logo: "https://flagcdn.com/w80/ar.png"
+   name: "Argentine Division 1",
+  slug: "argentine-division-1",
+  country: "Argentine",
+  logo: "https://upload.wikimedia.org/wikipedia/commons/thumb/9/92/Logo_de_la_Liga_Profesional_de_F%C3%BAtbol_de_Argentina.svg/512px-Logo_de_la_Liga_Profesional_de_F%C3%BAtbol_de_Argentina.svg.png"
   }
 ];
 
@@ -1262,96 +1262,228 @@ const rankClass =
   }
 
 
-  function playerPhoto(row) {
-  if (!row || typeof row !== "object") {
+  
+function imageURL(value) {
+  if (value && typeof value === "object") {
+    for (const key of [
+      "url",
+      "src",
+      "original",
+      "large",
+      "medium",
+      "default"
+    ]) {
+      const found = imageURL(value[key]);
+      if (found) return found;
+    }
+
     return "";
   }
 
-  const nested = [
-    row.player,
-    row.player_data,
-    row.playerData,
-    row.person
-  ].find(
-    item => item && typeof item === "object"
-  ) || {};
+  if (typeof value !== "string") return "";
 
-  const sources = [
-    row.photo,
-    row.image,
-    row.avatar,
-    row.picture,
-    row.portrait,
-    row.photo_url,
-    row.photoUrl,
-    row.image_url,
-    row.imageUrl,
-    row.avatar_url,
-    row.avatarUrl,
-    row.profile_image,
-    row.profile_picture,
-    row.player_photo,
-    row.player_image,
-    row.player_photo_url,
-    row.player_image_url,
-    row.playerPhoto,
-    row.playerImage,
+  const url = value.trim();
+  if (!url) return "";
 
-    nested.photo,
-    nested.image,
-    nested.avatar,
-    nested.picture,
-    nested.portrait,
-    nested.photo_url,
-    nested.photoUrl,
-    nested.image_url,
-    nested.imageUrl,
-    nested.avatar_url,
-    nested.avatarUrl,
-    nested.profile_image,
-    nested.profile_picture,
-    nested.thumbnail,
-    nested.thumb
+  if (url.startsWith("//")) {
+    return "https:" + url;
+  }
+
+  if (url.startsWith("/")) {
+    return "https://sportscore.com" + url;
+  }
+
+  return /^https?:\/\//i.test(url) ? url : "";
+}
+
+function findPlayerPhoto(node, depth = 0) {
+  if (!node || depth > 8) return "";
+
+  if (Array.isArray(node)) {
+    for (const item of node) {
+      const found = findPlayerPhoto(item, depth + 1);
+      if (found) return found;
+    }
+    return "";
+  }
+
+  if (typeof node !== "object") return "";
+
+  const imageKeys = [
+    "player_photo_url",
+    "playerPhotoUrl",
+    "photo_url",
+    "photoUrl",
+    "headshot",
+    "portrait",
+    "avatar",
+    "profile_image",
+    "profileImage",
+    "profile_picture",
+    "profilePicture",
+    "photo",
+    "image_url",
+    "imageUrl",
+    "image",
+    "picture",
+    "thumbnail",
+    "thumb"
   ];
 
-  for (const source of sources) {
-    let url = "";
+  for (const key of imageKeys) {
+    const found = imageURL(node[key]);
+    if (found) return found;
+  }
 
-    if (typeof source === "string") {
-      url = source.trim();
-    } else if (
-      source &&
-      typeof source === "object"
-    ) {
-      url =
-        source.url ||
-        source.src ||
-        source.original ||
-        source.large ||
-        source.thumbnail ||
-        "";
-    }
+  const priorityKeys = [
+    "player",
+    "person",
+    "athlete",
+    "profile",
+    "data",
+    "result",
+    "details",
+    "entity"
+  ];
 
-    if (!url || typeof url !== "string") {
-      continue;
-    }
+  for (const key of priorityKeys) {
+    const found = findPlayerPhoto(node[key], depth + 1);
+    if (found) return found;
+  }
 
-    url = url.trim();
+  const ignoredKeys = new Set([
+    "team",
+    "club",
+    "country",
+    "nationality",
+    "league",
+    "competition",
+    "tournament",
+    "logo",
+    "crest",
+    "flag",
+    "badge"
+  ]);
 
-    if (url.startsWith("//")) {
-      return `https:${url}`;
-    }
+  for (const [key, value] of Object.entries(node)) {
+    if (ignoredKeys.has(key.toLowerCase())) continue;
 
-    if (url.startsWith("/")) {
-      return `https://sportscore.com${url}`;
-    }
-
-    if (/^https?:\/\//i.test(url)) {
-      return url;
+    if (value && typeof value === "object") {
+      const found = findPlayerPhoto(value, depth + 1);
+      if (found) return found;
     }
   }
 
   return "";
+}
+
+function playerPhoto(row) {
+  return findPlayerPhoto(row);
+}
+
+const playerPhotoCache = new Map();
+
+function playerSlug(row) {
+  const player =
+    row?.player && typeof row.player === "object"
+      ? row.player
+      : {};
+
+  const candidates = [
+    player.slug,
+    player.player_slug,
+    player.playerSlug,
+    player.url_slug,
+    row?.player_slug,
+    row?.playerSlug,
+    row?.slug,
+    player.url,
+    row?.player_url
+  ];
+
+  for (const candidate of candidates) {
+    if (typeof candidate !== "string") continue;
+
+    const value = candidate.trim();
+    if (!value) continue;
+
+    const match = value.match(
+      /\/football\/player\/([^/?#]+)/i
+    );
+
+    if (match) return match[1];
+
+    if (
+      !/^https?:\/\//i.test(value) &&
+      !value.includes("/") &&
+      /^[a-z0-9-]+$/i.test(value)
+    ) {
+      return value;
+    }
+  }
+
+  return "";
+}
+
+async function fetchPlayerProfilePhoto(slug) {
+  if (!slug) return "";
+
+  if (playerPhotoCache.has(slug)) {
+    return playerPhotoCache.get(slug);
+  }
+
+  const request = fetchJSON(
+    `${API}/widget/player/?sport=football&slug=${encodeURIComponent(slug)}&src=${SRC}`
+  )
+    .then(findPlayerPhoto)
+    .catch(() => "");
+
+  playerPhotoCache.set(slug, request);
+
+  return request;
+}
+
+async function loadRealPlayerPhotos(card) {
+  const holders = Array.from(
+    card.querySelectorAll(".ss-player[data-player-slug]")
+  );
+
+  // نحدّو عدد الطلبات المتزامنة
+  for (let i = 0; i < holders.length; i += 3) {
+    const batch = holders.slice(i, i + 3);
+
+    await Promise.all(
+      batch.map(async holder => {
+        if (holder.dataset.photoLookup === "done") return;
+
+        holder.dataset.photoLookup = "done";
+
+        const slug = holder.dataset.playerSlug;
+        const img = holder.querySelector(".ss-player-photo");
+        const fallback = holder.querySelector(".ss-player-fallback");
+
+        if (!slug || !img) return;
+
+        // الصورة الموجودة مسبقاً ما محتاجاش طلب جديد
+        if (img.getAttribute("src")) return;
+
+        const photo = await fetchPlayerProfilePhoto(slug);
+        if (!photo) return;
+
+        img.onload = () => {
+          img.style.display = "block";
+          if (fallback) fallback.style.display = "none";
+        };
+
+        img.onerror = () => {
+          img.style.display = "none";
+          if (fallback) fallback.style.display = "flex";
+        };
+
+        img.src = photo;
+      })
+    );
+  }
 }
 
   function statValue(
@@ -1406,7 +1538,7 @@ const rankClass =
 
             const photo =
               playerPhoto(player);
-
+const slug = playerSlug(player);
             const total =
               statValue(
                 player,
@@ -1423,30 +1555,28 @@ const rankClass =
                 </span>
 
 
-                <div class="ss-player">
 
-                 ${
-  photo
-    ? `
-      <img
-        src="${escapeHTML(photo)}"
-        alt="${escapeHTML(name)}"
-        loading="lazy"
-        onerror="
-          this.onerror=null;
-          this.style.display='none';
-          this.nextElementSibling.style.display='flex';
-        "
-      >
-      <div
-        class="ss-player-fallback"
-        style="display:none"
-      >👤</div>
-    `
-    : `
-      <div class="ss-player-fallback">👤</div>
-    `
-}
+<div
+  class="ss-player"
+  data-player-slug="${escapeHTML(slug)}"
+>
+  <img
+    class="ss-player-photo"
+    ${photo ? `src="${escapeHTML(photo)}"` : ""}
+    alt="${escapeHTML(name)}"
+    loading="lazy"
+    style="display:${photo ? "block" : "none"}"
+    onerror="this.style.display='none';if(this.nextElementSibling)this.nextElementSibling.style.display='flex';this.onerror=null;"
+  >
+
+  <div
+    class="ss-player-fallback"
+    style="display:${photo ? "none" : "flex"}"
+  >👤</div>
+
+  <strong>${escapeHTML(name)}</strong>
+</div>
+
 
                   <strong>
                     ${escapeHTML(name)}
@@ -1791,6 +1921,13 @@ for (let i = 0; i < competitions.length; i += 3) {
           renderCompetition
         )
         .join("");
+   container.querySelectorAll(".bf-competition").forEach(card => {
+  card.addEventListener("toggle", () => {
+    if (card.open) {
+      loadRealPlayerPhotos(card);
+    }
+  });
+});
 
   }
 
