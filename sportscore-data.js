@@ -86,11 +86,11 @@ const competitions = [
     country: "Maroc",
     logo: "https://seeklogo.com/images/B/botolapro-inwi-logo-CDFB034249-seeklogo.com.png"
   },
-  {
+    {
     name: "FIFA World Cup",
     slug: "fifa-world-cup",
     country: "International",
-    logo: "https://commons.wikimedia.org/wiki/Special:Redirect/file/FIFA_World_Cup_2026_logo.svg"
+    logo: "https://commons.wikimedia.org/wiki/Special:Redirect/file/2026_FIFA_World_Cup_logo.svg"
   },
   {
     name: "UEFA Euro",
@@ -103,26 +103,26 @@ const competitions = [
     slug: "caf-africa-cup-of-nations",
     fallbackSlugs: ["africa-cup-of-nations"],
     country: "Afrique",
-    logo: "https://commons.wikimedia.org/wiki/Special:Redirect/file/Africa_Cup_of_Nations_logo.svg"
+    logo: "https://commons.wikimedia.org/wiki/Special:Redirect/file/2025_Africa_Cup_of_Nations_logo.svg"
   },
   {
     name: "AFC Asian Cup",
     slug: "afc-asian-cup",
     country: "Asie",
-    logo: ""
+    logo: "https://commons.wikimedia.org/wiki/Special:Redirect/file/AFC_Asian_Cup.svg"
   },
   {
     name: "Copa América",
     slug: "conmebol-copa-america",
     fallbackSlugs: ["copa-america"],
     country: "Amérique du Sud",
-    logo: ""
+    logo: "https://commons.wikimedia.org/wiki/Special:Redirect/file/Copa_America_wordmark.svg"
   },
   {
     name: "UEFA Nations League",
     slug: "uefa-nations-league",
     country: "Europe",
-    logo: ""
+    logo: "https://commons.wikimedia.org/wiki/Special:Redirect/file/Uefa_nations_league_textlogo.png"
   },
   {
     name: "EFL Championship",
@@ -176,7 +176,7 @@ const competitions = [
     name: "Scottish Premiership",
     slug: "scottish-premiership",
     country: "Écosse",
-    logo: "https://upload.wikimedia.org/wikipedia/commons/9/91/Liga_Profesional_de_F%C3%BAtbol_%28Argentina%29_wordmark.svg"
+    logo: "https://assets.football-logos.cc/logos/scotland/700x700/scottish-premiership.b3d4bdfb.png"
   },
   {
    name: "Argentine Division 1",
