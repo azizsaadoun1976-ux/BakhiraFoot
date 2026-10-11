@@ -1422,6 +1422,7 @@ function playerName(row) {
   );
 }
 
+
 function playerPhoto(row) {
   if (!row || typeof row !== "object") return "";
 
@@ -1430,29 +1431,38 @@ function playerPhoto(row) {
       ? row.player
       : row.data?.player || {};
 
-  const sources = [
+  const candidates = [
+    player.logo,
+    player.photo,
+    player.image,
+    player.avatar,
+    player.headshot,
+    player.portrait,
     player.photo_url,
     player.photoUrl,
     player.image_url,
     player.imageUrl,
-    player.headshot,
-    player.portrait,
-    player.avatar,
-    player.photo,
-    player.image,
+    player.profile_image,
+    player.profile_picture,
+
+    row.player_logo,
+    row.player_photo,
+    row.player_photo_url,
     row.photo_url,
     row.image_url,
     row.photo,
     row.image
   ];
 
-  for (const source of sources) {
-    const url = normaliseImageURL(source);
+  for (const candidate of candidates) {
+    const url = normaliseImageURL(candidate);
     if (url) return url;
   }
 
-  return "";
+  return findPlayerPhoto(row);
 }
+
+
 
 function playerSlug(row) {
   if (!row || typeof row !== "object") return "";
@@ -1468,28 +1478,32 @@ function playerSlug(row) {
     player.playerSlug,
     row.player_slug,
     row.playerSlug,
+    row.slug,
     player.url,
-    row.player_url
+    row.player_url,
+    row.url,
+    row.href,
+    row.path
   ];
 
   for (const candidate of candidates) {
     if (typeof candidate !== "string") continue;
 
-    const value = candidate.trim();
-    if (!value) continue;
+    const url = candidate.trim();
+    if (!url) continue;
 
-    const match = value.match(
-      /\/football\/player\/([^/?#]+)/i
+    const match = url.match(
+      /\/football\/player\/([^/?#]+)/
     );
 
     if (match) return match[1];
 
     if (
-      !value.includes("/") &&
-      !value.includes("://") &&
-      /^[a-z0-9-]+$/i.test(value)
+      !url.includes("/") &&
+      !url.includes("://") &&
+      /^[a-z0-9-]+$/i.test(url)
     ) {
-      return value;
+      return url;
     }
   }
 
@@ -1631,45 +1645,67 @@ async function findPlayerProfileSlug(name) {
   return request;
 }
 
+
 function extractProfilePhoto(data) {
   if (!data || typeof data !== "object") return "";
 
-  const nodes = [
+  const nestedPlayers = [
     data.player,
     data.data?.player,
     data.result?.player,
-    data.player_data,
+    data.player_data
+  ];
+
+  const possiblePlayers = [
     data.data,
     data.result,
     data
   ];
 
   const keys = [
+    "logo",
+    "photo",
+    "image",
+    "avatar",
+    "headshot",
+    "portrait",
     "photo_url",
     "photoUrl",
     "image_url",
     "imageUrl",
-    "headshot",
-    "portrait",
-    "avatar",
-    "photo",
-    "image",
-    "picture",
     "profile_image",
     "profile_picture"
   ];
 
-  for (const node of nodes) {
-    if (!node || typeof node !== "object") continue;
+  for (const player of nestedPlayers) {
+    if (!player || typeof player !== "object") continue;
 
     for (const key of keys) {
-      const url = normaliseImageURL(node[key]);
+      const url = normaliseImageURL(player[key]);
+      if (url) return url;
+    }
+  }
+
+  for (const player of possiblePlayers) {
+    if (!player || typeof player !== "object") continue;
+
+    const isPlayer =
+      player.name ||
+      player.player_name ||
+      player.full_name ||
+      player.slug;
+
+    if (!isPlayer) continue;
+
+    for (const key of keys) {
+      const url = normaliseImageURL(player[key]);
       if (url) return url;
     }
   }
 
   return "";
 }
+
 
 async function fetchPlayerProfilePhoto(slug) {
   if (!slug) return "";
@@ -2094,6 +2130,22 @@ for (let i = 0; i < competitions.length; i += 3) {
           renderCompetition
         )
         .join("");
+   
+container
+  .querySelectorAll("details.bf-competition")
+  .forEach(card => {
+    card.addEventListener("toggle", () => {
+      if (
+        card.open &&
+        card.dataset.playerPhotosStarted !== "1"
+      ) {
+        card.dataset.playerPhotosStarted = "1";
+
+        loadRealPlayerPhotos(card);
+      }
+    });
+  });
+
 
 container
   .querySelectorAll("details.bf-competition")
