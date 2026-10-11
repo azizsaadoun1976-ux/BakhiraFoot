@@ -2690,35 +2690,470 @@ async function loadRealPlayerPhotos(card) {
     throw lastError || new Error(`Impossible de charger ${endpoint} pour ${competition.name}`);
   }
 
-  async function loadCompetition(competition) {
-    const [standingsData, goalsData, assistsData] = await Promise.allSettled([
-      fetchCompetitionEndpoint("standings", competition),
-      fetchCompetitionEndpoint("topscorers", competition, "&limit=5&stat=goals"),
-      fetchCompetitionEndpoint("topscorers", competition, "&limit=5&stat=assists")
+/* =========================================================
+   BAKHIRAFOOT — CONFERENCE LEAGUE 2026/27
+   Calculer le classement à partir des matchs de la phase de ligue
+   au lieu du tableau SportScore qui mélange les qualifications.
+   ========================================================= */
+
+const CONFERENCE_LEAGUE_DATES = [
+  "2026-10-15",
+  "2026-10-22",
+  "2026-11-05",
+  "2026-11-26",
+  "2026-12-10",
+  "2026-12-17"
+];
+
+const CONFERENCE_LEAGUE_TEAMS = [
+  { name: "Ajax", aliases: ["AFC Ajax", "Ajax Amsterdam"] },
+  { name: "Atalanta", aliases: ["Atalanta BC"] },
+  { name: "Aarhus", aliases: ["Aarhus AGF", "AGF Aarhus"] },
+  { name: "Bologna", aliases: [] },
+  { name: "Borac", aliases: ["Borac Banja Luka"] },
+  { name: "Braga", aliases: ["Sporting Braga", "SC Braga"] },
+  { name: "Brann", aliases: ["SK Brann"] },
+  {
+    name: "Brighton",
+    aliases: ["Brighton Hove Albion", "Brighton & Hove Albion"]
+  },
+  { name: "Copenhagen", aliases: ["FC Copenhagen", "FC Kobenhavn", "Kobenhavn"] },
+  {
+    name: "Crvena Zvezda",
+    aliases: ["Red Star Belgrade", "FK Crvena Zvezda"]
+  },
+  { name: "CSKA Sofia", aliases: ["PFC CSKA Sofia"] },
+  {
+    name: "Egnatia",
+    aliases: ["KF Egnatia"]
+  },
+  { name: "Freiburg", aliases: ["SC Freiburg"] },
+  { name: "Getafe", aliases: ["Getafe CF"] },
+  { name: "Gent", aliases: ["KAA Gent"] },
+  {
+    name: "Hajduk Split",
+    aliases: ["HNK Hajduk Split"]
+  },
+  {
+    name: "Hearts",
+    aliases: ["Heart of Midlothian", "Heart of Midlothian FC"]
+  },
+  {
+    name: "Iberia Tbilisi",
+    aliases: ["FC Iberia 1999 Tbilisi", "FC Iberia 1999", "Iberia 1999"]
+  },
+  {
+    name: "Inter Escaldes",
+    aliases: ["Inter Club d'Escaldes", "Inter Club d Escaldes"]
+  },
+  { name: "Jablonec", aliases: ["FK Jablonec"] },
+  {
+    name: "Kauno Zalgiris",
+    aliases: ["Kauno Žalgiris", "FK Kauno Zalgiris"]
+  },
+  { name: "Kairat Almaty", aliases: ["FC Kairat Almaty", "Kairat"] },
+  { name: "KuPS", aliases: ["KuPS Kuopio"] },
+  {
+    name: "Lincoln Red Imps",
+    aliases: ["Lincoln Red Imps FC", "L. Red Imps"]
+  },
+  { name: "Lugano", aliases: ["FC Lugano"] },
+  { name: "Monaco", aliases: ["AS Monaco"] },
+  { name: "Midtjylland", aliases: ["FC Midtjylland"] },
+  { name: "Mjallby", aliases: ["Mjällby", "Mjallby AIF", "Mjällby AIF"] },
+  {
+    name: "Nordsjaelland",
+    aliases: ["Nordsjælland", "FC Nordsjaelland"]
+  },
+  { name: "Pafos", aliases: ["Pafos FC"] },
+  { name: "Panathinaikos", aliases: [] },
+  { name: "Riga", aliases: ["Riga FC"] },
+  {
+    name: "Sint-Truidense",
+    aliases: ["Sint-Truidense VV", "STVV"]
+  },
+  { name: "Thun", aliases: ["FC Thun"] },
+  { name: "Trabzonspor", aliases: ["Trabzonspor FC"] },
+  {
+    name: "Twente",
+    aliases: ["FC Twente", "FC Twente Enschede"]
+  },
+  {
+    name: "Universitatea Craiova",
+    aliases: [
+      "CS Universitatea Craiova",
+      "U Craiova",
+      "U. Craiova"
+    ]
+  }
+];
+
+function normalizeConferenceTeamName(name) {
+  return String(name || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/&/g, " and ")
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim()
+    .replace(/\s+/g, " ");
+}
+
+function getConferenceFixtureList(data, depth = 0) {
+  if (!data || depth > 8) return [];
+
+  if (Array.isArray(data)) {
+    const fixtures = data.filter(item =>
+      item &&
+      typeof item === "object" &&
+      (
+        ("home" in item && "away" in item) ||
+        ("home_team" in item && "away_team" in item)
+      )
+    );
+
+    if (fixtures.length) return fixtures;
+
+    for (const item of data) {
+      const found = getConferenceFixtureList(item, depth + 1);
+      if (found.length) return found;
+    }
+
+    return [];
+  }
+
+  if (typeof data !== "object") return [];
+
+  for (const key of [
+    "matches",
+    "fixtures",
+    "events",
+    "results",
+    "data",
+    "response"
+  ]) {
+    if (data[key] === undefined) continue;
+
+    const found = getConferenceFixtureList(
+      data[key],
+      depth + 1
+    );
+
+    if (found.length) return found;
+  }
+
+  for (const child of Object.values(data)) {
+    if (!child || typeof child !== "object") continue;
+
+    const found = getConferenceFixtureList(
+      child,
+      depth + 1
+    );
+
+    if (found.length) return found;
+  }
+
+  return [];
+}
+
+function getConferenceFixtureTeam(match, side) {
+  const raw =
+    match?.[side] ??
+    match?.[`${side}_team`] ??
+    match?.[`${side}Team`] ??
+    null;
+
+  const name =
+    typeof raw === "string"
+      ? raw
+      : raw?.name ||
+        raw?.team_name ||
+        raw?.teamName ||
+        raw?.title ||
+        match?.[`${side}_name`] ||
+        "";
+
+  const logo =
+    match?.[`${side}_logo`] ||
+    match?.[`${side}Logo`] ||
+    (raw && typeof raw === "object"
+      ? raw.logo || raw.image || raw.crest || ""
+      : "");
+
+  return {
+    name: String(name).trim(),
+    logo: String(logo || "").trim()
+  };
+}
+
+function getConferenceFixtureScore(match, side) {
+  const candidates = [
+    match?.[`${side}_score`],
+    match?.[`${side}Score`],
+    match?.scores?.[side],
+    match?.score?.[side]
+  ];
+
+  for (const candidate of candidates) {
+    if (
+      candidate !== undefined &&
+      candidate !== null &&
+      candidate !== "" &&
+      Number.isFinite(Number(candidate))
+    ) {
+      return Number(candidate);
+    }
+  }
+
+  return null;
+}
+
+function isConferenceFixtureFinished(match) {
+  const status = [
+    match?.status,
+    match?.status_text,
+    match?.status_name,
+    match?.state
+  ]
+    .filter(Boolean)
+    .join(" ")
+    .toLowerCase();
+
+  return /\b(finished|complete|completed|ended|ft|aet|pen|final)\b/.test(
+    status
+  ) ||
+  status.includes("full time") ||
+  status.includes("after extra time") ||
+  status.includes("after penalties");
+}
+
+async function loadConferenceLeaguePhaseStandings() {
+  const aliasMap = new Map();
+
+  for (const team of CONFERENCE_LEAGUE_TEAMS) {
+    const aliases = [team.name, ...(team.aliases || [])];
+
+    for (const alias of aliases) {
+      aliasMap.set(
+        normalizeConferenceTeamName(alias),
+        team.name
+      );
+    }
+  }
+
+  const rowsByName = new Map();
+
+  for (const team of CONFERENCE_LEAGUE_TEAMS) {
+    rowsByName.set(team.name, {
+      position: 0,
+      team: {
+        name: team.name,
+        logo: ""
+      },
+      played: 0,
+      wins: 0,
+      draws: 0,
+      losses: 0,
+      goals_for: 0,
+      goals_against: 0,
+      goal_difference: 0,
+      points: 0,
+      away_goals_for: 0,
+      away_wins: 0
+    });
+  }
+
+  const seenMatches = new Set();
+  let recognizedFixtures = 0;
+
+  const dailyResults = await Promise.all(
+    CONFERENCE_LEAGUE_DATES.map(async date => {
+      const url =
+        `${API}/v1/fixtures/?sport=football` +
+        `&date=${date}` +
+        `&competition=uefa-europa-conference-league` +
+        `&limit=200` +
+        `&src=${SRC}`;
+
+      const data = await fetchJSON(url);
+
+      return getConferenceFixtureList(data);
+    })
+  );
+
+  for (const fixtures of dailyResults) {
+    for (const match of fixtures) {
+      const home = getConferenceFixtureTeam(match, "home");
+      const away = getConferenceFixtureTeam(match, "away");
+
+      const homeName = aliasMap.get(
+        normalizeConferenceTeamName(home.name)
+      );
+
+      const awayName = aliasMap.get(
+        normalizeConferenceTeamName(away.name)
+      );
+
+      // ما ندخلو حتى فريق ماشي من لائحة مرحلة الدوري.
+      if (!homeName || !awayName) continue;
+
+      const homeRow = rowsByName.get(homeName);
+      const awayRow = rowsByName.get(awayName);
+
+      if (!homeRow || !awayRow) continue;
+
+      recognizedFixtures++;
+
+      if (!homeRow.team.logo && home.logo) {
+        homeRow.team.logo = home.logo;
+      }
+
+      if (!awayRow.team.logo && away.logo) {
+        awayRow.team.logo = away.logo;
+      }
+
+      const matchKey = String(
+        match.id ||
+        match.fixture_id ||
+        match.slug ||
+        `${homeName}|${awayName}|${match.time || match.date || ""}`
+      );
+
+      if (seenMatches.has(matchKey)) continue;
+      seenMatches.add(matchKey);
+
+      // المباريات المقبلة ما كتدخلش فالنقاط حتى تسالي.
+      if (!isConferenceFixtureFinished(match)) continue;
+
+      const homeGoals = getConferenceFixtureScore(match, "home");
+      const awayGoals = getConferenceFixtureScore(match, "away");
+
+      if (homeGoals === null || awayGoals === null) continue;
+
+      homeRow.played++;
+      awayRow.played++;
+
+      homeRow.goals_for += homeGoals;
+      homeRow.goals_against += awayGoals;
+
+      awayRow.goals_for += awayGoals;
+      awayRow.goals_against += homeGoals;
+
+      // الأهداف المسجلة خارج الميدان.
+      awayRow.away_goals_for += awayGoals;
+
+      if (homeGoals > awayGoals) {
+        homeRow.wins++;
+        awayRow.losses++;
+        homeRow.points += 3;
+      } else if (awayGoals > homeGoals) {
+        awayRow.losses++;
+        awayRow.wins++;
+        awayRow.points += 3;
+        awayRow.away_wins++;
+      } else {
+        homeRow.draws++;
+        awayRow.draws++;
+        homeRow.points++;
+        awayRow.points++;
+      }
+
+      homeRow.goal_difference =
+        homeRow.goals_for - homeRow.goals_against;
+
+      awayRow.goal_difference =
+        awayRow.goals_for - awayRow.goals_against;
+    }
+  }
+
+  if (!recognizedFixtures) {
+    throw new Error(
+      "Impossible de récupérer les matchs de la phase de ligue de Conference League."
+    );
+  }
+
+  const rows = Array.from(rowsByName.values());
+
+  rows.sort((a, b) =>
+    b.points - a.points ||
+    b.goal_difference - a.goal_difference ||
+    b.goals_for - a.goals_for ||
+    b.away_goals_for - a.away_goals_for ||
+    b.wins - a.wins ||
+    b.away_wins - a.away_wins ||
+    a.team.name.localeCompare(b.team.name, "fr")
+  );
+
+  const hasPlayedMatches = rows.some(row => row.played > 0);
+
+  rows.forEach((row, index) => {
+    row.position = index + 1;
+
+    // قبل أول جولة، ما نبيّـنوش مناطق التأهل اعتماداً
+    // على ترتيب أبجدي مؤقت.
+    row._bfDisableQualificationZone = !hasPlayedMatches;
+  });
+
+  return [{
+    name: "Phase de ligue — 2026/27",
+    rows
+  }];
+}
+   
+async function loadCompetition(competition) {
+  const isConferenceLeague =
+    competition.slug === "uefa-europa-conference-league";
+
+  const [standingsData, goalsData, assistsData] =
+    await Promise.allSettled([
+      isConferenceLeague
+        ? loadConferenceLeaguePhaseStandings()
+        : fetchCompetitionEndpoint("standings", competition),
+
+      fetchCompetitionEndpoint(
+        "topscorers",
+        competition,
+        "&limit=5&stat=goals"
+      ),
+
+      fetchCompetitionEndpoint(
+        "topscorers",
+        competition,
+        "&limit=5&stat=assists"
+      )
     ]);
 
-    const standingGroups = standingsData.status === "fulfilled"
-      ? findStandingGroups(standingsData.value)
+  const standingGroups =
+    standingsData.status === "fulfilled"
+      ? (
+          isConferenceLeague
+            ? standingsData.value
+            : findStandingGroups(standingsData.value)
+        )
       : [];
 
-    const standings = standingGroups.flatMap(group => group.rows);
+  const standings = standingGroups.flatMap(
+    group => group.rows
+  );
 
-    const goals = goalsData.status === "fulfilled"
+  const goals =
+    goalsData.status === "fulfilled"
       ? findPlayers(goalsData.value)
       : [];
 
-    const assists = assistsData.status === "fulfilled"
+  const assists =
+    assistsData.status === "fulfilled"
       ? findPlayers(assistsData.value)
       : [];
 
-    return {
-      competition,
-      standings,
-      standingGroups,
-      goals,
-      assists
-    };
-  }
+  return {
+    competition,
+    standings,
+    standingGroups,
+    goals,
+    assists
+  };
+}
 
   /* =========================================================
      AFFICHER TOUTES LES COMPÉTITIONS
