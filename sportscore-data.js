@@ -922,8 +922,6 @@ const QUALIFICATION_RULES = {
       key: "relegation",
       label: "Relégation"
     }
-  ]
-
 };
 
 function qualificationText(item) {
