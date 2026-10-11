@@ -79,13 +79,49 @@ const competitions = [
     logo: "https://commons.wikimedia.org/wiki/Special:Redirect/file/UEFA_Conference_League_full_logo_(2024_version).svg"
   },
 
+  
   {
     name: "Botola Pro",
     slug: "the-botola-pro",
     country: "Maroc",
     logo: "https://seeklogo.com/images/B/botolapro-inwi-logo-CDFB034249-seeklogo.com.png"
   },
-   
+  {
+    name: "FIFA World Cup",
+    slug: "fifa-world-cup",
+    country: "International",
+    logo: "https://commons.wikimedia.org/wiki/Special:Redirect/file/FIFA_World_Cup_2026_logo.svg"
+  },
+  {
+    name: "UEFA Euro",
+    slug: "uefa-european-championship",
+    country: "Europe",
+    logo: "https://commons.wikimedia.org/wiki/Special:Redirect/file/UEFA_Euro_2024_logo.svg"
+  },
+  {
+    name: "Africa Cup of Nations",
+    slug: "africa-cup-of-nations",
+    country: "Afrique",
+    logo: "https://commons.wikimedia.org/wiki/Special:Redirect/file/Africa_Cup_of_Nations_logo.svg"
+  },
+  {
+    name: "AFC Asian Cup",
+    slug: "afc-asian-cup",
+    country: "Asie",
+    logo: ""
+  },
+  {
+    name: "Copa América",
+    slug: "copa-america",
+    country: "Amérique du Sud",
+    logo: ""
+  },
+  {
+    name: "UEFA Nations League",
+    slug: "uefa-nations-league",
+    country: "Europe",
+    logo: ""
+  },
   {
     name: "EFL Championship",
     slug: "english-football-league-championship",
