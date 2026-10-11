@@ -2311,10 +2311,11 @@ async function loadRealPlayerPhotos(card) {
 
           <div class="bf-competition-logo">
             <img
-              src="${escapeHTML(competition.logo)}"
-              alt="${escapeHTML(competition.name)}"
-              loading="lazy"
-            >
+  src="${escapeHTML(competition.logo)}"
+  alt="${escapeHTML(competition.name)}"
+  loading="lazy"
+  onerror="this.onerror=null;this.style.display='none';this.parentElement.textContent='🏆';"
+>
           </div>
 
           <div class="bf-competition-info">
