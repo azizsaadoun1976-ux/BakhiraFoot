@@ -2812,281 +2812,6 @@ const CONFERENCE_LEAGUE_TEAMS = [
   }
 ];
 
-/* =========================================================
-   BAKHIRAFOOT — FETCH KNOCKOUT BRACKET
-   ========================================================= */
-
-async function fetchCompetitionBracket(competition) {
-  const slugs = [
-    competition.slug,
-    ...(competition.fallbackSlugs || [])
-  ].filter((slug, index, list) =>
-    slug && list.indexOf(slug) === index
-  );
-
-  for (const slug of slugs) {
-    try {
-      const url =
-        `https://sportscore.com/api/widget/bracket/` +
-        `?sport=football` +
-        `&slug=${encodeURIComponent(slug)}` +
-        `&src=${SRC}`;
-
-      const data = await fetchJSON(url);
-      const rounds = extractKnockoutRounds(data);
-
-      if (rounds.length) {
-        return rounds;
-      }
-    } catch (error) {
-      console.warn(
-        `Bracket indisponible pour ${competition.name}:`,
-        error
-      );
-    }
-  }
-
-  // ما كايناش إقصائيات متوفرة لهاد البطولة.
-  return [];
-}
-
-function knockoutTeam(match, side) {
-  const keys = side === "home"
-    ? ["home", "home_team", "homeTeam", "team1", "participant1"]
-    : ["away", "away_team", "awayTeam", "team2", "participant2"];
-
-  let raw = null;
-
-  for (const key of keys) {
-    if (match?.[key] !== undefined && match[key] !== null) {
-      raw = match[key];
-      break;
-    }
-  }
-
-  const obj = raw && typeof raw === "object" ? raw : {};
-
-  const name =
-    (typeof raw === "string" ? raw : "") ||
-    obj.name ||
-    obj.team_name ||
-    obj.teamName ||
-    obj.title ||
-    obj.competitor?.name ||
-    match?.[`${side}_name`] ||
-    "";
-
-  const logo =
-    obj.logo ||
-    obj.image ||
-    obj.crest ||
-    obj.competitor?.logo ||
-    match?.[`${side}_logo`] ||
-    "";
-
-  return {
-    name: String(name).trim(),
-    logo: String(logo).trim()
-  };
-}
-
-function knockoutScore(match, side) {
-  const keys = side === "home"
-    ? ["home_score", "homeScore", "score_home", "home_goals"]
-    : ["away_score", "awayScore", "score_away", "away_goals"];
-
-  for (const key of keys) {
-    const item = match?.[key];
-
-    if (
-      item !== undefined &&
-      item !== null &&
-      item !== ""
-    ) {
-      if (typeof item === "object") {
-        return item.value ?? item.total ?? item.current ?? "—";
-      }
-
-      return item;
-    }
-  }
-
-  const score = match?.score || match?.scores || {};
-
-  const value = score?.[side];
-
-  if (value !== undefined && value !== null) {
-    return typeof value === "object"
-      ? value.value ?? value.total ?? "—"
-      : value;
-  }
-
-  return "—";
-}
-
-function knockoutRoundName(node) {
-  if (!node || typeof node !== "object") return "";
-
-  for (const key of [
-    "round_name",
-    "roundName",
-    "round",
-    "stage_name",
-    "stageName",
-    "stage",
-    "phase"
-  ]) {
-    const value = node[key];
-
-    if (typeof value === "string" && value.trim()) {
-      return value.trim();
-    }
-
-    if (value && typeof value === "object") {
-      const name = value.name || value.title || value.label;
-
-      if (typeof name === "string" && name.trim()) {
-        return name.trim();
-      }
-    }
-  }
-
-  const hasMatches = [
-    "matches",
-    "fixtures",
-    "games",
-    "ties"
-  ].some(key => Array.isArray(node[key]));
-
-  if (hasMatches) {
-    return node.name || node.title || node.label || "";
-  }
-
-  return "";
-}
-
-function isKnockoutMatch(node) {
-  if (!node || typeof node !== "object" || Array.isArray(node)) {
-    return false;
-  }
-
-  return Boolean(
-    knockoutTeam(node, "home").name &&
-    knockoutTeam(node, "away").name
-  );
-}
-
-function extractKnockoutRounds(data) {
-  const rounds = [];
-  const seen = new Set();
-
-  function addRound(name, matches) {
-    const valid = matches.filter(isKnockoutMatch);
-
-    if (!valid.length) return;
-
-    const roundName =
-      name || "Phase à élimination directe";
-
-    const signature = roundName + "::" +
-      valid.map(match => {
-        const home = knockoutTeam(match, "home").name;
-        const away = knockoutTeam(match, "away").name;
-
-        return `${home}|${away}`;
-      }).join(";");
-
-    if (seen.has(signature)) return;
-    seen.add(signature);
-
-    rounds.push({
-      name: roundName,
-      matches: valid
-    });
-  }
-
-  function walk(node, inheritedName = "", depth = 0) {
-    if (!node || depth > 12) return;
-
-    if (Array.isArray(node)) {
-      const matches = node.filter(isKnockoutMatch);
-
-      if (matches.length) {
-        const byRound = new Map();
-
-        for (const match of matches) {
-          const label =
-            knockoutRoundName(match) ||
-            inheritedName ||
-            "Phase à élimination directe";
-
-          if (!byRound.has(label)) {
-            byRound.set(label, []);
-          }
-
-          byRound.get(label).push(match);
-        }
-
-        for (const [label, items] of byRound) {
-          addRound(label, items);
-        }
-
-        return;
-      }
-
-      for (const item of node) {
-        walk(
-          item,
-          knockoutRoundName(item) || inheritedName,
-          depth + 1
-        );
-      }
-
-      return;
-    }
-
-    if (typeof node !== "object") return;
-
-    const currentName =
-      knockoutRoundName(node) || inheritedName;
-
-    const preferredKeys = [
-      "rounds",
-      "stages",
-      "phases",
-      "bracket",
-      "matches",
-      "fixtures",
-      "games",
-      "ties",
-      "data",
-      "result",
-      "response"
-    ];
-
-    const visited = new Set();
-
-    for (const key of preferredKeys) {
-      if (node[key] && typeof node[key] === "object") {
-        visited.add(key);
-        walk(node[key], currentName, depth + 1);
-      }
-    }
-
-    for (const [key, child] of Object.entries(node)) {
-      if (visited.has(key)) continue;
-
-      if (child && typeof child === "object") {
-        walk(child, currentName, depth + 1);
-      }
-    }
-  }
-
-  walk(data);
-
-  return rounds;
-}
-
 function normalizeConferenceTeamName(name) {
   return String(name || "")
     .normalize("NFD")
@@ -3409,61 +3134,56 @@ async function loadCompetition(competition) {
   const isConferenceLeague =
     competition.slug === "uefa-europa-conference-league";
 
- 
-const [
-  standingsData,
-  goalsData,
-  assistsData,
-  bracketData
-] = await Promise.allSettled([
-  fetchCompetitionEndpoint("standings", competition),
+  const [standingsData, goalsData, assistsData] =
+    await Promise.allSettled([
+      isConferenceLeague
+        ? loadConferenceLeaguePhaseStandings()
+        : fetchCompetitionEndpoint("standings", competition),
 
-  fetchCompetitionEndpoint(
-    "topscorers",
-    competition,
-    "&limit=5&stat=goals"
-  ),
+fetchCompetitionEndpoint(
+  "topscorers",
+  competition,
+  "&limit=5&stat=goals"
+),
 
-  fetchCompetitionEndpoint(
-    "topscorers",
-    competition,
-    "&limit=5&stat=assists"
-  ),
+fetchCompetitionEndpoint(
+  "topscorers",
+  competition,
+  "&limit=5&stat=assists"
+)
+    ]);
 
-  fetchCompetitionBracket(competition)
-]);
+  const standingGroups =
+    standingsData.status === "fulfilled"
+      ? (
+          isConferenceLeague
+            ? standingsData.value
+            : findStandingGroups(standingsData.value)
+        )
+      : [];
 
-const standingGroups =
-  standingsData.status === "fulfilled"
-    ? findStandingGroups(standingsData.value)
-    : [];
+  const standings = standingGroups.flatMap(
+    group => group.rows
+  );
 
-const standings = standingGroups.flatMap(group => group.rows);
-
-const goals =
+ const goals =
   goalsData.status === "fulfilled"
-    ? findPlayers(goalsData.value)
+    ? sortTopPlayersByStat(goalsData.value, "goals")
     : [];
 
 const assists =
   assistsData.status === "fulfilled"
-    ? findPlayers(assistsData.value)
+    ? sortTopPlayersByStat(assistsData.value, "assists")
     : [];
 
-const bracketRounds =
-  bracketData.status === "fulfilled"
-    ? bracketData.value
-    : [];
-
-return {
-  competition,
-  standings,
-  standingGroups,
-  goals,
-  assists,
-  bracketRounds
-};
-
+  return {
+    competition,
+    standings,
+    standingGroups,
+    goals,
+    assists
+  };
+}
 
   /* =========================================================
      AFFICHER TOUTES LES COMPÉTITIONS
@@ -3498,73 +3218,15 @@ return {
   `;
 }
 
-function renderKnockoutBracket(rounds) {
-  if (!Array.isArray(rounds) || !rounds.length) {
-    return "";
-  }
-
-  return `
-    <section class="ss-knockout">
-      <div class="ss-knockout-header">
-        <span>🏆</span>
-        <div>
-          <h3>Phase à élimination directe</h3>
-          <p>Matchs et résultats disponibles</p>
-        </div>
-      </div>
-
-      <div class="ss-knockout-rounds">
-        ${rounds.map(round => `
-          <section class="ss-knockout-round">
-            <h4>${escapeHTML(round.name)}</h4>
-
-            ${round.matches.map(match => {
-              const home = knockoutTeam(match, "home");
-              const away = knockoutTeam(match, "away");
-
-              const homeScore = knockoutScore(match, "home");
-              const awayScore = knockoutScore(match, "away");
-
-              return `
-                <article class="ss-knockout-match">
-                  <div class="ss-knockout-team">
-                    ${
-                      home.logo
-                        ? `<img src="${escapeHTML(home.logo)}" alt="" loading="lazy">`
-                        : `<span class="ss-knockout-fallback">⚽</span>`
-                    }
-                    <span>${escapeHTML(home.name)}</span>
-                    <strong>${escapeHTML(homeScore)}</strong>
-                  </div>
-
-                  <div class="ss-knockout-team">
-                    ${
-                      away.logo
-                        ? `<img src="${escapeHTML(away.logo)}" alt="" loading="lazy">`
-                        : `<span class="ss-knockout-fallback">⚽</span>`
-                    }
-                    <span>${escapeHTML(away.name)}</span>
-                    <strong>${escapeHTML(awayScore)}</strong>
-                  </div>
-                </article>
-              `;
-            }).join("")}
-          </section>
-        `).join("")}
-      </div>
-    </section>
-  `;
-}
-
  function renderCompetition(result) {
-const {
-  competition,
-  standings,
-  standingGroups = [],
-  goals,
-  assists,
-  bracketRounds = []
-} = result;
+  const {
+    competition,
+    standings,
+    standingGroups = [],
+    goals,
+    assists
+  } = result;
+
   const usefulGroups = standingGroups.filter(group => group.rows && group.rows.length);
   const needsGroupTitles = usefulGroups.length > 1 || usefulGroups.some(group => group.name);
 
@@ -3601,7 +3263,7 @@ const {
             Classement indisponible pour le moment. SportScore ne renvoie pas de tableau pour ce slug.
           </div>
         `}
-           ${renderKnockoutBracket(bracketRounds)}
+
         <div class="ss-players-grid">
           ${renderPlayers(goals, "goals", "Meilleurs buteurs", "⚽")}
 ${renderPlayers(assists, "assists", "Meilleurs passeurs", "🎯")}
@@ -3766,132 +3428,6 @@ container
 
 
     style.textContent = `
-
-/* =========================================
-   BAKHIRAFOOT — KNOCKOUT ROUNDS
-========================================= */
-
-.ss-knockout {
-  padding: 18px;
-  border-top: 1px solid rgba(100, 116, 139, .18);
-}
-
-.ss-knockout-header {
-  display: flex;
-  align-items: center;
-  gap: 12px;
-  margin-bottom: 16px;
-}
-
-.ss-knockout-header > span {
-  font-size: 26px;
-}
-
-.ss-knockout-header h3 {
-  margin: 0;
-  font-size: 17px;
-}
-
-.ss-knockout-header p {
-  margin: 4px 0 0;
-  color: #718096;
-  font-size: 12px;
-}
-
-.ss-knockout-rounds {
-  display: flex;
-  gap: 14px;
-  overflow-x: auto;
-  padding-bottom: 10px;
-  align-items: flex-start;
-}
-
-.ss-knockout-round {
-  flex: 0 0 260px;
-  min-width: 260px;
-}
-
-.ss-knockout-round h4 {
-  margin: 0 0 10px;
-  padding: 10px 12px;
-  border-radius: 9px;
-  background: #e8f5ed;
-  color: #166534;
-  font-size: 13px;
-}
-
-.ss-knockout-match {
-  margin-bottom: 10px;
-  padding: 9px 11px;
-  background: #fff;
-  border: 1px solid rgba(100, 116, 139, .2);
-  border-radius: 11px;
-}
-
-.ss-knockout-team {
-  display: grid;
-  grid-template-columns: 24px minmax(0, 1fr) 25px;
-  align-items: center;
-  gap: 8px;
-  min-height: 32px;
-}
-
-.ss-knockout-team img,
-.ss-knockout-fallback {
-  width: 23px;
-  height: 23px;
-  object-fit: contain;
-}
-
-.ss-knockout-fallback {
-  display: flex;
-  align-items: center;
-  justify-content: center;
-}
-
-.ss-knockout-team > span:nth-child(2) {
-  overflow-wrap: anywhere;
-  font-size: 12px;
-  font-weight: 700;
-}
-
-.ss-knockout-team strong {
-  text-align: right;
-  font-size: 14px;
-}
-
-body.dark .ss-knockout {
-  border-top-color: rgba(255, 255, 255, .1);
-}
-
-body.dark .ss-knockout-header p {
-  color: #9baab4;
-}
-
-body.dark .ss-knockout-round h4 {
-  background: #10291f;
-  color: #86efac;
-}
-
-body.dark .ss-knockout-match {
-  background: #13212b;
-  border-color: rgba(255, 255, 255, .1);
-}
-
-body.dark .ss-knockout-team {
-  color: #e5edf4;
-}
-
-@media (max-width: 600px) {
-  .ss-knockout {
-    padding: 12px;
-  }
-
-  .ss-knockout-round {
-    flex-basis: 235px;
-    min-width: 235px;
-  }
-}
 
  body.dark .bf-competition-logo {
   background: #ffffff !important;
