@@ -887,7 +887,158 @@ async function loadTodayMatches() {
 
     return fallback;
   }
+/* =========================================================
+   BAKHIRAFOOT — FIX UEFA CONFERENCE LEAGUE RANKING
+   ========================================================= */
 
+function standingSortNumber(row, keys) {
+  const sources = [
+    row,
+    row?.statistics,
+    row?.stats,
+    row?.overall
+  ];
+
+  for (const source of sources) {
+    if (!source || typeof source !== "object") continue;
+
+    for (const key of keys) {
+      let item = source[key];
+
+      if (item && typeof item === "object") {
+        item =
+          item.value ??
+          item.total ??
+          item.count ??
+          item.number;
+      }
+
+      if (
+        item !== undefined &&
+        item !== null &&
+        item !== "" &&
+        Number.isFinite(Number(item))
+      ) {
+        return Number(item);
+      }
+    }
+  }
+
+  return null;
+}
+
+function sortConferenceLeagueGroups(groups) {
+  const pointsKeys = [
+    "points",
+    "pts",
+    "total_points",
+    "totalPoints"
+  ];
+
+  const criteria = [
+    // 1. Points
+    pointsKeys,
+
+    // 2. Goal difference
+    [
+      "goal_difference",
+      "goalDifference",
+      "gd",
+      "goal_diff",
+      "goalDiff",
+      "goals_diff"
+    ],
+
+    // 3. Goals scored
+    [
+      "goals_for",
+      "goalsFor",
+      "gf",
+      "goals_scored",
+      "goalsScored"
+    ],
+
+    // 4. Away goals, if SportScore provides them
+    [
+      "away_goals",
+      "awayGoals",
+      "goals_away",
+      "goalsAway",
+      "away_goals_for",
+      "awayGoalsFor"
+    ],
+
+    // 5. Wins
+    ["wins", "won", "w"],
+
+    // 6. Away wins
+    [
+      "away_wins",
+      "awayWins",
+      "wins_away",
+      "winsAway"
+    ]
+  ];
+
+  return groups.map(group => {
+    const originalRows = Array.isArray(group.rows)
+      ? group.rows
+      : [];
+
+    // Si les points manquent, préserver le classement du fournisseur.
+    const hasPointsForAll = originalRows.length > 0 &&
+      originalRows.every(row =>
+        standingSortNumber(row, pointsKeys) !== null
+      );
+
+    const rows = [...originalRows].sort((a, b) => {
+      if (hasPointsForAll) {
+        for (const keys of criteria) {
+          const aValue = standingSortNumber(a, keys);
+          const bValue = standingSortNumber(b, keys);
+
+          if (
+            aValue !== null &&
+            bValue !== null &&
+            aValue !== bValue
+          ) {
+            return bValue - aValue;
+          }
+        }
+      }
+
+      // Si les statistiques ne départagent pas les équipes,
+      // garder le classement fourni par SportScore.
+      const aRank = standingSortNumber(
+        a,
+        ["position", "rank", "place"]
+      );
+
+      const bRank = standingSortNumber(
+        b,
+        ["position", "rank", "place"]
+      );
+
+      if (
+        aRank !== null &&
+        bRank !== null &&
+        aRank !== bRank
+      ) {
+        return aRank - bRank;
+      }
+
+      return teamName(a).localeCompare(teamName(b), "fr");
+    });
+
+    return {
+      ...group,
+      rows: rows.map((row, index) => ({
+        ...row,
+        _bfConferenceRank: index + 1
+      }))
+    };
+  });
+}
 /* =========================================================
    BAKHIRAFOOT - QUALIFICATION ZONES
    ========================================================= */
@@ -1377,19 +1528,13 @@ function renderQualificationLegend(groupsOrRows, competition) {
 
  function renderStandingRow(row, index, competition) {
 
-    const position =
-      value(
-        row,
-        [
-          "position",
-          "rank",
-          "place"
-        ],
-        index + 1
-      );
+const position =
+  Number(
+    row?._bfConferenceRank ??
+    value(row, ["position", "rank", "place"], index + 1)
+  ) || index + 1;
 
-    const rank = Number(position) || index + 1;
-const zone = getQualificationZone(row, competition, rank);
+const rank = Number(position) || index + 1;const zone = getQualificationZone(row, competition, rank);
 
      const rankNumber = Number(position);
 
@@ -2762,10 +2907,20 @@ async function loadRealPlayerPhotos(card) {
     assists
   } = result;
 
-  const usefulGroups = standingGroups.filter(group => group.rows && group.rows.length);
-  const needsGroupTitles = usefulGroups.length > 1 || usefulGroups.some(group => group.name);
+const usefulGroups = standingGroups.filter(
+  group => group.rows && group.rows.length
+);
 
-  const tablesHTML = usefulGroups.map((group, index) => {
+const displayGroups =
+  competition.slug === "uefa-europa-conference-league"
+    ? sortConferenceLeagueGroups(usefulGroups)
+    : usefulGroups;
+
+const needsGroupTitles =
+  usefulGroups.length > 1 ||
+  usefulGroups.some(group => group.name);
+
+const tablesHTML = displayGroups.map((group, index) => {
     const title = group.name || (needsGroupTitles ? `Groupe ${String.fromCharCode(65 + index)}` : "");
     return renderStandingTable(group.rows, title, competition);
   }).join("");
@@ -2792,7 +2947,10 @@ async function loadRealPlayerPhotos(card) {
       </summary>
 
       <div class="bf-competition-content">
-        ${renderQualificationLegend(usefulGroups, competition)}
+       ${renderQualificationLegend(
+  displayGroups.flatMap(group => group.rows),
+  competition
+)}
         ${tablesHTML || `
           <div class="ss-no-data">
             Classement indisponible pour le moment. SportScore ne renvoie pas de tableau pour ce slug.
