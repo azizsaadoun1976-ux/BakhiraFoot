@@ -1902,11 +1902,18 @@ async function loadRealPlayerPhotos(card) {
         if (!slug) return;
 
         try {
-          const photo = await fetchPlayerProfilePhoto(slug);
-          if (!photo) return;
+          let photo = slug
+  ? await fetchPlayerProfilePhoto(slug)
+  : "";
 
-          img.dataset.photoFailed = "";
-          img.src = photo;
+if (!photo) {
+  photo = await fetchTheSportsDBPhoto(name);
+}
+
+if (!photo) return;
+
+img.dataset.photoFailed = "";
+img.src = photo;
         } catch {
           /* On garde le symbole de remplacement */
         }
