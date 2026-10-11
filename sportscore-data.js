@@ -1268,6 +1268,7 @@ function getProviderQualificationZone(row) {
 }
 
 function getQualificationZone(row, competition, position) {
+   if (row?._bfDisableQualificationZone) return null;
   // الأولوية لأي معلومة تأهل صريحة جاية من SportScore.
   const providerZone = getProviderQualificationZone(row);
 
