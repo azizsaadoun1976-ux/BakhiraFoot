@@ -2635,6 +2635,161 @@ body.dark .ss-club-fallback {
 
       @media (max-width: 500px) {
 
+/* =========================================
+   BAKHIRAFOOT STANDINGS — LIGHT MODE
+========================================= */
+
+.bf-competition-content,
+.ss-table {
+  background: #ffffff;
+}
+
+.bf-competition-info h2 {
+  color: #172b38;
+}
+
+.ss-standing-row:not(.ss-table-header) {
+  color: #273746;
+  background: #ffffff;
+  transition: background .18s ease;
+}
+
+.ss-standing-row:nth-child(even):not(.ss-table-header) {
+  background: #f5f8fb;
+}
+
+.ss-standing-row:hover:not(.ss-table-header) {
+  background: #eaf8ef;
+}
+
+.ss-position {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 28px;
+  min-height: 28px;
+  border-radius: 8px;
+  font-weight: 900;
+  color: #34465a;
+}
+
+.ss-club strong {
+  color: #172b38;
+}
+
+.ss-points {
+  color: #15803d;
+  font-size: 14px;
+  font-weight: 950;
+}
+
+.ss-player-card-head strong {
+  color: #172b38;
+}
+
+.ss-player-value {
+  color: #15803d;
+}
+
+.ss-club-fallback,
+.ss-player-fallback {
+  color: #475569;
+  background: #edf2f7;
+}
+
+.ss-qualification-legend {
+  background: #f8fafc;
+}
+
+
+/* =========================================
+   BAKHIRAFOOT STANDINGS — DARK MODE
+========================================= */
+
+body.dark .bf-competition-content,
+body.dark .ss-table {
+  background: #101c26;
+}
+
+body.dark .bf-competition-info h2 {
+  color: #f0f6fa;
+}
+
+body.dark .ss-standing-row:not(.ss-table-header) {
+  color: #dce6ee;
+  background: #13212b;
+}
+
+body.dark .ss-standing-row:nth-child(even):not(.ss-table-header) {
+  background: #172833;
+}
+
+body.dark .ss-standing-row:hover:not(.ss-table-header) {
+  background: #203a2e;
+}
+
+body.dark .ss-position {
+  color: #e2eaf1;
+}
+
+body.dark .ss-club strong {
+  color: #edf4f8;
+}
+
+body.dark .ss-points,
+body.dark .ss-player-value {
+  color: #65e69a;
+}
+
+body.dark .ss-player-card-head strong {
+  color: #edf4f8;
+}
+
+body.dark .ss-club-fallback,
+body.dark .ss-player-fallback {
+  color: #d4e0e8;
+  background: #263743;
+}
+
+body.dark .ss-qualification-legend {
+  background: #101c26;
+  border-color: rgba(255, 255, 255, .08);
+}
+
+/* Améliorer la lisibilité des en-têtes */
+.ss-table-header {
+  font-weight: 900;
+}
+
+body.dark .ss-table-header {
+  color: #bac8d3;
+}
+
+/* Accessibilité clavier */
+.bf-competition-summary:focus-visible {
+  outline: 3px solid #22c55e;
+  outline-offset: -3px;
+}
+
+body.dark .bf-competition-summary:focus-visible {
+  outline-color: #65e69a;
+}
+
+/* Téléphones */
+@media (max-width: 600px) {
+  .ss-standing-row {
+    gap: 5px;
+  }
+
+  .ss-points {
+    font-size: 13px;
+  }
+
+  .bf-competition-info h2 {
+    overflow-wrap: anywhere;
+  }
+}
+
         .competitions-page-head h1 {
           font-size: 30px;
         }
