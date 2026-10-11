@@ -1554,6 +1554,204 @@ function statValue(row, stat) {
 
   return 0;
 }
+   
+/* =========================================================
+   PLAYER TEAM + MATCHES PLAYED
+   ========================================================= */
+
+function playerTeamName(row) {
+  if (!row || typeof row !== "object") {
+    return "Équipe non renseignée";
+  }
+
+  const player =
+    row.player && typeof row.player === "object"
+      ? row.player
+      : row.data?.player || {};
+
+  const sources = [
+    row,
+    player,
+    row.data,
+    row.statistics,
+    row.stats,
+    player.statistics,
+    player.stats
+  ];
+
+  const keys = [
+    "team",
+    "team_name",
+    "teamName",
+    "team_data",
+    "teamData",
+    "club",
+    "club_name",
+    "clubName"
+  ];
+
+  for (const source of sources) {
+    if (!source || typeof source !== "object") {
+      continue;
+    }
+
+    for (const key of keys) {
+      const item = source[key];
+
+      if (typeof item === "string" && item.trim()) {
+        return item.trim();
+      }
+
+      if (item && typeof item === "object") {
+        const name =
+          item.name ||
+          item.team_name ||
+          item.teamName ||
+          item.title ||
+          item.short_name ||
+          item.display_name;
+
+        if (typeof name === "string" && name.trim()) {
+          return name.trim();
+        }
+      }
+    }
+  }
+
+  return "Équipe non renseignée";
+}
+
+
+function readPlayerNumber(value) {
+  if (
+    typeof value === "number" &&
+    Number.isFinite(value)
+  ) {
+    return value;
+  }
+
+  if (
+    typeof value === "string" &&
+    value.trim() !== "" &&
+    Number.isFinite(Number(value))
+  ) {
+    return Number(value);
+  }
+
+  if (value && typeof value === "object") {
+    for (const key of [
+      "total",
+      "value",
+      "count",
+      "appearances",
+      "played"
+    ]) {
+      if (value[key] !== undefined) {
+        const result = readPlayerNumber(value[key]);
+
+        if (result !== null) {
+          return result;
+        }
+      }
+    }
+  }
+
+  return null;
+}
+
+
+function playerAppearances(row) {
+  if (!row || typeof row !== "object") {
+    return null;
+  }
+
+  const player =
+    row.player && typeof row.player === "object"
+      ? row.player
+      : row.data?.player || {};
+
+  const sources = [
+    row,
+    row.statistics,
+    row.stats,
+    row.player_statistics,
+    row.playerStats,
+    player,
+    player.statistics,
+    player.stats,
+    row.data,
+    row.data?.player
+  ];
+
+  const keys = [
+    "appearances",
+    "appearance",
+    "matches_played",
+    "matchesPlayed",
+    "played_matches",
+    "playedMatches",
+    "games_played",
+    "gamesPlayed",
+    "apps",
+    "played",
+    "matches"
+  ];
+
+  for (const source of sources) {
+    if (!source || typeof source !== "object") {
+      continue;
+    }
+
+    // Statistiques enregistrées directement dans un objet
+    if (!Array.isArray(source)) {
+      for (const key of keys) {
+        if (source[key] === undefined) {
+          continue;
+        }
+
+        const result = readPlayerNumber(source[key]);
+
+        if (result !== null) {
+          return result;
+        }
+      }
+    }
+
+    // Statistiques enregistrées sous forme de liste
+    if (Array.isArray(source)) {
+      for (const item of source) {
+        if (!item || typeof item !== "object") {
+          continue;
+        }
+
+        const label = [
+          item.name,
+          item.type,
+          item.key,
+          item.label,
+          item.stat
+        ]
+          .filter(Boolean)
+          .join(" ")
+          .toLowerCase()
+          .replace(/[_-]+/g, " ");
+
+        if (
+          /appearance|matches played|played matches|games played/.test(label)
+        ) {
+          const result = readPlayerNumber(item);
+
+          if (result !== null) {
+            return result;
+          }
+        }
+      }
+    }
+  }
+
+  return null;
+}
+
 
 /* Cache pour éviter de répéter les recherches */
 const playerSearchCache = new Map();
@@ -1799,6 +1997,7 @@ async function fetchTheSportsDBPhoto(name) {
 }
 
 
+
 function renderPlayers(players, stat, title, icon) {
   const safePlayers = Array.isArray(players) ? players : [];
 
@@ -1810,9 +2009,19 @@ function renderPlayers(players, stat, title, icon) {
       const slug = playerSlug(player);
       const total = statValue(player, stat);
 
+      const club = playerTeamName(player);
+      const appearances = playerAppearances(player);
+
+      const appearancesText =
+        appearances === null
+          ? "Matchs joués : —"
+          : `${appearances} matchs joués`;
+
       return `
         <div class="ss-player-row">
-          <span class="ss-player-rank">${index + 1}</span>
+          <span class="ss-player-rank">
+            ${index + 1}
+          </span>
 
           <div
             class="ss-player"
@@ -1825,8 +2034,15 @@ function renderPlayers(players, stat, title, icon) {
               alt="${escapeHTML(name)}"
               loading="lazy"
               style="display:${photo ? "block" : "none"}"
-              onload="this.style.display='block';this.nextElementSibling.style.display='none';"
-              onerror="this.dataset.photoFailed='1';this.style.display='none';this.nextElementSibling.style.display='flex';"
+              onload="
+                this.style.display='block';
+                this.nextElementSibling.style.display='none';
+              "
+              onerror="
+                this.dataset.photoFailed='1';
+                this.style.display='none';
+                this.nextElementSibling.style.display='flex';
+              "
             >
 
             <div
@@ -1834,9 +2050,24 @@ function renderPlayers(players, stat, title, icon) {
               style="display:${photo ? "none" : "flex"}"
             >👤</div>
 
-            <strong class="ss-player-name">
-              ${escapeHTML(name)}
-            </strong>
+            <div class="ss-player-info">
+              <strong class="ss-player-name">
+                ${escapeHTML(name)}
+              </strong>
+
+              <div class="ss-player-meta">
+                <span
+                  class="ss-player-team"
+                  title="${escapeHTML(club)}"
+                >
+                  🏟️ ${escapeHTML(club)}
+                </span>
+
+                <span class="ss-player-appearances">
+                  ${escapeHTML(appearancesText)}
+                </span>
+              </div>
+            </div>
           </div>
 
           <strong class="ss-player-value">
@@ -1854,12 +2085,15 @@ function renderPlayers(players, stat, title, icon) {
           <span class="ss-stat-icon">${icon}</span>
           <strong>${escapeHTML(title)}</strong>
         </div>
+
         <span>Top 5</span>
       </div>
 
       ${
         rows ||
-        `<div class="ss-no-player-data">Données indisponibles.</div>`
+        `<div class="ss-no-player-data">
+          Données indisponibles.
+        </div>`
       }
     </div>
   `;
