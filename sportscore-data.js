@@ -1723,6 +1723,7 @@ function extractProfilePhoto(data) {
 }
 
 
+
 async function fetchPlayerProfilePhoto(slug) {
   if (!slug) return "";
 
@@ -1737,14 +1738,23 @@ async function fetchPlayerProfilePhoto(slug) {
       );
 
       return extractProfilePhoto(data);
-    } catch {
+    } catch (error) {
+      console.warn("SportScore player photo:", error);
       return "";
     }
-     
+  })();
+
+  playerProfileCache.set(slug, request);
+  return request;
+}
+
+
+/* Source secondaire : TheSportsDB */
 const sportsDbPhotoCache = new Map();
 
 async function fetchTheSportsDBPhoto(name) {
   const key = normalisePlayerName(name);
+
   if (!key) return "";
 
   if (sportsDbPhotoCache.has(key)) {
@@ -1753,7 +1763,9 @@ async function fetchTheSportsDBPhoto(name) {
 
   const request = (async () => {
     try {
-      const query = String(name).trim().replace(/\s+/g, "_");
+      const query = String(name)
+        .trim()
+        .replace(/\s+/g, "_");
 
       const data = await fetchJSON(
         `https://www.thesportsdb.com/api/v1/json/123/searchplayers.php?p=${encodeURIComponent(query)}`
@@ -1763,20 +1775,11 @@ async function fetchTheSportsDBPhoto(name) {
         ? data.player
         : [];
 
-      const exact = players.find(
-        p => normalisePlayerName(p.strPlayer) === key
+      const player = players.find(
+        item =>
+          normalisePlayerName(item?.strPlayer) === key
       );
 
-      const expanded = players.find(p => {
-        const candidate = normalisePlayerName(p.strPlayer);
-
-        return (
-          key.length >= 8 &&
-          candidate.startsWith(key + " ")
-        );
-      });
-
-      const player = exact || expanded;
       if (!player) return "";
 
       return normaliseImageURL(
@@ -1785,7 +1788,8 @@ async function fetchTheSportsDBPhoto(name) {
         player.strRender ||
         ""
       );
-    } catch {
+    } catch (error) {
+      console.warn("TheSportsDB player photo:", error);
       return "";
     }
   })();
@@ -1794,12 +1798,6 @@ async function fetchTheSportsDBPhoto(name) {
   return request;
 }
 
-  })();
-   
-
-  playerProfileCache.set(slug, request);
-  return request;
-}
 
 function renderPlayers(players, stat, title, icon) {
   const safePlayers = Array.isArray(players) ? players : [];
@@ -1868,59 +1866,118 @@ function renderPlayers(players, stat, title, icon) {
 }
 
 /* Recherche des photos uniquement quand on ouvre une compétition */
+
 async function loadRealPlayerPhotos(card) {
+  if (!card) return;
+
   const holders = Array.from(
     card.querySelectorAll(".ss-player[data-player-name]")
   );
 
+  async function loadOnePhoto(holder) {
+    const img = holder.querySelector(".ss-player-photo");
+
+    const fallback = holder.querySelector(
+      ".ss-player-fallback"
+    );
+
+    if (!img) return;
+
+    if (img.dataset.lookupStarted === "1") return;
+
+    img.dataset.lookupStarted = "1";
+
+    const name = holder.dataset.playerName || "";
+
+    let slug = holder.dataset.playerSlug || "";
+    let photo = "";
+
+    /* 1. الصورة الموجودة أصلاً */
+    if (img.getAttribute("src")) {
+      if (!img.complete) {
+        await Promise.race([
+          new Promise(resolve => {
+            img.addEventListener("load", resolve, {
+              once: true
+            });
+
+            img.addEventListener("error", resolve, {
+              once: true
+            });
+          }),
+          new Promise(resolve => setTimeout(resolve, 1800))
+        ]);
+      }
+
+      if (img.complete && img.naturalWidth > 0) {
+        return;
+      }
+
+      img.removeAttribute("src");
+      img.style.display = "none";
+
+      if (fallback) {
+        fallback.style.display = "flex";
+      }
+    }
+
+    /* 2. البحث عن بروفايل اللاعب في SportScore */
+    if (slug) {
+      photo = await fetchPlayerProfilePhoto(slug);
+    }
+
+    if (!photo) {
+      slug = await findPlayerProfileSlug(name);
+
+      if (slug) {
+        holder.dataset.playerSlug = slug;
+
+        photo = await fetchPlayerProfilePhoto(slug);
+      }
+    }
+
+    /* 3. البحث بالاسم في المصدر الاحتياطي */
+    if (!photo) {
+      photo = await fetchTheSportsDBPhoto(name);
+    }
+
+    if (!photo) {
+      if (fallback) {
+        fallback.style.display = "flex";
+      }
+
+      return;
+    }
+
+    img.onload = () => {
+      img.style.display = "block";
+
+      if (fallback) {
+        fallback.style.display = "none";
+      }
+    };
+
+    img.onerror = () => {
+      img.style.display = "none";
+
+      if (fallback) {
+        fallback.style.display = "flex";
+      }
+    };
+
+    img.src = photo;
+  }
+
+  /* 3 joueurs à la fois pour limiter les requêtes */
   for (let i = 0; i < holders.length; i += 3) {
-    const batch = holders.slice(i, i + 3);
-
     await Promise.all(
-      batch.map(async holder => {
-        const img = holder.querySelector(".ss-player-photo");
-
-        if (!img || img.dataset.lookupDone === "1") return;
-
-        /* Pas besoin de remplacer une photo déjà valide */
-        if (
-          img.getAttribute("src") &&
-          img.dataset.photoFailed !== "1"
-        ) {
-          return;
-        }
-
-        img.dataset.lookupDone = "1";
-
-        const name = holder.dataset.playerName;
-        let slug = holder.dataset.playerSlug;
-
-        if (!slug) {
-          slug = await findPlayerProfileSlug(name);
-        }
-
-        if (!slug) return;
-
-        try {
-          let photo = slug
-  ? await fetchPlayerProfilePhoto(slug)
-  : "";
-
-if (!photo) {
-  photo = await fetchTheSportsDBPhoto(name);
-}
-
-if (!photo) return;
-
-img.dataset.photoFailed = "";
-img.src = photo;
-        } catch {
-          /* On garde le symbole de remplacement */
-        }
-      })
+      holders
+        .slice(i, i + 3)
+        .map(loadOnePhoto)
     );
   }
 }
+
 
 
   /* =========================================================
@@ -2209,6 +2266,7 @@ for (let i = 0; i < competitions.length; i += 3) {
         )
         .join("");
    
+
 container
   .querySelectorAll("details.bf-competition")
   .forEach(card => {
@@ -2223,25 +2281,6 @@ container
       }
     });
   });
-
-
-container
-  .querySelectorAll("details.bf-competition")
-  .forEach(card => {
-    card.addEventListener("toggle", () => {
-      if (card.open) {
-        loadRealPlayerPhotos(card);
-      }
-    });
-  });
-   
-   container.querySelectorAll(".bf-competition").forEach(card => {
-  card.addEventListener("toggle", () => {
-    if (card.open) {
-      loadRealPlayerPhotos(card);
-    }
-  });
-});
 
   }
 
