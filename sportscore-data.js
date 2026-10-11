@@ -3220,13 +3220,37 @@ async function fetchKnockoutEvents(competitionName) {
 
     if (!league) return [];
 
-    const calendarEntries = (league.calendar || [])
-      .flatMap(calendar => calendar.entries || []);
+   const rawCalendar = league.calendar || [];
 
-    const knockoutEntries = calendarEntries.filter(entry =>
-      knockoutStageFromText(entry.label)
-    );
+const calendarEntries = Array.isArray(rawCalendar)
+  ? rawCalendar.flatMap(item => {
+      if (!item || typeof item !== "object") return [];
 
+      const nestedEntries = Array.isArray(item.entries)
+        ? item.entries
+        : [];
+
+      const directEntry =
+        item.label && (item.startDate || item.endDate)
+          ? [item]
+          : [];
+
+      return [...directEntry, ...nestedEntries];
+    })
+  : Array.isArray(rawCalendar.entries)
+    ? rawCalendar.entries
+    : [];
+
+const knockoutEntries = calendarEntries.filter(entry =>
+  knockoutStageFromText(entry.label)
+);
+
+console.log(
+  "[BakhiraFoot] Calendrier ESPN:",
+  calendarEntries.length,
+  "phases éliminatoires:",
+  knockoutEntries.map(entry => entry.label)
+);
     const dateRanges = knockoutEntries.length
       ? knockoutEntries
       : [{
