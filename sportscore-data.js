@@ -625,6 +625,13 @@ async function loadTodayMatches() {
         index + 1
       );
 
+     const rankNumber = Number(position);
+
+const rankClass =
+  rankNumber === 1 ? "is-first" :
+  rankNumber === 2 ? "is-second" :
+  rankNumber === 3 ? "is-third" :
+  "";
 
     const name =
       teamName(row);
@@ -723,7 +730,7 @@ async function loadTodayMatches() {
 
       <div class="ss-standing-row">
 
-        <span class="ss-position">
+       <span class="ss-position ${rankClass}">
           ${escapeHTML(position)}
         </span>
 
@@ -1702,6 +1709,54 @@ body.dark .ss-table-header {
 .ss-position {
   font-weight: 900;
   font-size: 13px;
+}
+
+.ss-position.is-first {
+  color: #765000;
+  background: #fff0b3;
+  border: 1px solid #edcf61;
+  border-radius: 9px;
+  padding: 5px;
+  text-align: center;
+  font-weight: 900;
+}
+
+.ss-position.is-second {
+  color: #46515c;
+  background: #e8edf2;
+  border: 1px solid #c7d0d9;
+  border-radius: 9px;
+  padding: 5px;
+  text-align: center;
+  font-weight: 900;
+}
+
+.ss-position.is-third {
+  color: #8b4b27;
+  background: #f7dfce;
+  border: 1px solid #dfb08e;
+  border-radius: 9px;
+  padding: 5px;
+  text-align: center;
+  font-weight: 900;
+}
+
+body.dark .ss-position.is-first {
+  color: #ffe9a0;
+  background: #493a18;
+  border-color: #78612b;
+}
+
+body.dark .ss-position.is-second {
+  color: #e0e7ee;
+  background: #303b46;
+  border-color: #52606e;
+}
+
+body.dark .ss-position.is-third {
+  color: #ffd0ad;
+  background: #492f22;
+  border-color: #805438;
 }
 
 .ss-club {
