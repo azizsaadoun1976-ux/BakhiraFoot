@@ -1015,9 +1015,127 @@ const QUALIFICATION_RULES = {
   ],
 
   "argentine-division-1": [
-    { from: 1, to: 8, key: "stage-playoff", label: "Qualifié pour les play-offs — dans chaque groupe" },
-    { from: 9, to: 15, key: "eliminated", label: "Hors de la zone des play-offs du groupe" }
-  ]
+  {
+    from: 1,
+    to: 8,
+    key: "stage-playoff",
+    label: "Qualifié pour les play-offs — dans chaque groupe"
+  },
+  {
+    from: 9,
+    to: 15,
+    key: "eliminated",
+    label: "Hors de la zone des play-offs du groupe"
+  }
+],
+
+/* =========================================================
+   COMPÉTITIONS DES SÉLECTIONS NATIONALES
+   ========================================================= */
+
+/* COUPE DU MONDE FIFA */
+"fifa-world-cup": [
+  {
+    from: 1,
+    to: 2,
+    key: "stage-direct",
+    label: "Qualifié au tour des 32 équipes"
+  },
+  {
+    from: 3,
+    to: 3,
+    key: "stage-playoff",
+    label: "3e du groupe — dépend du classement des meilleurs 3es"
+  },
+  {
+    from: 4,
+    to: 4,
+    key: "eliminated",
+    label: "Éliminé de la compétition"
+  }
+],
+
+/* CHAMPIONNAT D'EUROPE DES NATIONS */
+"uefa-european-championship": [
+  {
+    from: 1,
+    to: 2,
+    key: "stage-direct",
+    label: "Qualifié en huitièmes de finale"
+  },
+  {
+    from: 3,
+    to: 3,
+    key: "stage-playoff",
+    label: "3e du groupe — dépend du classement des meilleurs 3es"
+  },
+  {
+    from: 4,
+    to: 4,
+    key: "eliminated",
+    label: "Éliminé de la compétition"
+  }
+],
+
+/* COUPE D'AFRIQUE DES NATIONS */
+"caf-africa-cup-of-nations": [
+  {
+    from: 1,
+    to: 2,
+    key: "stage-direct",
+    label: "Qualifié en huitièmes de finale"
+  },
+  {
+    from: 3,
+    to: 3,
+    key: "stage-playoff",
+    label: "3e du groupe — dépend du classement des meilleurs 3es"
+  },
+  {
+    from: 4,
+    to: 4,
+    key: "eliminated",
+    label: "Éliminé de la compétition"
+  }
+],
+
+/* COUPE D'ASIE */
+"afc-asian-cup": [
+  {
+    from: 1,
+    to: 2,
+    key: "stage-direct",
+    label: "Qualifié en huitièmes de finale"
+  },
+  {
+    from: 3,
+    to: 3,
+    key: "stage-playoff",
+    label: "3e du groupe — dépend du classement des meilleurs 3es"
+  },
+  {
+    from: 4,
+    to: 4,
+    key: "eliminated",
+    label: "Éliminé de la compétition"
+  }
+],
+
+/* COPA AMÉRICA */
+"conmebol-copa-america": [
+  {
+    from: 1,
+    to: 2,
+    key: "stage-direct",
+    label: "Qualifié en quarts de finale"
+  },
+  {
+    from: 3,
+    to: 4,
+    key: "eliminated",
+    label: "Éliminé de la phase de groupes"
+  }
+]
 };
 
 function qualificationText(item) {
@@ -1194,19 +1312,49 @@ function getQualificationZone(row, competition, position) {
   ) || null;
 }
 
-function renderQualificationLegend(standings, competition) {
+function renderQualificationLegend(groupsOrRows, competition) {
   const zones = new Map();
 
-  standings.forEach((row, index) => {
-    const position =
-      Number(value(row, ["position", "rank", "place"], index + 1)) ||
-      index + 1;
+  // ندعمو المجموعات المتعددة، وحتى اللائحة القديمة ديال الفرق.
+  const groups =
+    Array.isArray(groupsOrRows) &&
+    groupsOrRows.some(group =>
+      group && Array.isArray(group.rows)
+    )
+      ? groupsOrRows
+      : [{
+          name: "",
+          rows: Array.isArray(groupsOrRows)
+            ? groupsOrRows
+            : []
+        }];
 
-    const zone = getQualificationZone(row, competition, position);
+  // الحساب كيرجع يبدأ من المركز 1 فكل مجموعة.
+  groups.forEach(group => {
+    const rows = Array.isArray(group.rows)
+      ? group.rows
+      : [];
 
-    if (zone && !zones.has(zone.key)) {
-      zones.set(zone.key, zone);
-    }
+    rows.forEach((row, index) => {
+      const position =
+        Number(
+          value(
+            row,
+            ["position", "rank", "place"],
+            index + 1
+          )
+        ) || index + 1;
+
+      const zone = getQualificationZone(
+        row,
+        competition,
+        position
+      );
+
+      if (zone && !zones.has(zone.key)) {
+        zones.set(zone.key, zone);
+      }
+    });
   });
 
   if (!zones.size) return "";
@@ -2644,7 +2792,7 @@ async function loadRealPlayerPhotos(card) {
       </summary>
 
       <div class="bf-competition-content">
-        ${renderQualificationLegend(standings, competition)}
+        ${renderQualificationLegend(usefulGroups, competition)}
         ${tablesHTML || `
           <div class="ss-no-data">
             Classement indisponible pour le moment. SportScore ne renvoie pas de tableau pour ce slug.
