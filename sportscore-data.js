@@ -84,8 +84,68 @@ const competitions = [
     slug: "the-botola-pro",
     country: "Maroc",
     logo: "https://seeklogo.com/images/B/botolapro-inwi-logo-CDFB034249-seeklogo.com.png"
+  },
+   
+  {
+    name: "EFL Championship",
+    slug: "english-football-league-championship",
+    country: "Angleterre",
+    logo: "https://flagcdn.com/w80/gb-eng.png"
+  },
+  {
+    name: "Serie B",
+    slug: "italian-serie-b",
+    country: "Italie",
+    logo: "https://flagcdn.com/w80/it.png"
+  },
+  {
+    name: "Brasileirão Série A",
+    slug: "brazilian-serie-a",
+    country: "Brésil",
+    logo: "https://flagcdn.com/w80/br.png"
+  },
+  {
+    name: "Egyptian Premier League",
+    slug: "egyptian-premier-league",
+    country: "Égypte",
+    logo: "https://flagcdn.com/w80/eg.png"
+  },
+  {
+    name: "Saudi Pro League",
+    slug: "saudi-pro-league",
+    country: "Arabie saoudite",
+    logo: "https://flagcdn.com/w80/sa.png"
+  },
+  {
+    name: "Primeira Liga",
+    slug: "portuguese-primeira-liga",
+    country: "Portugal",
+    logo: "https://flagcdn.com/w80/pt.png"
+  },
+  {
+    name: "Süper Lig",
+    slug: "turkish-super-league",
+    country: "Turquie",
+    logo: "https://flagcdn.com/w80/tr.png"
+  },
+  {
+    name: "Belgian Pro League",
+    slug: "belgian-pro-league",
+    country: "Belgique",
+    logo: "https://flagcdn.com/w80/be.png"
+  },
+  {
+    name: "Scottish Premiership",
+    slug: "scottish-premiership",
+    country: "Écosse",
+    logo: "https://flagcdn.com/w80/gb-sct.png"
+  },
+  {
+    name: "Argentine Primera División",
+    slug: "argentine-primera-division",
+    country: "Argentine",
+    logo: "https://flagcdn.com/w80/ar.png"
   }
-
 ];
 
 
@@ -1642,12 +1702,17 @@ async function loadAllStandings() {
     `;
 
 
-    const results =
-      await Promise.all(
-        competitions.map(
-          loadCompetition
-        )
-      );
+   const results = [];
+
+for (let i = 0; i < competitions.length; i += 3) {
+  const batch = competitions.slice(i, i + 3);
+
+  const batchResults = await Promise.all(
+    batch.map(loadCompetition)
+  );
+
+  results.push(...batchResults);
+}
 
 
     container.innerHTML =
