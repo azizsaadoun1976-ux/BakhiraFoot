@@ -146,60 +146,6 @@ const competitions = [
   country: "Argentine",
   logo: "https://upload.wikimedia.org/wikipedia/commons/9/91/Liga_Profesional_de_F%C3%BAtbol_%28Argentina%29_wordmark.svg"
   }
-   
-  /* =========================================
-     NATIONAL TEAMS — SÉLECTIONS NATIONALES
-     ========================================= */
-
-  {
-    name: "FIFA World Cup",
-    slug: "fifa-world-cup",
-    country: "Monde",
-    logo: "https://commons.wikimedia.org/wiki/Special:Redirect/file/2026_FIFA_World_Cup_logo.svg"
-  },
-
-  {
-    name: "UEFA European Championship",
-    slug: "uefa-european-championship",
-    country: "Europe",
-    logo: "https://pbs.twimg.com/media/GRZwVExbIAAb6h2.jpg"
-  },
-
-  {
-    name: "CAF Africa Cup of Nations",
-    slug: "caf-africa-cup-of-nations",
-    country: "Afrique",
-    logo: "https://content.sportslogos.net/news/2025/01/tournament-logo-905x590-20250127-CAF-AFCON-confederation-of-african-football-africa-cup-of-nations-logo-2025-morocco-zellij.jpg"
-  },
-
-  {
-    name: "AFC Asian Cup",
-    slug: "afc-asian-cup",
-    country: "Asie",
-    logo: "https://assets.the-afc.com/AFC_Competition_Logos/Asian_Cup/AFC_Asian_Cup_Logo_new.png"
-  },
-
-  {
-    name: "CONMEBOL Copa America",
-    slug: "conmebol-copa-america",
-    country: "Amérique du Sud",
-    logo: "https://assets.football-logos.cc/logos/tournaments/700x700/conmebol-copa-america-2024.4b3f575d.png"
-  },
-
-  {
-    name: "UEFA Nations League",
-    slug: "uefa-nations-league",
-    country: "Europe",
-    logo: "https://palmares.fyi/crests/competitions/uefa-nations-league.png"
-  },
-
-  {
-    name: "CONCACAF Gold Cup",
-    slug: "concacaf-gold-cup",
-    country: "Amérique du Nord et centrale",
-    logo: "https://logotyp.us/file/concacaf-gold-cup.svg"
-  }
-
 ];
 
 
