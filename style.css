@@ -14308,3 +14308,74 @@ body.dark #leagues .ss-qualification-legend .ss-zone-legend-item > span {
   filter: none !important;
 }
 
+/* FIX: séparateur entre joueur et statistique */
+
+#realStandings .bf-competition .ss-players-grid {
+  display: grid !important;
+  grid-template-columns: repeat(2, minmax(0, 1fr)) !important;
+  align-items: start !important;
+  gap: 14px !important;
+  min-width: 0 !important;
+}
+
+#realStandings .bf-competition .ss-player-card {
+  min-width: 0 !important;
+  overflow: hidden !important;
+}
+
+#realStandings .bf-competition .ss-player-row {
+  display: grid !important;
+  grid-template-columns: 22px minmax(0, 1fr) 32px !important;
+  align-items: center !important;
+  gap: 8px !important;
+  min-width: 0 !important;
+  min-height: 54px !important;
+  height: auto !important;
+  padding: 8px 0 !important;
+}
+
+#realStandings .bf-competition .ss-player {
+  display: flex !important;
+  align-items: center !important;
+  gap: 8px !important;
+  min-width: 0 !important;
+  width: 100% !important;
+  overflow: hidden !important;
+}
+
+#realStandings .bf-competition .ss-player-photo,
+#realStandings .bf-competition .ss-player-fallback {
+  width: 34px !important;
+  height: 34px !important;
+  flex: 0 0 34px !important;
+  border-radius: 50% !important;
+  object-fit: cover !important;
+}
+
+#realStandings .bf-competition .ss-player-name {
+  display: block !important;
+  flex: 1 1 auto !important;
+  min-width: 0 !important;
+  margin: 0 !important;
+  white-space: normal !important;
+  overflow: visible !important;
+  overflow-wrap: anywhere !important;
+  text-overflow: clip !important;
+  line-height: 1.35 !important;
+  font-size: 12px !important;
+}
+
+#realStandings .bf-competition .ss-player-value {
+  display: block !important;
+  width: 32px !important;
+  min-width: 32px !important;
+  text-align: right !important;
+  white-space: nowrap !important;
+  justify-self: end !important;
+}
+
+@media (max-width: 700px) {
+  #realStandings .bf-competition .ss-players-grid {
+    grid-template-columns: minmax(0, 1fr) !important;
+  }
+}
