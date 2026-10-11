@@ -604,15 +604,274 @@ async function loadTodayMatches() {
     return fallback;
   }
 
+/* =========================================================
+   BAKHIRAFOOT - QUALIFICATION ZONES
+   ========================================================= */
 
+// القواعد الأساسية؛ معلومات التأهل من المصدر عند توفرها عندها الأولوية.
+const QUALIFICATION_RULES = {
+  "english-premier-league": [
+    { from: 1, to: 4, key: "ucl", label: "Champions League" },
+    { from: 5, to: 5, key: "uel", label: "Europa League — place de base" },
+    { from: 6, to: 6, key: "uecl", label: "Conference League — place de base" },
+    { from: 18, to: 20, key: "relegation", label: "Relégation" }
+  ],
+
+  "spanish-la-liga": [
+    { from: 1, to: 4, key: "ucl", label: "Champions League" },
+    { from: 5, to: 5, key: "uel", label: "Europa League — place de base" },
+    { from: 6, to: 6, key: "uecl", label: "Conference League — place de base" },
+    { from: 18, to: 20, key: "relegation", label: "Relégation" }
+  ],
+
+  "italian-serie-a": [
+    { from: 1, to: 4, key: "ucl", label: "Champions League" },
+    { from: 5, to: 5, key: "uel", label: "Europa League" },
+    { from: 6, to: 6, key: "uecl", label: "Conference League — place de base" },
+    { from: 18, to: 20, key: "relegation", label: "Relégation" }
+  ],
+
+  "bundesliga": [
+    { from: 1, to: 4, key: "ucl", label: "Champions League" },
+    { from: 5, to: 5, key: "uel", label: "Europa League — place de base" },
+    { from: 6, to: 6, key: "uecl", label: "Conference League — place de base" },
+    { from: 16, to: 16, key: "relegation-playoff", label: "Barrage de relégation" },
+    { from: 17, to: 18, key: "relegation", label: "Relégation" }
+  ],
+
+  "french-ligue-1": [
+    { from: 1, to: 3, key: "ucl", label: "Champions League" },
+    { from: 4, to: 4, key: "ucl-playoff", label: "Qualifications Champions League" },
+    { from: 5, to: 5, key: "uel", label: "Europa League — place de base" },
+    { from: 6, to: 6, key: "uecl", label: "Conference League — place de base" },
+    { from: 16, to: 16, key: "relegation-playoff", label: "Barrage de relégation" },
+    { from: 17, to: 18, key: "relegation", label: "Relégation" }
+  ],
+
+  "netherlands-eredivisie": [
+    { from: 1, to: 1, key: "ucl", label: "Champions League" },
+    { from: 2, to: 2, key: "ucl-playoff", label: "Qualifications Champions League" },
+    { from: 3, to: 3, key: "uel", label: "Qualifications Europa League" },
+    { from: 4, to: 7, key: "europe-playoff", label: "Play-offs européens — zone indicative" },
+    { from: 16, to: 16, key: "relegation-playoff", label: "Barrage de relégation" },
+    { from: 17, to: 18, key: "relegation", label: "Relégation" }
+  ],
+
+  "the-botola-pro": [
+    { from: 1, to: 2, key: "caf-cl", label: "Ligue des champions CAF — places de base" },
+    { from: 3, to: 3, key: "caf-confed", label: "Coupe de la Confédération CAF — place indicative" },
+    { from: 15, to: 16, key: "relegation", label: "Relégation" }
+  ]
+};
+
+function qualificationText(item) {
+  if (typeof item === "string") return item;
+
+  if (Array.isArray(item)) {
+    return item.map(qualificationText).join(" ");
+  }
+
+  if (item && typeof item === "object") {
+    return [
+      item.label,
+      item.name,
+      item.title,
+      item.description,
+      item.type,
+      item.competition
+    ]
+      .filter(value => typeof value === "string")
+      .join(" ");
+  }
+
+  return "";
+}
+
+function getProviderQualificationZone(row) {
+  const source = [
+    row?.zone,
+    row?.zone_name,
+    row?.qualification,
+    row?.qualified_for,
+    row?.description
+  ]
+    .map(qualificationText)
+    .filter(Boolean)
+    .join(" ")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase();
+
+  if (!source) return null;
+
+  if (
+    /(knockout.*play.?off|play.?off.*round of 16|barrage.*huitieme)/.test(source)
+  ) {
+    return {
+      key: "stage-playoff",
+      label: "Barrages d'accès aux huitièmes"
+    };
+  }
+
+  if (
+    /round of 16|huitiemes de finale|last 16/.test(source)
+  ) {
+    return {
+      key: "stage-direct",
+      label: "Qualifié directement en huitièmes"
+    };
+  }
+
+  if (
+    /caf.*champions|champions.*caf/.test(source)
+  ) {
+    return {
+      key: "caf-cl",
+      label: "Ligue des champions CAF"
+    };
+  }
+
+  if (
+    /relegat|descenso|descente/.test(source) &&
+    /play.?off|barrage/.test(source)
+  ) {
+    return {
+      key: "relegation-playoff",
+      label: "Barrage de relégation"
+    };
+  }
+
+  if (/champions league|\bucl\b/.test(source)) {
+    if (/qualif|play.?off|barrage|preliminary/.test(source)) {
+      return {
+        key: "ucl-playoff",
+        label: "Qualifications Champions League"
+      };
+    }
+
+    return {
+      key: "ucl",
+      label: "Champions League"
+    };
+  }
+
+  if (/conference league|\buecl\b/.test(source)) {
+    return {
+      key: "uecl",
+      label: "Conference League"
+    };
+  }
+
+  if (/europa league|\buel\b/.test(source)) {
+    return {
+      key: "uel",
+      label: "Europa League"
+    };
+  }
+
+  if (/confederation caf/.test(source)) {
+    return {
+      key: "caf-confed",
+      label: "Coupe de la Confédération CAF"
+    };
+  }
+
+  if (/relegat|descenso|descente/.test(source)) {
+    return {
+      key: "relegation",
+      label: "Relégation"
+    };
+  }
+
+  if (/eliminated|elimine|elimination/.test(source)) {
+    return {
+      key: "eliminated",
+      label: "Éliminé de la compétition"
+    };
+  }
+
+  return null;
+}
+
+function getQualificationZone(row, competition, position) {
+  // الأولوية لأي معلومة تأهل صريحة جاية من SportScore.
+  const providerZone = getProviderQualificationZone(row);
+
+  if (providerZone) return providerZone;
+
+  const slug = competition?.slug;
+
+  // نظام مرحلة الدوري الأوروبية: 36 فريقاً.
+  if (
+    slug === "uefa-champions-league" ||
+    slug === "uefa-europa-league" ||
+    slug === "uefa-europa-conference-league"
+  ) {
+    if (position >= 1 && position <= 8) {
+      return {
+        key: "stage-direct",
+        label: "Qualifié directement en huitièmes"
+      };
+    }
+
+    if (position >= 9 && position <= 24) {
+      return {
+        key: "stage-playoff",
+        label: "Barrages d'accès aux huitièmes"
+      };
+    }
+
+    if (position >= 25 && position <= 36) {
+      return {
+        key: "eliminated",
+        label: "Éliminé de la compétition"
+      };
+    }
+
+    return null;
+  }
+
+  const rules = QUALIFICATION_RULES[slug] || [];
+
+  return rules.find(
+    rule => position >= rule.from && position <= rule.to
+  ) || null;
+}
+
+function renderQualificationLegend(standings, competition) {
+  const zones = new Map();
+
+  standings.forEach((row, index) => {
+    const position =
+      Number(value(row, ["position", "rank", "place"], index + 1)) ||
+      index + 1;
+
+    const zone = getQualificationZone(row, competition, position);
+
+    if (zone && !zones.has(zone.key)) {
+      zones.set(zone.key, zone);
+    }
+  });
+
+  if (!zones.size) return "";
+
+  return `
+    <div class="ss-qualification-legend">
+      ${Array.from(zones.values()).map(zone => `
+        <span class="ss-zone-legend-item">
+          <i class="ss-zone-swatch ss-zone-${zone.key}"></i>
+          <span>${escapeHTML(zone.label)}</span>
+        </span>
+      `).join("")}
+    </div>
+  `;
+}
+   
   /* =========================================================
      LIGNE DU CLASSEMENT
      ========================================================= */
 
-  function renderStandingRow(
-    row,
-    index
-  ) {
+ function renderStandingRow(row, index, competition) {
 
     const position =
       value(
@@ -624,6 +883,9 @@ async function loadTodayMatches() {
         ],
         index + 1
       );
+
+    const rank = Number(position) || index + 1;
+const zone = getQualificationZone(row, competition, rank);
 
      const rankNumber = Number(position);
 
@@ -728,9 +990,12 @@ const rankClass =
 
     return `
 
-      <div class="ss-standing-row">
+      <div
+  class="ss-standing-row ss-row-zone-${zone ? zone.key : "none"}"
+  title="${escapeHTML(zone ? zone.label : "")}"
+>
 
-       <span class="ss-position ${rankClass}">
+      <span class="ss-position ss-position-zone-${zone ? zone.key : "none"}">
           ${escapeHTML(position)}
         </span>
 
@@ -753,9 +1018,15 @@ const rankClass =
               `
           }
 
-          <strong>
-            ${escapeHTML(name)}
-          </strong>
+         <div class="ss-club-info">
+  <strong>${escapeHTML(name)}</strong>
+
+  ${zone ? `
+    <small class="ss-zone-caption ss-zone-${zone.key}">
+      ${escapeHTML(zone.label)}
+    </small>
+  ` : ""}
+</div>
 
         </div>
 
@@ -1187,8 +1458,10 @@ const rankClass =
     assists
   } = result;
 
-  const rows = standings
-    .map(renderStandingRow)
+ const rows = standings
+    .map((row, index) =>
+      renderStandingRow(row, index, competition)
+    )
     .join("");
 
   return `
@@ -1229,7 +1502,7 @@ const rankClass =
       </summary>
 
       <div class="bf-competition-content">
-
+${renderQualificationLegend(standings, competition)}
         <div class="ss-table-scroll">
 
           <div class="ss-table">
@@ -1709,6 +1982,180 @@ body.dark .ss-table-header {
 .ss-position {
   font-weight: 900;
   font-size: 13px;
+}
+
+/* Qualification legend */
+.ss-qualification-legend {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 8px 14px;
+  padding: 12px 16px;
+  border-bottom: 1px solid rgba(16, 35, 48, .07);
+}
+
+.ss-zone-legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  font-size: 10px;
+  font-weight: 800;
+}
+
+.ss-zone-swatch {
+  display: inline-block;
+  width: 9px;
+  height: 9px;
+  flex: 0 0 9px;
+  border-radius: 50%;
+}
+
+.ss-club-info {
+  display: flex;
+  flex-direction: column;
+  gap: 3px;
+  min-width: 0;
+}
+
+.ss-zone-caption {
+  display: block;
+  width: fit-content;
+  max-width: 100%;
+  padding: 2px 5px;
+  border-radius: 5px;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  font-size: 9px;
+  font-weight: 800;
+}
+
+.ss-row-zone-ucl {
+  border-left: 4px solid #2563eb;
+  background-color: rgba(37, 99, 235, .045);
+}
+
+.ss-row-zone-ucl-playoff {
+  border-left: 4px solid #60a5fa;
+  background-color: rgba(96, 165, 250, .05);
+}
+
+.ss-row-zone-uel {
+  border-left: 4px solid #ea580c;
+  background-color: rgba(234, 88, 12, .045);
+}
+
+.ss-row-zone-uecl,
+.ss-row-zone-europe-playoff {
+  border-left: 4px solid #9333ea;
+  background-color: rgba(147, 51, 234, .045);
+}
+
+.ss-row-zone-caf-cl {
+  border-left: 4px solid #0d9488;
+  background-color: rgba(13, 148, 136, .05);
+}
+
+.ss-row-zone-caf-confed {
+  border-left: 4px solid #0891b2;
+  background-color: rgba(8, 145, 178, .045);
+}
+
+.ss-row-zone-relegation-playoff {
+  border-left: 4px solid #d97706;
+  background-color: rgba(217, 119, 6, .05);
+}
+
+.ss-row-zone-relegation {
+  border-left: 4px solid #dc2626;
+  background-color: rgba(220, 38, 38, .045);
+}
+
+.ss-row-zone-stage-direct {
+  border-left: 4px solid #16a34a;
+  background-color: rgba(22, 163, 74, .05);
+}
+
+.ss-row-zone-stage-playoff {
+  border-left: 4px solid #ca8a04;
+  background-color: rgba(202, 138, 4, .05);
+}
+
+.ss-row-zone-eliminated {
+  border-left: 4px solid #94a3b8;
+  background-color: rgba(148, 163, 184, .045);
+}
+
+.ss-zone-ucl {
+  color: #1d4ed8;
+  background: #dbeafe;
+}
+
+.ss-zone-ucl-playoff {
+  color: #1d4ed8;
+  background: #eff6ff;
+}
+
+.ss-zone-uel {
+  color: #c2410c;
+  background: #ffedd5;
+}
+
+.ss-zone-uecl,
+.ss-zone-europe-playoff {
+  color: #7e22ce;
+  background: #f3e8ff;
+}
+
+.ss-zone-caf-cl {
+  color: #0f766e;
+  background: #ccfbf1;
+}
+
+.ss-zone-caf-confed {
+  color: #0e7490;
+  background: #cffafe;
+}
+
+.ss-zone-relegation-playoff {
+  color: #92400e;
+  background: #fef3c7;
+}
+
+.ss-zone-relegation {
+  color: #b91c1c;
+  background: #fee2e2;
+}
+
+.ss-zone-stage-direct {
+  color: #166534;
+  background: #dcfce7;
+}
+
+.ss-zone-stage-playoff {
+  color: #854d0e;
+  background: #fef9c3;
+}
+
+.ss-zone-eliminated {
+  color: #475569;
+  background: #e2e8f0;
+}
+
+body.dark .ss-zone-caption,
+body.dark .ss-zone-legend-item {
+  filter: brightness(.9);
+}
+
+@media (max-width: 600px) {
+  .ss-qualification-legend {
+    gap: 7px 10px;
+    padding: 10px 12px;
+  }
+
+  .ss-zone-caption {
+    font-size: 8px;
+  }
 }
 
 .ss-position.is-first {
