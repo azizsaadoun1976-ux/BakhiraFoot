@@ -90,25 +90,25 @@ const competitions = [
     name: "EFL Championship",
     slug: "english-football-league-championship",
     country: "Angleterre",
-    logo: "https://flagcdn.com/w80/gb-eng.png"
+    logo: "https://seeklogo.com/images/E/efl-championship-logo-472D2177A6-seeklogo.com.png"
   },
   {
     name: "Serie B",
     slug: "italian-serie-b",
     country: "Italie",
-    logo: "https://flagcdn.com/w80/it.png"
+    logo: "https://www.ceroacero.es/img/logos/competicoes/95_imgbank_sb_20250311155014.png"
   },
   {
     name: "Brasileirão Série A",
     slug: "brazilian-serie-a",
     country: "Brésil",
-    logo: "https://flagcdn.com/w80/br.png"
+    logo: "https://logospng.org/download/brasileirao-serie-a/logo-brasileirao-512.png"
   },
   {
     name: "Egyptian Premier League",
     slug: "egyptian-premier-league",
     country: "Égypte",
-    logo: "https://flagcdn.com/w80/eg.png"
+    logo: "https://assets.footylogos.com/logos/egyptian-premier-league/egyptian-premier-league-logo-footylogos.svg"
   },
  {
   name: "Saudi Professional League",
@@ -126,25 +126,25 @@ const competitions = [
     name: "Süper Lig",
     slug: "turkish-super-league",
     country: "Turquie",
-    logo: "https://flagcdn.com/w80/tr.png"
+    logo: "https://upload.wikimedia.org/wikipedia/commons/8/86/Trendyol_super_lig_logo.svg"
   },
   {
     name: "Belgian Pro League",
     slug: "belgian-pro-league",
     country: "Belgique",
-    logo: "https://flagcdn.com/w80/be.png"
+    logo: "https://assets.footylogos.com/logos/belgian-pro-league/belgian-pro-league-logo-footylogos.svg"
   },
   {
     name: "Scottish Premiership",
     slug: "scottish-premiership",
     country: "Écosse",
-    logo: "https://flagcdn.com/w80/gb-sct.png"
+    logo: "https://upload.wikimedia.org/wikipedia/commons/9/91/Liga_Profesional_de_F%C3%BAtbol_%28Argentina%29_wordmark.svg"
   },
   {
    name: "Argentine Division 1",
   slug: "argentine-division-1",
   country: "Argentine",
-  logo: "https://upload.wikimedia.org/wikipedia/commons/thumb/9/92/Logo_de_la_Liga_Profesional_de_F%C3%BAtbol_de_Argentina.svg/512px-Logo_de_la_Liga_Profesional_de_F%C3%BAtbol_de_Argentina.svg.png"
+  logo: "https://upload.wikimedia.org/wikipedia/commons/9/91/Liga_Profesional_de_F%C3%BAtbol_%28Argentina%29_wordmark.svg"
   }
 ];
 
