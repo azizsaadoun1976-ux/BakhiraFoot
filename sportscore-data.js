@@ -3130,6 +3130,468 @@ async function loadConferenceLeaguePhaseStandings() {
     return statValue(b, stat) - statValue(a, stat);
   }).slice(0, 5);
 }
+   /* =========================================================
+   BAKHIRAFOOT — TABLEAU DES ÉLIMINATOIRES ESPN
+   1/8 DE FINALE → FINALE
+   ========================================================= */
+
+const ESPN_KNOCKOUT_CODES = {
+  "UEFA Champions League": "uefa.champions",
+  "UEFA Europa League": "uefa.europa",
+  "UEFA Conference League": "uefa.europa.conf",
+  "FIFA World Cup": "fifa.world",
+  "UEFA Euro": "uefa.euro",
+  "CAF Africa Cup of Nations": "caf.nations",
+  "AFC Asian Cup": "afc.asian.cup",
+  "Copa América": "conmebol.america",
+  "UEFA Nations League": "uefa.nations"
+};
+
+const KNOCKOUT_STAGE_ORDER = [
+  { key: "Rd of 16", title: "1/8 de finale" },
+  { key: "Quarterfinals", title: "Quarts de finale" },
+  { key: "Semifinals", title: "Demi-finales" },
+  { key: "Final", title: "Finale" }
+];
+
+const knockoutEventsCache = new Map();
+
+function knockoutStageFromText(value) {
+  const text = String(value || "")
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[_-]+/g, " ");
+
+  if (
+    /round of 16|rd of 16|last 16|huitiemes de finale|octavos de final|ottavi di finale/.test(text)
+  ) {
+    return "Rd of 16";
+  }
+
+  if (
+    /quarter\s*final|quarts? de finale|cuartos de final|quarti di finale/.test(text)
+  ) {
+    return "Quarterfinals";
+  }
+
+  if (
+    /semi\s*final|demi\s*final|semifinali/.test(text)
+  ) {
+    return "Semifinals";
+  }
+
+  if (
+    /\bfinals?\b/.test(text) &&
+    !/quarter|semi|playoff/.test(text)
+  ) {
+    return "Final";
+  }
+
+  return "";
+}
+
+function knockoutEventStage(event) {
+  const match = event?.competitions?.[0] || {};
+
+  return knockoutStageFromText([
+    event?.season?.slug,
+    match?.series?.title,
+    event?.altGameNote,
+    ...(match?.notes || []).map(note => note?.text)
+  ].filter(Boolean).join(" "));
+}
+
+async function fetchKnockoutEvents(competitionName) {
+  if (knockoutEventsCache.has(competitionName)) {
+    return knockoutEventsCache.get(competitionName);
+  }
+
+  const code = ESPN_KNOCKOUT_CODES[competitionName];
+
+  if (!code) return [];
+
+  const request = (async () => {
+    const endpoint =
+      `https://site.api.espn.com/apis/site/v2/sports/soccer/${code}/scoreboard`;
+
+    const seasonData = await fetchJSON(endpoint);
+    const league = seasonData?.leagues?.[0];
+
+    if (!league) return [];
+
+    const calendarEntries = (league.calendar || [])
+      .flatMap(calendar => calendar.entries || []);
+
+    const knockoutEntries = calendarEntries.filter(entry =>
+      knockoutStageFromText(entry.label)
+    );
+
+    const dateRanges = knockoutEntries.length
+      ? knockoutEntries
+      : [{
+          startDate: league.calendarStartDate,
+          endDate: league.calendarEndDate
+        }];
+
+    const months = new Set();
+
+    dateRanges.forEach(entry => {
+      const start = new Date(entry.startDate || "");
+      const end = new Date(entry.endDate || "");
+
+      if (
+        Number.isNaN(start.getTime()) ||
+        Number.isNaN(end.getTime())
+      ) {
+        return;
+      }
+
+      const cursor = new Date(Date.UTC(
+        start.getUTCFullYear(),
+        start.getUTCMonth(),
+        1
+      ));
+
+      const lastMonth = new Date(Date.UTC(
+        end.getUTCFullYear(),
+        end.getUTCMonth(),
+        1
+      ));
+
+      while (cursor <= lastMonth) {
+        const month =
+          String(cursor.getUTCFullYear()) +
+          String(cursor.getUTCMonth() + 1).padStart(2, "0");
+
+        months.add(month);
+        cursor.setUTCMonth(cursor.getUTCMonth() + 1);
+      }
+    });
+
+    const responses = await Promise.all(
+      [...months].map(async month => {
+        try {
+          return await fetchJSON(`${endpoint}?dates=${month}`);
+        } catch (error) {
+          console.warn(
+            "BakhiraFoot knockout month:",
+            competitionName,
+            month,
+            error
+          );
+          return null;
+        }
+      })
+    );
+
+    const allEvents = responses.flatMap(data =>
+      Array.isArray(data?.events) ? data.events : []
+    );
+
+    const seen = new Set();
+
+    return allEvents.filter(event => {
+      const stage = knockoutEventStage(event);
+
+      if (!stage || !event.id || seen.has(event.id)) {
+        return false;
+      }
+
+      seen.add(event.id);
+      return true;
+    });
+  })();
+
+  knockoutEventsCache.set(competitionName, request);
+
+  try {
+    return await request;
+  } catch (error) {
+    knockoutEventsCache.delete(competitionName);
+    throw error;
+  }
+}
+
+function ensureKnockoutStyles() {
+  if (document.getElementById("bf-knockout-styles")) return;
+
+  const style = document.createElement("style");
+  style.id = "bf-knockout-styles";
+
+  style.textContent = `
+    .bf-ko-section {
+      margin-top: 24px;
+      padding-top: 20px;
+      border-top: 1px solid rgba(120, 130, 140, .22);
+    }
+
+    .bf-ko-section-head {
+      margin-bottom: 15px;
+    }
+
+    .bf-ko-section-head h3 {
+      margin: 0 0 5px;
+      font-size: 20px;
+      font-weight: 850;
+    }
+
+    .bf-ko-section-head p,
+    .bf-ko-loading,
+    .bf-ko-empty {
+      font-size: 13px;
+      opacity: .72;
+    }
+
+    .bf-ko-board {
+      display: grid;
+      grid-template-columns: repeat(4, minmax(225px, 1fr));
+      gap: 14px;
+      overflow-x: auto;
+      padding: 2px 2px 12px;
+      align-items: start;
+    }
+
+    .bf-ko-stage {
+      min-width: 225px;
+      padding: 12px;
+      border: 1px solid rgba(120, 130, 140, .20);
+      border-radius: 14px;
+      background: rgba(120, 130, 140, .055);
+    }
+
+    .bf-ko-stage-title {
+      margin: 0 0 12px;
+      font-size: 14px;
+      font-weight: 850;
+    }
+
+    .bf-ko-match {
+      padding: 11px;
+      margin-bottom: 10px;
+      border-radius: 11px;
+      background: var(--card-bg, #fff);
+      border: 1px solid rgba(120, 130, 140, .16);
+    }
+
+    .bf-ko-match-meta,
+    .bf-ko-match-status {
+      display: flex;
+      justify-content: space-between;
+      gap: 8px;
+      font-size: 11px;
+      opacity: .7;
+    }
+
+    .bf-ko-match-meta {
+      margin-bottom: 9px;
+    }
+
+    .bf-ko-team {
+      display: grid;
+      grid-template-columns: 24px minmax(0, 1fr) auto;
+      align-items: center;
+      gap: 8px;
+      min-height: 31px;
+    }
+
+    .bf-ko-team + .bf-ko-team {
+      margin-top: 5px;
+    }
+
+    .bf-ko-team img {
+      width: 23px;
+      height: 23px;
+      object-fit: contain;
+    }
+
+    .bf-ko-team strong {
+      min-width: 0;
+      font-size: 12px;
+      line-height: 1.3;
+      overflow-wrap: anywhere;
+    }
+
+    .bf-ko-team b {
+      font-size: 14px;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .bf-ko-match-status {
+      margin-top: 9px;
+      padding-top: 7px;
+      border-top: 1px solid rgba(120, 130, 140, .14);
+    }
+
+    .bf-ko-empty {
+      line-height: 1.5;
+    }
+
+    body.dark .bf-ko-stage,
+    body.dark .bf-ko-match {
+      background: rgba(255, 255, 255, .035);
+      border-color: rgba(255, 255, 255, .12);
+    }
+
+    @media (max-width: 800px) {
+      .bf-ko-board {
+        grid-template-columns: repeat(4, minmax(225px, 225px));
+      }
+    }
+  `;
+
+  document.head.appendChild(style);
+}
+
+function renderKnockoutBracket(events) {
+  const stagesHTML = KNOCKOUT_STAGE_ORDER.map(stage => {
+    const matches = events
+      .filter(event => knockoutEventStage(event) === stage.key)
+      .sort((a, b) => new Date(a.date) - new Date(b.date));
+
+    const matchesHTML = matches.map(event => {
+      const match = event.competitions?.[0] || {};
+      const competitors = match.competitors || [];
+
+      const home =
+        competitors.find(team => team.homeAway === "home") ||
+        competitors[0];
+
+      const away =
+        competitors.find(team => team.homeAway === "away") ||
+        competitors[1];
+
+      if (!home || !away) return "";
+
+      const status = match.status || event.status || {};
+      const statusType = status.type || {};
+      const state = statusType.state || "";
+
+      const hasScore =
+        state === "post" ||
+        state === "in" ||
+        statusType.completed === true;
+
+      const homeScore = hasScore
+        ? (home.score ?? "–")
+        : "–";
+
+      const awayScore = hasScore
+        ? (away.score ?? "–")
+        : "–";
+
+      const date = event.date
+        ? new Intl.DateTimeFormat("fr-FR", {
+            day: "2-digit",
+            month: "short"
+          }).format(new Date(event.date))
+        : "";
+
+      const legValue = Number(match.leg?.value);
+
+      const legLabel =
+        legValue === 1 ? "Aller" :
+        legValue === 2 ? "Retour" :
+        "";
+
+      const statusLabel =
+        statusType.detail ||
+        statusType.shortDetail ||
+        statusType.description ||
+        (state === "in" ? "En direct" : "Match");
+
+      function teamHTML(team, score) {
+        const name =
+          team.team?.displayName ||
+          team.team?.name ||
+          "Équipe";
+
+        const logo = team.team?.logo || "";
+
+        return `
+          <div class="bf-ko-team">
+            ${
+              logo
+                ? `<img src="${escapeHTML(logo)}"
+                        alt="${escapeHTML(name)}"
+                        loading="lazy"
+                        onerror="this.style.display='none'">`
+                : `<span>⚽</span>`
+            }
+            <strong>${escapeHTML(name)}</strong>
+            <b>${escapeHTML(score)}</b>
+          </div>
+        `;
+      }
+
+      return `
+        <article class="bf-ko-match">
+          <div class="bf-ko-match-meta">
+            <span>${escapeHTML(date)}</span>
+            <span>${escapeHTML(legLabel)}</span>
+          </div>
+
+          ${teamHTML(home, homeScore)}
+          ${teamHTML(away, awayScore)}
+
+          <div class="bf-ko-match-status">
+            <span>${escapeHTML(statusLabel)}</span>
+            <span>BakhiraFoot</span>
+          </div>
+        </article>
+      `;
+    }).join("");
+
+    return `
+      <section class="bf-ko-stage">
+        <h4 class="bf-ko-stage-title">
+          ${escapeHTML(stage.title)}
+        </h4>
+        ${
+          matchesHTML ||
+          `<p class="bf-ko-empty">Aucun match disponible pour cette phase.</p>`
+        }
+      </section>
+    `;
+  }).join("");
+
+  return `<div class="bf-ko-board">${stagesHTML}</div>`;
+}
+
+async function loadKnockoutBracket(competitionName, container) {
+  ensureKnockoutStyles();
+
+  container.innerHTML =
+    `<p class="bf-ko-loading">Chargement des matchs éliminatoires...</p>`;
+
+  try {
+    const events = await fetchKnockoutEvents(competitionName);
+
+    if (!events.length) {
+      container.innerHTML = `
+        <p class="bf-ko-empty">
+          Les matchs éliminatoires ne sont pas encore disponibles
+          pour cette saison.
+        </p>
+      `;
+      return;
+    }
+
+    container.innerHTML = renderKnockoutBracket(events);
+  } catch (error) {
+    console.error(
+      "BakhiraFoot — knockout bracket:",
+      competitionName,
+      error
+    );
+
+    container.innerHTML = `
+      <p class="bf-ko-empty">
+        Impossible de charger le tableau éliminatoire pour le moment.
+      </p>
+    `;
+  }
+}
 async function loadCompetition(competition) {
   const isConferenceLeague =
     competition.slug === "uefa-europa-conference-league";
@@ -3236,7 +3698,10 @@ const assists =
   }).join("");
 
   return `
-    <details class="bf-competition">
+    <details
+  class="bf-competition"
+  data-competition-name="${escapeHTML(competition.name)}"
+>
       <summary class="bf-competition-summary">
         <div class="bf-competition-brand">
           <div class="bf-competition-logo">
@@ -3263,7 +3728,18 @@ const assists =
             Classement indisponible pour le moment. SportScore ne renvoie pas de tableau pour ce slug.
           </div>
         `}
+${ESPN_KNOCKOUT_CODES[competition.name] ? `
+  <section class="bf-ko-section" data-bf-knockout>
+    <div class="bf-ko-section-head">
+      <h3>Tableau des éliminatoires</h3>
+      <p>De la huitième de finale jusqu'à la finale</p>
+    </div>
 
+    <p class="bf-ko-loading">
+      Ouvrez cette compétition pour charger les matchs.
+    </p>
+  </section>
+` : ""}
         <div class="ss-players-grid">
           ${renderPlayers(goals, "goals", "Meilleurs buteurs", "⚽")}
 ${renderPlayers(assists, "assists", "Meilleurs passeurs", "🎯")}
@@ -3390,6 +3866,28 @@ container
   .querySelectorAll("details.bf-competition")
   .forEach(card => {
     card.addEventListener("toggle", () => {
+       if (
+  card.open &&
+  card.dataset.knockoutStarted !== "1"
+) {
+  const competitionName =
+    card.dataset.competitionName;
+
+  const bracket =
+    card.querySelector("[data-bf-knockout]");
+
+  if (
+    bracket &&
+    ESPN_KNOCKOUT_CODES[competitionName]
+  ) {
+    card.dataset.knockoutStarted = "1";
+
+    loadKnockoutBracket(
+      competitionName,
+      bracket
+    );
+  }
+}
       if (
         card.open &&
         card.dataset.playerPhotosStarted !== "1"
