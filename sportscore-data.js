@@ -1377,28 +1377,99 @@ function findPlayerPhoto(node, depth = 0) {
   return "";
 }
 
-function playerPhoto(row) {
-  return findPlayerPhoto(row);
+
+function normaliseImageURL(value) {
+  if (value && typeof value === "object") {
+    value =
+      value.url ||
+      value.src ||
+      value.original ||
+      value.large ||
+      "";
+  }
+
+  if (typeof value !== "string") return "";
+
+  value = value.trim();
+
+  if (value.startsWith("//")) {
+    return "https:" + value;
+  }
+
+  if (value.startsWith("/")) {
+    return "https://sportscore.com" + value;
+  }
+
+  return /^https?:\/\//i.test(value) ? value : "";
 }
 
-const playerPhotoCache = new Map();
+function playerName(row) {
+  if (!row) return "Joueur";
+
+  const player =
+    row.player && typeof row.player === "object"
+      ? row.player
+      : row.data?.player || {};
+
+  return (
+    player.name ||
+    player.player_name ||
+    player.full_name ||
+    row.player_name ||
+    row.name ||
+    (typeof row.player === "string" ? row.player : "") ||
+    "Joueur"
+  );
+}
+
+function playerPhoto(row) {
+  if (!row || typeof row !== "object") return "";
+
+  const player =
+    row.player && typeof row.player === "object"
+      ? row.player
+      : row.data?.player || {};
+
+  const sources = [
+    player.photo_url,
+    player.photoUrl,
+    player.image_url,
+    player.imageUrl,
+    player.headshot,
+    player.portrait,
+    player.avatar,
+    player.photo,
+    player.image,
+    row.photo_url,
+    row.image_url,
+    row.photo,
+    row.image
+  ];
+
+  for (const source of sources) {
+    const url = normaliseImageURL(source);
+    if (url) return url;
+  }
+
+  return "";
+}
 
 function playerSlug(row) {
+  if (!row || typeof row !== "object") return "";
+
   const player =
-    row?.player && typeof row.player === "object"
+    row.player && typeof row.player === "object"
       ? row.player
-      : {};
+      : row.data?.player || {};
 
   const candidates = [
     player.slug,
     player.player_slug,
     player.playerSlug,
-    player.url_slug,
-    row?.player_slug,
-    row?.playerSlug,
-    row?.slug,
+    row.player_slug,
+    row.playerSlug,
     player.url,
-    row?.player_url
+    row.player_url
   ];
 
   for (const candidate of candidates) {
@@ -1414,8 +1485,8 @@ function playerSlug(row) {
     if (match) return match[1];
 
     if (
-      !/^https?:\/\//i.test(value) &&
       !value.includes("/") &&
+      !value.includes("://") &&
       /^[a-z0-9-]+$/i.test(value)
     ) {
       return value;
@@ -1425,215 +1496,317 @@ function playerSlug(row) {
   return "";
 }
 
-async function fetchPlayerProfilePhoto(slug) {
-  if (!slug) return "";
+function statValue(row, stat) {
+  const player =
+    row?.player && typeof row.player === "object"
+      ? row.player
+      : {};
 
-  if (playerPhotoCache.has(slug)) {
-    return playerPhotoCache.get(slug);
+  const keys =
+    stat === "goals"
+      ? ["goals", "goal", "total", "value"]
+      : ["assists", "assist", "total", "value"];
+
+  for (const source of [row, player]) {
+    for (const key of keys) {
+      const candidate = source?.[key];
+
+      if (
+        candidate !== undefined &&
+        candidate !== null &&
+        candidate !== "" &&
+        Number.isFinite(Number(candidate))
+      ) {
+        return Number(candidate);
+      }
+    }
   }
 
-  const request = fetchJSON(
-    `${API}/widget/player/?sport=football&slug=${encodeURIComponent(slug)}&src=${SRC}`
-  )
-    .then(findPlayerPhoto)
-    .catch(() => "");
+  return 0;
+}
 
-  playerPhotoCache.set(slug, request);
+/* Cache pour éviter de répéter les recherches */
+const playerSearchCache = new Map();
+const playerProfileCache = new Map();
 
+function normalisePlayerName(name) {
+  return String(name || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[.'’]/g, "")
+    .replace(/\s+/g, " ")
+    .trim()
+    .toLowerCase();
+}
+
+function findSlugInSearch(data, targetName, inPlayers = false, depth = 0) {
+  if (!data || depth > 7) return "";
+
+  if (Array.isArray(data)) {
+    for (const item of data) {
+      const slug = findSlugInSearch(
+        item,
+        targetName,
+        inPlayers,
+        depth + 1
+      );
+
+      if (slug) return slug;
+    }
+
+    return "";
+  }
+
+  if (typeof data !== "object") return "";
+
+  const type = String(
+    data.type ||
+    data.entity_type ||
+    data.kind ||
+    data.category ||
+    ""
+  ).toLowerCase();
+
+  const isPlayer =
+    inPlayers ||
+    type === "player" ||
+    type === "football player" ||
+    type === "athlete";
+
+  const name =
+    data.name ||
+    data.player_name ||
+    data.full_name ||
+    "";
+
+  const slug = playerSlug(data);
+
+  if (
+    isPlayer &&
+    slug &&
+    normalisePlayerName(name) === targetName
+  ) {
+    return slug;
+  }
+
+  for (const [key, value] of Object.entries(data)) {
+    const childContainsPlayers =
+      inPlayers || /^(players|player|athletes)$/i.test(key);
+
+    const found = findSlugInSearch(
+      value,
+      targetName,
+      childContainsPlayers,
+      depth + 1
+    );
+
+    if (found) return found;
+  }
+
+  return "";
+}
+
+async function findPlayerProfileSlug(name) {
+  const targetName = normalisePlayerName(name);
+
+  if (!targetName) return "";
+
+  if (playerSearchCache.has(targetName)) {
+    return playerSearchCache.get(targetName);
+  }
+
+  const request = (async () => {
+    try {
+      const data = await fetchJSON(
+        `${API}/v1/search/?sport=football&q=${encodeURIComponent(name)}&limit=8&src=${SRC}`
+      );
+
+      return findSlugInSearch(data, targetName);
+    } catch {
+      return "";
+    }
+  })();
+
+  playerSearchCache.set(targetName, request);
   return request;
 }
 
+function extractProfilePhoto(data) {
+  if (!data || typeof data !== "object") return "";
+
+  const nodes = [
+    data.player,
+    data.data?.player,
+    data.result?.player,
+    data.player_data,
+    data.data,
+    data.result,
+    data
+  ];
+
+  const keys = [
+    "photo_url",
+    "photoUrl",
+    "image_url",
+    "imageUrl",
+    "headshot",
+    "portrait",
+    "avatar",
+    "photo",
+    "image",
+    "picture",
+    "profile_image",
+    "profile_picture"
+  ];
+
+  for (const node of nodes) {
+    if (!node || typeof node !== "object") continue;
+
+    for (const key of keys) {
+      const url = normaliseImageURL(node[key]);
+      if (url) return url;
+    }
+  }
+
+  return "";
+}
+
+async function fetchPlayerProfilePhoto(slug) {
+  if (!slug) return "";
+
+  if (playerProfileCache.has(slug)) {
+    return playerProfileCache.get(slug);
+  }
+
+  const request = (async () => {
+    try {
+      const data = await fetchJSON(
+        `${API}/widget/player/?sport=football&slug=${encodeURIComponent(slug)}&src=${SRC}`
+      );
+
+      return extractProfilePhoto(data);
+    } catch {
+      return "";
+    }
+  })();
+
+  playerProfileCache.set(slug, request);
+  return request;
+}
+
+function renderPlayers(players, stat, title, icon) {
+  const safePlayers = Array.isArray(players) ? players : [];
+
+  const rows = safePlayers
+    .slice(0, 5)
+    .map((player, index) => {
+      const name = playerName(player);
+      const photo = playerPhoto(player);
+      const slug = playerSlug(player);
+      const total = statValue(player, stat);
+
+      return `
+        <div class="ss-player-row">
+          <span class="ss-player-rank">${index + 1}</span>
+
+          <div
+            class="ss-player"
+            data-player-name="${escapeHTML(name)}"
+            data-player-slug="${escapeHTML(slug)}"
+          >
+            <img
+              class="ss-player-photo"
+              ${photo ? `src="${escapeHTML(photo)}"` : ""}
+              alt="${escapeHTML(name)}"
+              loading="lazy"
+              style="display:${photo ? "block" : "none"}"
+              onload="this.style.display='block';this.nextElementSibling.style.display='none';"
+              onerror="this.dataset.photoFailed='1';this.style.display='none';this.nextElementSibling.style.display='flex';"
+            >
+
+            <div
+              class="ss-player-fallback"
+              style="display:${photo ? "none" : "flex"}"
+            >👤</div>
+
+            <strong class="ss-player-name">
+              ${escapeHTML(name)}
+            </strong>
+          </div>
+
+          <strong class="ss-player-value">
+            ${escapeHTML(total)}
+          </strong>
+        </div>
+      `;
+    })
+    .join("");
+
+  return `
+    <div class="ss-player-card">
+      <div class="ss-player-card-head">
+        <div>
+          <span class="ss-stat-icon">${icon}</span>
+          <strong>${escapeHTML(title)}</strong>
+        </div>
+        <span>Top 5</span>
+      </div>
+
+      ${
+        rows ||
+        `<div class="ss-no-player-data">Données indisponibles.</div>`
+      }
+    </div>
+  `;
+}
+
+/* Recherche des photos uniquement quand on ouvre une compétition */
 async function loadRealPlayerPhotos(card) {
   const holders = Array.from(
-    card.querySelectorAll(".ss-player[data-player-slug]")
+    card.querySelectorAll(".ss-player[data-player-name]")
   );
 
-  // نحدّو عدد الطلبات المتزامنة
   for (let i = 0; i < holders.length; i += 3) {
     const batch = holders.slice(i, i + 3);
 
     await Promise.all(
       batch.map(async holder => {
-        if (holder.dataset.photoLookup === "done") return;
-
-        holder.dataset.photoLookup = "done";
-
-        const slug = holder.dataset.playerSlug;
         const img = holder.querySelector(".ss-player-photo");
-        const fallback = holder.querySelector(".ss-player-fallback");
 
-        if (!slug || !img) return;
+        if (!img || img.dataset.lookupDone === "1") return;
 
-        // الصورة الموجودة مسبقاً ما محتاجاش طلب جديد
-        if (img.getAttribute("src")) return;
+        /* Pas besoin de remplacer une photo déjà valide */
+        if (
+          img.getAttribute("src") &&
+          img.dataset.photoFailed !== "1"
+        ) {
+          return;
+        }
 
-        const photo = await fetchPlayerProfilePhoto(slug);
-        if (!photo) return;
+        img.dataset.lookupDone = "1";
 
-        img.onload = () => {
-          img.style.display = "block";
-          if (fallback) fallback.style.display = "none";
-        };
+        const name = holder.dataset.playerName;
+        let slug = holder.dataset.playerSlug;
 
-        img.onerror = () => {
-          img.style.display = "none";
-          if (fallback) fallback.style.display = "flex";
-        };
+        if (!slug) {
+          slug = await findPlayerProfileSlug(name);
+        }
 
-        img.src = photo;
+        if (!slug) return;
+
+        try {
+          const photo = await fetchPlayerProfilePhoto(slug);
+          if (!photo) return;
+
+          img.dataset.photoFailed = "";
+          img.src = photo;
+        } catch {
+          /* On garde le symbole de remplacement */
+        }
       })
     );
   }
 }
-
-  function statValue(
-    row,
-    stat
-  ) {
-
-    if (stat === "goals") {
-
-      return value(
-        row,
-        [
-          "goals",
-          "goal",
-          "total",
-          "value"
-        ],
-        0
-      );
-
-    }
-
-
-    return value(
-      row,
-      [
-        "assists",
-        "assist",
-        "total",
-        "value"
-      ],
-      0
-    );
-  }
-
-
-  function renderPlayers(
-    players,
-    stat,
-    title,
-    icon
-  ) {
-
-    const rows =
-      players
-        .slice(0, 5)
-        .map(
-          (player, index) => {
-
-            const name =
-              playerName(player);
-
-            const photo =
-              playerPhoto(player);
-const slug = playerSlug(player);
-            const total =
-              statValue(
-                player,
-                stat
-              );
-
-
-            return `
-
-              <div class="ss-player-row">
-
-                <span class="ss-player-rank">
-                  ${index + 1}
-                </span>
-
-
-
-<div
-  class="ss-player"
-  data-player-slug="${escapeHTML(slug)}"
->
-  <img
-    class="ss-player-photo"
-    ${photo ? `src="${escapeHTML(photo)}"` : ""}
-    alt="${escapeHTML(name)}"
-    loading="lazy"
-    style="display:${photo ? "block" : "none"}"
-    onerror="this.style.display='none';if(this.nextElementSibling)this.nextElementSibling.style.display='flex';this.onerror=null;"
-  >
-
-  <div
-    class="ss-player-fallback"
-    style="display:${photo ? "none" : "flex"}"
-  >👤</div>
-
-  <strong>${escapeHTML(name)}</strong>
-</div>
-
-
-                  <strong>
-                    ${escapeHTML(name)}
-                  </strong>
-
-                </div>
-
-
-                <strong class="ss-player-value">
-                  ${escapeHTML(total)}
-                </strong>
-
-              </div>
-
-            `;
-
-          }
-        )
-        .join("");
-
-
-    return `
-
-      <div class="ss-player-card">
-
-        <div class="ss-player-card-head">
-
-          <div>
-            <span class="ss-stat-icon">
-              ${icon}
-            </span>
-
-            <strong>
-              ${escapeHTML(title)}
-            </strong>
-          </div>
-
-          <span>
-            Top 5
-          </span>
-
-        </div>
-
-
-        ${
-          rows ||
-          `
-            <div class="ss-no-player-data">
-              Données indisponibles.
-            </div>
-          `
-        }
-
-      </div>
-
-    `;
-  }
 
 
   /* =========================================================
@@ -1921,6 +2094,17 @@ for (let i = 0; i < competitions.length; i += 3) {
           renderCompetition
         )
         .join("");
+
+container
+  .querySelectorAll("details.bf-competition")
+  .forEach(card => {
+    card.addEventListener("toggle", () => {
+      if (card.open) {
+        loadRealPlayerPhotos(card);
+      }
+    });
+  });
+   
    container.querySelectorAll(".bf-competition").forEach(card => {
   card.addEventListener("toggle", () => {
     if (card.open) {
