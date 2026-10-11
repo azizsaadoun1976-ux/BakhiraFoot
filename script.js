@@ -9575,7 +9575,143 @@ async function openMatchDetails(index) {
 /* =========================================================
    DATE BAR
 ========================================================= */
+async function getLatestScheduledFixtureDate() {
+  const cacheKey = "bf_latest_schedule_date_v1";
+  const now = Date.now();
 
+  function localISODate(date) {
+    const y = date.getFullYear();
+    const m = String(date.getMonth() + 1).padStart(2, "0");
+    const d = String(date.getDate()).padStart(2, "0");
+    return `${y}-${m}-${d}`;
+  }
+
+  const today = localISODate(new Date());
+
+  // استعمال آخر نتيجة مخزنة لمدة 6 ساعات
+  try {
+    const cached = JSON.parse(
+      localStorage.getItem(cacheKey) || "null"
+    );
+
+    if (
+      cached &&
+      cached.expires > now &&
+      /^\d{4}-\d{2}-\d{2}$/.test(cached.date)
+    ) {
+      return cached.date;
+    }
+  } catch (_) {}
+
+  try {
+    const response = await fetch(
+      "https://api.github.com/repos/openfootball/football.json/git/trees/master?recursive=1"
+    );
+
+    if (!response.ok) {
+      throw new Error(`GitHub HTTP ${response.status}`);
+    }
+
+    const repository = await response.json();
+
+    if (!Array.isArray(repository.tree) || repository.truncated) {
+      throw new Error("Catalogue incomplet");
+    }
+
+    const year = new Date().getFullYear();
+
+    // المواسم الحالية والقريبة فقط، وليس كل الأرشيف القديم
+    const files = repository.tree
+      .filter(file => file.type === "blob")
+      .map(file => {
+        const match = file.path.match(
+          /^(\d{4}(?:-\d{2})?)\/([^/]+)\.json$/i
+        );
+
+        if (!match) return null;
+
+        return {
+          path: file.path,
+          startYear: Number(match[1].slice(0, 4))
+        };
+      })
+      .filter(file =>
+        file &&
+        file.startYear >= year - 1 &&
+        file.startYear <= year + 1
+      );
+
+    if (!files.length) {
+      throw new Error("Aucun fichier de saison disponible");
+    }
+
+    let latestDate = today;
+    let nextIndex = 0;
+    let failed = false;
+
+    // جلب الملفات بالتوازي المحدود لتفادي عدد كبير من الطلبات مرة واحدة
+    const workers = Array.from(
+      { length: Math.min(6, files.length) },
+      async () => {
+        while (nextIndex < files.length) {
+          const file = files[nextIndex++];
+
+          try {
+            const result = await fetch(
+              "https://raw.githubusercontent.com/openfootball/football.json/master/" +
+              file.path
+            );
+
+            if (!result.ok) {
+              throw new Error("Fixture file unavailable");
+            }
+
+            const data = await result.json();
+
+            for (const match of data.matches || []) {
+              const date = String(match.date || "").slice(0, 10);
+
+              if (
+                /^\d{4}-\d{2}-\d{2}$/.test(date) &&
+                date > latestDate
+              ) {
+                latestDate = date;
+              }
+            }
+          } catch (_) {
+            failed = true;
+          }
+        }
+      }
+    );
+
+    await Promise.all(workers);
+
+    // إلا فشل شي ملف، ما نفرضوش حدّاً ناقصاً على المستخدم
+    if (failed) {
+      throw new Error("Certaines données sont indisponibles");
+    }
+
+    try {
+      localStorage.setItem(
+        cacheKey,
+        JSON.stringify({
+          date: latestDate,
+          expires: now + 6 * 60 * 60 * 1000
+        })
+      );
+    } catch (_) {}
+
+    return latestDate;
+  } catch (error) {
+    console.warn(
+      "BAKHIRAFOOT schedule date limit:",
+      error
+    );
+
+    return null;
+  }
+}
 
 function createDateBar() {
   const bar = $("dateBar");
@@ -9597,21 +9733,32 @@ function createDateBar() {
 
  const maxDate = `${today.getFullYear()}-12-31`;
 
-const savedDate =
+const initialDate =
   /^\d{4}-\d{2}-\d{2}$/.test(currentDate || "")
     ? currentDate
     : todayISO;
-
-const initialDate =
-  savedDate > maxDate ? todayISO : savedDate;
-
   // اختيار التاريخ من الكالندر
   const picker = document.createElement("input");
 
   picker.type = "date";
   picker.id = "bfDatePicker";
   picker.value = initialDate;
-  picker.max = maxDate; 
+   picker.disabled = true;
+
+getLatestScheduledFixtureDate()
+  .then(latestDate => {
+    if (!latestDate) return;
+
+    picker.max = latestDate;
+
+    if (picker.value > latestDate) {
+      picker.value = latestDate;
+      currentDate = latestDate;
+    }
+  })
+  .finally(() => {
+    picker.disabled = false;
+  });
   picker.setAttribute("aria-label", "Choisir une date");
   picker.title = "Choisir la date des matchs";
 
