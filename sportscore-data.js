@@ -724,6 +724,133 @@ const QUALIFICATION_RULES = {
   ]
 };
 
+const QUALIFICATION_RULES = {
+  /* =======================
+     COMPÉTITIONS EXISTANTES
+     ======================= */
+
+  "english-premier-league": [
+    { from: 1, to: 4, key: "ucl", label: "Champions League" },
+    { from: 5, to: 5, key: "uel", label: "Europa League — place de base" },
+    { from: 6, to: 6, key: "uecl", label: "Conference League — place de base" },
+    { from: 18, to: 20, key: "relegation", label: "Relégation" }
+  ],
+
+  "spanish-la-liga": [
+    { from: 1, to: 4, key: "ucl", label: "Champions League" },
+    { from: 5, to: 5, key: "uel", label: "Europa League — place de base" },
+    { from: 6, to: 6, key: "uecl", label: "Conference League — place de base" },
+    { from: 18, to: 20, key: "relegation", label: "Relégation" }
+  ],
+
+  "italian-serie-a": [
+    { from: 1, to: 4, key: "ucl", label: "Champions League" },
+    { from: 5, to: 5, key: "uel", label: "Europa League" },
+    { from: 6, to: 6, key: "uecl", label: "Conference League — place de base" },
+    { from: 18, to: 20, key: "relegation", label: "Relégation" }
+  ],
+
+  "bundesliga": [
+    { from: 1, to: 4, key: "ucl", label: "Champions League" },
+    { from: 5, to: 5, key: "uel", label: "Europa League — place de base" },
+    { from: 6, to: 6, key: "uecl", label: "Conference League — place de base" },
+    { from: 16, to: 16, key: "relegation-playoff", label: "Barrage de relégation" },
+    { from: 17, to: 18, key: "relegation", label: "Relégation" }
+  ],
+
+  "french-ligue-1": [
+    { from: 1, to: 3, key: "ucl", label: "Champions League" },
+    { from: 4, to: 4, key: "ucl-playoff", label: "Qualifications Champions League" },
+    { from: 5, to: 5, key: "uel", label: "Europa League — place de base" },
+    { from: 6, to: 6, key: "uecl", label: "Conference League — place de base" },
+    { from: 16, to: 16, key: "relegation-playoff", label: "Barrage de relégation" },
+    { from: 17, to: 18, key: "relegation", label: "Relégation" }
+  ],
+
+  "netherlands-eredivisie": [
+    { from: 1, to: 1, key: "ucl", label: "Champions League" },
+    { from: 2, to: 2, key: "ucl-playoff", label: "Qualifications Champions League" },
+    { from: 3, to: 3, key: "uel", label: "Qualifications Europa League" },
+    { from: 4, to: 7, key: "europe-playoff", label: "Play-offs européens — zone indicative" },
+    { from: 16, to: 16, key: "relegation-playoff", label: "Barrage de relégation" },
+    { from: 17, to: 18, key: "relegation", label: "Relégation" }
+  ],
+
+  "the-botola-pro": [
+    { from: 1, to: 2, key: "caf-cl", label: "Ligue des champions CAF — places de base" },
+    { from: 3, to: 3, key: "caf-confed", label: "Coupe de la Confédération CAF — place indicative" },
+    { from: 15, to: 16, key: "relegation", label: "Relégation" }
+  ],
+
+  /* =======================
+     NOUVELLES COMPÉTITIONS
+     ======================= */
+
+  "english-football-league-championship": [
+    { from: 1, to: 2, key: "stage-direct", label: "Promotion directe en Premier League" },
+    { from: 3, to: 8, key: "stage-playoff", label: "Play-offs de promotion — Premier League" },
+    { from: 22, to: 24, key: "relegation", label: "Relégation en League One" }
+  ],
+
+  "italian-serie-b": [
+    { from: 1, to: 2, key: "stage-direct", label: "Promotion directe en Serie A" },
+    { from: 3, to: 8, key: "stage-playoff", label: "Play-offs de promotion" },
+    { from: 16, to: 17, key: "relegation-playoff", label: "Zone conditionnelle de play-out — vérifier l'écart de points" },
+    { from: 18, to: 20, key: "relegation", label: "Relégation en Serie C" }
+  ],
+
+  "brazilian-serie-a": [
+    { from: 1, to: 5, key: "ucl", label: "Copa Libertadores — places via le championnat" },
+    { from: 6, to: 12, key: "uel", label: "Zone indicative Copa Sudamericana — selon les coupes et les quotas" },
+    { from: 17, to: 20, key: "relegation", label: "Relégation en Série B" }
+  ],
+
+  "egyptian-premier-league": [
+    { from: 1, to: 6, key: "stage-direct", label: "Groupe championnat — après la phase initiale" },
+    { from: 7, to: 30, key: "stage-playoff", label: "Groupe maintien — après la phase initiale" }
+  ],
+
+  "saudi-professional-league": [
+    { from: 1, to: 3, key: "ucl", label: "AFC Champions League Elite — places de base" },
+    { from: 4, to: 5, key: "ucl-playoff", label: "Qualifications AFC Champions League Elite" },
+    { from: 6, to: 6, key: "uecl", label: "AFC Champions League Two — selon les quotas" },
+    { from: 7, to: 8, key: "uel", label: "Gulf Club Champions League" },
+    { from: 16, to: 18, key: "relegation", label: "Relégation" }
+  ],
+
+  "portuguese-primera-liga": [
+    { from: 1, to: 1, key: "ucl", label: "Champions League — qualification directe" },
+    { from: 2, to: 2, key: "ucl-playoff", label: "Champions League — tour préliminaire" },
+    { from: 3, to: 4, key: "uecl", label: "Conference League — selon les places UEFA" },
+    { from: 16, to: 16, key: "relegation-playoff", label: "Barrage de maintien" },
+    { from: 17, to: 18, key: "relegation", label: "Relégation" }
+  ],
+
+  "turkish-super-league": [
+    { from: 1, to: 2, key: "ucl", label: "Zone Champions League — selon les places UEFA" },
+    { from: 3, to: 3, key: "uel", label: "Zone Europa League — selon les places UEFA" },
+    { from: 4, to: 4, key: "uecl", label: "Zone Conference League — selon les places UEFA et la Coupe" },
+    { from: 16, to: 18, key: "relegation", label: "Relégation" }
+  ],
+
+  "belgian-pro-league": [
+    { from: 1, to: 1, key: "stage-direct", label: "Champion de Belgique" },
+    { from: 2, to: 4, key: "uecl", label: "Places européennes — selon les quotas UEFA et la Coupe" },
+    { from: 17, to: 18, key: "relegation", label: "Relégation en Challenger Pro League" }
+  ],
+
+  "scottish-premiership": [
+    { from: 1, to: 3, key: "stage-direct", label: "Zone européenne — selon les places UEFA et les Coupes" },
+    { from: 11, to: 11, key: "relegation-playoff", label: "Barrage de relégation" },
+    { from: 12, to: 12, key: "relegation", label: "Relégation" }
+  ],
+
+  "argentine-division-1": [
+    { from: 1, to: 8, key: "stage-playoff", label: "Qualifié pour les play-offs — dans chaque groupe" },
+    { from: 9, to: 15, key: "eliminated", label: "Hors de la zone des play-offs du groupe" }
+  ]
+};
+
 function qualificationText(item) {
   if (typeof item === "string") return item;
 
