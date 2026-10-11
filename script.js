@@ -1707,6 +1707,281 @@ function buildCompetitionGroups(matches) {
   return result;
 }
 
+/* =========================================================
+   BAKHIRAFOOT — FETCH KNOCKOUT BRACKET
+   ========================================================= */
+
+async function fetchCompetitionBracket(competition) {
+  const slugs = [
+    competition.slug,
+    ...(competition.fallbackSlugs || [])
+  ].filter((slug, index, list) =>
+    slug && list.indexOf(slug) === index
+  );
+
+  for (const slug of slugs) {
+    try {
+      const url =
+        `https://sportscore.com/api/widget/bracket/` +
+        `?sport=football` +
+        `&slug=${encodeURIComponent(slug)}` +
+        `&src=${SRC}`;
+
+      const data = await fetchJSON(url);
+      const rounds = extractKnockoutRounds(data);
+
+      if (rounds.length) {
+        return rounds;
+      }
+    } catch (error) {
+      console.warn(
+        `Bracket indisponible pour ${competition.name}:`,
+        error
+      );
+    }
+  }
+
+  // ما كايناش إقصائيات متوفرة لهاد البطولة.
+  return [];
+}
+function knockoutTeam(match, side) {
+  const keys = side === "home"
+    ? ["home", "home_team", "homeTeam", "team1", "participant1"]
+    : ["away", "away_team", "awayTeam", "team2", "participant2"];
+
+  let raw = null;
+
+  for (const key of keys) {
+    if (match?.[key] !== undefined && match[key] !== null) {
+      raw = match[key];
+      break;
+    }
+  }
+
+  const obj = raw && typeof raw === "object" ? raw : {};
+
+  const name =
+    (typeof raw === "string" ? raw : "") ||
+    obj.name ||
+    obj.team_name ||
+    obj.teamName ||
+    obj.title ||
+    obj.competitor?.name ||
+    match?.[`${side}_name`] ||
+    "";
+
+  const logo =
+    obj.logo ||
+    obj.image ||
+    obj.crest ||
+    obj.competitor?.logo ||
+    match?.[`${side}_logo`] ||
+    "";
+
+  return {
+    name: String(name).trim(),
+    logo: String(logo).trim()
+  };
+}
+
+function knockoutScore(match, side) {
+  const keys = side === "home"
+    ? ["home_score", "homeScore", "score_home", "home_goals"]
+    : ["away_score", "awayScore", "score_away", "away_goals"];
+
+  for (const key of keys) {
+    const item = match?.[key];
+
+    if (
+      item !== undefined &&
+      item !== null &&
+      item !== ""
+    ) {
+      if (typeof item === "object") {
+        return item.value ?? item.total ?? item.current ?? "—";
+      }
+
+      return item;
+    }
+  }
+
+  const score = match?.score || match?.scores || {};
+
+  const value = score?.[side];
+
+  if (value !== undefined && value !== null) {
+    return typeof value === "object"
+      ? value.value ?? value.total ?? "—"
+      : value;
+  }
+
+  return "—";
+}
+
+function knockoutRoundName(node) {
+  if (!node || typeof node !== "object") return "";
+
+  for (const key of [
+    "round_name",
+    "roundName",
+    "round",
+    "stage_name",
+    "stageName",
+    "stage",
+    "phase"
+  ]) {
+    const value = node[key];
+
+    if (typeof value === "string" && value.trim()) {
+      return value.trim();
+    }
+
+    if (value && typeof value === "object") {
+      const name = value.name || value.title || value.label;
+
+      if (typeof name === "string" && name.trim()) {
+        return name.trim();
+      }
+    }
+  }
+
+  const hasMatches = [
+    "matches",
+    "fixtures",
+    "games",
+    "ties"
+  ].some(key => Array.isArray(node[key]));
+
+  if (hasMatches) {
+    return node.name || node.title || node.label || "";
+  }
+
+  return "";
+}
+
+function isKnockoutMatch(node) {
+  if (!node || typeof node !== "object" || Array.isArray(node)) {
+    return false;
+  }
+
+  return Boolean(
+    knockoutTeam(node, "home").name &&
+    knockoutTeam(node, "away").name
+  );
+}
+
+function extractKnockoutRounds(data) {
+  const rounds = [];
+  const seen = new Set();
+
+  function addRound(name, matches) {
+    const valid = matches.filter(isKnockoutMatch);
+
+    if (!valid.length) return;
+
+    const roundName =
+      name || "Phase à élimination directe";
+
+    const signature = roundName + "::" +
+      valid.map(match => {
+        const home = knockoutTeam(match, "home").name;
+        const away = knockoutTeam(match, "away").name;
+
+        return `${home}|${away}`;
+      }).join(";");
+
+    if (seen.has(signature)) return;
+    seen.add(signature);
+
+    rounds.push({
+      name: roundName,
+      matches: valid
+    });
+  }
+
+  function walk(node, inheritedName = "", depth = 0) {
+    if (!node || depth > 12) return;
+
+    if (Array.isArray(node)) {
+      const matches = node.filter(isKnockoutMatch);
+
+      if (matches.length) {
+        const byRound = new Map();
+
+        for (const match of matches) {
+          const label =
+            knockoutRoundName(match) ||
+            inheritedName ||
+            "Phase à élimination directe";
+
+          if (!byRound.has(label)) {
+            byRound.set(label, []);
+          }
+
+          byRound.get(label).push(match);
+        }
+
+        for (const [label, items] of byRound) {
+          addRound(label, items);
+        }
+
+        return;
+      }
+
+      for (const item of node) {
+        walk(
+          item,
+          knockoutRoundName(item) || inheritedName,
+          depth + 1
+        );
+      }
+
+      return;
+    }
+
+    if (typeof node !== "object") return;
+
+    const currentName =
+      knockoutRoundName(node) || inheritedName;
+
+    const preferredKeys = [
+      "rounds",
+      "stages",
+      "phases",
+      "bracket",
+      "matches",
+      "fixtures",
+      "games",
+      "ties",
+      "data",
+      "result",
+      "response"
+    ];
+
+    const visited = new Set();
+
+    for (const key of preferredKeys) {
+      if (node[key] && typeof node[key] === "object") {
+        visited.add(key);
+        walk(node[key], currentName, depth + 1);
+      }
+    }
+
+    for (const [key, child] of Object.entries(node)) {
+      if (visited.has(key)) continue;
+
+      if (child && typeof child === "object") {
+        walk(child, currentName, depth + 1);
+      }
+    }
+  }
+
+  walk(data);
+
+  return rounds;
+}
+
+
 
 /* =========================================================
    RENDER SCORES
