@@ -5871,7 +5871,34 @@ body.dark .bf-third-ranking-table tbody tr.is-eliminated {
     assists
   } = result;
 
-  const usefulGroups = standingGroups.filter(group => group.rows && group.rows.length);
+  
+const usefulGroups = standingGroups.filter(group => {
+  if (!group.rows || !group.rows.length) {
+    return false;
+  }
+
+  // نحيدو غير الجدول القديم ديال أحسن الثوالث
+  // ونخليو مجموعات كأس العالم وجميع البطولات الأخرى.
+  if (competition?.slug === "fifa-world-cup") {
+    const label = String(group.name || "")
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .toLowerCase()
+      .replace(/[_-]+/g, " ")
+      .replace(/\s+/g, " ")
+      .trim();
+
+    const isOldThirdPlaceTable =
+      /ranking of third|third place|third placed|best third|meilleurs troisiemes|classement des troisiemes|classement troisieme/.test(label);
+
+    if (isOldThirdPlaceTable) {
+      return false;
+    }
+  }
+
+  return true;
+});
+
   const needsGroupTitles = usefulGroups.length > 1 || usefulGroups.some(group => group.name);
 
   const tablesHTML = usefulGroups.map((group, index) => {
