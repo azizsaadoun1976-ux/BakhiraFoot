@@ -3253,6 +3253,7 @@ const ESPN_KNOCKOUT_ROUND_ORDER = [
 ];
 const knockoutEventsCache = new Map();
 
+
 function knockoutStageFromText(value) {
   const text = String(value || "")
     .toLowerCase()
@@ -3264,37 +3265,28 @@ function knockoutStageFromText(value) {
 
   if (
     /round of 32|rd of 32|last 32|1\/16 de finale|seizieme[s]? de finale/.test(text)
-  ) {
-    return "round32";
-  }
+  ) return "round32";
 
   if (
     /round of 16|rd of 16|last 16|huitiemes de finale|octavos de final|ottavi di finale/.test(text)
-  ) {
-    return "round16";
-  }
+  ) return "round16";
 
   if (
     /quarter\s*final|quarts? de finale|cuartos de final|quarti di finale/.test(text)
-  ) {
-    return "quarterfinal";
-  }
+  ) return "quarterfinal";
 
   if (
     /semi\s*final|demi\s*final|semifinali/.test(text)
-  ) {
-    return "semifinal";
-  }
+  ) return "semifinal";
 
   if (
     /\bfinals?\b/.test(text) &&
     !/quarter|semi|playoff/.test(text)
-  ) {
-    return "final";
-  }
+  ) return "final";
 
   return "";
 }
+
 function knockoutEventStage(event) {
   const match = event?.competitions?.[0] || {};
 
@@ -3810,31 +3802,180 @@ function ensureKnockoutStyles() {
     }
   `;
 
+
+style.textContent += `
+  /* Compact bracket: the whole tree fits the desktop width */
+  .bf-ko-bracket-scroll {
+    overflow-x: hidden;
+    width: 100%;
+  }
+
+  .bf-ko-bracket {
+    display: grid;
+    grid-template-columns:
+      repeat(4, minmax(0, 1fr))
+      minmax(125px, 1.2fr)
+      repeat(4, minmax(0, 1fr));
+    width: 100%;
+    min-width: 0;
+    gap: 5px;
+  }
+
+  .bf-ko-layout-standard .bf-ko-bracket {
+    grid-template-columns:
+      repeat(3, minmax(0, 1fr))
+      minmax(125px, 1.2fr)
+      repeat(3, minmax(0, 1fr));
+  }
+
+  .bf-ko-layout-short .bf-ko-bracket {
+    grid-template-columns:
+      repeat(2, minmax(0, 1fr))
+      minmax(135px, 1.2fr)
+      repeat(2, minmax(0, 1fr));
+  }
+
+  .bf-ko-bracket-side {
+    display: contents;
+  }
+
+  .bf-ko-stage {
+    width: auto;
+    min-width: 0;
+    flex: initial;
+    padding: 6px 4px;
+  }
+
+  .bf-ko-stage-title {
+    min-height: 40px;
+    padding: 6px 4px;
+    font-size: clamp(7px, .72vw, 11px);
+    overflow-wrap: anywhere;
+  }
+
+  .bf-ko-stage-list {
+    min-height: 0 !important;
+    gap: 6px;
+  }
+
+  .bf-ko-match {
+    padding: 5px 4px;
+    border-radius: 8px;
+  }
+
+  .bf-ko-match-meta,
+  .bf-ko-match-status {
+    font-size: 8px;
+    overflow-wrap: anywhere;
+  }
+
+  .bf-ko-team {
+    grid-template-columns: 16px minmax(0, 1fr) 15px;
+    gap: 3px;
+    min-height: 28px;
+    padding: 3px 1px;
+  }
+
+  .bf-ko-team img,
+  .bf-ko-team-fallback {
+    width: 15px;
+    height: 15px;
+  }
+
+  .bf-ko-team strong {
+    font-size: clamp(7px, .65vw, 10px);
+    line-height: 1.25;
+    overflow-wrap: anywhere;
+  }
+
+  .bf-ko-team b {
+    min-width: 0;
+    font-size: 10px;
+  }
+
+  .bf-ko-final-column {
+    width: auto;
+    min-width: 0;
+    flex: initial;
+    min-height: 180px;
+    padding: 8px 5px;
+  }
+
+  .bf-ko-final-heading > span {
+    font-size: 27px;
+  }
+
+  .bf-ko-final-heading h4 {
+    font-size: 16px;
+  }
+
+  /* Small screens: stack the bracket vertically instead of scrolling sideways */
+  @media (max-width: 900px) {
+    .bf-ko-bracket-scroll {
+      overflow-x: hidden;
+    }
+
+    .bf-ko-bracket {
+      display: flex;
+      flex-direction: column;
+      width: 100%;
+    }
+
+    .bf-ko-bracket-side {
+      display: grid;
+      grid-template-columns: repeat(2, minmax(0, 1fr));
+      gap: 8px;
+    }
+
+    .bf-ko-stage {
+      padding: 8px;
+    }
+
+    .bf-ko-team strong {
+      font-size: 10px;
+    }
+
+    .bf-ko-final-column {
+      min-height: 0;
+      padding: 15px;
+    }
+  }
+
+  @media (max-width: 480px) {
+    .bf-ko-bracket-side {
+      grid-template-columns: 1fr;
+    }
+  }
+`;
+
+   
   document.head.appendChild(style);
 }
 
 function renderKnockoutBracket(events, competitionName) {
-  const isWorldCup = competitionName === "FIFA World Cup";
+const isWorldCup = competitionName === "FIFA World Cup";
 
-  let stages = ESPN_KNOCKOUT_ROUND_ORDER.filter(
-    stage => stage.key !== "final"
-  );
+let stages = ESPN_KNOCKOUT_ROUND_ORDER.filter(
+  stage => stage.key !== "final"
+);
 
-  if (!isWorldCup) {
-    stages = stages.filter(
-      stage => stage.key !== "round32"
-    );
-  }
+if (!isWorldCup) {
+  stages = stages.filter(stage => stage.key !== "round32");
+}
 
-  // هاد البطولات ما كتبدأش بثمن النهائي.
-  if (
-    competitionName === "Copa América" ||
-    competitionName === "UEFA Nations League"
-  ) {
-    stages = stages.filter(
-      stage => stage.key !== "round16"
-    );
-  }
+const noRound16 =
+  competitionName === "Copa América" ||
+  competitionName === "UEFA Nations League";
+
+if (noRound16) {
+  stages = stages.filter(stage => stage.key !== "round16");
+}
+
+const layoutClass = isWorldCup
+  ? "bf-ko-layout-world-cup"
+  : noRound16
+    ? "bf-ko-layout-short"
+    : "bf-ko-layout-standard";
 
   function teamKey(team) {
     const id = team?.team?.id || team?.id;
@@ -4128,6 +4269,122 @@ function renderKnockoutBracket(events, competitionName) {
     .sort((a, b) => a.date - b.date);
   }
 
+
+function buildBracketSideAssignments() {
+  const stageKeys = stages.map(stage => stage.key);
+  const tiesByStage = new Map();
+
+  [...stageKeys, "final"].forEach(key => {
+    tiesByStage.set(key, getStageTies(key));
+  });
+
+  const assignments = new Map();
+
+  function getSideMap(stageKey) {
+    if (!assignments.has(stageKey)) {
+      assignments.set(stageKey, new Map());
+    }
+    return assignments.get(stageKey);
+  }
+
+  function tieTeamKeys(tie) {
+    return [
+      teamKey({ name: tie.home.name }),
+      teamKey({ name: tie.away.name })
+    ];
+  }
+
+  function fillUnknownSides(ties, sideMap) {
+    let leftCount = [...sideMap.values()]
+      .filter(side => side === "left").length;
+
+    let rightCount = [...sideMap.values()]
+      .filter(side => side === "right").length;
+
+    ties.forEach(tie => {
+      if (sideMap.has(tie.id)) return;
+
+      const side =
+        leftCount <= rightCount ? "left" : "right";
+
+      sideMap.set(tie.id, side);
+
+      if (side === "left") leftCount++;
+      else rightCount++;
+    });
+  }
+
+  if (!stageKeys.length) return assignments;
+
+  const finalTie = tiesByStage.get("final")?.[0];
+  const lastStageKey = stageKeys[stageKeys.length - 1];
+  const lastStageTies = tiesByStage.get(lastStageKey) || [];
+  const lastSideMap = getSideMap(lastStageKey);
+
+  // Les demi-finalistes qui apparaissent dans la finale
+  // donnent la position gauche/droite de leur branche.
+  if (finalTie) {
+    const finalists = [
+      {
+        key: teamKey({ name: finalTie.home.name }),
+        side: "left"
+      },
+      {
+        key: teamKey({ name: finalTie.away.name }),
+        side: "right"
+      }
+    ];
+
+    lastStageTies.forEach(tie => {
+      const keys = tieTeamKeys(tie);
+
+      finalists.forEach(finalist => {
+        if (keys.includes(finalist.key)) {
+          lastSideMap.set(tie.id, finalist.side);
+        }
+      });
+    });
+  }
+
+  fillUnknownSides(lastStageTies, lastSideMap);
+
+  // Chaque tour hérite de la branche du tour suivant
+  // grâce aux équipes qui réapparaissent dans les matchs.
+  for (let index = stageKeys.length - 1; index > 0; index--) {
+    const nextKey = stageKeys[index];
+    const currentKey = stageKeys[index - 1];
+
+    const nextTies = tiesByStage.get(nextKey) || [];
+    const currentTies = tiesByStage.get(currentKey) || [];
+
+    const nextSides = getSideMap(nextKey);
+    const currentSides = getSideMap(currentKey);
+
+    currentTies.forEach(tie => {
+      const keys = tieTeamKeys(tie);
+
+      for (const nextTie of nextTies) {
+        const nextSide = nextSides.get(nextTie.id);
+        if (!nextSide) continue;
+
+        const nextKeys = tieTeamKeys(nextTie);
+
+        if (keys.some(key => nextKeys.includes(key))) {
+          currentSides.set(tie.id, nextSide);
+          break;
+        }
+      }
+    });
+
+    fillUnknownSides(currentTies, currentSides);
+  }
+
+  return assignments;
+}
+
+const stageSideAssignments = buildBracketSideAssignments();
+
+   
   function renderMatchCard(match, isFinal = false) {
     function renderTeam(team) {
       return `
@@ -4174,40 +4431,36 @@ function renderKnockoutBracket(events, competitionName) {
     `;
   }
 
-  function renderStageColumn(stage, side) {
-    const ties = getStageTies(stage.key);
-    const splitAt = Math.ceil(ties.length / 2);
+ 
+function renderStageColumn(stage, side) {
+  const ties = getStageTies(stage.key);
+  const sideMap = stageSideAssignments.get(stage.key);
 
-    const visibleTies =
-      side === "left"
-        ? ties.slice(0, splitAt)
-        : ties.slice(splitAt);
+  const visibleTies = ties.filter(
+    tie => sideMap?.get(tie.id) === side
+  );
 
-    let emptyMessage = "Aucun match disponible pour cette phase.";
+  const emptyMessage =
+    "Les affiches seront ajoutées dès que les équipes seront connues.";
 
-    if (ties.length === 0) {
-      emptyMessage =
-        "Les affiches seront ajoutées dès que les données seront disponibles.";
-    }
+  return `
+    <section class="bf-ko-stage bf-ko-stage-${stage.key}">
+      <h4 class="bf-ko-stage-title">
+        ${escapeHTML(stage.label)}
+      </h4>
 
-    return `
-      <section class="bf-ko-stage bf-ko-stage-${stage.key}">
-        <h4 class="bf-ko-stage-title">
-          ${escapeHTML(stage.label)}
-        </h4>
-
-        <div class="bf-ko-stage-list">
-          ${
-            visibleTies.length
-              ? visibleTies
-                  .map(match => renderMatchCard(match))
-                  .join("")
-              : `<p class="bf-ko-empty">${escapeHTML(emptyMessage)}</p>`
-          }
-        </div>
-      </section>
-    `;
-  }
+      <div class="bf-ko-stage-list">
+        ${
+          visibleTies.length
+            ? visibleTies
+                .map(match => renderMatchCard(match))
+                .join("")
+            : `<p class="bf-ko-empty">${emptyMessage}</p>`
+        }
+      </div>
+    </section>
+  `;
+}
 
   const finalStage = ESPN_KNOCKOUT_ROUND_ORDER.find(
     stage => stage.key === "final"
@@ -4221,7 +4474,7 @@ function renderKnockoutBracket(events, competitionName) {
   const rightStages = [...stages].reverse();
 
   return `
-    <section class="bf-ko-section">
+    <section class="bf-ko-section ${layoutClass}">
       <div class="bf-ko-section-head">
         <h3>Tableau des éliminatoires</h3>
         <p>
