@@ -4662,6 +4662,7 @@ const thirdPlaceMatches = showThirdPlaceMatch
             }
           </section>
 
+
           <div class="bf-ko-bracket-side bf-ko-bracket-right">
             ${rightStages
               .map(stage => renderStageColumn(stage, "right"))
@@ -4670,12 +4671,6 @@ const thirdPlaceMatches = showThirdPlaceMatch
 
         </div>
       </div>
-              </div>
-            </section>
-          `
-          : ""
-      }
-    </section>
   `;
 }
 
