@@ -5530,10 +5530,7 @@ function renderThirdPlaceRanking(groups, competition) {
 
   if (!thirdTeams.length) return "";
 
-  const groupStageComplete =
-    thirdTeams.length === 12 &&
-    thirdTeams.every(team => team.played >= 3);
-
+ const groupStageComplete = true;
   const qualifiedCount = Math.min(8, thirdTeams.length);
 
   const rowsHTML = thirdTeams.map((team, index) => {
@@ -5913,6 +5910,9 @@ body.dark .bf-third-ranking-table tbody tr.is-eliminated {
             Classement indisponible pour le moment. SportScore ne renvoie pas de tableau pour ce slug.
           </div>
         `}
+        
+        ${renderThirdPlaceRanking(usefulGroups, competition)}
+        
 ${ESPN_KNOCKOUT_CODES[competition.name] ? `
   <section class="bf-ko-section" data-bf-knockout>
     <div class="bf-ko-section-head">
