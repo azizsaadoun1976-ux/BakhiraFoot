@@ -3261,7 +3261,11 @@ function knockoutStageFromText(value) {
     .replace(/[_-]+/g, " ")
     .replace(/\s+/g, " ")
     .trim();
-
+  if (
+    /\b(third place|3rd place|petite finale|match pour la 3e place|match pour la 3eme place|match pour la troisieme place)\b/.test(text)
+  ) {
+    return "thirdplace";
+  }
   if (
     /round of 32|rd of 32|last 32|1\/16 de finale|seizieme[s]? de finale/.test(text)
   ) return "round32";
@@ -3967,6 +3971,30 @@ style.textContent += `
       grid-template-columns: 1fr;
     }
   }
+
+    .bf-ko-third-place {
+      width: min(100%, 560px);
+      margin: 18px auto 0;
+      padding: 14px;
+      color: var(--ko-text);
+      background: var(--ko-panel);
+      border: 1px solid var(--ko-border);
+      border-radius: 14px;
+    }
+
+    .bf-ko-third-place h4 {
+      margin: 0 0 12px;
+      text-align: center;
+      font-size: 15px;
+      font-weight: 900;
+    }
+
+    .bf-ko-third-place-list .bf-ko-match {
+      width: 100%;
+      max-width: 460px;
+      margin: 0 auto;
+    }
+  
 `;
 
    
@@ -3975,7 +4003,12 @@ style.textContent += `
 
 function renderKnockoutBracket(events, competitionName) {
 const isWorldCup = competitionName === "FIFA World Cup";
-
+const showThirdPlaceMatch = new Set([
+  "FIFA World Cup",
+  "CAF Africa Cup of Nations",
+  "Copa América",
+  "UEFA Nations League"
+]).has(competitionName);
 let stages = ESPN_KNOCKOUT_ROUND_ORDER.filter(
   stage => stage.key !== "final"
 );
@@ -4554,7 +4587,9 @@ function renderStageColumn(stage, side) {
   const finalMatches = finalStage
     ? getStageTies(finalStage.key)
     : [];
-
+const thirdPlaceMatches = showThirdPlaceMatch
+  ? getStageTies("thirdplace")
+  : [];
   const leftStages = stages;
   const rightStages = [...stages].reverse();
 
@@ -4602,6 +4637,7 @@ function renderStageColumn(stage, side) {
             </div>
           </section>
 
+
           <div class="bf-ko-bracket-side bf-ko-bracket-right">
             ${rightStages
               .map(stage => renderStageColumn(stage, "right"))
@@ -4610,9 +4646,35 @@ function renderStageColumn(stage, side) {
 
         </div>
       </div>
+
+      ${
+        showThirdPlaceMatch
+          ? `
+            <section class="bf-ko-third-place">
+              <h4>🥉 Match pour la 3e place</h4>
+
+              <div class="bf-ko-third-place-list">
+                ${
+                  thirdPlaceMatches.length
+                    ? thirdPlaceMatches
+                        .map(match => renderMatchCard(match))
+                        .join("")
+                    : `
+                      <p class="bf-ko-empty">
+                        Le match pour la 3e place sera affiché
+                        dès que les données seront disponibles.
+                      </p>
+                    `
+                }
+              </div>
+            </section>
+          `
+          : ""
+      }
     </section>
   `;
 }
+
 async function loadKnockoutBracket(competitionName, container) {
   ensureKnockoutStyles();
 
