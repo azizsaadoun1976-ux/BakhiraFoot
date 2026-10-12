@@ -5574,8 +5574,204 @@ function renderThirdPlaceRanking(groups, competition) {
     `;
   }).join("");
 
-  return `
+ 
+return `
+    <style>
+      .bf-third-ranking {
+        margin: 24px 0;
+        padding: 20px;
+        border: 1px solid #dbe5ed;
+        border-radius: 18px;
+        background: #ffffff;
+        color: #172b38;
+        box-shadow: 0 8px 24px rgba(20, 40, 55, .06);
+      }
+
+      .bf-third-ranking-header {
+        display: flex;
+        align-items: center;
+        justify-content: space-between;
+        gap: 12px;
+        margin-bottom: 18px;
+      }
+
+      .bf-third-ranking-header h3 {
+        margin: 0;
+        font-size: clamp(17px, 2.5vw, 22px);
+        font-weight: 900;
+      }
+
+      .bf-third-ranking-header p {
+        margin: 7px 0 0;
+        color: #64748b;
+        font-size: 13px;
+        line-height: 1.6;
+      }
+
+      .bf-third-ranking-header > strong {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        flex-shrink: 0;
+        min-width: 54px;
+        min-height: 40px;
+        padding: 6px 10px;
+        border-radius: 12px;
+        color: #166534;
+        background: #dcfce7;
+        font-weight: 900;
+      }
+
+      .bf-third-ranking-scroll {
+        width: 100%;
+        overflow-x: auto;
+        border: 1px solid #e2e8f0;
+        border-radius: 12px;
+      }
+
+      .bf-third-ranking-table {
+        width: 100%;
+        min-width: 760px;
+        border-collapse: separate;
+        border-spacing: 0;
+        font-size: 12px;
+      }
+
+      .bf-third-ranking-table th {
+        padding: 12px 9px;
+        background: #172b38;
+        color: #ffffff;
+        text-align: center;
+        white-space: nowrap;
+        font-weight: 800;
+      }
+
+      .bf-third-ranking-table td {
+        padding: 11px 9px;
+        border-bottom: 1px solid #e8edf2;
+        text-align: center;
+        white-space: nowrap;
+      }
+
+      .bf-third-ranking-table tbody tr.is-qualified {
+        background: #f0fdf4;
+      }
+
+      .bf-third-ranking-table tbody tr.is-qualified td:first-child {
+        border-left: 4px solid #16a34a;
+      }
+
+      .bf-third-ranking-table tbody tr.not-qualified {
+        background: #f8fafc;
+        color: #64748b;
+      }
+
+      .bf-third-ranking-table tbody tr:nth-child(8) td {
+        border-bottom: 3px solid #16a34a;
+      }
+
+      .bf-third-ranking-table tbody tr:hover {
+        filter: brightness(.97);
+      }
+
+      .bf-third-team {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        min-width: 150px;
+        text-align: left;
+      }
+
+      .bf-third-team strong {
+        color: #172b38;
+      }
+
+      .bf-third-team-logo,
+      .bf-third-team-logo-fallback {
+        width: 26px;
+        height: 26px;
+        flex: 0 0 26px;
+        object-fit: contain;
+      }
+
+      .bf-third-team-logo-fallback {
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+      }
+
+      .bf-third-status {
+        display: inline-block;
+        padding: 5px 8px;
+        border-radius: 7px;
+        background: #dcfce7;
+        color: #166534;
+        font-size: 10px;
+        font-weight: 900;
+      }
+
+      .not-qualified .bf-third-status {
+        background: #e2e8f0;
+        color: #475569;
+      }
+
+      .bf-third-ranking-note {
+        margin: 12px 0 0;
+        color: #64748b;
+        font-size: 11px;
+        line-height: 1.6;
+      }
+
+      body.dark .bf-third-ranking {
+        background: #13212b;
+        border-color: rgba(255,255,255,.12);
+        color: #e5eef4;
+      }
+
+      body.dark .bf-third-ranking-header p,
+      body.dark .bf-third-ranking-note {
+        color: #a9bac6;
+      }
+
+      body.dark .bf-third-ranking-scroll {
+        border-color: #344653;
+      }
+
+      body.dark .bf-third-ranking-table tbody tr.is-qualified {
+        background: #153529;
+      }
+
+      body.dark .bf-third-ranking-table tbody tr.not-qualified {
+        background: #1b2934;
+        color: #b5c2cc;
+      }
+
+      body.dark .bf-third-team strong {
+        color: #f1f5f9;
+      }
+
+      body.dark .bf-third-ranking-table td {
+        border-bottom-color: #344653;
+      }
+
+      @media (max-width: 600px) {
+        .bf-third-ranking {
+          padding: 12px;
+          border-radius: 14px;
+        }
+
+        .bf-third-ranking-header {
+          align-items: flex-start;
+        }
+
+        .bf-third-ranking-header p {
+          font-size: 12px;
+        }
+      }
+    </style>
+
     <section class="bf-third-ranking">
+
       <div class="bf-third-ranking-header">
         <div>
           <h3>🌍 Ranking of Third-Placed Teams</h3>
@@ -5660,7 +5856,6 @@ function renderThirdPlaceRanking(groups, competition) {
       </summary>
 
       <div class="bf-competition-content">
-      ${renderThirdPlaceRanking(usefulGroups, competition)}
         ${renderQualificationLegend(usefulGroups, competition)}
         ${tablesHTML || `
           <div class="ss-no-data">
