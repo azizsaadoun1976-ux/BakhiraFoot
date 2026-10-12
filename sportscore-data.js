@@ -5406,6 +5406,218 @@ async function loadCompetition(competition) {
   `;
 }
 
+
+function renderThirdPlaceRanking(groups, competition) {
+  if (competition?.slug !== "fifa-world-cup") {
+    return "";
+  }
+
+  const sourceGroups = Array.isArray(groups) ? groups : [];
+  const thirdTeams = [];
+
+  function numberValue(row, keys, fallback = 0) {
+    const raw = value(row, keys, fallback);
+    const number = Number(raw);
+
+    return Number.isFinite(number) ? number : fallback;
+  }
+
+  function optionalNumber(row, keys) {
+    const raw = value(row, keys, null);
+
+    if (raw === null || raw === undefined || raw === "") {
+      return null;
+    }
+
+    const number = Number(raw);
+    return Number.isFinite(number) ? number : null;
+  }
+
+  sourceGroups.forEach((group, groupIndex) => {
+    const rows = Array.isArray(group?.rows) ? group.rows : [];
+
+    if (rows.length < 3) return;
+
+    const rankedRows = rows
+      .map((row, index) => ({
+        row,
+        index,
+        position:
+          numberValue(row, ["position", "rank", "place"], index + 1) ||
+          index + 1
+      }))
+      .sort((a, b) =>
+        a.position - b.position || a.index - b.index
+      );
+
+    const thirdEntry =
+      rankedRows.find(item => item.position === 3) ||
+      rankedRows[2];
+
+    if (!thirdEntry?.row) return;
+
+    const row = thirdEntry.row;
+
+    const goalsFor = numberValue(
+      row,
+      ["goals_for", "gf", "goals_scored", "goalsScored"]
+    );
+
+    const goalsAgainst = numberValue(
+      row,
+      ["goals_against", "ga", "goals_conceded", "goalsConceded"]
+    );
+
+    const groupName = String(
+      group.name || `Group ${String.fromCharCode(65 + groupIndex)}`
+    );
+
+    thirdTeams.push({
+      row,
+      groupName,
+      groupIndex,
+      name: teamName(row),
+      logo: teamLogo(row),
+      played: numberValue(row, ["played", "matches", "p", "games"]),
+      goalsFor,
+      goalsAgainst,
+      goalDifference: numberValue(
+        row,
+        ["goal_difference", "gd", "goalDifference"],
+        goalsFor - goalsAgainst
+      ),
+      points: numberValue(row, ["points", "pts", "total_points"]),
+      fairPlay: optionalNumber(row, [
+        "fair_play_points",
+        "fairPlayPoints",
+        "fair_play_score",
+        "fairPlayScore"
+      ]),
+      fifaRanking: optionalNumber(row, [
+        "fifa_ranking",
+        "fifaRanking",
+        "world_ranking",
+        "worldRanking"
+      ])
+    });
+  });
+
+  thirdTeams.sort((a, b) => {
+    if (b.points !== a.points) {
+      return b.points - a.points;
+    }
+
+    if (b.goalDifference !== a.goalDifference) {
+      return b.goalDifference - a.goalDifference;
+    }
+
+    if (b.goalsFor !== a.goalsFor) {
+      return b.goalsFor - a.goalsFor;
+    }
+
+    if (a.fairPlay !== null && b.fairPlay !== null &&
+        b.fairPlay !== a.fairPlay) {
+      return b.fairPlay - a.fairPlay;
+    }
+
+    if (a.fifaRanking !== null && b.fifaRanking !== null &&
+        a.fifaRanking !== b.fifaRanking) {
+      return a.fifaRanking - b.fifaRanking;
+    }
+
+    return a.groupIndex - b.groupIndex;
+  });
+
+  if (!thirdTeams.length) return "";
+
+  const groupStageComplete =
+    thirdTeams.length === 12 &&
+    thirdTeams.every(team => team.played >= 3);
+
+  const qualifiedCount = Math.min(8, thirdTeams.length);
+
+  const rowsHTML = thirdTeams.map((team, index) => {
+    const qualified = index < 8;
+
+    const status = groupStageComplete
+      ? (qualified ? "Qualifié" : "Éliminé")
+      : (qualified ? "Zone de qualification" : "Hors du top 8");
+
+    const logoHTML = team.logo
+      ? `<img src="${escapeHTML(team.logo)}"
+              alt=""
+              loading="lazy"
+              class="bf-third-team-logo">`
+      : `<span class="bf-third-team-logo-fallback">⚽</span>`;
+
+    return `
+      <tr class="${qualified ? "is-qualified" : "not-qualified"}">
+        <td class="bf-third-rank">${index + 1}</td>
+        <td>${escapeHTML(team.groupName)}</td>
+        <td>
+          <div class="bf-third-team">
+            ${logoHTML}
+            <strong>${escapeHTML(team.name)}</strong>
+          </div>
+        </td>
+        <td>${team.played}</td>
+        <td>${team.goalsFor}</td>
+        <td>${team.goalsAgainst}</td>
+        <td>${team.goalDifference > 0 ? "+" : ""}${team.goalDifference}</td>
+        <td><strong>${team.points}</strong></td>
+        <td>
+          <span class="bf-third-status">
+            ${escapeHTML(status)}
+          </span>
+        </td>
+      </tr>
+    `;
+  }).join("");
+
+  return `
+    <section class="bf-third-ranking">
+      <div class="bf-third-ranking-header">
+        <div>
+          <h3>🌍 Ranking of Third-Placed Teams</h3>
+          <p>
+            Les 8 meilleurs troisièmes se qualifient
+            pour les seizièmes de finale.
+          </p>
+        </div>
+        <strong>${qualifiedCount}/8</strong>
+      </div>
+
+      <div class="bf-third-ranking-scroll">
+        <table class="bf-third-ranking-table">
+          <thead>
+            <tr>
+              <th>#</th>
+              <th>Groupe</th>
+              <th>Équipe</th>
+              <th>J</th>
+              <th>BP</th>
+              <th>BC</th>
+              <th>Diff.</th>
+              <th>Pts</th>
+              <th>Qualification</th>
+            </tr>
+          </thead>
+          <tbody>
+            ${rowsHTML}
+          </tbody>
+        </table>
+      </div>
+
+      <p class="bf-third-ranking-note">
+        Classement établi selon les points, la différence de buts
+        et les buts marqués. Les critères de fair-play et le classement
+        FIFA ne sont utilisés que si la source fournit ces données.
+      </p>
+    </section>
+  `;
+}
+
+   
  function renderCompetition(result) {
   const {
     competition,
