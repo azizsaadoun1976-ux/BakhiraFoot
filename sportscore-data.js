@@ -3148,12 +3148,12 @@ const ESPN_KNOCKOUT_CODES = {
 };
 
 const KNOCKOUT_STAGE_ORDER = [
+  { key: "Rd of 32", title: "1/16 de finale — 32 équipes" },
   { key: "Rd of 16", title: "1/8 de finale" },
   { key: "Quarterfinals", title: "Quarts de finale" },
   { key: "Semifinals", title: "Demi-finales" },
   { key: "Final", title: "Finale" }
 ];
-
 const knockoutEventsCache = new Map();
 
 function knockoutStageFromText(value) {
@@ -3162,7 +3162,11 @@ function knockoutStageFromText(value) {
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "")
     .replace(/[_-]+/g, " ");
-
+if (
+  /round of 32|rd of 32|last 32|1\/16 de finale|seizieme[s]? de finale/.test(text)
+) {
+  return "Rd of 32";
+}
   if (
     /round of 16|rd of 16|last 16|huitiemes de finale|octavos de final|ottavi di finale/.test(text)
   ) {
@@ -3698,8 +3702,15 @@ function ensureKnockoutStyles() {
   document.head.appendChild(style);
 }
 
-function renderKnockoutBracket(events) {
-  const stagesHTML = KNOCKOUT_STAGE_ORDER.map(stage => {
+function renderKnockoutBracket(events, competitionName) {
+  const stages =
+    competitionName === "FIFA World Cup"
+      ? KNOCKOUT_STAGE_ORDER
+      : KNOCKOUT_STAGE_ORDER.filter(
+          stage => stage.key !== "Rd of 32"
+        );
+
+  const stagesHTML = stages.map(stage => {
     const matches = events
       .filter(event => knockoutEventStage(event) === stage.key)
       .sort((a, b) => new Date(a.date) - new Date(b.date));
@@ -3832,7 +3843,10 @@ async function loadKnockoutBracket(competitionName, container) {
       return;
     }
 
-    container.innerHTML = renderKnockoutBracket(events);
+    container.innerHTML = renderKnockoutBracket(
+  events,
+  competitionName
+);
   } catch (error) {
     console.error(
       "BakhiraFoot — knockout bracket:",
@@ -3847,16 +3861,334 @@ async function loadKnockoutBracket(competitionName, container) {
     `;
   }
 }
+   /* =========================================================
+   BAKHIRAFOOT — AFCON MAROC 2025
+   GROUPES DES PHASES FINALES
+   ========================================================= */
+
+const AFCON_FINAL_GROUPS_2025 = [
+  {
+    name: "Groupe A",
+    teams: [
+      { name: "Maroc", aliases: ["Morocco"] },
+      { name: "Mali", aliases: [] },
+      { name: "Zambie", aliases: ["Zambia"] },
+      { name: "Comores", aliases: ["Comoros"] }
+    ]
+  },
+  {
+    name: "Groupe B",
+    teams: [
+      { name: "Égypte", aliases: ["Egypt"] },
+      {
+        name: "Afrique du Sud",
+        aliases: ["South Africa"]
+      },
+      { name: "Angola", aliases: [] },
+      { name: "Zimbabwe", aliases: [] }
+    ]
+  },
+  {
+    name: "Groupe C",
+    teams: [
+      { name: "Nigeria", aliases: [] },
+      { name: "Tunisie", aliases: ["Tunisia"] },
+      { name: "Ouganda", aliases: ["Uganda"] },
+      { name: "Tanzanie", aliases: ["Tanzania"] }
+    ]
+  },
+  {
+    name: "Groupe D",
+    teams: [
+      { name: "Sénégal", aliases: ["Senegal"] },
+      {
+        name: "RD Congo",
+        aliases: [
+          "DR Congo",
+          "Congo DR",
+          "Democratic Republic of the Congo"
+        ]
+      },
+      { name: "Bénin", aliases: ["Benin"] },
+      { name: "Botswana", aliases: [] }
+    ]
+  },
+  {
+    name: "Groupe E",
+    teams: [
+      { name: "Algérie", aliases: ["Algeria"] },
+      { name: "Burkina Faso", aliases: [] },
+      {
+        name: "Guinée équatoriale",
+        aliases: ["Equatorial Guinea"]
+      },
+      { name: "Soudan", aliases: ["Sudan"] }
+    ]
+  },
+  {
+    name: "Groupe F",
+    teams: [
+      {
+        name: "Côte d'Ivoire",
+        aliases: ["Ivory Coast", "Cote d'Ivoire"]
+      },
+      { name: "Cameroun", aliases: ["Cameroon"] },
+      { name: "Gabon", aliases: [] },
+      { name: "Mozambique", aliases: [] }
+    ]
+  }
+];
+
+function normaliseAfconTeamName(name) {
+  return String(name || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]/g, "");
+}
+
+async function loadAfconFinalStandings() {
+  const endpoint =
+    "https://site.api.espn.com/apis/site/v2/sports/soccer/caf.nations/scoreboard";
+
+  // نهائيات CAN المغرب 2025، ماشي تصفيات CAN 2027.
+  const months = ["202512", "202601"];
+
+  const responses = await Promise.all(
+    months.map(month =>
+      fetchJSON(`${endpoint}?dates=${month}`)
+    )
+  );
+
+  const uniqueEvents = new Map();
+
+  responses.forEach(data => {
+    (Array.isArray(data?.events) ? data.events : [])
+      .forEach(event => {
+        if (event?.id) {
+          uniqueEvents.set(event.id, event);
+        }
+      });
+  });
+
+  const groups = AFCON_FINAL_GROUPS_2025.map(
+    definition => ({
+      name: definition.name,
+      rows: definition.teams.map(team => ({
+        position: 0,
+        team: {
+          name: team.name,
+          logo: ""
+        },
+        played: 0,
+        wins: 0,
+        draws: 0,
+        losses: 0,
+        goals_for: 0,
+        goals_against: 0,
+        goal_difference: 0,
+        points: 0
+      }))
+    })
+  );
+
+  const teamLookup = new Map();
+
+  groups.forEach((group, groupIndex) => {
+    const groupDefinition =
+      AFCON_FINAL_GROUPS_2025[groupIndex];
+
+    group.rows.forEach((row, teamIndex) => {
+      const definition = groupDefinition.teams[teamIndex];
+
+      [definition.name, ...(definition.aliases || [])]
+        .forEach(alias => {
+          teamLookup.set(
+            normaliseAfconTeamName(alias),
+            { group, row }
+          );
+        });
+    });
+  });
+
+  let groupMatchesCount = 0;
+
+  for (const event of uniqueEvents.values()) {
+    const match = event?.competitions?.[0];
+
+    if (!match) continue;
+
+    const statusType =
+      match.status?.type ||
+      event.status?.type ||
+      {};
+
+    // ما نحسبوش المباريات اللي ما سالاوش.
+    if (
+      statusType.completed !== true &&
+      statusType.state !== "post"
+    ) {
+      continue;
+    }
+
+    const competitors = match.competitors || [];
+
+    const home =
+      competitors.find(team => team.homeAway === "home") ||
+      competitors[0];
+
+    const away =
+      competitors.find(team => team.homeAway === "away") ||
+      competitors[1];
+
+    if (!home || !away) continue;
+
+    const homeName =
+      home.team?.displayName ||
+      home.team?.name ||
+      home.team?.shortDisplayName ||
+      "";
+
+    const awayName =
+      away.team?.displayName ||
+      away.team?.name ||
+      away.team?.shortDisplayName ||
+      "";
+
+    const homeInfo = teamLookup.get(
+      normaliseAfconTeamName(homeName)
+    );
+
+    const awayInfo = teamLookup.get(
+      normaliseAfconTeamName(awayName)
+    );
+
+    // كنقبلو غير الماتشات بين جوج فرق من نفس المجموعة.
+    // هكا ماتشات الإقصائيات والتصفيات ما كيدخلوش فالترتيب.
+    if (
+      !homeInfo ||
+      !awayInfo ||
+      homeInfo.group !== awayInfo.group
+    ) {
+      continue;
+    }
+
+    if (
+      home.score === null ||
+      home.score === undefined ||
+      away.score === null ||
+      away.score === undefined ||
+      String(home.score).trim() === "" ||
+      String(away.score).trim() === ""
+    ) {
+      continue;
+    }
+
+    const homeScore = Number(home.score);
+    const awayScore = Number(away.score);
+
+    if (
+      !Number.isFinite(homeScore) ||
+      !Number.isFinite(awayScore)
+    ) {
+      continue;
+    }
+
+    const homeRow = homeInfo.row;
+    const awayRow = awayInfo.row;
+
+    const homeLogo =
+      home.team?.logo ||
+      home.team?.logos?.[0]?.href ||
+      "";
+
+    const awayLogo =
+      away.team?.logo ||
+      away.team?.logos?.[0]?.href ||
+      "";
+
+    if (!homeRow.team.logo && homeLogo) {
+      homeRow.team.logo = homeLogo;
+    }
+
+    if (!awayRow.team.logo && awayLogo) {
+      awayRow.team.logo = awayLogo;
+    }
+
+    homeRow.played++;
+    awayRow.played++;
+
+    homeRow.goals_for += homeScore;
+    homeRow.goals_against += awayScore;
+
+    awayRow.goals_for += awayScore;
+    awayRow.goals_against += homeScore;
+
+    if (homeScore > awayScore) {
+      homeRow.wins++;
+      awayRow.losses++;
+
+      homeRow.points += 3;
+    } else if (awayScore > homeScore) {
+      awayRow.wins++;
+      homeRow.losses++;
+
+      awayRow.points += 3;
+    } else {
+      homeRow.draws++;
+      awayRow.draws++;
+
+      homeRow.points++;
+      awayRow.points++;
+    }
+
+    groupMatchesCount++;
+  }
+
+  if (!groupMatchesCount) {
+    throw new Error(
+      "Impossible de récupérer les matchs de la phase finale AFCON 2025."
+    );
+  }
+
+  groups.forEach(group => {
+    group.rows.forEach(row => {
+      row.goal_difference =
+        row.goals_for - row.goals_against;
+    });
+
+    group.rows.sort((a, b) =>
+      b.points - a.points ||
+      b.goal_difference - a.goal_difference ||
+      b.goals_for - a.goals_for ||
+      b.wins - a.wins
+    );
+
+    group.rows.forEach((row, index) => {
+      row.position = index + 1;
+    });
+  });
+
+  console.log(
+    "[BakhiraFoot] AFCON 2025:",
+    groupMatchesCount,
+    "matchs de groupes récupérés."
+  );
+
+  return groups;
+}
 async function loadCompetition(competition) {
   const isConferenceLeague =
     competition.slug === "uefa-europa-conference-league";
-
+const isAfconFinals =
+  competition.slug === "caf-africa-cup-of-nations";
   const [standingsData, goalsData, assistsData] =
     await Promise.allSettled([
-      isConferenceLeague
-        ? loadConferenceLeaguePhaseStandings()
-        : fetchCompetitionEndpoint("standings", competition),
-
+     isConferenceLeague
+  ? loadConferenceLeaguePhaseStandings()
+  : isAfconFinals
+    ? loadAfconFinalStandings()
+    : fetchCompetitionEndpoint("standings", competition),
 fetchCompetitionEndpoint(
   "topscorers",
   competition,
@@ -3871,13 +4203,13 @@ fetchCompetitionEndpoint(
     ]);
 
   const standingGroups =
-    standingsData.status === "fulfilled"
-      ? (
-          isConferenceLeague
-            ? standingsData.value
-            : findStandingGroups(standingsData.value)
-        )
-      : [];
+  standingsData.status === "fulfilled"
+    ? (
+        isConferenceLeague || isAfconFinals
+          ? standingsData.value
+          : findStandingGroups(standingsData.value)
+      )
+    : [];
 
   const standings = standingGroups.flatMap(
     group => group.rows
@@ -3990,9 +4322,13 @@ ${ESPN_KNOCKOUT_CODES[competition.name] ? `
       <p>De la huitième de finale jusqu'à la finale</p>
     </div>
 
-    <p class="bf-ko-loading">
-      Ouvrez cette compétition pour charger les matchs.
-    </p>
+    <p>
+  ${
+    competition.name === "FIFA World Cup"
+      ? "Du tour des 32 équipes jusqu'à la finale"
+      : "Des huitièmes de finale jusqu'à la finale"
+  }
+</p>
   </section>
 ` : ""}
         <div class="ss-players-grid">
