@@ -3288,13 +3288,35 @@ function knockoutStageFromText(value) {
 }
 
 function knockoutEventStage(event) {
-  const match = event?.competitions?.[0] || {};
+  const competitions = Array.isArray(event?.competitions)
+    ? event.competitions
+    : [];
+
+  const match =
+    competitions.find(item => Array.isArray(item?.competitors)) ||
+    competitions[0] ||
+    {};
+
+  const notes = Array.isArray(match?.notes)
+    ? match.notes.map(note =>
+        typeof note === "string"
+          ? note
+          : note?.text || note?.headline || ""
+      )
+    : [];
 
   return knockoutStageFromText([
+    event?.name,
+    event?.shortName,
     event?.season?.slug,
-    match?.series?.title,
+    event?.season?.name,
+    event?.season?.type?.name,
     event?.altGameNote,
-    ...(match?.notes || []).map(note => note?.text)
+    match?.name,
+    match?.shortName,
+    match?.series?.title,
+    match?.series?.summary,
+    ...notes
   ].filter(Boolean).join(" "));
 }
 
@@ -4384,6 +4406,67 @@ function buildBracketSideAssignments() {
 
 const stageSideAssignments = buildBracketSideAssignments();
 
+   function sortTiesByNextRound(stage, ties, side) {
+  const stageIndex = stages.findIndex(
+    item => item.key === stage.key
+  );
+
+  if (stageIndex < 0) {
+    return ties;
+  }
+
+  const nextStage =
+    stages[stageIndex + 1] ||
+    ESPN_KNOCKOUT_ROUND_ORDER.find(
+      item => item.key === "final"
+    );
+
+  if (!nextStage) {
+    return ties;
+  }
+
+  const nextSideMap =
+    stageSideAssignments.get(nextStage.key);
+
+  let nextTies = getStageTies(nextStage.key);
+
+  if (nextStage.key !== "final" && nextSideMap) {
+    nextTies = nextTies.filter(
+      tie => nextSideMap.get(tie.id) === side
+    );
+  }
+
+  const teamPositions = new Map();
+
+  nextTies.forEach((tie, index) => {
+    const homeKey = teamKey({ name: tie.home.name });
+    const awayKey = teamKey({ name: tie.away.name });
+
+    if (!teamPositions.has(homeKey)) {
+      teamPositions.set(homeKey, index * 2);
+    }
+
+    if (!teamPositions.has(awayKey)) {
+      teamPositions.set(awayKey, index * 2 + 1);
+    }
+  });
+
+  function tieRank(tie) {
+    const positions = [
+      teamPositions.get(teamKey({ name: tie.home.name })),
+      teamPositions.get(teamKey({ name: tie.away.name }))
+    ].filter(Number.isFinite);
+
+    return positions.length
+      ? Math.min(...positions)
+      : Number.MAX_SAFE_INTEGER;
+  }
+
+  return [...ties].sort((a, b) =>
+    tieRank(a) - tieRank(b) ||
+    a.date - b.date
+  );
+}
    
   function renderMatchCard(match, isFinal = false) {
     function renderTeam(team) {
@@ -4436,10 +4519,13 @@ function renderStageColumn(stage, side) {
   const ties = getStageTies(stage.key);
   const sideMap = stageSideAssignments.get(stage.key);
 
-  const visibleTies = ties.filter(
+ const visibleTies = sortTiesByNextRound(
+  stage,
+  ties.filter(
     tie => sideMap?.get(tie.id) === side
-  );
-
+  ),
+  side
+);
   const emptyMessage =
     "Les affiches seront ajoutées dès que les équipes seront connues.";
 
