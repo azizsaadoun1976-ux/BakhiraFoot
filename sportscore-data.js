@@ -2418,6 +2418,7 @@ async function fetchPlayerProfilePhoto(slug) {
 /* Source secondaire : TheSportsDB */
 const sportsDbPhotoCache = new Map();
 
+
 async function fetchTheSportsDBPhoto(name) {
   const key = normalisePlayerName(name);
 
@@ -2441,10 +2442,35 @@ async function fetchTheSportsDBPhoto(name) {
         ? data.player
         : [];
 
-      const player = players.find(
-        item =>
-          normalisePlayerName(item?.strPlayer) === key
+      const words = value =>
+        String(value || "")
+          .normalize("NFD")
+          .replace(/[\u0300-\u036f]/g, "")
+          .toLowerCase()
+          .replace(/[^a-z0-9]+/g, " ")
+          .trim()
+          .split(/\s+/)
+          .filter(word => word.length > 1);
+
+      // الأولوية للاسم المطابق تماماً.
+      let player = players.find(item =>
+        normalisePlayerName(item?.strPlayer) === key
       );
+
+      // البحث بأجزاء الاسم لتجاوز اختلاف الاسم الكامل.
+      if (!player) {
+        const targetWords = words(name);
+
+        if (targetWords.length >= 2) {
+          player = players.find(item => {
+            const candidateWords = words(item?.strPlayer);
+
+            return targetWords.every(word =>
+              candidateWords.includes(word)
+            );
+          });
+        }
+      }
 
       if (!player) return "";
 
@@ -2452,15 +2478,22 @@ async function fetchTheSportsDBPhoto(name) {
         player.strCutout ||
         player.strThumb ||
         player.strRender ||
+        player.strThumbURL ||
         ""
       );
     } catch (error) {
-      console.warn("TheSportsDB player photo:", error);
+      console.warn(
+        "TheSportsDB player photo:",
+        name,
+        error
+      );
+
       return "";
     }
   })();
 
   sportsDbPhotoCache.set(key, request);
+
   return request;
 }
 
@@ -2571,10 +2604,74 @@ function renderPlayers(players, stat, title, icon) {
 
 async function loadRealPlayerPhotos(card) {
   if (!card) return;
-
+ensurePlayerPhotoStyles();
   const holders = Array.from(
     card.querySelectorAll(".ss-player[data-player-name]")
   );
+
+function ensurePlayerPhotoStyles() {
+  if (document.getElementById("bf-player-photo-styles")) {
+    return;
+  }
+
+  const style = document.createElement("style");
+  style.id = "bf-player-photo-styles";
+
+  style.textContent = `
+    .ss-player img.ss-player-photo,
+    .ss-player .ss-player-fallback {
+      width: 42px !important;
+      height: 42px !important;
+      flex: 0 0 42px !important;
+      border-radius: 50%;
+      object-fit: cover;
+      object-position: center 25%;
+      box-sizing: border-box;
+      border: 2px solid rgba(16, 185, 129, .28);
+      background: #edf2f7;
+    }
+
+    .ss-player img.ss-player-photo {
+      box-shadow: 0 3px 10px rgba(15, 23, 42, .12);
+      transition:
+        transform .2s ease,
+        border-color .2s ease;
+    }
+
+    .ss-player:hover img.ss-player-photo {
+      transform: scale(1.06);
+      border-color: #10b981;
+    }
+
+    .ss-player .ss-player-fallback {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 19px;
+    }
+
+    body.dark .ss-player img.ss-player-photo {
+      border-color: rgba(52, 211, 153, .4);
+      background: #1e293b;
+    }
+
+    body.dark .ss-player .ss-player-fallback {
+      border-color: rgba(52, 211, 153, .4);
+      background: #263743;
+    }
+
+    @media (max-width: 600px) {
+      .ss-player img.ss-player-photo,
+      .ss-player .ss-player-fallback {
+        width: 38px !important;
+        height: 38px !important;
+        flex-basis: 38px !important;
+      }
+    }
+  `;
+
+  document.head.appendChild(style);
+}
 
   async function loadOnePhoto(holder) {
     const img = holder.querySelector(".ss-player-photo");
