@@ -7420,9 +7420,6 @@ body.dark .ss-zone-caption {
     `;
 
 
-    document.head.appendChild(style);
-  }
-
     style.textContent += `
       /* =========================================
          BAKHIRAFOOT PRO — STANDINGS REDESIGN
@@ -8027,6 +8024,9 @@ body.dark .ss-zone-caption {
         }
       }
     `;
+
+    document.head.appendChild(style);
+  }
 
 
   /* =========================================================
