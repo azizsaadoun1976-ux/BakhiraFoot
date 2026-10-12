@@ -4615,7 +4615,7 @@ const thirdPlaceMatches = showThirdPlaceMatch
               .join("")}
           </div>
 
-          <section class="bf-ko-final-column">
+                   <section class="bf-ko-final-column">
             <div class="bf-ko-final-heading">
               <span>🏆</span>
               <small>OBJECTIF</small>
@@ -4635,8 +4635,32 @@ const thirdPlaceMatches = showThirdPlaceMatch
                   `
               }
             </div>
-          </section>
 
+            ${
+              showThirdPlaceMatch
+                ? `
+                  <section class="bf-ko-third-place">
+                    <h4>🥉 Match pour la 3e place</h4>
+
+                    <div class="bf-ko-third-place-list">
+                      ${
+                        thirdPlaceMatches.length
+                          ? thirdPlaceMatches
+                              .map(match => renderMatchCard(match))
+                              .join("")
+                          : `
+                            <p class="bf-ko-empty">
+                              Le match pour la 3e place sera affiché
+                              dès que les données seront disponibles.
+                            </p>
+                          `
+                      }
+                    </div>
+                  </section>
+                `
+                : ""
+            }
+          </section>
 
           <div class="bf-ko-bracket-side bf-ko-bracket-right">
             ${rightStages
@@ -4646,26 +4670,6 @@ const thirdPlaceMatches = showThirdPlaceMatch
 
         </div>
       </div>
-
-      ${
-        showThirdPlaceMatch
-          ? `
-            <section class="bf-ko-third-place">
-              <h4>🥉 Match pour la 3e place</h4>
-
-              <div class="bf-ko-third-place-list">
-                ${
-                  thirdPlaceMatches.length
-                    ? thirdPlaceMatches
-                        .map(match => renderMatchCard(match))
-                        .join("")
-                    : `
-                      <p class="bf-ko-empty">
-                        Le match pour la 3e place sera affiché
-                        dès que les données seront disponibles.
-                      </p>
-                    `
-                }
               </div>
             </section>
           `
