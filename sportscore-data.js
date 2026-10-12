@@ -2830,7 +2830,6 @@ const CONFERENCE_LEAGUE_TEAMS = [
   { name: "Ajax", aliases: ["AFC Ajax", "Ajax Amsterdam"] },
   { name: "Atalanta", aliases: ["Atalanta BC"] },
   { name: "Aarhus", aliases: ["Aarhus AGF", "AGF Aarhus"] },
-  { name: "Bologna", aliases: [] },
   { name: "Borac", aliases: ["Borac Banja Luka"] },
   { name: "Braga", aliases: ["Sporting Braga", "SC Braga"] },
   { name: "Brann", aliases: ["SK Brann"] },
