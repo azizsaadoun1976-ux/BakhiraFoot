@@ -4453,7 +4453,7 @@ async function loadCompetition(competition) {
     fetchCompetitionEndpoint("standings", competition),
 
     isAfcon2025
-      ? loadAfcon2025PlayerLeaders("goals")
+      ? loadAfcon2025LeadersSafe("goals")
       : fetchCompetitionEndpoint(
           "topscorers",
           competition,
@@ -4461,7 +4461,7 @@ async function loadCompetition(competition) {
         ),
 
     isAfcon2025
-      ? loadAfcon2025PlayerLeaders("assists")
+      ? loadAfcon2025LeadersSafe("assists")
       : fetchCompetitionEndpoint(
           "topscorers",
           competition,
