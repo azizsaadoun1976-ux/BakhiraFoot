@@ -7423,6 +7423,611 @@ body.dark .ss-zone-caption {
     document.head.appendChild(style);
   }
 
+    style.textContent += `
+      /* =========================================
+         BAKHIRAFOOT PRO — STANDINGS REDESIGN
+         ========================================= */
+
+      .real-standings {
+        width: 100%;
+        max-width: 1240px;
+        margin: 0 auto;
+        display: grid;
+        gap: 15px;
+      }
+
+      /* Competition cards */
+      .bf-competition {
+        overflow: hidden;
+        border: 1px solid #e2e8f0;
+        border-radius: 16px;
+        background: #fff;
+        box-shadow: 0 4px 16px rgba(15, 35, 50, .045);
+        transition: border-color .2s ease, box-shadow .2s ease;
+      }
+
+      .bf-competition:hover {
+        border-color: #cbd5e1;
+        box-shadow: 0 7px 22px rgba(15, 35, 50, .075);
+      }
+
+      .bf-competition[open] {
+        border-color: #b7dec5;
+      }
+
+      .bf-competition-summary {
+        min-height: 70px;
+        padding: 11px 15px;
+        gap: 12px;
+        background: linear-gradient(110deg, #fff 0%, #f7fafc 100%);
+      }
+
+      .bf-competition-brand {
+        gap: 12px;
+      }
+
+      .bf-competition-logo {
+        width: 44px;
+        height: 44px;
+        flex-basis: 44px;
+        border-radius: 12px;
+        background: #f1f5f9;
+        border: 1px solid #e2e8f0;
+      }
+
+      .bf-competition-logo img {
+        width: 33px;
+        height: 33px;
+      }
+
+      .bf-competition-info small {
+        margin-bottom: 3px;
+        color: #64748b;
+        font-size: 9px;
+        letter-spacing: .8px;
+        opacity: 1;
+      }
+
+      .bf-competition-info h2 {
+        color: #172b38;
+        font-size: 16px;
+        font-weight: 900;
+        line-height: 1.3;
+      }
+
+      .bf-competition-info span {
+        margin-top: 3px;
+        color: #64748b;
+        font-size: 10px;
+        opacity: 1;
+      }
+
+      .bf-competition-arrow {
+        width: 29px;
+        height: 29px;
+        flex-basis: 29px;
+        background: #edf2f7;
+        color: #475569;
+        font-size: 21px;
+      }
+
+      .bf-competition-content {
+        background: #fff;
+        border-top-color: #e8edf2;
+      }
+
+      /* Group headings */
+      .ss-standing-group + .ss-standing-group {
+        border-top: 5px solid #f1f5f9;
+      }
+
+      .ss-standing-group-title {
+        padding: 11px 14px;
+        background: #f1f8f4;
+        color: #166534;
+        border-bottom-color: #e1eee5;
+        font-size: 12px;
+        letter-spacing: .2px;
+      }
+
+      /* Tables */
+      .ss-table-scroll {
+        width: 100%;
+        overflow-x: auto;
+        scrollbar-width: thin;
+        scrollbar-color: #cbd5e1 transparent;
+      }
+
+      .ss-table {
+        width: 100%;
+        min-width: 690px;
+        background: #fff;
+      }
+
+      .ss-standing-row {
+        grid-template-columns:
+          34px
+          minmax(155px, 1fr)
+          repeat(7, 36px)
+          48px;
+        gap: 5px;
+        min-height: 44px;
+        padding: 7px 12px;
+        border-bottom-color: #edf1f5;
+        font-size: 11px;
+      }
+
+      .ss-table-header {
+        min-height: 36px;
+        background: #f1f5f9;
+        color: #64748b;
+        font-size: 9px;
+        letter-spacing: .4px;
+      }
+
+      .ss-standing-row:not(.ss-table-header) {
+        transition: background .15s ease;
+      }
+
+      .ss-standing-row:nth-child(even):not(.ss-table-header) {
+        background: #f8fafc;
+      }
+
+      .ss-standing-row:hover:not(.ss-table-header) {
+        background: #effaf3;
+      }
+
+      .ss-position {
+        min-width: 25px;
+        min-height: 25px;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        border-radius: 7px;
+        font-size: 11px;
+      }
+
+      .ss-club {
+        gap: 8px;
+      }
+
+      .ss-club img,
+      .ss-club-fallback {
+        width: 27px;
+        height: 27px;
+        flex-basis: 27px;
+      }
+
+      .ss-club strong {
+        font-size: 11px;
+        font-weight: 800;
+      }
+
+      .ss-points {
+        font-size: 13px;
+        font-weight: 950;
+      }
+
+      /* Qualification information */
+      .ss-qualification-legend {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 8px 12px;
+        padding: 12px 14px;
+        background: #f8fafc;
+        border-bottom: 1px solid #e2e8f0;
+      }
+
+      .ss-zone-legend-item {
+        gap: 7px;
+        font-size: 10px;
+        font-weight: 800;
+        line-height: 1.5;
+      }
+
+      .ss-zone-legend-item > span:last-child {
+        max-width: 280px;
+        white-space: normal;
+        overflow-wrap: anywhere;
+      }
+
+      .ss-zone-caption {
+        width: fit-content;
+        max-width: 100%;
+        padding: 3px 6px;
+        border-radius: 5px;
+        font-size: 9px;
+        line-height: 1.4;
+        white-space: normal;
+        overflow-wrap: anywhere;
+      }
+
+      /* Goalscorers and assists */
+      .ss-players-grid {
+        grid-template-columns: repeat(2, minmax(0, 1fr));
+        gap: 12px;
+        padding: 14px;
+        background: #f6f8fa;
+      }
+
+      .ss-player-card {
+        min-width: 0;
+        padding: 13px;
+        border: 1px solid #e2e8f0;
+        border-radius: 13px;
+        background: #fff;
+        box-shadow: 0 2px 8px rgba(15, 35, 50, .025);
+      }
+
+      .ss-player-card-head {
+        padding-bottom: 10px;
+        margin-bottom: 4px;
+        border-bottom: 1px solid #edf1f5;
+      }
+
+      .ss-player-card-head strong {
+        color: #172b38;
+        font-size: 13px;
+        font-weight: 900;
+      }
+
+      .ss-player-card-head > span {
+        padding: 4px 7px;
+        border-radius: 6px;
+        background: #f1f5f9;
+        color: #64748b;
+        font-size: 9px;
+        opacity: 1;
+      }
+
+      .ss-player-row {
+        grid-template-columns: 20px minmax(0, 1fr) 30px;
+        gap: 7px;
+        min-height: 53px;
+        border-top-color: #edf1f5;
+      }
+
+      .ss-player-rank {
+        font-size: 10px;
+        font-weight: 900;
+      }
+
+      .ss-player {
+        min-width: 0;
+        gap: 8px;
+      }
+
+      .ss-player-name {
+        display: block;
+        color: #172b38;
+        font-size: 11px;
+        font-weight: 800;
+        line-height: 1.4;
+      }
+
+      .ss-player-meta {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 3px 6px;
+        margin-top: 2px;
+        color: #64748b;
+        font-size: 9px;
+      }
+
+      .ss-player-team,
+      .ss-player-appearances {
+        max-width: 100%;
+        overflow-wrap: anywhere;
+      }
+
+      .ss-player-value {
+        min-width: 27px;
+        padding: 5px;
+        border-radius: 7px;
+        background: #dcfce7;
+        color: #166534;
+        font-size: 12px;
+        font-weight: 950;
+        text-align: center;
+      }
+
+      /* World Cup: third-place ranking */
+      .bf-competition .bf-third-ranking {
+        margin: 15px;
+        padding: 13px;
+        border-color: #dce6ee;
+        border-radius: 13px;
+        box-shadow: none;
+      }
+
+      .bf-competition .bf-third-ranking-header {
+        gap: 10px;
+        margin-bottom: 12px;
+      }
+
+      .bf-competition .bf-third-ranking-header h3 {
+        font-size: 15px;
+        line-height: 1.4;
+      }
+
+      .bf-competition .bf-third-ranking-header p {
+        margin-top: 4px;
+        font-size: 10px;
+        line-height: 1.5;
+      }
+
+      .bf-competition .bf-third-ranking-header > strong {
+        min-width: 44px;
+        min-height: 32px;
+        padding: 4px 7px;
+        border-radius: 8px;
+        font-size: 12px;
+      }
+
+      .bf-competition .bf-third-ranking-table {
+        min-width: 690px;
+        font-size: 10px;
+      }
+
+      .bf-competition .bf-third-ranking-table th {
+        padding: 9px 6px;
+        font-size: 9px;
+      }
+
+      .bf-competition .bf-third-ranking-table td {
+        padding: 7px 6px;
+      }
+
+      .bf-competition .bf-third-team {
+        gap: 6px;
+        min-width: 135px;
+      }
+
+      .bf-competition .bf-third-team strong {
+        font-size: 10px;
+      }
+
+      .bf-competition .bf-third-team-logo,
+      .bf-competition .bf-third-team-logo-fallback {
+        width: 22px;
+        height: 22px;
+        flex-basis: 22px;
+      }
+
+      .bf-competition .bf-third-ranking-note {
+        margin-top: 8px;
+        font-size: 9px;
+      }
+
+      /* Knockout module spacing */
+      .bf-competition .bf-ko-section {
+        margin: 14px;
+        border-radius: 14px;
+      }
+
+      .bf-competition .bf-ko-section-head h3 {
+        font-size: 15px;
+      }
+
+      /* Dark mode */
+      body.dark .bf-competition {
+        background: #13212b;
+        border-color: #2a3c48;
+        box-shadow: 0 4px 16px rgba(0, 0, 0, .12);
+      }
+
+      body.dark .bf-competition:hover {
+        border-color: #3e5968;
+      }
+
+      body.dark .bf-competition[open] {
+        border-color: #276647;
+      }
+
+      body.dark .bf-competition-summary {
+        background: linear-gradient(110deg, #152530 0%, #101d27 100%);
+        color: #edf4f8;
+      }
+
+      body.dark .bf-competition-info h2 {
+        color: #f1f5f9;
+      }
+
+      body.dark .bf-competition-info small,
+      body.dark .bf-competition-info span {
+        color: #a9bac6;
+      }
+
+      body.dark .bf-competition-arrow {
+        background: #263743;
+        color: #e2e8f0;
+      }
+
+      body.dark .bf-competition-content,
+      body.dark .ss-table {
+        background: #101c26;
+      }
+
+      body.dark .ss-standing-group + .ss-standing-group {
+        border-top-color: #263743;
+      }
+
+      body.dark .ss-standing-group-title {
+        color: #86efac;
+        background: #132b21;
+        border-bottom-color: #263743;
+      }
+
+      body.dark .ss-table-header {
+        color: #bac8d3;
+        background: #1b2a35;
+      }
+
+      body.dark .ss-standing-row:not(.ss-table-header) {
+        color: #dce6ee;
+        background: #13212b;
+        border-bottom-color: #263743;
+      }
+
+      body.dark .ss-standing-row:nth-child(even):not(.ss-table-header) {
+        background: #172833;
+      }
+
+      body.dark .ss-standing-row:hover:not(.ss-table-header) {
+        background: #203a2e;
+      }
+
+      body.dark .ss-club strong,
+      body.dark .ss-player-name,
+      body.dark .ss-player-card-head strong {
+        color: #edf4f8;
+      }
+
+      body.dark .ss-qualification-legend {
+        background: #101c26 !important;
+        border-bottom-color: #2b3c48;
+      }
+
+      body.dark .ss-zone-legend-item {
+        color: #e5edf4 !important;
+      }
+
+      body.dark .ss-players-grid {
+        background: #0f1a23;
+      }
+
+      body.dark .ss-player-card {
+        background: #13212b;
+        border-color: #2a3c48;
+      }
+
+      body.dark .ss-player-card-head {
+        border-bottom-color: #2a3c48;
+      }
+
+      body.dark .ss-player-card-head > span {
+        background: #263743;
+        color: #bac8d3;
+      }
+
+      body.dark .ss-player-meta {
+        color: #a9bac6;
+      }
+
+      body.dark .ss-player-value {
+        background: #153b2b;
+        color: #86efac;
+      }
+
+      body.dark .ss-player-row {
+        border-top-color: #2a3c48;
+      }
+
+      body.dark .bf-competition .bf-third-ranking {
+        background: #13212b;
+        border-color: #2a3c48;
+      }
+
+      body.dark .bf-competition .bf-third-ranking-header h3,
+      body.dark .bf-competition .bf-third-team strong {
+        color: #f1f5f9;
+      }
+
+      body.dark .bf-competition .bf-third-ranking-header p,
+      body.dark .bf-competition .bf-third-ranking-note {
+        color: #a9bac6;
+      }
+
+      body.dark .bf-competition .bf-third-ranking-table tbody tr.is-qualified {
+        background: #153529;
+      }
+
+      body.dark .bf-competition .bf-third-ranking-table tbody tr.not-qualified {
+        background: #1b2934;
+        color: #b5c2cc;
+      }
+
+      body.dark .bf-competition .bf-third-ranking-table tbody tr.is-eliminated {
+        background: #351c23;
+        color: #fecaca;
+      }
+
+      /* Responsive */
+      @media (max-width: 760px) {
+        .real-standings {
+          gap: 11px;
+        }
+
+        .ss-players-grid {
+          grid-template-columns: 1fr;
+          gap: 9px;
+          padding: 10px;
+        }
+
+        .bf-competition .bf-third-ranking {
+          margin: 10px;
+          padding: 10px;
+        }
+      }
+
+      @media (max-width: 600px) {
+        .bf-competition {
+          border-radius: 13px;
+        }
+
+        .bf-competition-summary {
+          min-height: 63px;
+          padding: 9px 10px;
+        }
+
+        .bf-competition-logo {
+          width: 39px;
+          height: 39px;
+          flex-basis: 39px;
+        }
+
+        .bf-competition-logo img {
+          width: 29px;
+          height: 29px;
+        }
+
+        .bf-competition-info h2 {
+          font-size: 14px;
+        }
+
+        .ss-table {
+          min-width: 650px;
+        }
+
+        .ss-standing-row {
+          grid-template-columns:
+            29px
+            minmax(135px, 1fr)
+            repeat(7, 33px)
+            43px;
+          gap: 4px;
+          min-height: 41px;
+          padding: 6px 8px;
+        }
+
+        .ss-club {
+          gap: 6px;
+        }
+
+        .ss-club img,
+        .ss-club-fallback {
+          width: 23px;
+          height: 23px;
+          flex-basis: 23px;
+        }
+
+        .ss-standing-group-title {
+          padding: 9px 11px;
+          font-size: 11px;
+        }
+      }
+    `;
+
 
   /* =========================================================
      START
