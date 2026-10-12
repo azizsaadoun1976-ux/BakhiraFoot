@@ -2830,7 +2830,6 @@ const CONFERENCE_LEAGUE_TEAMS = [
   { name: "Ajax", aliases: ["AFC Ajax", "Ajax Amsterdam"] },
   { name: "Atalanta", aliases: ["Atalanta BC"] },
   { name: "Aarhus", aliases: ["Aarhus AGF", "AGF Aarhus"] },
-  { name: "Bologna", aliases: [] },
   { name: "Borac", aliases: ["Borac Banja Luka"] },
   { name: "Braga", aliases: ["Sporting Braga", "SC Braga"] },
   { name: "Brann", aliases: ["SK Brann"] },
@@ -3249,7 +3248,16 @@ const ESPN_KNOCKOUT_ROUND_ORDER = [
   { key: "round16", label: "1/8 de finale" },
   { key: "quarterfinal", label: "Quarts de finale" },
   { key: "semifinal", label: "Demi-finales" },
-  { key: "final", label: "Finale" }
+  { key: "final", label: "Finale" },
+  { key: "thirdplace", label: "Match pour la 3e place" }
+];
+
+const ESPN_KNOCKOUT_THIRD_PLACE_COMPETITIONS = new Set([
+  "FIFA World Cup",
+  "CAF Africa Cup of Nations",
+  "Copa América",
+  "UEFA Nations League"
+]);
 ];
 const knockoutEventsCache = new Map();
 
@@ -3262,7 +3270,11 @@ function knockoutStageFromText(value) {
     .replace(/[_-]+/g, " ")
     .replace(/\s+/g, " ")
     .trim();
-
+  if (
+    /\b(third place|3rd place|petite finale|match for third place|third place match|third place playoff|third place play off|match pour la 3e place|match pour la 3eme place|match pour la troisieme place)\b/.test(text)
+  ) {
+    return "thirdplace";
+  }
   if (
     /round of 32|rd of 32|last 32|1\/16 de finale|seizieme[s]? de finale/.test(text)
   ) return "round32";
@@ -3290,14 +3302,28 @@ function knockoutStageFromText(value) {
 function knockoutEventStage(event) {
   const match = event?.competitions?.[0] || {};
 
+  const notes = Array.isArray(match?.notes)
+    ? match.notes.map(note =>
+        typeof note === "string"
+          ? note
+          : note?.text || note?.headline || ""
+      )
+    : [];
+
   return knockoutStageFromText([
+    event?.name,
+    event?.shortName,
     event?.season?.slug,
-    match?.series?.title,
     event?.altGameNote,
-    ...(match?.notes || []).map(note => note?.text)
+    match?.name,
+    match?.shortName,
+    match?.series?.title,
+    match?.series?.summary,
+    match?.status?.type?.detail,
+    match?.status?.type?.shortDetail,
+    ...notes
   ].filter(Boolean).join(" "));
 }
-
 async function fetchKnockoutEvents(competitionName) {
   if (knockoutEventsCache.has(competitionName)) {
     return knockoutEventsCache.get(competitionName);
@@ -3941,6 +3967,29 @@ style.textContent += `
     }
   }
 
+  .bf-ko-third-place {
+  width: min(100%, 560px);
+  margin: 18px auto 0;
+  padding: 14px;
+  background: var(--ko-panel);
+  border: 1px solid var(--ko-border);
+  border-radius: 14px;
+}
+
+.bf-ko-third-place h4 {
+  margin: 0 0 12px;
+  text-align: center;
+  font-size: 15px;
+  font-weight: 900;
+  color: var(--ko-text);
+}
+
+.bf-ko-third-place .bf-ko-match {
+  width: 100%;
+  max-width: 460px;
+  margin-inline: auto;
+}
+
   @media (max-width: 480px) {
     .bf-ko-bracket-side {
       grid-template-columns: 1fr;
@@ -3956,7 +4005,9 @@ function renderKnockoutBracket(events, competitionName) {
 const isWorldCup = competitionName === "FIFA World Cup";
 
 let stages = ESPN_KNOCKOUT_ROUND_ORDER.filter(
-  stage => stage.key !== "final"
+  stage =>
+    stage.key !== "final" &&
+    stage.key !== "thirdplace"
 );
 
 if (!isWorldCup) {
@@ -4384,7 +4435,61 @@ function buildBracketSideAssignments() {
 
 const stageSideAssignments = buildBracketSideAssignments();
 
-   
+   function sortTiesForBracket(stageKey, ties, side) {
+  const pathStages = ESPN_KNOCKOUT_ROUND_ORDER.filter(
+    stage => stage.key !== "thirdplace"
+  );
+
+  const currentIndex = pathStages.findIndex(
+    stage => stage.key === stageKey
+  );
+
+  const nextStage = pathStages[currentIndex + 1];
+
+  if (!nextStage) {
+    return ties;
+  }
+
+  const nextSideMap = stageSideAssignments.get(nextStage.key);
+
+  const nextTies = getStageTies(nextStage.key).filter(tie =>
+    nextStage.key === "final" ||
+    nextSideMap?.get(tie.id) === side
+  );
+
+  function tieRank(tie) {
+    const teamKeys = [
+      teamKey({ name: tie.home.name }),
+      teamKey({ name: tie.away.name })
+    ];
+
+    for (let i = 0; i < nextTies.length; i++) {
+      const nextTie = nextTies[i];
+
+      const nextTeamKeys = [
+        teamKey({ name: nextTie.home.name }),
+        teamKey({ name: nextTie.away.name })
+      ];
+
+      const matchingTeam = teamKeys.find(
+        key => nextTeamKeys.includes(key)
+      );
+
+      if (matchingTeam) {
+        return i * 2 + nextTeamKeys.indexOf(matchingTeam);
+      }
+    }
+
+    // إلا ما قدرناش نربطو الماتش بالدور الموالي،
+    // كنحتافظو بالترتيب الزمني ديالو كحل احتياطي.
+    return Number.MAX_SAFE_INTEGER;
+  }
+
+  return [...ties].sort((a, b) =>
+    tieRank(a) - tieRank(b) ||
+    a.date - b.date
+  );
+}
   function renderMatchCard(match, isFinal = false) {
     function renderTeam(team) {
       return `
@@ -4433,13 +4538,14 @@ const stageSideAssignments = buildBracketSideAssignments();
 
  
 function renderStageColumn(stage, side) {
-  const ties = getStageTies(stage.key);
-  const sideMap = stageSideAssignments.get(stage.key);
+ const ties = getStageTies(stage.key);
+const sideMap = stageSideAssignments.get(stage.key);
 
-  const visibleTies = ties.filter(
-    tie => sideMap?.get(tie.id) === side
-  );
-
+const visibleTies = sortTiesForBracket(
+  stage.key,
+  ties.filter(tie => sideMap?.get(tie.id) === side),
+  side
+);
   const emptyMessage =
     "Les affiches seront ajoutées dès que les équipes seront connues.";
 
@@ -4469,10 +4575,38 @@ function renderStageColumn(stage, side) {
   const finalMatches = finalStage
     ? getStageTies(finalStage.key)
     : [];
+const showThirdPlaceMatch =
+  ESPN_KNOCKOUT_THIRD_PLACE_COMPETITIONS.has(competitionName);
 
+const thirdPlaceMatches = showThirdPlaceMatch
+  ? getStageTies("thirdplace")
+  : [];
   const leftStages = stages;
   const rightStages = [...stages].reverse();
+${
+  showThirdPlaceMatch
+    ? `
+      <section class="bf-ko-third-place">
+        <h4>🥉 Match pour la 3e place</h4>
 
+        <div class="bf-ko-third-place-list">
+          ${
+            thirdPlaceMatches.length
+              ? thirdPlaceMatches
+                  .map(match => renderMatchCard(match))
+                  .join("")
+              : `
+                <p class="bf-ko-empty">
+                  L'affiche du match pour la 3e place sera affichée
+                  dès que la source publiera les données.
+                </p>
+              `
+          }
+        </div>
+      </section>
+    `
+    : ""
+}
   return `
     <section class="bf-ko-section ${layoutClass}">
       <div class="bf-ko-section-head">
@@ -5450,6 +5584,16 @@ container
   .querySelectorAll("details.bf-competition")
   .forEach(card => {
     card.addEventListener("toggle", () => {
+             // إلا تحلّ classement، نسدو جميع البطولات الأخرى.
+      if (card.open) {
+        container
+          .querySelectorAll("details.bf-competition")
+          .forEach(otherCard => {
+            if (otherCard !== card && otherCard.open) {
+              otherCard.open = false;
+            }
+          });
+      }
        if (
   card.open &&
   card.dataset.knockoutStarted !== "1"
