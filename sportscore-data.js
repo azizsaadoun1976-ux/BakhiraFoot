@@ -5450,6 +5450,16 @@ container
   .querySelectorAll("details.bf-competition")
   .forEach(card => {
     card.addEventListener("toggle", () => {
+             // نخليو غير classement واحد محلول
+      if (card.open) {
+        container
+          .querySelectorAll("details.bf-competition")
+          .forEach(otherCard => {
+            if (otherCard !== card && otherCard.open) {
+              otherCard.open = false;
+            }
+          });
+      }
        if (
   card.open &&
   card.dataset.knockoutStarted !== "1"
