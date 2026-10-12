@@ -4321,11 +4321,11 @@ if (bracketScroll && finalColumn) {
       error
     );
 
-    container.innerHTML = `
-      <p class="bf-ko-empty">
-        Impossible de charger le tableau éliminatoire pour le moment.
-      </p>
-    `;
+   container.innerHTML = `
+  <p class="bf-ko-empty">
+    Erreur : ${escapeHTML(error?.message || String(error))}
+  </p>
+`;
   }
 }
    /* =========================================================
