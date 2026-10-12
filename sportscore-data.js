@@ -3244,12 +3244,12 @@ const ESPN_KNOCKOUT_CODES = {
   "UEFA Nations League": "uefa.nations"
 };
 
-const KNOCKOUT_STAGE_ORDER = [
-  { key: "Rd of 32", title: "1/16 de finale — 32 équipes" },
-  { key: "Rd of 16", title: "1/8 de finale" },
-  { key: "Quarterfinals", title: "Quarts de finale" },
-  { key: "Semifinals", title: "Demi-finales" },
-  { key: "Final", title: "Finale" }
+const ESPN_KNOCKOUT_ROUND_ORDER = [
+  { key: "round32", label: "1/16 de finale — 32 équipes" },
+  { key: "round16", label: "1/8 de finale" },
+  { key: "quarterfinal", label: "Quarts de finale" },
+  { key: "semifinal", label: "Demi-finales" },
+  { key: "final", label: "Finale" }
 ];
 const knockoutEventsCache = new Map();
 
@@ -3258,40 +3258,43 @@ function knockoutStageFromText(value) {
     .toLowerCase()
     .normalize("NFD")
     .replace(/[\u0300-\u036f]/g, "")
-    .replace(/[_-]+/g, " ");
-if (
-  /round of 32|rd of 32|last 32|1\/16 de finale|seizieme[s]? de finale/.test(text)
-) {
-  return "Rd of 32";
-}
+    .replace(/[_-]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+
+  if (
+    /round of 32|rd of 32|last 32|1\/16 de finale|seizieme[s]? de finale/.test(text)
+  ) {
+    return "round32";
+  }
+
   if (
     /round of 16|rd of 16|last 16|huitiemes de finale|octavos de final|ottavi di finale/.test(text)
   ) {
-    return "Rd of 16";
+    return "round16";
   }
 
   if (
     /quarter\s*final|quarts? de finale|cuartos de final|quarti di finale/.test(text)
   ) {
-    return "Quarterfinals";
+    return "quarterfinal";
   }
 
   if (
     /semi\s*final|demi\s*final|semifinali/.test(text)
   ) {
-    return "Semifinals";
+    return "semifinal";
   }
 
   if (
     /\bfinals?\b/.test(text) &&
     !/quarter|semi|playoff/.test(text)
   ) {
-    return "Final";
+    return "final";
   }
 
   return "";
 }
-
 function knockoutEventStage(event) {
   const match = event?.competitions?.[0] || {};
 
@@ -3445,482 +3448,833 @@ function ensureKnockoutStyles() {
   style.id = "bf-knockout-styles";
 
   style.textContent = `
-  .bf-ko-section {
-    --bf-ko-text: #172033;
-    --bf-ko-muted: #718096;
-    --bf-ko-panel: #f3f6fb;
-    --bf-ko-card: #ffffff;
-    --bf-ko-border: #e2e8f0;
-    --bf-ko-accent: #0d9b78;
-
-    position: relative;
-    margin-top: 28px;
-    padding: 24px;
-    overflow: hidden;
-    color: var(--bf-ko-text);
-    background:
-      radial-gradient(ellipse at top right,
-        rgba(13, 155, 120, .09), transparent 45%),
-      var(--bf-ko-card);
-    border: 1px solid var(--bf-ko-border);
-    border-radius: 20px;
-    box-shadow: 0 8px 30px rgba(15, 23, 42, .045);
-  }
-
-  .bf-ko-section::before {
-    content: "";
-    position: absolute;
-    inset: 0 0 auto;
-    height: 4px;
-    background: linear-gradient(
-      90deg, #10b981, #0d9488, #3b82f6, #8b5cf6
-    );
-  }
-
-  .bf-ko-section-head {
-    margin: 0 0 22px;
-    padding-bottom: 18px;
-    display: flex;
-    flex-direction: column;
-    gap: 7px;
-    border-bottom: 1px solid var(--bf-ko-border);
-  }
-
-  .bf-ko-section-head h3 {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    margin: 0;
-    color: var(--bf-ko-text);
-    font-size: clamp(19px, 2vw, 25px);
-    font-weight: 850;
-    letter-spacing: -.5px;
-  }
-
-  .bf-ko-section-head h3::before {
-    content: "🏆";
-    display: grid;
-    place-items: center;
-    width: 40px;
-    height: 40px;
-    flex-shrink: 0;
-    border-radius: 13px;
-    background: rgba(16, 185, 129, .12);
-    font-size: 20px;
-  }
-
-  .bf-ko-section-head p {
-    margin: 0;
-    color: var(--bf-ko-muted);
-    font-size: 13px;
-    line-height: 1.6;
-  }
-
-  .bf-ko-board {
-    display: grid;
-    grid-template-columns: repeat(4, minmax(225px, 1fr));
-    align-items: stretch;
-    gap: 16px;
-    overflow-x: auto;
-    padding: 2px 2px 14px;
-    scrollbar-width: thin;
-    scrollbar-color: #94a3b8 transparent;
-  }
-
-  .bf-ko-board::-webkit-scrollbar {
-    height: 6px;
-  }
-
-  .bf-ko-board::-webkit-scrollbar-thumb {
-    background: #94a3b8;
-    border-radius: 20px;
-  }
-
-  .bf-ko-stage {
-    --bf-ko-stage-accent: #10b981;
-
-    position: relative;
-    min-width: 0;
-    padding: 15px;
-    background: var(--bf-ko-panel);
-    border: 1px solid var(--bf-ko-border);
-    border-radius: 17px;
-    transition: border-color .2s ease, box-shadow .2s ease;
-  }
-
-  .bf-ko-stage:nth-child(2) {
-    --bf-ko-stage-accent: #3b82f6;
-  }
-
-  .bf-ko-stage:nth-child(3) {
-    --bf-ko-stage-accent: #8b5cf6;
-  }
-
-  .bf-ko-stage:nth-child(4) {
-    --bf-ko-stage-accent: #d49b22;
-  }
-
-  .bf-ko-stage:hover {
-    border-color: var(--bf-ko-stage-accent);
-    box-shadow: 0 6px 22px rgba(15, 23, 42, .055);
-  }
-
-  .bf-ko-stage-title {
-    display: flex;
-    align-items: center;
-    gap: 9px;
-    margin: 0 0 15px;
-    padding-bottom: 13px;
-    border-bottom: 1px solid var(--bf-ko-border);
-    color: var(--bf-ko-text);
-    font-size: 14px;
-    font-weight: 850;
-  }
-
-  .bf-ko-stage-title::before {
-    content: "";
-    width: 4px;
-    height: 20px;
-    flex-shrink: 0;
-    border-radius: 5px;
-    background: var(--bf-ko-stage-accent);
-  }
-
-  .bf-ko-match {
-    position: relative;
-    margin-bottom: 12px;
-    padding: 13px;
-    overflow: hidden;
-    background: var(--bf-ko-card);
-    border: 1px solid var(--bf-ko-border);
-    border-radius: 14px;
-    box-shadow: 0 2px 5px rgba(15, 23, 42, .025);
-    transition: transform .2s ease, box-shadow .2s ease,
-      border-color .2s ease;
-  }
-
-  .bf-ko-match:last-child {
-    margin-bottom: 0;
-  }
-
-  .bf-ko-match:hover {
-    transform: translateY(-2px);
-    border-color: rgba(13, 155, 120, .4);
-    box-shadow: 0 8px 20px rgba(15, 23, 42, .07);
-  }
-
-  .bf-ko-match-meta {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 8px;
-    min-height: 23px;
-    margin-bottom: 10px;
-    color: var(--bf-ko-muted);
-    font-size: 11px;
-    font-weight: 650;
-  }
-
-  .bf-ko-match-meta span:last-child:not(:empty) {
-    padding: 4px 7px;
-    color: var(--bf-ko-stage-accent, #0d9b78);
-    background: var(--bf-ko-panel);
-    border: 1px solid var(--bf-ko-border);
-    border-radius: 6px;
-    font-size: 10px;
-    font-weight: 800;
-    white-space: nowrap;
-  }
-
-  .bf-ko-team {
-    display: grid;
-    grid-template-columns: 30px minmax(0, 1fr) auto;
-    align-items: center;
-    gap: 9px;
-    min-height: 42px;
-    padding: 5px 7px;
-    border-radius: 9px;
-    transition: background .2s ease;
-  }
-
-  .bf-ko-team + .bf-ko-team {
-    margin-top: 3px;
-  }
-
-  .bf-ko-team:hover {
-    background: var(--bf-ko-panel);
-  }
-
-  .bf-ko-team img {
-    display: block;
-    width: 27px;
-    height: 27px;
-    padding: 2px;
-    object-fit: contain;
-  }
-
-  .bf-ko-team strong {
-    min-width: 0;
-    color: var(--bf-ko-text);
-    font-size: 12px;
-    font-weight: 700;
-    line-height: 1.45;
-    overflow-wrap: anywhere;
-  }
-
-  .bf-ko-team b {
-    min-width: 25px;
-    color: var(--bf-ko-text);
-    font-size: 17px;
-    font-weight: 900;
-    text-align: center;
-    font-variant-numeric: tabular-nums;
-  }
-
-  .bf-ko-match-status {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    flex-wrap: wrap;
-    gap: 7px;
-    margin-top: 9px;
-    padding-top: 10px;
-    color: var(--bf-ko-muted);
-    border-top: 1px solid var(--bf-ko-border);
-    font-size: 10px;
-  }
-
-  .bf-ko-match-status span:first-child {
-    font-weight: 750;
-  }
-
-  .bf-ko-match-status span:last-child {
-    padding: 4px 7px;
-    color: var(--bf-ko-accent);
-    background: rgba(13, 155, 120, .09);
-    border-radius: 6px;
-    font-size: 9px;
-    font-weight: 850;
-    letter-spacing: .25px;
-  }
-
-  .bf-ko-loading,
-  .bf-ko-empty {
-    padding: 15px;
-    color: var(--bf-ko-muted);
-    background: var(--bf-ko-panel);
-    border: 1px dashed var(--bf-ko-border);
-    border-radius: 12px;
-    font-size: 13px;
-    line-height: 1.7;
-  }
-
-  /* DARK MODE */
-  body.dark .bf-ko-section,
-  body.dark-mode .bf-ko-section,
-  html.dark .bf-ko-section,
-  html[data-theme="dark"] .bf-ko-section,
-  body[data-theme="dark"] .bf-ko-section {
-    --bf-ko-text: #edf2f7;
-    --bf-ko-muted: #a0aec0;
-    --bf-ko-panel: #171f2d;
-    --bf-ko-card: #111827;
-    --bf-ko-border: #2d3748;
-    --bf-ko-accent: #34d399;
-
-    background:
-      radial-gradient(ellipse at top right,
-        rgba(16, 185, 129, .09), transparent 45%),
-      #111827;
-    box-shadow: 0 10px 35px rgba(0, 0, 0, .16);
-  }
-
-  @media (max-width: 1100px) {
-    .bf-ko-board {
-      grid-template-columns: repeat(4, 250px);
-    }
-  }
-
-  @media (max-width: 600px) {
     .bf-ko-section {
-      margin-top: 20px;
-      padding: 15px 12px;
-      border-radius: 15px;
+      --ko-text: #172033;
+      --ko-muted: #718096;
+      --ko-panel: #f3f6fb;
+      --ko-card: #ffffff;
+      --ko-border: #e2e8f0;
+
+      margin-top: 26px;
+      padding: 22px 16px;
+      overflow: hidden;
+      color: var(--ko-text);
+      background:
+        radial-gradient(ellipse at center,
+          rgba(16,185,129,.07), transparent 58%);
+      border: 1px solid var(--ko-border);
+      border-radius: 18px;
     }
 
     .bf-ko-section-head {
-      margin-bottom: 15px;
-      padding-bottom: 13px;
+      margin-bottom: 18px;
+      padding-bottom: 16px;
+      border-bottom: 1px solid var(--ko-border);
     }
 
-    .bf-ko-section-head h3::before {
-      width: 34px;
-      height: 34px;
-      font-size: 17px;
+    .bf-ko-section-head h3 {
+      margin: 0;
+      font-size: clamp(19px, 2vw, 25px);
+      font-weight: 900;
     }
 
-    .bf-ko-board {
-      grid-template-columns: repeat(4, 238px);
-      gap: 11px;
+    .bf-ko-section-head p {
+      margin: 7px 0 0;
+      color: var(--ko-muted);
+      font-size: 12px;
+      line-height: 1.6;
+    }
+
+    .bf-ko-bracket-scroll {
+      width: 100%;
+      overflow-x: auto;
+      overflow-y: hidden;
+      padding: 5px 2px 15px;
+      scrollbar-width: thin;
+      scrollbar-color: #94a3b8 transparent;
+      overscroll-behavior-x: contain;
+    }
+
+    .bf-ko-bracket-scroll::-webkit-scrollbar {
+      height: 7px;
+    }
+
+    .bf-ko-bracket-scroll::-webkit-scrollbar-thumb {
+      background: #94a3b8;
+      border-radius: 20px;
+    }
+
+    .bf-ko-bracket {
+      display: flex;
+      align-items: stretch;
+      justify-content: center;
+      gap: 12px;
+      width: max-content;
+      min-width: 100%;
+    }
+
+    .bf-ko-bracket-side {
+      display: flex;
+      align-items: stretch;
+      gap: 10px;
+      flex: 0 0 auto;
     }
 
     .bf-ko-stage {
+      position: relative;
+      display: flex;
+      flex: 0 0 218px;
+      flex-direction: column;
+      width: 218px;
+      min-width: 0;
       padding: 11px;
-      border-radius: 13px;
+      background: var(--ko-panel);
+      border: 1px solid var(--ko-border);
+      border-radius: 15px;
+    }
+
+    .bf-ko-stage-title {
+      min-height: 42px;
+      display: flex;
+      align-items: center;
+      margin: 0;
+      padding: 10px;
+      border-radius: 10px;
+      color: #087b5e;
+      background: rgba(16,185,129,.12);
+      font-size: 12px;
+      font-weight: 900;
+      line-height: 1.4;
+    }
+
+    .bf-ko-stage-quarterfinal .bf-ko-stage-title {
+      color: #1d4ed8;
+      background: rgba(59,130,246,.12);
+    }
+
+    .bf-ko-stage-semifinal .bf-ko-stage-title {
+      color: #7c3aed;
+      background: rgba(139,92,246,.13);
+    }
+
+    .bf-ko-stage-list {
+      display: flex;
+      flex: 1;
+      flex-direction: column;
+      justify-content: space-around;
+      gap: 12px;
+      padding-top: 12px;
+    }
+
+    .bf-ko-stage-round32 .bf-ko-stage-list {
+      min-height: 900px;
+    }
+
+    .bf-ko-stage-round16 .bf-ko-stage-list {
+      min-height: 440px;
+    }
+
+    .bf-ko-stage-quarterfinal .bf-ko-stage-list {
+      min-height: 220px;
+    }
+
+    .bf-ko-stage-semifinal .bf-ko-stage-list {
+      min-height: 105px;
     }
 
     .bf-ko-match {
+      position: relative;
+      min-width: 0;
       padding: 10px;
-      border-radius: 11px;
+      background: var(--ko-card);
+      border: 1px solid var(--ko-border);
+      border-radius: 12px;
+      box-shadow: 0 3px 10px rgba(15,23,42,.04);
+      transition:
+        transform .2s ease,
+        border-color .2s ease,
+        box-shadow .2s ease;
+    }
+
+    .bf-ko-match:hover {
+      transform: translateY(-2px);
+      border-color: rgba(16,185,129,.55);
+      box-shadow: 0 7px 18px rgba(15,23,42,.08);
+    }
+
+    .bf-ko-match.is-live {
+      border-color: #ef4444;
+    }
+
+    .bf-ko-match-meta {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      flex-wrap: wrap;
+      gap: 5px;
+      margin-bottom: 7px;
+      color: var(--ko-muted);
+      font-size: 9px;
+      line-height: 1.4;
+    }
+
+    .bf-ko-leg-badge {
+      padding: 3px 6px;
+      color: #087b5e;
+      background: rgba(16,185,129,.12);
+      border-radius: 6px;
+      font-weight: 800;
     }
 
     .bf-ko-team {
-      min-height: 39px;
-      grid-template-columns: 26px minmax(0, 1fr) auto;
+      display: grid;
+      grid-template-columns: 25px minmax(0,1fr) 24px;
+      align-items: center;
       gap: 7px;
+      min-height: 35px;
+      color: var(--ko-text);
     }
 
-    .bf-ko-team img {
+    .bf-ko-team + .bf-ko-team {
+      margin-top: 3px;
+      padding-top: 4px;
+      border-top: 1px solid rgba(148,163,184,.17);
+    }
+
+    .bf-ko-team img,
+    .bf-ko-team-fallback {
+      display: flex;
+      align-items: center;
+      justify-content: center;
       width: 24px;
       height: 24px;
+      object-fit: contain;
     }
-  }
 
-  @media (prefers-reduced-motion: reduce) {
-    .bf-ko-match,
-    .bf-ko-stage,
-    .bf-ko-team {
-      transition: none;
+    .bf-ko-team-fallback {
+      font-size: 17px;
     }
-  }
-`;
 
+    .bf-ko-team strong {
+      min-width: 0;
+      overflow-wrap: anywhere;
+      font-size: 11px;
+      font-weight: 750;
+      line-height: 1.4;
+    }
+
+    .bf-ko-team b {
+      text-align: center;
+      font-size: 14px;
+      font-weight: 950;
+      font-variant-numeric: tabular-nums;
+    }
+
+    .bf-ko-team.is-winner strong,
+    .bf-ko-team.is-winner b {
+      color: #07834f;
+    }
+
+    .bf-ko-match-status {
+      margin-top: 7px;
+      padding-top: 7px;
+      border-top: 1px solid var(--ko-border);
+      color: var(--ko-muted);
+      font-size: 9px;
+      font-weight: 800;
+      line-height: 1.4;
+    }
+
+    .bf-ko-empty {
+      padding: 11px 9px;
+      color: var(--ko-muted);
+      background: var(--ko-card);
+      border: 1px dashed var(--ko-border);
+      border-radius: 10px;
+      font-size: 10px;
+      line-height: 1.6;
+    }
+
+    .bf-ko-final-column {
+      position: relative;
+      display: flex;
+      flex: 0 0 245px;
+      flex-direction: column;
+      justify-content: center;
+      align-self: stretch;
+      width: 245px;
+      min-height: 260px;
+      padding: 15px 12px;
+      background:
+        radial-gradient(ellipse at top,
+          rgba(213,162,43,.18), transparent 67%),
+        var(--ko-panel);
+      border: 1px solid rgba(213,162,43,.55);
+      border-radius: 19px;
+      box-shadow: 0 8px 25px rgba(213,162,43,.09);
+      text-align: center;
+    }
+
+    .bf-ko-final-heading {
+      margin-bottom: 16px;
+    }
+
+    .bf-ko-final-heading > span {
+      display: block;
+      font-size: 38px;
+      line-height: 1.2;
+    }
+
+    .bf-ko-final-heading small {
+      display: block;
+      margin-top: 8px;
+      color: #a8790a;
+      font-size: 9px;
+      font-weight: 950;
+      letter-spacing: 2px;
+    }
+
+    .bf-ko-final-heading h4 {
+      margin: 4px 0 0;
+      font-size: 21px;
+      font-weight: 950;
+      letter-spacing: 1px;
+    }
+
+    .bf-ko-final-matches {
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      gap: 12px;
+    }
+
+    .bf-ko-match-final {
+      border-color: rgba(213,162,43,.65);
+      box-shadow: 0 6px 18px rgba(213,162,43,.12);
+    }
+
+    .bf-ko-match-final .bf-ko-team.is-winner strong,
+    .bf-ko-match-final .bf-ko-team.is-winner b {
+      color: #a8790a;
+    }
+
+    /* Dark mode */
+    body.dark .bf-ko-section {
+      --ko-text: #edf2f7;
+      --ko-muted: #a0aec0;
+      --ko-panel: #17212d;
+      --ko-card: #111a25;
+      --ko-border: rgba(255,255,255,.12);
+    }
+
+    body.dark .bf-ko-team.is-winner strong,
+    body.dark .bf-ko-team.is-winner b {
+      color: #6ee7b7;
+    }
+
+    body.dark .bf-ko-final-heading small {
+      color: #f5d477;
+    }
+
+    body.dark .bf-ko-match-final .bf-ko-team.is-winner strong,
+    body.dark .bf-ko-match-final .bf-ko-team.is-winner b {
+      color: #f5d477;
+    }
+
+    @media (max-width: 600px) {
+      .bf-ko-section {
+        padding: 15px 10px;
+      }
+
+      .bf-ko-bracket {
+        justify-content: flex-start;
+      }
+
+      .bf-ko-stage {
+        flex-basis: 205px;
+        width: 205px;
+        padding: 9px;
+      }
+
+      .bf-ko-final-column {
+        flex-basis: 225px;
+        width: 225px;
+        padding: 12px 9px;
+      }
+    }
+
+    @media (prefers-reduced-motion: reduce) {
+      .bf-ko-match {
+        transition: none;
+      }
+    }
+  `;
 
   document.head.appendChild(style);
 }
 
 function renderKnockoutBracket(events, competitionName) {
-  const stages =
-    competitionName === "FIFA World Cup"
-      ? KNOCKOUT_STAGE_ORDER
-      : KNOCKOUT_STAGE_ORDER.filter(
-          stage => stage.key !== "Rd of 32"
-        );
+  const isWorldCup = competitionName === "FIFA World Cup";
 
-  const stagesHTML = stages.map(stage => {
-    const matches = events
-      .filter(event => knockoutEventStage(event) === stage.key)
-      .sort((a, b) => new Date(a.date) - new Date(b.date));
+  let stages = ESPN_KNOCKOUT_STAGE_ORDER.filter(
+    stage => stage.key !== "final"
+  );
 
-    const matchesHTML = matches.map(event => {
-      const match = event.competitions?.[0] || {};
-      const competitors = match.competitors || [];
+  if (!isWorldCup) {
+    stages = stages.filter(
+      stage => stage.key !== "round32"
+    );
+  }
 
-      const home =
+  // هاد البطولات ما كتبدأش بثمن النهائي.
+  if (
+    competitionName === "Copa América" ||
+    competitionName === "UEFA Nations League"
+  ) {
+    stages = stages.filter(
+      stage => stage.key !== "round16"
+    );
+  }
+
+  function teamKey(team) {
+    const id = team?.team?.id || team?.id;
+
+    if (id) return `id:${id}`;
+
+    return `name:${String(
+      team?.team?.displayName ||
+      team?.team?.name ||
+      team?.name ||
+      ""
+    )
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, " ")
+      .trim()
+    }`;
+  }
+
+  function getEventMatch(event) {
+    return (
+      event?.competitions?.find(
+        item => Array.isArray(item?.competitors)
+      ) ||
+      event?.competitions?.[0] ||
+      {}
+    );
+  }
+
+  function getTeams(match) {
+    const competitors = match?.competitors || [];
+
+    return {
+      home:
         competitors.find(team => team.homeAway === "home") ||
-        competitors[0];
-
-      const away =
+        competitors[0] ||
+        null,
+      away:
         competitors.find(team => team.homeAway === "away") ||
-        competitors[1];
+        competitors[1] ||
+        null
+    };
+  }
 
-      if (!home || !away) return "";
+  function scoreNumber(value) {
+    if (
+      value === null ||
+      value === undefined ||
+      String(value).trim() === "" ||
+      ["-", "—", "–"].includes(String(value).trim())
+    ) {
+      return null;
+    }
 
-      const status = match.status || event.status || {};
-      const statusType = status.type || {};
-      const state = statusType.state || "";
+    const number = Number(value);
 
-      const hasScore =
-        state === "post" ||
-        state === "in" ||
-        statusType.completed === true;
+    return Number.isFinite(number) ? number : null;
+  }
 
-      const homeScore = hasScore
-        ? (home.score ?? "–")
-        : "–";
+  function getMatchStatus(event, match) {
+    const status = match?.status || event?.status || {};
+    const type = status?.type || {};
 
-      const awayScore = hasScore
-        ? (away.score ?? "–")
-        : "–";
+    return {
+      state: type.state || "",
+      completed:
+        type.completed === true ||
+        type.state === "post",
+      live: type.state === "in",
+      label:
+        type.detail ||
+        type.shortDetail ||
+        type.description ||
+        (type.state === "in"
+          ? "En direct"
+          : type.state === "post"
+            ? "Terminé"
+            : "À venir")
+    };
+  }
 
-      const date = event.date
-        ? new Intl.DateTimeFormat("fr-FR", {
-            day: "2-digit",
-            month: "short"
-          }).format(new Date(event.date))
-        : "";
+  function formatMatchDate(value) {
+    if (!value) return "";
 
-      const legValue = Number(match.leg?.value);
+    const date = new Date(value);
 
-      const legLabel =
-        legValue === 1 ? "Aller" :
-        legValue === 2 ? "Retour" :
-        "";
+    if (Number.isNaN(date.getTime())) return "";
 
-      const statusLabel =
-        statusType.detail ||
-        statusType.shortDetail ||
-        statusType.description ||
-        (state === "in" ? "En direct" : "Match");
+    return new Intl.DateTimeFormat("fr-FR", {
+      day: "2-digit",
+      month: "short"
+    }).format(date);
+  }
 
-      function teamHTML(team, score) {
-        const name =
-          team.team?.displayName ||
-          team.team?.name ||
-          "Équipe";
+  /*
+   * تجمع الذهاب والإياب حسب هوية الفريقين،
+   * وكتحسب النتيجة الإجمالية غير من النتائج المتوفرة.
+   */
+  function getStageTies(stageKey) {
+    const stageEvents = (events || [])
+      .filter(event => knockoutEventStage(event) === stageKey)
+      .sort(
+        (a, b) =>
+          new Date(a.date || 0) - new Date(b.date || 0)
+      );
 
-        const logo = team.team?.logo || "";
+    const ties = new Map();
 
-        return `
-          <div class="bf-ko-team">
-            ${
-              logo
-                ? `<img src="${escapeHTML(logo)}"
-                        alt="${escapeHTML(name)}"
-                        loading="lazy"
-                        onerror="this.style.display='none'">`
-                : `<span>⚽</span>`
-            }
-            <strong>${escapeHTML(name)}</strong>
-            <b>${escapeHTML(score)}</b>
-          </div>
-        `;
+    stageEvents.forEach((event, index) => {
+      const match = getEventMatch(event);
+      const { home, away } = getTeams(match);
+
+      if (!home || !away) return;
+
+      const homeKey = teamKey(home);
+      const awayKey = teamKey(away);
+
+      const pairKey = [
+        homeKey,
+        awayKey
+      ].sort().join("::");
+
+      if (!ties.has(pairKey)) {
+        ties.set(pairKey, {
+          id: pairKey || `match-${index}`,
+          fixtures: [],
+          teams: new Map(),
+          firstHomeKey: homeKey,
+          firstAwayKey: awayKey,
+          firstDate: event.date || ""
+        });
       }
 
+      const tie = ties.get(pairKey);
+
+      tie.fixtures.push({ event, match });
+
+      for (const team of [home, away]) {
+        const key = teamKey(team);
+
+        if (!tie.teams.has(key)) {
+          tie.teams.set(key, {
+            name:
+              team.team?.displayName ||
+              team.team?.name ||
+              team.displayName ||
+              team.name ||
+              "Équipe à déterminer",
+            logo:
+              team.team?.logo ||
+              team.logo ||
+              "",
+            total: 0,
+            hasScore: false,
+            winner: false
+          });
+        }
+
+        const info = tie.teams.get(key);
+
+        if (!info.logo) {
+          info.logo =
+            team.team?.logo ||
+            team.logo ||
+            "";
+        }
+      }
+    });
+
+    return Array.from(ties.values()).map(tie => {
+      const fixtures = tie.fixtures.sort(
+        (a, b) =>
+          new Date(a.event.date || 0) -
+          new Date(b.event.date || 0)
+      );
+
+      let allCompleted = fixtures.length > 0;
+      let hasLiveMatch = false;
+      let hasAnyScore = false;
+      let lastKnownWinnerKey = "";
+
+      const dates = [];
+
+      for (const fixture of fixtures) {
+        const { event, match } = fixture;
+        const { home, away } = getTeams(match);
+        const status = getMatchStatus(event, match);
+
+        if (!status.completed) {
+          allCompleted = false;
+        }
+
+        if (status.live) {
+          hasLiveMatch = true;
+        }
+
+        const dateLabel = formatMatchDate(
+          event.date || match.date
+        );
+
+        if (dateLabel && !dates.includes(dateLabel)) {
+          dates.push(dateLabel);
+        }
+
+        for (const team of [home, away]) {
+          const key = teamKey(team);
+          const score = scoreNumber(team.score);
+
+          if (
+            score !== null &&
+            (status.completed || status.live)
+          ) {
+            const info = tie.teams.get(key);
+
+            info.total += score;
+            info.hasScore = true;
+
+            hasAnyScore = true;
+          }
+        }
+
+        if (status.completed) {
+          const winner = [home, away].find(
+            team => team?.winner === true
+          );
+
+          if (winner) {
+            lastKnownWinnerKey = teamKey(winner);
+          }
+        }
+      }
+
+      const homeInfo = tie.teams.get(tie.firstHomeKey);
+      const awayInfo = tie.teams.get(tie.firstAwayKey);
+
+      if (!homeInfo || !awayInfo) return null;
+
+      if (allCompleted) {
+        if (homeInfo.total > awayInfo.total) {
+          homeInfo.winner = true;
+        } else if (awayInfo.total > homeInfo.total) {
+          awayInfo.winner = true;
+        } else if (lastKnownWinnerKey) {
+          const winnerInfo = tie.teams.get(lastKnownWinnerKey);
+
+          if (winnerInfo) winnerInfo.winner = true;
+        }
+      }
+
+      let statusLabel;
+
+      if (hasLiveMatch) {
+        statusLabel = "En direct";
+      } else if (fixtures.length > 1 && allCompleted) {
+        statusLabel = "Score cumulé final";
+      } else if (fixtures.length > 1 && hasAnyScore) {
+        statusLabel = "Score cumulé provisoire";
+      } else if (fixtures.length > 1) {
+        statusLabel = "Aller-retour";
+      } else {
+        statusLabel = getMatchStatus(
+          fixtures[0]?.event,
+          fixtures[0]?.match
+        ).label;
+      }
+
+      return {
+        id: tie.id,
+        date: new Date(tie.firstDate || 0).getTime(),
+        dateLabel: dates.join(" · "),
+        statusLabel,
+        legCount: fixtures.length,
+        completed: allCompleted,
+        inProgress: hasLiveMatch,
+        home: {
+          ...homeInfo,
+          score: homeInfo.hasScore
+            ? homeInfo.total
+            : "—"
+        },
+        away: {
+          ...awayInfo,
+          score: awayInfo.hasScore
+            ? awayInfo.total
+            : "—"
+        }
+      };
+    })
+    .filter(Boolean)
+    .sort((a, b) => a.date - b.date);
+  }
+
+  function renderMatchCard(match, isFinal = false) {
+    function renderTeam(team) {
       return `
-        <article class="bf-ko-match">
-          <div class="bf-ko-match-meta">
-            <span>${escapeHTML(date)}</span>
-            <span>${escapeHTML(legLabel)}</span>
-          </div>
+        <div class="bf-ko-team ${team.winner ? "is-winner" : ""}">
+          ${
+            team.logo
+              ? `
+                <img
+                  src="${escapeHTML(team.logo)}"
+                  alt=""
+                  loading="lazy"
+                  onerror="this.style.display='none'"
+                >
+              `
+              : `<span class="bf-ko-team-fallback">⚽</span>`
+          }
 
-          ${teamHTML(home, homeScore)}
-          ${teamHTML(away, awayScore)}
+          <strong>${escapeHTML(team.name)}</strong>
 
-          <div class="bf-ko-match-status">
-            <span>${escapeHTML(statusLabel)}</span>
-            <span>BakhiraFoot</span>
-          </div>
-        </article>
+          <b>${escapeHTML(team.score)}</b>
+        </div>
       `;
-    }).join("");
+    }
 
     return `
-      <section class="bf-ko-stage">
+      <article class="bf-ko-match ${match.inProgress ? "is-live" : ""} ${isFinal ? "bf-ko-match-final" : ""}">
+        <div class="bf-ko-match-meta">
+          <span>${escapeHTML(match.dateLabel || "")}</span>
+
+          ${
+            match.legCount > 1
+              ? `<span class="bf-ko-leg-badge">Aller-retour</span>`
+              : ""
+          }
+        </div>
+
+        ${renderTeam(match.home)}
+        ${renderTeam(match.away)}
+
+        <div class="bf-ko-match-status">
+          <span>${escapeHTML(match.statusLabel || "")}</span>
+        </div>
+      </article>
+    `;
+  }
+
+  function renderStageColumn(stage, side) {
+    const ties = getStageTies(stage.key);
+    const splitAt = Math.ceil(ties.length / 2);
+
+    const visibleTies =
+      side === "left"
+        ? ties.slice(0, splitAt)
+        : ties.slice(splitAt);
+
+    let emptyMessage = "Aucun match disponible pour cette phase.";
+
+    if (ties.length === 0) {
+      emptyMessage =
+        "Les affiches seront ajoutées dès que les données seront disponibles.";
+    }
+
+    return `
+      <section class="bf-ko-stage bf-ko-stage-${stage.key}">
         <h4 class="bf-ko-stage-title">
-          ${escapeHTML(stage.title)}
+          ${escapeHTML(stage.label)}
         </h4>
-        ${
-          matchesHTML ||
-          `<p class="bf-ko-empty">Aucun match disponible pour cette phase.</p>`
-        }
+
+        <div class="bf-ko-stage-list">
+          ${
+            visibleTies.length
+              ? visibleTies
+                  .map(match => renderMatchCard(match))
+                  .join("")
+              : `<p class="bf-ko-empty">${escapeHTML(emptyMessage)}</p>`
+          }
+        </div>
       </section>
     `;
-  }).join("");
+  }
 
-  return `<div class="bf-ko-board">${stagesHTML}</div>`;
+  const finalStage = ESPN_KNOCKOUT_STAGE_ORDER.find(
+    stage => stage.key === "final"
+  );
+
+  const finalMatches = finalStage
+    ? getStageTies(finalStage.key)
+    : [];
+
+  const leftStages = stages;
+  const rightStages = [...stages].reverse();
+
+  return `
+    <section class="bf-ko-section">
+      <div class="bf-ko-section-head">
+        <h3>Tableau des éliminatoires</h3>
+        <p>
+          ${
+            isWorldCup
+              ? "Du tour des 32 équipes jusqu'à la finale"
+              : "Des huitièmes ou quarts de finale jusqu'à la finale"
+          }
+        </p>
+      </div>
+
+      <div class="bf-ko-bracket-scroll">
+        <div class="bf-ko-bracket">
+
+          <div class="bf-ko-bracket-side bf-ko-bracket-left">
+            ${leftStages
+              .map(stage => renderStageColumn(stage, "left"))
+              .join("")}
+          </div>
+
+          <section class="bf-ko-final-column">
+            <div class="bf-ko-final-heading">
+              <span>🏆</span>
+              <small>OBJECTIF</small>
+              <h4>FINALE</h4>
+            </div>
+
+            <div class="bf-ko-final-matches">
+              ${
+                finalMatches.length
+                  ? finalMatches
+                      .map(match => renderMatchCard(match, true))
+                      .join("")
+                  : `
+                    <p class="bf-ko-empty">
+                      La finale sera affichée dès que les données seront disponibles.
+                    </p>
+                  `
+              }
+            </div>
+          </section>
+
+          <div class="bf-ko-bracket-side bf-ko-bracket-right">
+            ${rightStages
+              .map(stage => renderStageColumn(stage, "right"))
+              .join("")}
+          </div>
+
+        </div>
+      </div>
+    </section>
+  `;
 }
-
 async function loadKnockoutBracket(competitionName, container) {
   ensureKnockoutStyles();
 
@@ -3944,6 +4298,22 @@ async function loadKnockoutBracket(competitionName, container) {
   events,
   competitionName
 );
+
+const bracketScroll = container.querySelector(
+  ".bf-ko-bracket-scroll"
+);
+
+const finalColumn = container.querySelector(
+  ".bf-ko-final-column"
+);
+
+if (bracketScroll && finalColumn) {
+  bracketScroll.scrollLeft =
+    finalColumn.offsetLeft +
+    finalColumn.offsetWidth / 2 -
+    bracketScroll.clientWidth / 2;
+}
+     
   } catch (error) {
     console.error(
       "BakhiraFoot — knockout bracket:",
