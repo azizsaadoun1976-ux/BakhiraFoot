@@ -4299,120 +4299,104 @@ function afcon2025CategoryMatches(category, stat) {
   return /\b(assists?|passes decisives?)\b/.test(label);
 }
 
+
 async function loadAfcon2025PlayerLeaders(stat) {
-  if (afcon2025PlayerCache.has(stat)) {
-    return afcon2025PlayerCache.get(stat);
+  const cacheKey = `afcon-final-2025-${stat}`;
+
+  if (afcon2025PlayerCache.has(cacheKey)) {
+    return afcon2025PlayerCache.get(cacheKey);
   }
 
-  const request = (async () => {
-    const payload = await afcon2025GetLeadersPayload();
-    const categories = afcon2025GetCategories(payload);
+  const finalStats = {
+    goals: [
+      {
+        name: "Brahim Díaz",
+        team: "Maroc",
+        value: 5,
+        appearances: 7
+      },
+      {
+        name: "Mohamed Salah",
+        team: "Égypte",
+        value: 4,
+        appearances: 6
+      },
+      {
+        name: "Victor Osimhen",
+        team: "Nigeria",
+        value: 4,
+        appearances: 6
+      },
+      {
+        name: "Ayoub El Kaabi",
+        team: "Maroc",
+        value: 3,
+        appearances: 7
+      },
+      {
+        name: "Ademola Lookman",
+        team: "Nigeria",
+        value: 3,
+        appearances: 6
+      }
+    ],
 
-    const category = categories.find(item =>
-      afcon2025CategoryMatches(item, stat)
-    );
+    assists: [
+      {
+        name: "Ademola Lookman",
+        team: "Nigeria",
+        value: 4,
+        appearances: 6
+      },
+      {
+        name: "Sadio Mané",
+        team: "Sénégal",
+        value: 3,
+        appearances: 7
+      },
+      {
+        name: "Akor Adams",
+        team: "Nigeria",
+        value: 2,
+        appearances: 7
+      },
+      {
+        name: "Victor Osimhen",
+        team: "Nigeria",
+        value: 2,
+        appearances: 6
+      },
+      {
+        name: "Alex Iwobi",
+        team: "Nigeria",
+        value: 2,
+        appearances: 6
+      }
+    ]
+  };
 
-    if (!category) {
-      throw new Error(
-        `Catégorie ESPN introuvable : ${stat} — CAN 2025`
-      );
-    }
+  const selected = finalStats[stat];
 
-    const rows = Array.isArray(category.leaders)
-      ? category.leaders
-      : [];
-
-    if (!rows.length) {
-      throw new Error(
-        `Aucun joueur disponible pour ${stat} — CAN 2025`
-      );
-    }
-
-const normalizedRows = await Promise.all(
-  rows.slice(0, 5).map(async row => {
-        try {
-          const athlete = await afcon2025ResolveReference(
-            row.athlete || row.player
-          );
-
-          const teamSource = row.team || athlete.team || {};
-          const team = await afcon2025ResolveReference(teamSource);
-
-          const rawValue = row.value ?? row.displayValue ?? 0;
-          const total = Number(rawValue);
-
-          const name =
-            athlete.displayName ||
-            athlete.fullName ||
-            athlete.name ||
-            athlete.shortName ||
-            "";
-
-          if (!name || !Number.isFinite(total)) {
-            return null;
-          }
-
-          const headshot = athlete.headshot || {};
-          const photo =
-            headshot.href ||
-            headshot.url ||
-            athlete.photo ||
-            athlete.image ||
-            "";
-
-          const teamName =
-            team.displayName ||
-            team.name ||
-            team.shortDisplayName ||
-            (typeof teamSource === "string" ? teamSource : "") ||
-            "Équipe non renseignée";
-
-          return {
-            player: {
-              name,
-              full_name: name,
-              headshot: photo,
-              photo,
-              url: athlete.links?.[0]?.href || ""
-            },
-            team: teamName,
-            goals: stat === "goals" ? total : 0,
-            assists: stat === "assists" ? total : 0
-          };
-        } catch (error) {
-          console.warn(
-            "BakhiraFoot — joueur CAN 2025:",
-            error
-          );
-          return null;
-        }
-      })
-    );
-
-    const result = normalizedRows
-      .filter(Boolean)
-      .sort((a, b) => b[stat] - a[stat])
-      .slice(0, 10);
-
-    if (!result.length) {
-      throw new Error(
-        `Impossible de lire les joueurs CAN 2025 : ${stat}`
-      );
-    }
-
-    return result;
-  })();
-
-  afcon2025PlayerCache.set(stat, request);
-
-  try {
-    return await request;
-  } catch (error) {
-    afcon2025PlayerCache.delete(stat);
-    console.error("BakhiraFoot — CAN 2025:", error);
-    throw error;
+  if (!Array.isArray(selected)) {
+    return [];
   }
+
+  const players = selected.map(item => ({
+    player: {
+      name: item.name,
+      full_name: item.name
+    },
+    team: item.team,
+    appearances: item.appearances,
+    goals: stat === "goals" ? item.value : 0,
+    assists: stat === "assists" ? item.value : 0
+  }));
+
+  afcon2025PlayerCache.set(cacheKey, players);
+
+  return players;
 }
+
   async function loadAfcon2025LeadersSafe(stat) {
   let timer;
 
