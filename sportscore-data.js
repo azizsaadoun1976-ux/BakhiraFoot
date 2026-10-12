@@ -4177,6 +4177,38 @@ async function loadAfconFinalStandings() {
 
   return groups;
 }
+   async function loadCompetition(competition) {
+  const isAfcon2025 =
+    competition?.slug === "caf-africa-cup-of-nations";
+
+  const [
+    standingsData,
+    goalsData,
+    assistsData,
+    knockoutData
+  ] = await Promise.allSettled([
+    fetchCompetitionEndpoint("standings", competition),
+
+    isAfcon2025
+      ? loadAfcon2025PlayerLeaders("goals")
+      : fetchCompetitionEndpoint(
+          "topscorers",
+          competition,
+          "&limit=5&stat=goals"
+        ),
+
+    isAfcon2025
+      ? loadAfcon2025PlayerLeaders("assists")
+      : fetchCompetitionEndpoint(
+          "topscorers",
+          competition,
+          "&limit=5&stat=assists"
+        ),
+
+    fetchCompetitionKnockoutRounds(competition)
+  ]);
+
+  // خلي باقي الدالة كيف ما هو ابتداءً من هنا:
 async function loadCompetition(competition) {
   const isConferenceLeague =
     competition.slug === "uefa-europa-conference-league";
