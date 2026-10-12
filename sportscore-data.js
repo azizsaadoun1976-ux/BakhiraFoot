@@ -4177,7 +4177,244 @@ async function loadAfconFinalStandings() {
 
   return groups;
 }
-   async function loadCompetition(competition) {
+
+/* =========================================================
+   BAKHIRAFOOT — CAN MAROC 2025
+   BUTEURS + PASSES DÉCISIVES
+   Source: ESPN — saison 2025
+   ========================================================= */
+
+let afcon2025LeadersPayloadPromise = null;
+const afcon2025PlayerCache = new Map();
+const afcon2025ReferenceCache = new Map();
+
+function afcon2025GetCategories(payload) {
+  const found = [];
+
+  function walk(node, depth = 0) {
+    if (!node || typeof node !== "object" || depth > 8) return;
+
+    if (Array.isArray(node.categories) && node.categories.length) {
+      found.push(...node.categories);
+      return;
+    }
+
+    if (Array.isArray(node)) {
+      node.forEach(item => walk(item, depth + 1));
+      return;
+    }
+
+    Object.values(node).forEach(value => walk(value, depth + 1));
+  }
+
+  walk(payload);
+
+  return [...new Set(found)];
+}
+
+async function afcon2025GetLeadersPayload() {
+  if (afcon2025LeadersPayloadPromise) {
+    return afcon2025LeadersPayloadPromise;
+  }
+
+  const urls = [
+    "https://sports.core.api.espn.com/v2/sports/soccer/leagues/caf.nations/seasons/2025/leaders?limit=100&lang=en&region=us",
+    "https://sports.core.api.espn.com/v2/sports/soccer/leagues/caf.nations/seasons/2025/types/2/leaders?limit=100&lang=en&region=us",
+    "https://site.api.espn.com/apis/site/v2/sports/soccer/caf.nations/leaders?season=2025&lang=en&region=us"
+  ];
+
+  const request = (async () => {
+    let lastError;
+
+    for (const url of urls) {
+      try {
+        const payload = await fetchJSON(url);
+
+        if (afcon2025GetCategories(payload).length) {
+          return payload;
+        }
+      } catch (error) {
+        lastError = error;
+      }
+    }
+
+    throw lastError || new Error(
+      "ESPN ne renvoie pas les statistiques CAN 2025."
+    );
+  })();
+
+  afcon2025LeadersPayloadPromise = request;
+
+  try {
+    return await request;
+  } catch (error) {
+    afcon2025LeadersPayloadPromise = null;
+    throw error;
+  }
+}
+
+async function afcon2025ResolveReference(item) {
+  if (!item || typeof item !== "object") return item || {};
+
+  const ref = item.$ref;
+
+  // L'objet contient déjà les informations du joueur ou de l'équipe.
+  if (!ref || item.displayName || item.fullName || item.name) {
+    return item;
+  }
+
+  let url = String(ref)
+    .replace(/^http:\/\//i, "https://")
+    .replace("sports.core.api.espn.pvt", "sports.core.api.espn.com");
+
+  if (!afcon2025ReferenceCache.has(url)) {
+    const request = fetchJSON(url).catch(error => {
+      afcon2025ReferenceCache.delete(url);
+      throw error;
+    });
+
+    afcon2025ReferenceCache.set(url, request);
+  }
+
+  return afcon2025ReferenceCache.get(url);
+}
+
+function afcon2025CategoryMatches(category, stat) {
+  const label = [
+    category?.name,
+    category?.displayName,
+    category?.shortDisplayName,
+    category?.abbreviation
+  ]
+    .filter(Boolean)
+    .join(" ")
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "");
+
+  if (stat === "goals") {
+    return /\b(goals?|scoring|buts?)\b/.test(label);
+  }
+
+  return /\b(assists?|passes decisives?)\b/.test(label);
+}
+
+async function loadAfcon2025PlayerLeaders(stat) {
+  if (afcon2025PlayerCache.has(stat)) {
+    return afcon2025PlayerCache.get(stat);
+  }
+
+  const request = (async () => {
+    const payload = await afcon2025GetLeadersPayload();
+    const categories = afcon2025GetCategories(payload);
+
+    const category = categories.find(item =>
+      afcon2025CategoryMatches(item, stat)
+    );
+
+    if (!category) {
+      throw new Error(
+        `Catégorie ESPN introuvable : ${stat} — CAN 2025`
+      );
+    }
+
+    const rows = Array.isArray(category.leaders)
+      ? category.leaders
+      : [];
+
+    if (!rows.length) {
+      throw new Error(
+        `Aucun joueur disponible pour ${stat} — CAN 2025`
+      );
+    }
+
+    const normalizedRows = await Promise.all(
+      rows.map(async row => {
+        try {
+          const athlete = await afcon2025ResolveReference(
+            row.athlete || row.player
+          );
+
+          const teamSource = row.team || athlete.team || {};
+          const team = await afcon2025ResolveReference(teamSource);
+
+          const rawValue = row.value ?? row.displayValue ?? 0;
+          const total = Number(rawValue);
+
+          const name =
+            athlete.displayName ||
+            athlete.fullName ||
+            athlete.name ||
+            athlete.shortName ||
+            "";
+
+          if (!name || !Number.isFinite(total)) {
+            return null;
+          }
+
+          const headshot = athlete.headshot || {};
+          const photo =
+            headshot.href ||
+            headshot.url ||
+            athlete.photo ||
+            athlete.image ||
+            "";
+
+          const teamName =
+            team.displayName ||
+            team.name ||
+            team.shortDisplayName ||
+            (typeof teamSource === "string" ? teamSource : "") ||
+            "Équipe non renseignée";
+
+          return {
+            player: {
+              name,
+              full_name: name,
+              headshot: photo,
+              photo,
+              url: athlete.links?.[0]?.href || ""
+            },
+            team: teamName,
+            goals: stat === "goals" ? total : 0,
+            assists: stat === "assists" ? total : 0
+          };
+        } catch (error) {
+          console.warn(
+            "BakhiraFoot — joueur CAN 2025:",
+            error
+          );
+          return null;
+        }
+      })
+    );
+
+    const result = normalizedRows
+      .filter(Boolean)
+      .sort((a, b) => b[stat] - a[stat])
+      .slice(0, 10);
+
+    if (!result.length) {
+      throw new Error(
+        `Impossible de lire les joueurs CAN 2025 : ${stat}`
+      );
+    }
+
+    return result;
+  })();
+
+  afcon2025PlayerCache.set(stat, request);
+
+  try {
+    return await request;
+  } catch (error) {
+    afcon2025PlayerCache.delete(stat);
+    console.error("BakhiraFoot — CAN 2025:", error);
+    throw error;
+  }
+}
+         
+async function loadCompetition(competition) {
   const isAfcon2025 =
     competition?.slug === "caf-africa-cup-of-nations";
 
@@ -4209,31 +4446,6 @@ async function loadAfconFinalStandings() {
   ]);
 
   // خلي باقي الدالة كيف ما هو ابتداءً من هنا:
-async function loadCompetition(competition) {
-  const isConferenceLeague =
-    competition.slug === "uefa-europa-conference-league";
-const isAfconFinals =
-  competition.slug === "caf-africa-cup-of-nations";
-  const [standingsData, goalsData, assistsData] =
-    await Promise.allSettled([
-     isConferenceLeague
-  ? loadConferenceLeaguePhaseStandings()
-  : isAfconFinals
-    ? loadAfconFinalStandings()
-    : fetchCompetitionEndpoint("standings", competition),
-fetchCompetitionEndpoint(
-  "topscorers",
-  competition,
-  "&limit=5&stat=goals"
-),
-
-fetchCompetitionEndpoint(
-  "topscorers",
-  competition,
-  "&limit=5&stat=assists"
-)
-    ]);
-
   const standingGroups =
   standingsData.status === "fulfilled"
     ? (
