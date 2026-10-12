@@ -4441,16 +4441,27 @@ const normalizedRows = await Promise.all(
   }
 }       
 async function loadCompetition(competition) {
-  const isAfcon2025 =
+  const isConferenceLeague =
+    competition?.slug === "uefa-europa-conference-league";
+
+  const isAfconFinals =
     competition?.slug === "caf-africa-cup-of-nations";
+
+  const isAfcon2025 = isAfconFinals;
 
   const [
     standingsData,
     goalsData,
-    assistsData,
-    knockoutData
+    assistsData
   ] = await Promise.allSettled([
-    fetchCompetitionEndpoint("standings", competition),
+    isConferenceLeague
+      ? loadConferenceLeaguePhaseStandings()
+      : isAfconFinals
+        ? loadAfconFinalStandings()
+        : fetchCompetitionEndpoint(
+            "standings",
+            competition
+          ),
 
     isAfcon2025
       ? loadAfcon2025LeadersSafe("goals")
@@ -4466,44 +4477,52 @@ async function loadCompetition(competition) {
           "topscorers",
           competition,
           "&limit=5&stat=assists"
-        ),
-
-    fetchCompetitionKnockoutRounds(competition)
+        )
   ]);
 
-  // خلي باقي الدالة كيف ما هو ابتداءً من هنا:
   const standingGroups =
-  standingsData.status === "fulfilled"
-    ? (
-        isConferenceLeague || isAfconFinals
-          ? standingsData.value
-          : findStandingGroups(standingsData.value)
+    standingsData.status === "fulfilled"
+      ? (
+          isConferenceLeague || isAfconFinals
+            ? standingsData.value
+            : findStandingGroups(standingsData.value)
+        )
+      : [];
+
+  const validGroups = Array.isArray(standingGroups)
+    ? standingGroups.filter(
+        group => Array.isArray(group?.rows)
       )
     : [];
 
-  const standings = standingGroups.flatMap(
+  const standings = validGroups.flatMap(
     group => group.rows
   );
 
- const goals =
-  goalsData.status === "fulfilled"
-    ? sortTopPlayersByStat(goalsData.value, "goals")
-    : [];
+  const goals =
+    goalsData.status === "fulfilled"
+      ? sortTopPlayersByStat(
+          goalsData.value,
+          "goals"
+        )
+      : [];
 
-const assists =
-  assistsData.status === "fulfilled"
-    ? sortTopPlayersByStat(assistsData.value, "assists")
-    : [];
+  const assists =
+    assistsData.status === "fulfilled"
+      ? sortTopPlayersByStat(
+          assistsData.value,
+          "assists"
+        )
+      : [];
 
   return {
     competition,
     standings,
-    standingGroups,
+    standingGroups: validGroups,
     goals,
     assists
   };
 }
-
   /* =========================================================
      AFFICHER TOUTES LES COMPÉTITIONS
      ========================================================= */
