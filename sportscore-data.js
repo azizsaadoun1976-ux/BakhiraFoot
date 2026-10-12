@@ -4328,8 +4328,8 @@ async function loadAfcon2025PlayerLeaders(stat) {
       );
     }
 
-    const normalizedRows = await Promise.all(
-      rows.map(async row => {
+const normalizedRows = await Promise.all(
+  rows.slice(0, 5).map(async row => {
         try {
           const athlete = await afcon2025ResolveReference(
             row.athlete || row.player
@@ -4413,7 +4413,33 @@ async function loadAfcon2025PlayerLeaders(stat) {
     throw error;
   }
 }
-         
+  async function loadAfcon2025LeadersSafe(stat) {
+  let timer;
+
+  try {
+    const result = await Promise.race([
+      loadAfcon2025PlayerLeaders(stat),
+
+      new Promise(resolve => {
+        timer = setTimeout(() => resolve([]), 7000);
+      })
+    ]);
+
+    return Array.isArray(result) ? result : [];
+
+  } catch (error) {
+    console.warn(
+      "BakhiraFoot — Statistiques CAN 2025 indisponibles:",
+      stat,
+      error
+    );
+
+    return [];
+
+  } finally {
+    clearTimeout(timer);
+  }
+}       
 async function loadCompetition(competition) {
   const isAfcon2025 =
     competition?.slug === "caf-africa-cup-of-nations";
