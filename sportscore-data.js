@@ -5412,8 +5412,32 @@ function renderThirdPlaceRanking(groups, competition) {
     return "";
   }
 
-  const sourceGroups = Array.isArray(groups) ? groups : [];
+  
+  const sourceGroups = (
+    Array.isArray(groups) ? groups : []
+  ).filter(group => {
+    const label = String(
+      group?.name ||
+      group?.title ||
+      group?.label ||
+      group?.group_name ||
+      group?.groupName ||
+      ""
+    )
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .toLowerCase()
+      .replace(/[_-]+/g, " ")
+      .replace(/\s+/g, " ")
+      .trim();
+
+    return !(
+      /ranking of third|third placed teams|best third|meilleurs troisiem|classement.*troisiem/.test(label)
+    );
+  });
+
   const thirdTeams = [];
+
 
   function numberValue(row, keys, fallback = 0) {
     const raw = value(row, keys, fallback);
@@ -5530,7 +5554,9 @@ function renderThirdPlaceRanking(groups, competition) {
 
   if (!thirdTeams.length) return "";
 
- const groupStageComplete = true;
+ const groupStageComplete =
+  thirdTeams.length === 12 &&
+  thirdTeams.every(team => team.played >= 3);
   const qualifiedCount = Math.min(8, thirdTeams.length);
 
   const rowsHTML = thirdTeams.map((team, index) => {
@@ -5828,7 +5854,7 @@ body.dark .bf-third-ranking-table tbody tr.is-eliminated {
             pour les seizièmes de finale.
           </p>
         </div>
-        <strong>${qualifiedCount}/8</strong>
+        <strong>8/12</strong>
       </div>
 
       <div class="bf-third-ranking-scroll">
