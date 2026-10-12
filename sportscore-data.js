@@ -5537,12 +5537,25 @@ function renderThirdPlaceRanking(groups, competition) {
   const qualifiedCount = Math.min(8, thirdTeams.length);
 
   const rowsHTML = thirdTeams.map((team, index) => {
-    const qualified = index < 8;
+  const qualified = index < 8;
 
-    const status = groupStageComplete
-      ? (qualified ? "Qualifié" : "Éliminé")
-      : (qualified ? "Zone de qualification" : "Hors du top 8");
+  const status = groupStageComplete
+    ? (
+        qualified
+          ? "Qualifié pour les 16es de finale"
+          : "Éliminé"
+      )
+    : (
+        qualified
+          ? "Dans la zone de qualification"
+          : "Hors du top 8 provisoire"
+      );
 
+  const statusClass = qualified
+    ? "qualified"
+    : groupStageComplete
+      ? "eliminated"
+      : "pending";
     const logoHTML = team.logo
       ? `<img src="${escapeHTML(team.logo)}"
               alt=""
@@ -5551,7 +5564,13 @@ function renderThirdPlaceRanking(groups, competition) {
       : `<span class="bf-third-team-logo-fallback">⚽</span>`;
 
     return `
-      <tr class="${qualified ? "is-qualified" : "not-qualified"}">
+      <tr class="${
+  qualified
+    ? "is-qualified"
+    : groupStageComplete
+      ? "is-eliminated"
+      : "not-qualified"
+}">
         <td class="bf-third-rank">${index + 1}</td>
         <td>${escapeHTML(team.groupName)}</td>
         <td>
@@ -5566,7 +5585,7 @@ function renderThirdPlaceRanking(groups, competition) {
         <td>${team.goalDifference > 0 ? "+" : ""}${team.goalDifference}</td>
         <td><strong>${team.points}</strong></td>
         <td>
-          <span class="bf-third-status">
+          <span class="bf-third-status ${statusClass}">
             ${escapeHTML(status)}
           </span>
         </td>
@@ -5714,7 +5733,39 @@ return `
         background: #e2e8f0;
         color: #475569;
       }
+.bf-third-status.qualified {
+  background: #dcfce7;
+  color: #166534;
+}
 
+.bf-third-status.eliminated {
+  background: #fee2e2;
+  color: #991b1b;
+}
+
+.bf-third-status.pending {
+  background: #e2e8f0;
+  color: #475569;
+}
+
+body.dark .bf-third-status.qualified {
+  background: #14532d;
+  color: #bbf7d0;
+}
+
+body.dark .bf-third-status.eliminated {
+  background: #7f1d1d;
+  color: #fecaca;
+}
+
+body.dark .bf-third-status.pending {
+  background: #334155;
+  color: #e2e8f0;
+}
+
+body.dark .bf-third-ranking-table tbody tr.is-eliminated {
+  background: #351c23;
+}
       .bf-third-ranking-note {
         margin: 12px 0 0;
         color: #64748b;
