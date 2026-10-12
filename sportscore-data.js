@@ -5660,6 +5660,7 @@ function renderThirdPlaceRanking(groups, competition) {
       </summary>
 
       <div class="bf-competition-content">
+      ${renderThirdPlaceRanking(usefulGroups, competition)}
         ${renderQualificationLegend(usefulGroups, competition)}
         ${tablesHTML || `
           <div class="ss-no-data">
