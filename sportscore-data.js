@@ -3816,7 +3816,7 @@ function ensureKnockoutStyles() {
 function renderKnockoutBracket(events, competitionName) {
   const isWorldCup = competitionName === "FIFA World Cup";
 
-  let stages = ESPN_KNOCKOUT_STAGE_ORDER.filter(
+  let stages = ESPN_KNOCKOUT_ROUND_ORDER.filter(
     stage => stage.key !== "final"
   );
 
@@ -4209,7 +4209,7 @@ function renderKnockoutBracket(events, competitionName) {
     `;
   }
 
-  const finalStage = ESPN_KNOCKOUT_STAGE_ORDER.find(
+  const finalStage = ESPN_KNOCKOUT_ROUND_ORDER.find(
     stage => stage.key === "final"
   );
 
