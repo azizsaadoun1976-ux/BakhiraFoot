@@ -5393,6 +5393,255 @@ async function loadAfcon2025PlayerLeaders(stat) {
     clearTimeout(timer);
   }
 }       
+
+
+/* =========================================
+   BAKHIRAFOOT — HISTORICAL ESPN STANDINGS
+   ========================================= */
+
+function readESPNStandingStat(entry, aliases) {
+  const stats = Array.isArray(entry?.stats)
+    ? entry.stats
+    : [];
+
+  const normalize = text =>
+    String(text || "")
+      .toLowerCase()
+      .replace(/[^a-z0-9]/g, "");
+
+  const wanted = aliases.map(normalize);
+
+  const stat = stats.find(item =>
+    wanted.includes(
+      normalize(
+        item?.name ||
+        item?.abbreviation ||
+        item?.displayName
+      )
+    )
+  );
+
+  if (!stat) return null;
+
+  if (
+    stat.value !== null &&
+    stat.value !== undefined &&
+    Number.isFinite(Number(stat.value))
+  ) {
+    return Number(stat.value);
+  }
+
+  if (stat.displayValue !== undefined) {
+    const parsed = Number(stat.displayValue);
+
+    if (Number.isFinite(parsed)) {
+      return parsed;
+    }
+  }
+
+  return null;
+}
+
+function normalizeESPNHistoricalGroups(payload) {
+  const groups = [];
+  const visited = new Set();
+
+  function extractRows(entries) {
+    if (!Array.isArray(entries)) return [];
+
+    return entries
+      .filter(entry =>
+        entry &&
+        typeof entry === "object" &&
+        entry.team
+      )
+      .map((entry, index) => {
+        const team = entry.team || {};
+
+        const logos = Array.isArray(team.logos)
+          ? team.logos
+          : [];
+
+        const logo =
+          logos.find(item => item?.href)?.href ||
+          team.logo ||
+          "";
+
+        const rank = readESPNStandingStat(
+          entry,
+          ["rank", "position", "place"]
+        );
+
+        const played = readESPNStandingStat(
+          entry,
+          ["gamesPlayed", "played", "matches", "games"]
+        );
+
+        const wins = readESPNStandingStat(
+          entry,
+          ["wins", "won"]
+        );
+
+        const draws = readESPNStandingStat(
+          entry,
+          ["ties", "draws", "drawn"]
+        );
+
+        const losses = readESPNStandingStat(
+          entry,
+          ["losses", "lost"]
+        );
+
+        const goalsFor = readESPNStandingStat(
+          entry,
+          ["goalsFor", "pointsFor", "goalsScored"]
+        );
+
+        const goalsAgainst = readESPNStandingStat(
+          entry,
+          ["goalsAgainst", "pointsAgainst", "goalsConceded"]
+        );
+
+        const goalDifference = readESPNStandingStat(
+          entry,
+          ["goalDifference", "pointDifferential", "differential"]
+        );
+
+        const points = readESPNStandingStat(
+          entry,
+          ["points", "leaguePoints"]
+        );
+
+        return {
+          position: rank ?? index + 1,
+
+          team: {
+            name:
+              team.displayName ||
+              team.name ||
+              team.shortDisplayName ||
+              "Équipe",
+            logo
+          },
+
+          ...(played !== null ? { played } : {}),
+          ...(wins !== null ? { wins } : {}),
+          ...(draws !== null ? { draws } : {}),
+          ...(losses !== null ? { losses } : {}),
+          ...(goalsFor !== null ? { goals_for: goalsFor } : {}),
+          ...(goalsAgainst !== null
+            ? { goals_against: goalsAgainst }
+            : {}),
+          ...(goalDifference !== null
+            ? { goal_difference: goalDifference }
+            : {}),
+          ...(points !== null ? { points } : {})
+        };
+      });
+  }
+
+  function walk(node, inheritedName = "", depth = 0) {
+    if (
+      !node ||
+      typeof node !== "object" ||
+      depth > 10 ||
+      visited.has(node)
+    ) {
+      return;
+    }
+
+    visited.add(node);
+
+    const name =
+      node.name ||
+      node.displayName ||
+      inheritedName ||
+      "";
+
+    const entries =
+      node.standings?.entries ||
+      (
+        Array.isArray(node.entries) &&
+        node.entries.some(item =>
+          item?.team && Array.isArray(item?.stats)
+        )
+          ? node.entries
+          : null
+      );
+
+    if (Array.isArray(entries) && entries.length) {
+      const rows = extractRows(entries);
+
+      if (rows.length) {
+        groups.push({
+          name,
+          rows
+        });
+      }
+    }
+
+    if (Array.isArray(node.children)) {
+      node.children.forEach(child =>
+        walk(child, child?.name || name, depth + 1)
+      );
+    }
+
+    if (
+      !Array.isArray(node.children) &&
+      node.standings?.entries
+    ) {
+      return;
+    }
+
+    if (node.standings && !node.standings.entries) {
+      walk(node.standings, name, depth + 1);
+    }
+  }
+
+  walk(payload);
+
+  // بعض البطولات كترجع جدولاً واحداً بلا children.
+  if (!groups.length && Array.isArray(payload?.standings?.entries)) {
+    const rows = extractRows(payload.standings.entries);
+
+    if (rows.length) {
+      groups.push({
+        name: "",
+        rows
+      });
+    }
+  }
+
+  return groups;
+}
+
+async function fetchHistoricalESPNStandings(
+  espnCode,
+  season
+) {
+  if (!espnCode || !Number.isInteger(Number(season))) {
+    throw new Error("Code de compétition ou saison invalide.");
+  }
+
+  const url =
+    "https://site.api.espn.com/apis/v2/sports/soccer/" +
+    `${encodeURIComponent(espnCode)}/standings` +
+    `?season=${encodeURIComponent(season)}`;
+
+  const payload = await fetchJSON(url);
+
+  const groups = normalizeESPNHistoricalGroups(payload);
+
+  if (!groups.length) {
+    throw new Error(
+      `Aucun classement historique disponible pour la saison ${season}.`
+    );
+  }
+
+  return groups;
+}
+
+   
 async function loadCompetition(competition) {
   const isConferenceLeague =
     competition?.slug === "uefa-europa-conference-league";
