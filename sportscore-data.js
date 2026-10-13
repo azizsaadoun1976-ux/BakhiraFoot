@@ -6422,7 +6422,7 @@ if (playersBox) {
           setHistoricalSeasonSections(card, true);
 
           status.textContent =
-            `Classement ${year} indisponible. Les données actuelles ont été restaurées.`;
+            `Classement ${year} indisponible : ${error?.message || "Erreur inconnue"}. Les données actuelles ont été restaurées.`;
         } finally {
           if (currentRequest === requestNumber) {
             select.disabled = false;
