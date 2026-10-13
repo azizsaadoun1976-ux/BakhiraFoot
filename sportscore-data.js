@@ -5646,12 +5646,269 @@ async function fetchHistoricalESPNStandings(
    HISTORICAL SEASON SELECTOR — BINDING
    ========================================= */
 
+
+/* =========================================
+   HISTORICAL TOP SCORERS + ASSISTS
+   ESPN CORE API
+   ========================================= */
+
+const historicalESPNEntityCache = new Map();
+const historicalESPNPlayersCache = new Map();
+
+async function resolveHistoricalESPNEntity(entity) {
+  if (!entity) return {};
+
+  const reference =
+    typeof entity === "string"
+      ? entity
+      : entity.$ref;
+
+  if (!reference) {
+    return typeof entity === "object" ? entity : {};
+  }
+
+  const url = reference.replace(/^http:/i, "https:");
+
+  if (!historicalESPNEntityCache.has(url)) {
+    const request = fetchJSON(url).catch(error => {
+      historicalESPNEntityCache.delete(url);
+      throw error;
+    });
+
+    historicalESPNEntityCache.set(url, request);
+  }
+
+  try {
+    return await historicalESPNEntityCache.get(url);
+  } catch (error) {
+    console.warn(
+      "BakhiraFoot — référence ESPN indisponible:",
+      url,
+      error
+    );
+
+    return typeof entity === "object" ? entity : {};
+  }
+}
+
+function historicalESPNStatNumber(leader) {
+  const candidates = [
+    leader?.value,
+    leader?.displayValue,
+    leader?.statistics?.value,
+    leader?.statistics?.displayValue
+  ];
+
+  for (const candidate of candidates) {
+    if (
+      candidate !== null &&
+      candidate !== undefined &&
+      candidate !== ""
+    ) {
+      const number = Number(
+        String(candidate).replace(/,/g, "")
+      );
+
+      if (Number.isFinite(number)) {
+        return number;
+      }
+    }
+  }
+
+  return null;
+}
+
+function historicalESPNCategoryMatches(category, stat) {
+  const name = [
+    category?.name,
+    category?.displayName,
+    category?.shortDisplayName,
+    category?.abbreviation
+  ]
+    .filter(Boolean)
+    .join(" ")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/[^a-z0-9]/g, "");
+
+  if (stat === "goals") {
+    if (/assist|against|conceded|difference|own/.test(name)) {
+      return false;
+    }
+
+    return /^(goals?|totalgoals|goalscored|scoring|goalscoring)$/.test(name) ||
+      /^(total)?goals/.test(name);
+  }
+
+  return /^(assists?|goalassists?|totalassists?)$/.test(name) ||
+    /^assists/.test(name);
+}
+
+async function findHistoricalESPNLeaderCategory(payload, stat) {
+  const rawCategories =
+    payload?.categories ||
+    payload?.leaders?.categories ||
+    [];
+
+  if (!Array.isArray(rawCategories)) {
+    return null;
+  }
+
+  const categories = await Promise.all(
+    rawCategories.map(category =>
+      resolveHistoricalESPNEntity(category)
+    )
+  );
+
+  return categories.find(category =>
+    historicalESPNCategoryMatches(category, stat)
+  ) || null;
+}
+
+async function normalizeHistoricalESPNLeaders(category, stat) {
+  const entries = Array.isArray(category?.leaders)
+    ? category.leaders
+    : Array.isArray(category?.leaders?.items)
+      ? category.leaders.items
+      : [];
+
+  if (!entries.length) return [];
+
+  const players = await Promise.all(
+    entries.slice(0, 5).map(async leader => {
+      const [athlete, team] = await Promise.all([
+        resolveHistoricalESPNEntity(leader?.athlete),
+        resolveHistoricalESPNEntity(leader?.team)
+      ]);
+
+      const name =
+        athlete?.displayName ||
+        athlete?.fullName ||
+        athlete?.shortName ||
+        athlete?.name ||
+        leader?.athlete?.displayName ||
+        "";
+
+      const total = historicalESPNStatNumber(leader);
+
+      if (!name || total === null) {
+        return null;
+      }
+
+      const headshot =
+        athlete?.headshot?.href ||
+        athlete?.headshot?.url ||
+        athlete?.photo ||
+        athlete?.image ||
+        "";
+
+      const teamLogo =
+        team?.logos?.find(logo => logo?.href)?.href ||
+        team?.logo ||
+        "";
+
+      const teamName =
+        team?.displayName ||
+        team?.name ||
+        team?.shortDisplayName ||
+        "";
+
+      const player = {
+        name,
+        slug: athlete?.slug || athlete?.id || "",
+        photo: headshot,
+        photo_url: headshot,
+        logo: headshot,
+        image: headshot,
+        team: {
+          name: teamName || "Équipe non renseignée",
+          logo: teamLogo
+        }
+      };
+
+      return {
+        name,
+        player_name: name,
+        player,
+        team: player.team,
+        value: total,
+        [stat]: total
+      };
+    })
+  );
+
+  return players
+    .filter(Boolean)
+    .sort((a, b) => b[stat] - a[stat]);
+}
+
+async function fetchHistoricalESPNPlayers(espnCode, season) {
+  const cacheKey = `${espnCode}:${season}`;
+
+  if (historicalESPNPlayersCache.has(cacheKey)) {
+    return historicalESPNPlayersCache.get(cacheKey);
+  }
+
+  const request = (async () => {
+    const base =
+      "https://sports.core.api.espn.com/v2/sports/soccer/leagues/" +
+      `${encodeURIComponent(espnCode)}/seasons/${encodeURIComponent(season)}`;
+
+    const endpoints = [
+      `${base}/types/2/leaders?limit=100`,
+      `${base}/types/3/leaders?limit=100`,
+      `${base}/leaders?limit=100`
+    ];
+
+    let lastError = null;
+
+    for (const endpoint of endpoints) {
+      try {
+        const payload = await fetchJSON(endpoint);
+
+        const [goalsCategory, assistsCategory] =
+          await Promise.all([
+            findHistoricalESPNLeaderCategory(payload, "goals"),
+            findHistoricalESPNLeaderCategory(payload, "assists")
+          ]);
+
+        const [goals, assists] = await Promise.all([
+          normalizeHistoricalESPNLeaders(goalsCategory, "goals"),
+          normalizeHistoricalESPNLeaders(assistsCategory, "assists")
+        ]);
+
+        if (goals.length || assists.length) {
+          return { goals, assists };
+        }
+      } catch (error) {
+        lastError = error;
+      }
+    }
+
+    throw lastError ||
+      new Error(
+        `Aucune statistique historique disponible pour ${season}.`
+      );
+  })();
+
+  historicalESPNPlayersCache.set(cacheKey, request);
+
+  try {
+    return await request;
+  } catch (error) {
+    historicalESPNPlayersCache.delete(cacheKey);
+    throw error;
+  }
+}
+
+   
 const historicalStandingsCache = new Map();
 
 function setHistoricalSeasonSections(card, visible) {
   card
     .querySelectorAll(
-      ".bf-third-ranking, .bf-ko-section, .ss-players-grid"
+      ".bf-third-ranking, .bf-ko-section"
     )
     .forEach(section => {
       if (!visible) {
@@ -5698,7 +5955,10 @@ function bindHistoricalSeasonSelectors(container) {
       }
 
       const originalHTML = standingsBox.innerHTML;
-
+const playersBox = card.querySelector(".ss-players-grid");
+const originalPlayersHTML = playersBox
+  ? playersBox.innerHTML
+  : "";
       const competition = competitions.find(
         item => item.slug === select.dataset.competitionSlug
       );
@@ -5713,7 +5973,9 @@ function bindHistoricalSeasonSelectors(container) {
 
         if (selectedValue === "current") {
           standingsBox.innerHTML = originalHTML;
-
+if (playersBox) {
+  playersBox.innerHTML = originalPlayersHTML;
+}
           setHistoricalSeasonSections(card, true);
 
           status.textContent =
@@ -5788,6 +6050,71 @@ function bindHistoricalSeasonSelectors(container) {
             })
             .join("");
 
+          let historicalPlayers = {
+            goals: [],
+            assists: []
+          };
+
+          try {
+            historicalPlayers =
+              await fetchHistoricalESPNPlayers(
+                espnCode,
+                year
+              );
+          } catch (playersError) {
+            console.warn(
+              "BakhiraFoot — statistiques historiques indisponibles:",
+              year,
+              playersError
+            );
+          }
+
+          if (currentRequest !== requestNumber) {
+            return;
+          }
+
+          const historicalGoals = Array.isArray(
+            historicalPlayers?.goals
+          )
+            ? historicalPlayers.goals
+            : [];
+
+          const historicalAssists = Array.isArray(
+            historicalPlayers?.assists
+          )
+            ? historicalPlayers.assists
+            : [];
+
+          const hasHistoricalPlayerStats =
+            historicalGoals.length > 0 ||
+            historicalAssists.length > 0;
+
+          if (playersBox) {
+            playersBox.innerHTML = `
+              ${
+                renderPlayers(
+                  historicalGoals,
+                  "goals",
+                  "Meilleurs buteurs",
+                  "⚽"
+                )
+              }
+
+              ${
+                renderPlayers(
+                  historicalAssists,
+                  "assists",
+                  "Meilleurs passeurs",
+                  "🎯"
+                )
+              }
+            `;
+
+            if (hasHistoricalPlayerStats) {
+              loadRealPlayerPhotos(card);
+            }
+          }
+
           if (!tablesHTML) {
             throw new Error(
               `Aucun classement disponible pour ${year}.`
@@ -5803,8 +6130,9 @@ function bindHistoricalSeasonSelectors(container) {
           // pour ne pas les mélanger au classement historique.
           setHistoricalSeasonSections(card, false);
 
-          status.textContent =
-            `Classement historique ${year} chargé. Les autres statistiques seront reliées à cette saison dans une étape suivante.`;
+         status.textContent = hasHistoricalPlayerStats
+  ? `Classement, buteurs et passeurs de ${year} chargés lorsque disponibles.`
+  : `Classement de ${year} chargé. Les statistiques historiques des buteurs et passeurs ne sont pas disponibles.`;
 
         } catch (error) {
           if (currentRequest !== requestNumber) {
