@@ -5641,6 +5641,199 @@ async function fetchHistoricalESPNStandings(
   return groups;
 }
 
+
+/* =========================================
+   HISTORICAL SEASON SELECTOR — BINDING
+   ========================================= */
+
+const historicalStandingsCache = new Map();
+
+function setHistoricalSeasonSections(card, visible) {
+  card
+    .querySelectorAll(
+      ".bf-third-ranking, .bf-ko-section, .ss-players-grid"
+    )
+    .forEach(section => {
+      if (!visible) {
+        if (section.dataset.bfOriginalDisplay === undefined) {
+          section.dataset.bfOriginalDisplay =
+            section.style.display || "";
+        }
+
+        section.style.display = "none";
+      } else {
+        section.style.display =
+          section.dataset.bfOriginalDisplay || "";
+
+        delete section.dataset.bfOriginalDisplay;
+      }
+    });
+}
+
+function bindHistoricalSeasonSelectors(container) {
+  if (!container) return;
+
+  container
+    .querySelectorAll("[data-bf-season-select]")
+    .forEach(select => {
+      if (select.dataset.historyBound === "1") {
+        return;
+      }
+
+      const card = select.closest(".bf-competition");
+
+      const standingsBox = card?.querySelector(
+        ".bf-season-standings-content"
+      );
+
+      const status = card?.querySelector(
+        "[data-bf-season-status]"
+      );
+
+      if (!card || !standingsBox || !status) {
+        console.warn(
+          "BakhiraFoot: zone du classement ou statut introuvable."
+        );
+        return;
+      }
+
+      const originalHTML = standingsBox.innerHTML;
+
+      const competition = competitions.find(
+        item => item.slug === select.dataset.competitionSlug
+      );
+
+      let requestNumber = 0;
+
+      select.dataset.historyBound = "1";
+
+      select.addEventListener("change", async () => {
+        const selectedValue = select.value;
+        const currentRequest = ++requestNumber;
+
+        if (selectedValue === "current") {
+          standingsBox.innerHTML = originalHTML;
+
+          setHistoricalSeasonSections(card, true);
+
+          status.textContent =
+            "Données de la saison actuelle.";
+
+          return;
+        }
+
+        const year = Number(selectedValue);
+        const espnCode = select.dataset.espnCode;
+
+        if (
+          !competition ||
+          !espnCode ||
+          !Number.isInteger(year)
+        ) {
+          status.textContent =
+            "Cette saison n'est pas disponible pour cette compétition.";
+          return;
+        }
+
+        select.disabled = true;
+        standingsBox.setAttribute("aria-busy", "true");
+
+        status.textContent =
+          `Chargement du classement ${select.options[select.selectedIndex].text}…`;
+
+        try {
+          const cacheKey = `${espnCode}:${year}`;
+
+          let groups = historicalStandingsCache.get(cacheKey);
+
+          if (!groups) {
+            groups = await fetchHistoricalESPNStandings(
+              espnCode,
+              year
+            );
+
+            historicalStandingsCache.set(cacheKey, groups);
+          }
+
+          if (currentRequest !== requestNumber) {
+            return;
+          }
+
+          const usefulGroups = (
+            Array.isArray(groups) ? groups : []
+          ).filter(group =>
+            Array.isArray(group?.rows) &&
+            group.rows.length > 0
+          );
+
+          const allRows = usefulGroups.flatMap(
+            group => group.rows
+          );
+
+          const tablesHTML = usefulGroups
+            .map((group, index) => {
+              const title =
+                group.name ||
+                (
+                  usefulGroups.length > 1
+                    ? `Groupe ${String.fromCharCode(65 + index)}`
+                    : ""
+                );
+
+              return renderStandingTable(
+                group.rows,
+                title,
+                competition
+              );
+            })
+            .join("");
+
+          if (!tablesHTML) {
+            throw new Error(
+              `Aucun classement disponible pour ${year}.`
+            );
+          }
+
+          standingsBox.innerHTML = `
+            ${renderQualificationLegend(allRows, competition)}
+            ${tablesHTML}
+          `;
+
+          // On masque les statistiques des autres saisons,
+          // pour ne pas les mélanger au classement historique.
+          setHistoricalSeasonSections(card, false);
+
+          status.textContent =
+            `Classement historique ${year} chargé. Les autres statistiques seront reliées à cette saison dans une étape suivante.`;
+
+        } catch (error) {
+          if (currentRequest !== requestNumber) {
+            return;
+          }
+
+          console.warn(
+            "BakhiraFoot — classement historique:",
+            error
+          );
+
+          standingsBox.innerHTML = originalHTML;
+
+          select.value = "current";
+
+          setHistoricalSeasonSections(card, true);
+
+          status.textContent =
+            `Classement ${year} indisponible. Les données actuelles ont été restaurées.`;
+        } finally {
+          if (currentRequest === requestNumber) {
+            select.disabled = false;
+            standingsBox.removeAttribute("aria-busy");
+          }
+        }
+      });
+    });
+}
+
    
 async function loadCompetition(competition) {
   const isConferenceLeague =
@@ -6432,6 +6625,7 @@ const usefulGroups = standingGroups.filter(group => {
 
       <div class="bf-competition-content">
       ${renderSeasonSelector(competition)}
+       <div class="bf-season-standings-content">
         ${renderQualificationLegend(usefulGroups, competition)}
         ${tablesHTML || `
           <div class="ss-no-data">
@@ -6577,7 +6771,7 @@ for (let i = 0; i < competitions.length; i += 3) {
           renderCompetition
         )
         .join("");
-   
+   bindHistoricalSeasonSelectors(container);
 
 container
   .querySelectorAll("details.bf-competition")
