@@ -191,6 +191,109 @@ const competitions = [
      HELPERS
      ========================================================= */
 
+
+/* =========================================
+   BAKHIRAFOOT — HISTORICAL SEASONS
+   ========================================= */
+
+// رموز ESPN للبطولات اللي عندها مصدر معروف.
+const ESPN_SEASON_CODES = {
+  "english-premier-league": "eng.1",
+  "spanish-la-liga": "esp.1",
+  "italian-serie-a": "ita.1",
+  "bundesliga": "ger.1",
+  "french-ligue-1": "fra.1",
+  "netherlands-eredivisie": "ned.1",
+
+  "uefa-champions-league": "uefa.champions",
+  "uefa-europa-league": "uefa.europa",
+  "uefa-europa-conference-league": "uefa.europa.conf",
+
+  "fifa-world-cup": "fifa.world",
+  "uefa-european-championship": "uefa.euro",
+  "caf-africa-cup-of-nations": "caf.nations",
+  "afc-asian-cup": "afc.asian.cup",
+  "conmebol-copa-america": "conmebol.america",
+  "uefa-nations-league": "uefa.nations",
+
+  "english-football-league-championship": "eng.2",
+  "italian-serie-b": "ita.2",
+  "brazilian-serie-a": "bra.1",
+  "saudi-professional-league": "ksa.1",
+  "portuguese-primera-liga": "por.1",
+  "turkish-super-league": "tur.1",
+  "belgian-pro-league": "bel.1",
+  "scottish-premiership": "sco.1",
+  "argentine-division-1": "arg.1"
+};
+
+// البطولات الدولية عندها سنوات إصدارات محددة.
+const ESPN_SEASON_EDITIONS = {
+  "fifa-world-cup": [
+    2026, 2022, 2018, 2014, 2010,
+    2006, 2002, 1998
+  ],
+
+  "uefa-european-championship": [
+    2024, 2020, 2016, 2012, 2008,
+    2004, 2000
+  ],
+
+  "caf-africa-cup-of-nations": [
+    2025, 2023, 2021, 2019, 2017,
+    2015, 2013, 2012, 2010, 2008
+  ],
+
+  "afc-asian-cup": [
+    2023, 2019, 2015, 2011, 2007, 2004
+  ],
+
+  "conmebol-copa-america": [
+    2024, 2021, 2019, 2016, 2015,
+    2011, 2007, 2004, 2001
+  ],
+
+  "uefa-nations-league": [
+    2024, 2022, 2020, 2018
+  ]
+};
+
+// بطولات كتستعمل العام الواحد فالتسمية.
+const ESPN_CALENDAR_YEAR_COMPETITIONS = new Set([
+  "brazilian-serie-a",
+  "argentine-division-1"
+]);
+
+function getSeasonOptions(competition) {
+  const slug = competition?.slug;
+
+  if (!slug || !ESPN_SEASON_CODES[slug]) {
+    return [];
+  }
+
+  const editions = ESPN_SEASON_EDITIONS[slug];
+
+  if (Array.isArray(editions)) {
+    return editions.map(year => ({
+      year,
+      label: String(year)
+    }));
+  }
+
+  const currentYear = new Date().getUTCFullYear();
+
+  return Array.from({ length: 12 }, (_, index) => {
+    const year = currentYear - index;
+
+    const label = ESPN_CALENDAR_YEAR_COMPETITIONS.has(slug)
+      ? String(year)
+      : `${year}/${String(year + 1).slice(-2)}`;
+
+    return { year, label };
+  });
+}
+
+   
   function escapeHTML(value) {
     return String(value ?? "")
       .replace(/&/g, "&amp;")
