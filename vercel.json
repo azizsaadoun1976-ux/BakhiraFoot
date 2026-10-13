@@ -1,10 +1,9 @@
-
 {
   "version": 2,
   "routes": [
     {
-      "src": "/api/history",
-      "dest": "/api/history.js"
+      "src": "/api/historical-players$",
+      "dest": "/api/historical-players.js"
     },
     {
       "src": "/api/(.*)",
