@@ -6438,7 +6438,7 @@ if (playersBox) {
             fetchHistoricalESPNPlayers(
   select.dataset.competitionSlug || espnCode,
   year
-)
+),
             playerTimeout
           ])
             .then(historicalPlayers => {
