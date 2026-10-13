@@ -6134,7 +6134,7 @@ function setHistoricalSeasonSections(card, visible) {
       }
     });
 }
-
+const historicalStandingsCache = new Map();
 function bindHistoricalSeasonSelectors(container) {
   if (!container) return;
 
