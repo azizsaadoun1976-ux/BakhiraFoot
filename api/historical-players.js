@@ -229,8 +229,8 @@ module.exports = async (req, res) => {
     }
 
     const url =
-      `${ESPN}/${league}/seasons/${season}/leaders` +
-      "?lang=en&region=us";
+  `${ESPN}/${league}/seasons/${season}/types/2/leaders` +
+  "?lang=en&region=us";
 
     let payload = await getJSON(url);
     let categories = getCategories(payload);
