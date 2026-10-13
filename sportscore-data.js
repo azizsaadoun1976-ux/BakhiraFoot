@@ -5990,6 +5990,128 @@ body.dark .bf-third-ranking-table tbody tr.is-eliminated {
   `;
 }
 
+
+function renderSeasonSelector(competition) {
+  const slug = competition?.slug || "";
+
+  const leagueCodes = {
+    "english-premier-league": "eng.1",
+    "spanish-la-liga": "esp.1",
+    "italian-serie-a": "ita.1",
+    "bundesliga": "ger.1",
+    "french-ligue-1": "fra.1",
+    "netherlands-eredivisie": "ned.1",
+
+    "uefa-champions-league": "uefa.champions",
+    "uefa-europa-league": "uefa.europa",
+    "uefa-europa-conference-league": "uefa.europa.conf",
+
+    "fifa-world-cup": "fifa.world",
+    "uefa-european-championship": "uefa.euro",
+    "caf-africa-cup-of-nations": "caf.nations",
+    "afc-asian-cup": "afc.asian.cup",
+    "conmebol-copa-america": "conmebol.america",
+    "uefa-nations-league": "uefa.nations",
+
+    "english-football-league-championship": "eng.2",
+    "italian-serie-b": "ita.2",
+    "brazilian-serie-a": "bra.1",
+    "saudi-professional-league": "ksa.1",
+    "portuguese-primera-liga": "por.1",
+    "turkish-super-league": "tur.1",
+    "belgian-pro-league": "bel.1",
+    "scottish-premiership": "sco.1",
+    "argentine-division-1": "arg.1"
+  };
+
+  const espnCode = leagueCodes[slug];
+
+  if (!espnCode) return "";
+
+  const editions = {
+    "fifa-world-cup": [
+      2026, 2022, 2018, 2014, 2010,
+      2006, 2002, 1998
+    ],
+    "uefa-european-championship": [
+      2024, 2020, 2016, 2012,
+      2008, 2004, 2000
+    ],
+    "caf-africa-cup-of-nations": [
+      2025, 2023, 2021, 2019, 2017,
+      2015, 2013, 2012, 2010, 2008
+    ],
+    "afc-asian-cup": [
+      2023, 2019, 2015, 2011, 2007, 2004
+    ],
+    "conmebol-copa-america": [
+      2024, 2021, 2019, 2016, 2015,
+      2011, 2007, 2004, 2001
+    ],
+    "uefa-nations-league": [
+      2024, 2022, 2020, 2018
+    ]
+  };
+
+  const calendarYearCompetitions = new Set([
+    "brazilian-serie-a",
+    "argentine-division-1"
+  ]);
+
+  const years = editions[slug] || Array.from(
+    { length: 15 },
+    (_, index) => new Date().getUTCFullYear() - index
+  );
+
+  function seasonLabel(year) {
+    if (
+      editions[slug] ||
+      calendarYearCompetitions.has(slug)
+    ) {
+      return String(year);
+    }
+
+    return `${year}/${String(year + 1).slice(-2)}`;
+  }
+
+  return `
+    <div class="bf-season-control">
+      <div class="bf-season-control-heading">
+        <label for="bf-season-${escapeHTML(slug)}">
+          Saison
+        </label>
+        <span>Choisir une saison précédente</span>
+      </div>
+
+      <select
+        id="bf-season-${escapeHTML(slug)}"
+        class="bf-season-select"
+        data-bf-season-select
+        data-competition-slug="${escapeHTML(slug)}"
+        data-espn-code="${escapeHTML(espnCode)}"
+      >
+        <option value="current" selected>
+          Saison actuelle
+        </option>
+
+        ${years.map(year => `
+          <option value="${year}">
+            ${escapeHTML(seasonLabel(year))}
+          </option>
+        `).join("")}
+      </select>
+
+      <p
+        class="bf-season-status"
+        data-bf-season-status
+        aria-live="polite"
+      >
+        Données de la saison actuelle.
+      </p>
+    </div>
+  `;
+}
+
    
  function renderCompetition(result) {
   const {
@@ -6060,6 +6182,7 @@ const usefulGroups = standingGroups.filter(group => {
       </summary>
 
       <div class="bf-competition-content">
+      ${renderSeasonSelector(competition)}
         ${renderQualificationLegend(usefulGroups, competition)}
         ${tablesHTML || `
           <div class="ss-no-data">
@@ -8124,6 +8247,96 @@ body.dark .ss-zone-caption {
         .ss-standing-group-title {
           padding: 9px 11px;
           font-size: 11px;
+        }
+      }
+    `;
+
+    style.textContent += `
+      .bf-season-control {
+        display: flex;
+        align-items: center;
+        flex-wrap: wrap;
+        gap: 12px;
+        padding: 12px 15px;
+        background: #f8fafc;
+        border-bottom: 1px solid #e2e8f0;
+      }
+
+      .bf-season-control-heading {
+        display: flex;
+        flex-direction: column;
+        gap: 3px;
+        min-width: 125px;
+      }
+
+      .bf-season-control-heading label {
+        font-size: 12px;
+        font-weight: 900;
+        color: #172b38;
+      }
+
+      .bf-season-control-heading span {
+        font-size: 10px;
+        color: #64748b;
+      }
+
+      .bf-season-select {
+        min-width: 175px;
+        max-width: 100%;
+        padding: 9px 30px 9px 11px;
+        border: 1px solid #cbd5e1;
+        border-radius: 9px;
+        background: #ffffff;
+        color: #172b38;
+        font-size: 12px;
+        font-weight: 800;
+        cursor: pointer;
+      }
+
+      .bf-season-select:focus {
+        outline: 2px solid #16a34a;
+        outline-offset: 2px;
+      }
+
+      .bf-season-status {
+        flex-basis: 100%;
+        margin: 0;
+        color: #64748b;
+        font-size: 10px;
+      }
+
+      body.dark .bf-season-control {
+        background: #101c26;
+        border-bottom-color: #2b3c48;
+      }
+
+      body.dark .bf-season-control-heading label {
+        color: #f1f5f9;
+      }
+
+      body.dark .bf-season-control-heading span,
+      body.dark .bf-season-status {
+        color: #a9bac6;
+      }
+
+      body.dark .bf-season-select {
+        background: #1b2a35;
+        border-color: #3b5261;
+        color: #f1f5f9;
+      }
+
+      @media (max-width: 600px) {
+        .bf-season-control {
+          gap: 8px;
+          padding: 10px;
+        }
+
+        .bf-season-control-heading {
+          flex-basis: 100%;
+        }
+
+        .bf-season-select {
+          width: 100%;
         }
       }
     `;
