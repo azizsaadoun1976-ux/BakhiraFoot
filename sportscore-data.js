@@ -5745,15 +5745,64 @@ function historicalESPNCategoryMatches(category, stat) {
     /^assists/.test(name);
 }
 
+
+/* =========================================
+   HISTORICAL ESPN LEADERS — FIXED
+   ========================================= */
+
+// ESPN peut renvoyer les listes directement ou par un $ref.
+async function readHistoricalESPNCollection(
+  resource,
+  itemKeys = ["items", "leaders", "entries", "results", "categories"]
+) {
+  const payload = await resolveHistoricalESPNEntity(resource);
+
+  if (Array.isArray(payload)) {
+    return payload;
+  }
+
+  if (!payload || typeof payload !== "object") {
+    return [];
+  }
+
+  for (const key of itemKeys) {
+    const collection = payload[key];
+
+    if (Array.isArray(collection)) {
+      return collection;
+    }
+
+    if (
+      collection &&
+      typeof collection === "object"
+    ) {
+      const resolved = await resolveHistoricalESPNEntity(collection);
+
+      if (Array.isArray(resolved)) {
+        return resolved;
+      }
+
+      for (const nestedKey of itemKeys) {
+        if (Array.isArray(resolved?.[nestedKey])) {
+          return resolved[nestedKey];
+        }
+      }
+    }
+  }
+
+  return [];
+}
+
 async function findHistoricalESPNLeaderCategory(payload, stat) {
-  const rawCategories =
-    payload?.categories ||
-    payload?.leaders?.categories ||
+  const categoryResource =
+    payload?.categories ??
+    payload?.leaders?.categories ??
     [];
 
-  if (!Array.isArray(rawCategories)) {
-    return null;
-  }
+  const rawCategories = await readHistoricalESPNCollection(
+    categoryResource,
+    ["items", "categories"]
+  );
 
   const categories = await Promise.all(
     rawCategories.map(category =>
@@ -5767,20 +5816,51 @@ async function findHistoricalESPNLeaderCategory(payload, stat) {
 }
 
 async function normalizeHistoricalESPNLeaders(category, stat) {
-  const entries = Array.isArray(category?.leaders)
-    ? category.leaders
-    : Array.isArray(category?.leaders?.items)
-      ? category.leaders.items
-      : [];
+  if (!category) {
+    return [];
+  }
 
-  if (!entries.length) return [];
+  const leaderResource =
+    category.leaders ??
+    category.items ??
+    category.entries ??
+    [];
+
+  const rawEntries = await readHistoricalESPNCollection(
+    leaderResource,
+    ["items", "leaders", "entries", "results"]
+  );
+
+  if (!rawEntries.length) {
+    return [];
+  }
+
+  const resolvedEntries = await Promise.all(
+    rawEntries.slice(0, 100).map(entry =>
+      resolveHistoricalESPNEntity(entry)
+    )
+  );
 
   const players = await Promise.all(
-    entries.slice(0, 5).map(async leader => {
-      const [athlete, team] = await Promise.all([
-        resolveHistoricalESPNEntity(leader?.athlete),
-        resolveHistoricalESPNEntity(leader?.team)
+    resolvedEntries.map(async leader => {
+      if (!leader || typeof leader !== "object") {
+        return null;
+      }
+
+      const [athlete, rawStats] = await Promise.all([
+        resolveHistoricalESPNEntity(
+          leader.athlete || leader.player
+        ),
+        resolveHistoricalESPNEntity(
+          leader.statistics ||
+          leader.stats ||
+          leader.stat
+        )
       ]);
+
+      const team = await resolveHistoricalESPNEntity(
+        leader.team || athlete?.team
+      );
 
       const name =
         athlete?.displayName ||
@@ -5788,9 +5868,39 @@ async function normalizeHistoricalESPNLeaders(category, stat) {
         athlete?.shortName ||
         athlete?.name ||
         leader?.athlete?.displayName ||
+        leader?.displayName ||
+        leader?.name ||
         "";
 
-      const total = historicalESPNStatNumber(leader);
+      let total = historicalESPNStatNumber({
+        ...leader,
+        statistics: rawStats,
+        stats: rawStats
+      });
+
+      // Certains payloads stockent les stats dans un tableau.
+      if (total === null && Array.isArray(rawStats)) {
+        const relevantStat = rawStats.find(item => {
+          const label = [
+            item?.name,
+            item?.displayName,
+            item?.abbreviation,
+            item?.shortDisplayName
+          ]
+            .filter(Boolean)
+            .join(" ")
+            .toLowerCase();
+
+          return stat === "goals"
+            ? /goal|scoring/.test(label) &&
+                !/against|conceded|own goal/.test(label)
+            : /assist/.test(label);
+        });
+
+        if (relevantStat) {
+          total = historicalESPNStatNumber(relevantStat);
+        }
+      }
 
       if (!name || total === null) {
         return null;
@@ -5799,6 +5909,11 @@ async function normalizeHistoricalESPNLeaders(category, stat) {
       const headshot =
         athlete?.headshot?.href ||
         athlete?.headshot?.url ||
+        (
+          typeof athlete?.headshot === "string"
+            ? athlete.headshot
+            : ""
+        ) ||
         athlete?.photo ||
         athlete?.image ||
         "";
@@ -5812,17 +5927,18 @@ async function normalizeHistoricalESPNLeaders(category, stat) {
         team?.displayName ||
         team?.name ||
         team?.shortDisplayName ||
-        "";
+        "Équipe non renseignée";
 
       const player = {
         name,
+        player_name: name,
         slug: athlete?.slug || athlete?.id || "",
         photo: headshot,
         photo_url: headshot,
         logo: headshot,
         image: headshot,
         team: {
-          name: teamName || "Équipe non renseignée",
+          name: teamName,
           logo: teamLogo
         }
       };
@@ -5840,7 +5956,8 @@ async function normalizeHistoricalESPNLeaders(category, stat) {
 
   return players
     .filter(Boolean)
-    .sort((a, b) => b[stat] - a[stat]);
+    .sort((a, b) => b[stat] - a[stat])
+    .slice(0, 5);
 }
 
 async function fetchHistoricalESPNPlayers(espnCode, season) {
@@ -5853,12 +5970,15 @@ async function fetchHistoricalESPNPlayers(espnCode, season) {
   const request = (async () => {
     const base =
       "https://sports.core.api.espn.com/v2/sports/soccer/leagues/" +
-      `${encodeURIComponent(espnCode)}/seasons/${encodeURIComponent(season)}`;
+      `${encodeURIComponent(espnCode)}/seasons/` +
+      `${encodeURIComponent(season)}`;
 
+    // On teste d'abord la route générale documentée,
+    // puis les routes par type de saison en secours.
     const endpoints = [
+      `${base}/leaders?limit=100`,
       `${base}/types/2/leaders?limit=100`,
-      `${base}/types/3/leaders?limit=100`,
-      `${base}/leaders?limit=100`
+      `${base}/types/3/leaders?limit=100`
     ];
 
     let lastError = null;
@@ -5874,15 +5994,31 @@ async function fetchHistoricalESPNPlayers(espnCode, season) {
           ]);
 
         const [goals, assists] = await Promise.all([
-          normalizeHistoricalESPNLeaders(goalsCategory, "goals"),
-          normalizeHistoricalESPNLeaders(assistsCategory, "assists")
+          normalizeHistoricalESPNLeaders(
+            goalsCategory,
+            "goals"
+          ),
+          normalizeHistoricalESPNLeaders(
+            assistsCategory,
+            "assists"
+          )
         ]);
 
         if (goals.length || assists.length) {
           return { goals, assists };
         }
+
+        lastError = new Error(
+          `ESPN n'a renvoyé aucun leader exploitable pour ${season}.`
+        );
       } catch (error) {
         lastError = error;
+
+        console.warn(
+          "BakhiraFoot — endpoint historique ESPN indisponible:",
+          endpoint,
+          error
+        );
       }
     }
 
@@ -5900,31 +6036,6 @@ async function fetchHistoricalESPNPlayers(espnCode, season) {
     historicalESPNPlayersCache.delete(cacheKey);
     throw error;
   }
-}
-
-   
-const historicalStandingsCache = new Map();
-
-function setHistoricalSeasonSections(card, visible) {
-  card
-    .querySelectorAll(
-      ".bf-third-ranking, .bf-ko-section"
-    )
-    .forEach(section => {
-      if (!visible) {
-        if (section.dataset.bfOriginalDisplay === undefined) {
-          section.dataset.bfOriginalDisplay =
-            section.style.display || "";
-        }
-
-        section.style.display = "none";
-      } else {
-        section.style.display =
-          section.dataset.bfOriginalDisplay || "";
-
-        delete section.dataset.bfOriginalDisplay;
-      }
-    });
 }
 
 function bindHistoricalSeasonSelectors(container) {
