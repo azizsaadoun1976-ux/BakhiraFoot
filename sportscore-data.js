@@ -5791,92 +5791,55 @@ function historicalESPNStatNumber(leader) {
   return null;
 }
 
+
 function historicalESPNCategoryMatches(category, stat) {
-  const name = [
+  const names = [
     category?.name,
     category?.displayName,
     category?.shortDisplayName,
     category?.abbreviation
   ]
     .filter(Boolean)
-    .join(" ")
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .toLowerCase()
-    .replace(/[^a-z0-9]/g, "");
+    .map(text =>
+      String(text)
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .toLowerCase()
+        .replace(/[^a-z0-9]/g, "")
+    );
 
   if (stat === "goals") {
-    if (/assist|against|conceded|difference|own/.test(name)) {
-      return false;
-    }
-
-    return /^(goals?|totalgoals|goalscored|scoring|goalscoring)$/.test(name) ||
-      /^(total)?goals/.test(name);
+    return names.some(name =>
+      /^(goal|goals|totalgoals|goalscored|goalscoring)$/.test(name)
+    );
   }
 
-  return /^(assists?|goalassists?|totalassists?)$/.test(name) ||
-    /^assists/.test(name);
-}
-
-
-/* =========================================
-   HISTORICAL ESPN LEADERS — FIXED
-   ========================================= */
-
-// ESPN peut renvoyer les listes directement ou par un $ref.
-async function readHistoricalESPNCollection(
-  resource,
-  itemKeys = ["items", "leaders", "entries", "results", "categories"]
-) {
-  const payload = await resolveHistoricalESPNEntity(resource);
-
-  if (Array.isArray(payload)) {
-    return payload;
-  }
-
-  if (!payload || typeof payload !== "object") {
-    return [];
-  }
-
-  for (const key of itemKeys) {
-    const collection = payload[key];
-
-    if (Array.isArray(collection)) {
-      return collection;
-    }
-
-    if (
-      collection &&
-      typeof collection === "object"
-    ) {
-      const resolved = await resolveHistoricalESPNEntity(collection);
-
-      if (Array.isArray(resolved)) {
-        return resolved;
-      }
-
-      for (const nestedKey of itemKeys) {
-        if (Array.isArray(resolved?.[nestedKey])) {
-          return resolved[nestedKey];
-        }
-      }
-    }
-  }
-
-  return [];
+  return names.some(name =>
+    /^(assist|assists|goalassists|totalassists)$/.test(name)
+  );
 }
 
 async function findHistoricalESPNLeaderCategory(payload, stat) {
-  const categoryResource =
+  const resource =
     payload?.categories ??
     payload?.leaders?.categories ??
     [];
 
   const rawCategories = await readHistoricalESPNCollection(
-    categoryResource,
+    resource,
     ["items", "categories"]
   );
 
+  // نبحثو أولا فالبيانات الموجودة، بلا طلبات إضافية.
+  const direct = rawCategories.find(category =>
+    historicalESPNCategoryMatches(category, stat)
+  );
+
+  if (direct) {
+    return resolveHistoricalESPNEntity(direct);
+  }
+
+  // حل احتياطي إلا كانت الفئات راجعة غير بروابط $ref.
   const categories = await Promise.all(
     rawCategories.map(category =>
       resolveHistoricalESPNEntity(category)
@@ -5889,148 +5852,123 @@ async function findHistoricalESPNLeaderCategory(payload, stat) {
 }
 
 async function normalizeHistoricalESPNLeaders(category, stat) {
-  if (!category) {
-    return [];
-  }
+  if (!category) return [];
 
-  const leaderResource =
+  const entries = await readHistoricalESPNCollection(
     category.leaders ??
-    category.items ??
-    category.entries ??
-    [];
-
-  const rawEntries = await readHistoricalESPNCollection(
-    leaderResource,
+      category.items ??
+      category.entries ??
+      [],
     ["items", "leaders", "entries", "results"]
   );
 
-  if (!rawEntries.length) {
-    return [];
-  }
+  if (!entries.length) return [];
 
-  const resolvedEntries = await Promise.all(
-    rawEntries.slice(0, 8).map(entry =>
-      resolveHistoricalESPNEntity(entry)
-    )
-  );
+  // غير أفضل 5 لاعبين، باش ما نكثروش طلبات الشبكة.
+  const results = await Promise.all(
+    entries.slice(0, 5).map(async entry => {
+      try {
+        const leader = await resolveHistoricalESPNEntity(entry);
 
-  const players = await Promise.all(
-    resolvedEntries.map(async leader => {
-      if (!leader || typeof leader !== "object") {
+        const athlete = await resolveHistoricalESPNEntity(
+          leader?.athlete || leader?.player
+        );
+
+        const name =
+          athlete?.displayName ||
+          athlete?.fullName ||
+          athlete?.shortName ||
+          athlete?.name ||
+          leader?.displayName ||
+          leader?.name ||
+          "";
+
+        let total = historicalESPNStatNumber(leader);
+
+        if (
+          total === null &&
+          (leader?.statistics || leader?.stats)
+        ) {
+          const stats = await resolveHistoricalESPNEntity(
+            leader.statistics || leader.stats
+          );
+
+          total = historicalESPNStatNumber({
+            ...leader,
+            statistics: stats,
+            stats
+          });
+        }
+
+        if (!name || total === null) return null;
+
+        const rawTeam =
+          leader?.team ||
+          athlete?.team ||
+          {};
+
+        const team = await resolveHistoricalESPNEntity(rawTeam);
+
+        const photo =
+          athlete?.headshot?.href ||
+          athlete?.headshot?.url ||
+          (
+            typeof athlete?.headshot === "string"
+              ? athlete.headshot
+              : ""
+          ) ||
+          athlete?.photo ||
+          athlete?.image ||
+          "";
+
+        const teamName =
+          team?.displayName ||
+          team?.name ||
+          team?.shortDisplayName ||
+          "Équipe non renseignée";
+
+        const teamLogo =
+          team?.logos?.find(item => item?.href)?.href ||
+          team?.logo ||
+          "";
+
+        return {
+          name,
+          player_name: name,
+          value: total,
+          [stat]: total,
+          player: {
+            name,
+            full_name: name,
+            slug: athlete?.slug || athlete?.id || "",
+            photo,
+            photo_url: photo,
+            image: photo,
+            logo: photo,
+            team: {
+              name: teamName,
+              logo: teamLogo
+            }
+          },
+          team: {
+            name: teamName,
+            logo: teamLogo
+          }
+        };
+      } catch (error) {
+        console.warn(
+          "BakhiraFoot — joueur historique ignoré:",
+          error
+        );
+
         return null;
       }
-
-      const [athlete, rawStats] = await Promise.all([
-        resolveHistoricalESPNEntity(
-          leader.athlete || leader.player
-        ),
-        resolveHistoricalESPNEntity(
-          leader.statistics ||
-          leader.stats ||
-          leader.stat
-        )
-      ]);
-
-      const team = await resolveHistoricalESPNEntity(
-        leader.team || athlete?.team
-      );
-
-      const name =
-        athlete?.displayName ||
-        athlete?.fullName ||
-        athlete?.shortName ||
-        athlete?.name ||
-        leader?.athlete?.displayName ||
-        leader?.displayName ||
-        leader?.name ||
-        "";
-
-      let total = historicalESPNStatNumber({
-        ...leader,
-        statistics: rawStats,
-        stats: rawStats
-      });
-
-      // Certains payloads stockent les stats dans un tableau.
-      if (total === null && Array.isArray(rawStats)) {
-        const relevantStat = rawStats.find(item => {
-          const label = [
-            item?.name,
-            item?.displayName,
-            item?.abbreviation,
-            item?.shortDisplayName
-          ]
-            .filter(Boolean)
-            .join(" ")
-            .toLowerCase();
-
-          return stat === "goals"
-            ? /goal|scoring/.test(label) &&
-                !/against|conceded|own goal/.test(label)
-            : /assist/.test(label);
-        });
-
-        if (relevantStat) {
-          total = historicalESPNStatNumber(relevantStat);
-        }
-      }
-
-      if (!name || total === null) {
-        return null;
-      }
-
-      const headshot =
-        athlete?.headshot?.href ||
-        athlete?.headshot?.url ||
-        (
-          typeof athlete?.headshot === "string"
-            ? athlete.headshot
-            : ""
-        ) ||
-        athlete?.photo ||
-        athlete?.image ||
-        "";
-
-      const teamLogo =
-        team?.logos?.find(logo => logo?.href)?.href ||
-        team?.logo ||
-        "";
-
-      const teamName =
-        team?.displayName ||
-        team?.name ||
-        team?.shortDisplayName ||
-        "Équipe non renseignée";
-
-      const player = {
-        name,
-        player_name: name,
-        slug: athlete?.slug || athlete?.id || "",
-        photo: headshot,
-        photo_url: headshot,
-        logo: headshot,
-        image: headshot,
-        team: {
-          name: teamName,
-          logo: teamLogo
-        }
-      };
-
-      return {
-        name,
-        player_name: name,
-        player,
-        team: player.team,
-        value: total,
-        [stat]: total
-      };
     })
   );
 
-  return players
-    .filter(Boolean)
-    .sort((a, b) => b[stat] - a[stat])
-    .slice(0, 5);
+  return results.filter(Boolean).sort(
+    (a, b) => b[stat] - a[stat]
+  );
 }
 
 async function fetchHistoricalESPNPlayers(espnCode, season) {
@@ -6046,19 +5984,19 @@ async function fetchHistoricalESPNPlayers(espnCode, season) {
       `${encodeURIComponent(espnCode)}/seasons/` +
       `${encodeURIComponent(season)}`;
 
-    // On teste d'abord la route générale documentée,
-    // puis les routes par type de saison en secours.
     const endpoints = [
-      `${base}/leaders?limit=100`,
       `${base}/types/2/leaders?limit=100`,
-      `${base}/types/3/leaders?limit=100`
+      `${base}/leaders?limit=100`
     ];
 
     let lastError = null;
 
     for (const endpoint of endpoints) {
       try {
-        const payload = await fetchHistoricalJSONWithTimeout(endpoint, 7000);
+        const payload = await fetchHistoricalJSONWithTimeout(
+          endpoint,
+          8000
+        );
 
         const [goalsCategory, assistsCategory] =
           await Promise.all([
@@ -6082,13 +6020,13 @@ async function fetchHistoricalESPNPlayers(espnCode, season) {
         }
 
         lastError = new Error(
-          `ESPN n'a renvoyé aucun leader exploitable pour ${season}.`
+          `Aucune catégorie de buts ou passes décisives trouvée pour ${season}.`
         );
       } catch (error) {
         lastError = error;
 
         console.warn(
-          "BakhiraFoot — endpoint historique ESPN indisponible:",
+          "BakhiraFoot — statistiques ESPN indisponibles:",
           endpoint,
           error
         );
@@ -6097,7 +6035,7 @@ async function fetchHistoricalESPNPlayers(espnCode, season) {
 
     throw lastError ||
       new Error(
-        `Aucune statistique historique disponible pour ${season}.`
+        `Statistiques historiques indisponibles pour ${season}.`
       );
   })();
 
@@ -6319,7 +6257,7 @@ if (playersBox) {
               reject(
                 new Error("Délai des statistiques dépassé.")
               );
-            }, 12000);
+            }, 30000);
           });
 
           Promise.race([
