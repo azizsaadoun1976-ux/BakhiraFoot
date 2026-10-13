@@ -5237,7 +5237,7 @@ async function afcon2025ResolveReference(item) {
     .replace("sports.core.api.espn.pvt", "sports.core.api.espn.com");
 
   if (!afcon2025ReferenceCache.has(url)) {
-    const request = fetchJSON(url).catch(error => {
+    const request = fetchHistoricalJSONWithTimeout(url, 7000).catch(error => {
       afcon2025ReferenceCache.delete(url);
       throw error;
     });
@@ -5696,6 +5696,38 @@ async function fetchHistoricalESPNStandings(espnCode, season) {
 const historicalESPNEntityCache = new Map();
 const historicalESPNPlayersCache = new Map();
 
+async function fetchHistoricalJSONWithTimeout(url, timeoutMs = 7000) {
+  const controller = new AbortController();
+  let timer;
+
+  try {
+    const request = fetch(url, {
+      method: "GET",
+      headers: {
+        Accept: "application/json"
+      },
+      signal: controller.signal
+    }).then(async response => {
+      if (!response.ok) {
+        throw new Error(`HTTP ${response.status}`);
+      }
+
+      return response.json();
+    });
+
+    const timeout = new Promise((_, reject) => {
+      timer = setTimeout(() => {
+        controller.abort();
+        reject(new Error(`Timeout après ${timeoutMs} ms`));
+      }, timeoutMs);
+    });
+
+    return await Promise.race([request, timeout]);
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 async function resolveHistoricalESPNEntity(entity) {
   if (!entity) return {};
 
@@ -5711,7 +5743,7 @@ async function resolveHistoricalESPNEntity(entity) {
   const url = reference.replace(/^http:/i, "https:");
 
   if (!historicalESPNEntityCache.has(url)) {
-    const request = fetchJSON(url).catch(error => {
+    const request = fetchHistoricalJSONWithTimeout(url, 7000).catch(error => {
       historicalESPNEntityCache.delete(url);
       throw error;
     });
@@ -5877,7 +5909,7 @@ async function normalizeHistoricalESPNLeaders(category, stat) {
   }
 
   const resolvedEntries = await Promise.all(
-    rawEntries.slice(0, 100).map(entry =>
+    rawEntries.slice(0, 8).map(entry =>
       resolveHistoricalESPNEntity(entry)
     )
   );
@@ -6026,7 +6058,7 @@ async function fetchHistoricalESPNPlayers(espnCode, season) {
 
     for (const endpoint of endpoints) {
       try {
-        const payload = await fetchJSON(endpoint);
+        const payload = await fetchHistoricalJSONWithTimeout(endpoint, 7000);
 
         const [goalsCategory, assistsCategory] =
           await Promise.all([
@@ -6077,6 +6109,30 @@ async function fetchHistoricalESPNPlayers(espnCode, season) {
     historicalESPNPlayersCache.delete(cacheKey);
     throw error;
   }
+}
+
+function setHistoricalSeasonSections(card, visible) {
+  if (!card) return;
+
+  card
+    .querySelectorAll(".bf-third-ranking, .bf-ko-section")
+    .forEach(section => {
+      if (!visible) {
+        if (section.dataset.bfSeasonOriginalDisplay === undefined) {
+          section.dataset.bfSeasonOriginalDisplay =
+            section.style.display || "";
+        }
+
+        section.style.display = "none";
+      } else {
+        if (section.dataset.bfSeasonOriginalDisplay !== undefined) {
+          section.style.display =
+            section.dataset.bfSeasonOriginalDisplay;
+
+          delete section.dataset.bfSeasonOriginalDisplay;
+        }
+      }
+    });
 }
 
 function bindHistoricalSeasonSelectors(container) {
@@ -6202,89 +6258,152 @@ if (playersBox) {
             })
             .join("");
 
-          let historicalPlayers = {
-            goals: [],
-            assists: []
-          };
-
-          try {
-            historicalPlayers =
-              await fetchHistoricalESPNPlayers(
-                espnCode,
-                year
-              );
-          } catch (playersError) {
-            console.warn(
-              "BakhiraFoot — statistiques historiques indisponibles:",
-              year,
-              playersError
-            );
-          }
-
-          if (currentRequest !== requestNumber) {
-            return;
-          }
-
-          const historicalGoals = Array.isArray(
-            historicalPlayers?.goals
-          )
-            ? historicalPlayers.goals
-            : [];
-
-          const historicalAssists = Array.isArray(
-            historicalPlayers?.assists
-          )
-            ? historicalPlayers.assists
-            : [];
-
-          const hasHistoricalPlayerStats =
-            historicalGoals.length > 0 ||
-            historicalAssists.length > 0;
-
-          if (playersBox) {
-            playersBox.innerHTML = `
-              ${
-                renderPlayers(
-                  historicalGoals,
-                  "goals",
-                  "Meilleurs buteurs",
-                  "⚽"
-                )
-              }
-
-              ${
-                renderPlayers(
-                  historicalAssists,
-                  "assists",
-                  "Meilleurs passeurs",
-                  "🎯"
-                )
-              }
-            `;
-
-            if (hasHistoricalPlayerStats) {
-              loadRealPlayerPhotos(card);
-            }
-          }
-
+          
           if (!tablesHTML) {
             throw new Error(
               `Aucun classement disponible pour ${year}.`
             );
           }
 
+          // نعرضو الترتيب مباشرة.
           standingsBox.innerHTML = `
-           ${renderQualificationLegend(usefulGroups, competition)}
+            ${renderQualificationLegend(usefulGroups, competition)}
             ${tablesHTML}
           `;
 
-          // On masque les statistiques des autres saisons,
-          // pour ne pas les mélanger au classement historique.
           setHistoricalSeasonSections(card, false);
 
-         status.textContent = hasHistoricalPlayerStats
-  ? `Classement, buteurs et passeurs de ${year} chargés lorsque disponibles.`
-  : `Classement de ${year} chargé. Les statistiques historiques des buteurs et passeurs ne sont pas disponibles.`;
+          if (playersBox) {
+            playersBox.innerHTML = `
+              <div class="ss-player-card ss-player-card--goals">
+                <div class="ss-player-card-head">
+                  <div>
+                    <span class="ss-stat-icon">⚽</span>
+                    <strong>Meilleurs buteurs</strong>
+                  </div>
+                  <span>${year}</span>
+                </div>
+                <div class="ss-no-player-data">
+                  Chargement des buteurs historiques…
+                </div>
+              </div>
+
+              <div class="ss-player-card ss-player-card--assists">
+                <div class="ss-player-card-head">
+                  <div>
+                    <span class="ss-stat-icon">🎯</span>
+                    <strong>Meilleurs passeurs</strong>
+                  </div>
+                  <span>${year}</span>
+                </div>
+                <div class="ss-no-player-data">
+                  Chargement des passeurs historiques…
+                </div>
+              </div>
+            `;
+          }
+
+          status.textContent =
+            `Classement ${year} chargé. Chargement des statistiques historiques…`;
+
+          // إحصائيات اللاعبين ما تبقاش تحبس الترتيب.
+          const seasonRequest = currentRequest;
+          let playerTimer;
+
+          const playerTimeout = new Promise((_, reject) => {
+            playerTimer = setTimeout(() => {
+              historicalESPNPlayersCache.delete(
+                `${espnCode}:${year}`
+              );
+
+              reject(
+                new Error("Délai des statistiques dépassé.")
+              );
+            }, 12000);
+          });
+
+          Promise.race([
+            fetchHistoricalESPNPlayers(espnCode, year),
+            playerTimeout
+          ])
+            .then(historicalPlayers => {
+              if (seasonRequest !== requestNumber) return;
+
+              const historicalGoals = Array.isArray(
+                historicalPlayers?.goals
+              )
+                ? historicalPlayers.goals
+                : [];
+
+              const historicalAssists = Array.isArray(
+                historicalPlayers?.assists
+              )
+                ? historicalPlayers.assists
+                : [];
+
+              if (playersBox) {
+                playersBox.innerHTML = `
+                  ${renderPlayers(
+                    historicalGoals,
+                    "goals",
+                    "Meilleurs buteurs",
+                    "⚽"
+                  )}
+
+                  ${renderPlayers(
+                    historicalAssists,
+                    "assists",
+                    "Meilleurs passeurs",
+                    "🎯"
+                  )}
+                `;
+
+                if (
+                  historicalGoals.length ||
+                  historicalAssists.length
+                ) {
+                  loadRealPlayerPhotos(card);
+                }
+              }
+
+              status.textContent =
+                historicalGoals.length || historicalAssists.length
+                  ? `Classement et statistiques historiques de ${year} chargés.`
+                  : `Classement ${year} chargé. Statistiques historiques indisponibles.`;
+            })
+            .catch(playersError => {
+              if (seasonRequest !== requestNumber) return;
+
+              console.warn(
+                "BakhiraFoot — statistiques historiques:",
+                year,
+                playersError
+              );
+
+              if (playersBox) {
+                playersBox.innerHTML = `
+                  ${renderPlayers(
+                    [],
+                    "goals",
+                    "Meilleurs buteurs",
+                    "⚽"
+                  )}
+
+                  ${renderPlayers(
+                    [],
+                    "assists",
+                    "Meilleurs passeurs",
+                    "🎯"
+                  )}
+                `;
+              }
+
+              status.textContent =
+                `Classement ${year} chargé. Les statistiques des joueurs ne sont pas disponibles.`;
+            })
+            .finally(() => {
+              clearTimeout(playerTimer);
+            });
 
         } catch (error) {
           if (currentRequest !== requestNumber) {
