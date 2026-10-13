@@ -1,7 +1,7 @@
-
 "use strict";
 
-const ESPN = "https://sports.core.api.espn.com/v2/sports/soccer/leagues";
+const ESPN =
+  "https://site.web.api.espn.com/apis/common/v3/sports/soccer";
 
 const LEAGUES = {
   "english-premier-league": "eng.1",
@@ -30,201 +30,261 @@ const LEAGUES = {
   "conmebol-copa-america": "conmebol.america"
 };
 
-async function getJSON(url) {
-  const response = await fetch(url, {
-    headers: {
-      Accept: "application/json",
-      "User-Agent": "Mozilla/5.0"
-    },
-    signal: AbortSignal.timeout(12000)
-  });
-
-  if (!response.ok) {
-    throw new Error(`ESPN HTTP ${response.status}: ${url}`);
-  }
-
-  return response.json();
-}
-
-function refURL(ref) {
-  if (!ref) return "";
-  return String(ref).replace(/^http:\/\//, "https://");
-}
-
-async function resolveEntity(value) {
-  if (!value) return {};
-
-  if (typeof value === "string") {
-    try {
-      return await getJSON(refURL(value));
-    } catch {
-      return {};
-    }
-  }
-
-  if (value.$ref && !(
-    value.displayName ||
-    value.fullName ||
-    value.name
-  )) {
-    try {
-      return await getJSON(refURL(value.$ref));
-    } catch {
-      return value;
-    }
-  }
-
-  return value;
-}
-
-function norm(value) {
-  return String(value || "")
+function normalize(value) {
+  return String(value ?? "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
     .toLowerCase()
     .replace(/[^a-z0-9]/g, "");
 }
 
-function getCategories(payload) {
-  const found = [];
+function numberValue(value) {
+  if (typeof value === "number") {
+    return Number.isFinite(value) ? value : null;
+  }
+
+  if (typeof value !== "string") return null;
+
+  const match = value.replace(/,/g, "").match(/-?\d+(?:\.\d+)?/);
+
+  return match ? Number(match[0]) : null;
+}
+
+async function getJSON(url) {
+  const response = await fetch(url, {
+    headers: {
+      Accept: "application/json",
+      "User-Agent": "Mozilla/5.0",
+      Referer: "https://www.espn.com/"
+    },
+    signal: AbortSignal.timeout(15000)
+  });
+
+  const body = await response.text();
+
+  if (!response.ok) {
+    throw new Error(
+      `ESPN HTTP ${response.status}: ${url}`
+    );
+  }
+
+  try {
+    return JSON.parse(body);
+  } catch {
+    throw new Error(`ESPN returned invalid JSON: ${url}`);
+  }
+}
+
+function findStatValue(root, stat) {
+  const aliases = stat === "goals"
+    ? ["goals", "goal", "totalgoals", "goalsscored", "goalscored"]
+    : ["assists", "assist", "totalassists"];
+
+  const labels = stat === "goals"
+    ? ["g", "gls", "goals"]
+    : ["a", "ast", "assists"];
+
   const visited = new Set();
 
   function walk(node, depth = 0) {
     if (
       !node ||
       typeof node !== "object" ||
-      depth > 10 ||
+      depth > 14 ||
       visited.has(node)
     ) {
-      return;
+      return null;
     }
 
     visited.add(node);
 
-    if (
-      !Array.isArray(node) &&
-      (node.name || node.displayName ||
-       node.shortDisplayName || node.abbreviation) &&
-      (node.leaders || node.items || node.entries)
-    ) {
-      found.push(node);
-    }
-
-    if (Array.isArray(node.categories)) {
-      found.push(...node.categories);
-    }
-
     if (Array.isArray(node)) {
-      node.forEach(item => walk(item, depth + 1));
-      return;
+      for (const item of node) {
+        const result = walk(item, depth + 1);
+        if (result !== null) return result;
+      }
+
+      return null;
     }
 
-    Object.values(node).forEach(value =>
-      walk(value, depth + 1)
+    // ESPN may return names/labels and totals as parallel arrays.
+    for (const field of ["names", "labels"]) {
+      const names = node[field];
+      const totals = node.totals;
+
+      if (Array.isArray(names) && Array.isArray(totals)) {
+        const index = names.findIndex(name => {
+          const key = normalize(name);
+          return aliases.includes(key) ||
+            labels.includes(key);
+        });
+
+        if (index >= 0 && index < totals.length) {
+          const result = numberValue(totals[index]);
+
+          if (result !== null) return result;
+        }
+      }
+    }
+
+    // ESPN may also return individual statistic objects.
+    for (const [key, value] of Object.entries(node)) {
+      if (aliases.includes(normalize(key))) {
+        const direct = numberValue(value);
+
+        if (direct !== null) return direct;
+
+        if (value && typeof value === "object") {
+          for (const field of [
+            "value",
+            "total",
+            "displayValue",
+            "displayValueText"
+          ]) {
+            const result = numberValue(value[field]);
+
+            if (result !== null) return result;
+          }
+        }
+      }
+    }
+
+    const ownName = normalize(
+      node.name || node.displayName || node.shortDisplayName
     );
+
+    if (aliases.includes(ownName) || labels.includes(ownName)) {
+      for (const field of [
+        "value",
+        "total",
+        "displayValue",
+        "displayValueText"
+      ]) {
+        const result = numberValue(node[field]);
+
+        if (result !== null) return result;
+      }
+
+      if (Array.isArray(node.totals) && node.totals.length) {
+        const result = numberValue(node.totals[0]);
+
+        if (result !== null) return result;
+      }
+    }
+
+    for (const value of Object.values(node)) {
+      const result = walk(value, depth + 1);
+
+      if (result !== null) return result;
+    }
+
+    return null;
   }
 
-  walk(payload);
-
-  return [...new Set(found)];
+  return walk(root);
 }
-function findCategory(categories, stat) {
-  const aliases = stat === "goals"
-    ? ["goals", "totalgoals", "goalsscored"]
-    : ["assists", "totalassists"];
 
-  return categories.find(category => {
-    const name = norm(category.name);
-    const display = norm(category.displayName);
+function getRows(payload) {
+  const candidates = [
+    payload?.athletes,
+    payload?.results,
+    payload?.leaders,
+    payload?.items,
+    payload?.entries
+  ];
 
-    if (stat === "goals" && (
-      name.includes("owngoal") ||
-      name.includes("goalsagainst")
-    )) {
-      return false;
+  for (const candidate of candidates) {
+    if (Array.isArray(candidate)) return candidate;
+
+    if (Array.isArray(candidate?.items)) {
+      return candidate.items;
     }
 
-    return aliases.includes(name) ||
-      aliases.includes(display);
-  });
+    if (Array.isArray(candidate?.athletes)) {
+      return candidate.athletes;
+    }
+  }
+
+  return [];
 }
 
-async function normalizeLeaders(category, stat) {
-  const leaders = Array.isArray(category?.leaders)
-    ? category.leaders
-    : [];
+function normalizeRows(rows, stat) {
+  const result = [];
 
-  const rows = await Promise.all(
-    leaders.slice(0, 5).map(async row => {
-      const athlete = await resolveEntity(
-        row.athlete || row.player
+  for (const row of rows) {
+    const athlete =
+      row.athlete ||
+      row.player ||
+      row;
+
+    const name =
+      athlete.displayName ||
+      athlete.fullName ||
+      athlete.shortName ||
+      athlete.name ||
+      "";
+
+    const value = findStatValue(row, stat);
+
+    if (!name || value === null || value <= 0) {
+      continue;
+    }
+
+    const sourceTeam =
+      row.team ||
+      athlete.team ||
+      {};
+
+    const team = {
+      name:
+        sourceTeam.displayName ||
+        sourceTeam.name ||
+        sourceTeam.shortDisplayName ||
+        "",
+      logo:
+        sourceTeam.logo ||
+        sourceTeam.logos?.[0]?.href ||
+        ""
+    };
+
+    const id = athlete.id || "";
+
+    const photo =
+      athlete.headshot?.href ||
+      athlete.headshot ||
+      athlete.images?.[0]?.href ||
+      (
+        id
+          ? `https://a.espncdn.com/i/headshots/soccer/players/full/${id}.png`
+          : ""
       );
 
-      const athleteName =
-        athlete.displayName ||
-        athlete.fullName ||
-        athlete.shortName ||
-        athlete.name ||
-        "";
+    result.push({
+      name,
+      player_name: name,
+      value,
+      [stat]: value,
+      appearances: Number(
+        findStatValue(row, "appearances") || 0
+      ),
+      player: {
+        id,
+        name,
+        full_name: athlete.fullName || name,
+        photo,
+        photo_url: photo,
+        image: photo,
+        logo: photo,
+        team,
+        [stat]: value
+      },
+      team
+    });
+  }
 
-      if (!athleteName) return null;
-
-      const rawTeam = await resolveEntity(
-        row.team || athlete.team
-      );
-
-      const team = {
-        name:
-          rawTeam.displayName ||
-          rawTeam.name ||
-          rawTeam.shortDisplayName ||
-          "",
-        logo:
-          rawTeam.logos?.[0]?.href ||
-          rawTeam.logo ||
-          ""
-      };
-
-      const athleteId = athlete.id || "";
-      const photo =
-        athlete.headshot?.href ||
-        athlete.headshot ||
-        athlete.images?.[0]?.href ||
-        (
-          athleteId
-            ? `https://a.espncdn.com/i/headshots/soccer/players/full/${athleteId}.png`
-            : ""
-        );
-
-      const value = Number(
-        row.value ??
-        row.displayValue ??
-        0
-      );
-
-      return {
-        name: athleteName,
-        player_name: athleteName,
-        value,
-        [stat]: value,
-        appearances: 0,
-        player: {
-          id: athleteId,
-          name: athleteName,
-          full_name: athlete.fullName || athleteName,
-          photo,
-          photo_url: photo,
-          image: photo,
-          logo: photo,
-          team,
-          [stat]: value
-        },
-        team
-      };
-    })
-  );
-
-  return rows
-    .filter(row => row && Number.isFinite(row.value))
-    .sort((a, b) => b.value - a.value);
+  return result
+    .sort((a, b) => b.value - a.value)
+    .slice(0, 5);
 }
 
 module.exports = async (req, res) => {
@@ -255,94 +315,39 @@ module.exports = async (req, res) => {
       });
     }
 
-    const url =
-  `${ESPN}/${league}/seasons/${season}/types/2/leaders` +
-  "?lang=en&region=us";
+    async function getLeaders(stat) {
+      const params = new URLSearchParams({
+        region: "us",
+        lang: "en",
+        contentorigin: "espn",
+        category: stat,
+        season: String(season),
+        seasontype: "2",
+        page: "1",
+        limit: "50",
+        sort: `${stat}:desc`
+      });
 
-  const base = `${ESPN}/${league}`;
+      const url =
+        `${ESPN}/${league}/statistics/byathlete?${params}`;
 
-const urls = [
-  `${base}/seasons/${season}/leaders?limit=100&lang=en&region=us`,
+      const payload = await getJSON(url);
+      const rows = getRows(payload);
+      const players = normalizeRows(rows, stat);
 
-  `${base}/seasons/${season}/types/2/leaders?limit=100&lang=en&region=us`,
+      if (!players.length) {
+        throw new Error(
+          `ESPN returned no ${stat} leaders for ${league}, season ${season}.`
+        );
+      }
 
-  `https://site.api.espn.com/apis/site/v2/sports/soccer/${league}/leaders?season=${season}&lang=en&region=us`,
-
-  `https://site.web.api.espn.com/apis/site/v2/sports/soccer/${league}/leaders?season=${season}&lang=en&region=us`
-];
-
-let goals = [];
-let assists = [];
-let lastError = null;
-
-for (const url of urls) {
-  try {
-    let payload = await getJSON(url);
-    let categories = getCategories(payload);
-
-    if (!categories.length && payload?.$ref) {
-      payload = await getJSON(refURL(payload.$ref));
-      categories = getCategories(payload);
+      return players;
     }
 
-    categories = await Promise.all(
-      categories.map(async category => {
-        if (
-          category?.$ref &&
-          !category.name &&
-          !category.displayName
-        ) {
-          try {
-            return await getJSON(
-              refURL(category.$ref)
-            );
-          } catch {
-            return category;
-          }
-        }
-
-        return category;
-      })
-    );
-
-    const goalsCategory = findCategory(
-      categories,
-      "goals"
-    );
-
-    const assistsCategory = findCategory(
-      categories,
-      "assists"
-    );
-
-    const [newGoals, newAssists] = await Promise.all([
-      normalizePlayers(goalsCategory, "goals"),
-      normalizePlayers(assistsCategory, "assists")
+    const [goals, assists] = await Promise.all([
+      getLeaders("goals"),
+      getLeaders("assists")
     ]);
-
-    if (newGoals.length || newAssists.length) {
-      goals = newGoals;
-      assists = newAssists;
-      break;
-    }
-
-    lastError = new Error(
-      `Aucun buteur ou passeur trouvé : ${url}`
-    );
-  } catch (error) {
-    lastError = error;
-  }
-}
-
-if (!goals.length && !assists.length) {
-  return res.status(502).json({
-    error: "historical_players_failed",
-    competition,
-    season,
-    details: lastError?.message ||
-      "Aucune statistique disponible auprès des sources ESPN testées."
-  });
-}
 
     return res.status(200).json({
       provider: "ESPN",
