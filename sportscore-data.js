@@ -5795,7 +5795,7 @@ function bindHistoricalSeasonSelectors(container) {
           }
 
           standingsBox.innerHTML = `
-            ${renderQualificationLegend(allRows, competition)}
+           ${renderQualificationLegend(usefulGroups, competition)}
             ${tablesHTML}
           `;
 
