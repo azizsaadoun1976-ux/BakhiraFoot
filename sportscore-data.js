@@ -5971,6 +5971,202 @@ async function normalizeHistoricalESPNLeaders(category, stat) {
   );
 }
 
+
+function parseHistoricalESPNByAthlete(payload, stat) {
+  const athletes = Array.isArray(payload?.athletes)
+    ? payload.athletes
+    : [];
+
+  const metadata = Array.isArray(payload?.categories)
+    ? payload.categories
+    : [];
+
+  const normalize = value =>
+    String(value || "")
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .toLowerCase()
+      .replace(/[^a-z0-9]/g, "");
+
+  const aliases = stat === "goals"
+    ? ["goals", "totalgoals", "goalscored"]
+    : ["assists", "totalassists", "goalassists"];
+
+  function readNumber(value) {
+    const candidate =
+      value?.value ??
+      value?.total ??
+      value?.displayValue ??
+      value;
+
+    if (
+      candidate === null ||
+      candidate === undefined ||
+      candidate === ""
+    ) {
+      return null;
+    }
+
+    const number = Number(
+      String(candidate).replace(/,/g, "")
+    );
+
+    return Number.isFinite(number) ? number : null;
+  }
+
+  function readCategoryStat(category, meta, statName) {
+    const names = category?.names || meta?.names || [];
+    const labels = category?.labels || meta?.labels || [];
+    const totals = category?.totals || category?.values || [];
+
+    let index = names.findIndex(name =>
+      aliases.includes(normalize(name))
+    );
+
+    if (index < 0) {
+      const shortAliases = statName === "goals"
+        ? ["g", "gls"]
+        : ["a", "ast"];
+
+      index = labels.findIndex(label =>
+        shortAliases.includes(normalize(label))
+      );
+    }
+
+    if (index >= 0 && index < totals.length) {
+      const number = readNumber(totals[index]);
+
+      if (number !== null) return number;
+    }
+
+    const statCollections = [
+      category?.stats,
+      category?.statistics,
+      category?.values
+    ];
+
+    for (const collection of statCollections) {
+      if (!Array.isArray(collection)) continue;
+
+      const item = collection.find(value => {
+        const name = normalize(
+          value?.name ||
+          value?.displayName ||
+          value?.abbreviation ||
+          value?.label
+        );
+
+        return aliases.includes(name);
+      });
+
+      if (item) {
+        const number = readNumber(item);
+
+        if (number !== null) return number;
+      }
+    }
+
+    return null;
+  }
+
+  const scoringMeta = metadata.find(item =>
+    /scoring|offensive/i.test(
+      `${item?.name || ""} ${item?.displayName || ""}`
+    )
+  );
+
+  return athletes
+    .map(item => {
+      const athlete = item?.athlete || item?.player || {};
+      const team = item?.team || athlete?.team || {};
+
+      const name =
+        athlete?.displayName ||
+        athlete?.fullName ||
+        athlete?.shortName ||
+        item?.displayName ||
+        "";
+
+      const categories = Array.isArray(item?.categories)
+        ? item.categories
+        : [];
+
+      const category =
+        categories.find(item =>
+          /scoring|offensive/i.test(
+            `${item?.name || ""} ${item?.displayName || ""}`
+          )
+        ) ||
+        categories[0] ||
+        item?.statistics ||
+        item?.stats ||
+        {};
+
+      const total = readCategoryStat(
+        category,
+        scoringMeta,
+        stat
+      );
+
+      if (!name || total === null || total <= 0) {
+        return null;
+      }
+
+      const appearances =
+        readCategoryStat(category, scoringMeta, "appearances");
+
+      const photo =
+        athlete?.headshot?.href ||
+        athlete?.headshot?.url ||
+        athlete?.headshot ||
+        athlete?.photo ||
+        "";
+
+      const teamName =
+        team?.displayName ||
+        team?.name ||
+        team?.shortDisplayName ||
+        "Équipe non renseignée";
+
+      const teamLogo =
+        team?.logos?.find(item => item?.href)?.href ||
+        team?.logo ||
+        "";
+
+      const player = {
+        name,
+        full_name: name,
+        slug: athlete?.slug || athlete?.id || "",
+        photo,
+        photo_url: photo,
+        image: photo,
+        logo: photo,
+        team: {
+          name: teamName,
+          logo: teamLogo
+        },
+        [stat]: total
+      };
+
+      return {
+        name,
+        player_name: name,
+        player,
+        team: player.team,
+        value: total,
+        [stat]: total,
+        ...(appearances !== null
+          ? { appearances }
+          : {})
+      };
+    })
+    .filter(Boolean)
+    .sort((a, b) => b[stat] - a[stat])
+    .slice(0, 5);
+}
+
+   
+
 async function fetchHistoricalESPNPlayers(espnCode, season) {
   const cacheKey = `${espnCode}:${season}`;
 
@@ -5980,63 +6176,64 @@ async function fetchHistoricalESPNPlayers(espnCode, season) {
 
   const request = (async () => {
     const base =
-      "https://sports.core.api.espn.com/v2/sports/soccer/leagues/" +
-      `${encodeURIComponent(espnCode)}/seasons/` +
-      `${encodeURIComponent(season)}`;
+      "https://site.web.api.espn.com/apis/common/v3/sports/soccer/" +
+      `${encodeURIComponent(espnCode)}/statistics/byathlete`;
 
-    const endpoints = [
-      `${base}/types/2/leaders?limit=100`,
-      `${base}/leaders?limit=100`
-    ];
+    async function loadStat(stat) {
+      const params = new URLSearchParams({
+        region: "us",
+        lang: "en",
+        contentorigin: "espn",
+        isqualified: "false",
+        limit: "100",
+        page: "1",
+        category: "scoring",
+        sort: `scoring.${stat}:desc`,
+        season: String(season),
+        seasontype: "2"
+      });
 
-    let lastError = null;
+      const url = `${base}?${params.toString()}`;
 
-    for (const endpoint of endpoints) {
-      try {
-        const payload = await fetchHistoricalJSONWithTimeout(
-          endpoint,
-          8000
-        );
+      const payload = await fetchHistoricalJSONWithTimeout(
+        url,
+        10000
+      );
 
-        const [goalsCategory, assistsCategory] =
-          await Promise.all([
-            findHistoricalESPNLeaderCategory(payload, "goals"),
-            findHistoricalESPNLeaderCategory(payload, "assists")
-          ]);
-
-        const [goals, assists] = await Promise.all([
-          normalizeHistoricalESPNLeaders(
-            goalsCategory,
-            "goals"
-          ),
-          normalizeHistoricalESPNLeaders(
-            assistsCategory,
-            "assists"
-          )
-        ]);
-
-        if (goals.length || assists.length) {
-          return { goals, assists };
-        }
-
-        lastError = new Error(
-          `Aucune catégorie de buts ou passes décisives trouvée pour ${season}.`
-        );
-      } catch (error) {
-        lastError = error;
-
-        console.warn(
-          "BakhiraFoot — statistiques ESPN indisponibles:",
-          endpoint,
-          error
-        );
-      }
+      return parseHistoricalESPNByAthlete(payload, stat);
     }
 
-    throw lastError ||
-      new Error(
-        `Statistiques historiques indisponibles pour ${season}.`
+    const [goalsResult, assistsResult] =
+      await Promise.allSettled([
+        loadStat("goals"),
+        loadStat("assists")
+      ]);
+
+    const goals = goalsResult.status === "fulfilled"
+      ? goalsResult.value
+      : [];
+
+    const assists = assistsResult.status === "fulfilled"
+      ? assistsResult.value
+      : [];
+
+    if (!goals.length && !assists.length) {
+      console.warn(
+        "BakhiraFoot — ESPN historical player data:",
+        goalsResult.status === "rejected"
+          ? goalsResult.reason
+          : "Aucun buteur retourné",
+        assistsResult.status === "rejected"
+          ? assistsResult.reason
+          : "Aucun passeur retourné"
       );
+
+      throw new Error(
+        `Aucune statistique exploitable pour la saison ${season}.`
+      );
+    }
+
+    return { goals, assists };
   })();
 
   historicalESPNPlayersCache.set(cacheKey, request);
@@ -6048,6 +6245,7 @@ async function fetchHistoricalESPNPlayers(espnCode, season) {
     throw error;
   }
 }
+
 
 function setHistoricalSeasonSections(card, visible) {
   if (!card) return;
