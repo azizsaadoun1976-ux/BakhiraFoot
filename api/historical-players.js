@@ -84,21 +84,48 @@ function norm(value) {
 }
 
 function getCategories(payload) {
-  const possible = [
-    payload?.categories,
-    payload?.leaders?.categories,
-    payload?.leader?.categories
-  ];
+  const found = [];
+  const visited = new Set();
 
-  for (const categories of possible) {
-    if (Array.isArray(categories) && categories.length) {
-      return categories;
+  function walk(node, depth = 0) {
+    if (
+      !node ||
+      typeof node !== "object" ||
+      depth > 10 ||
+      visited.has(node)
+    ) {
+      return;
     }
+
+    visited.add(node);
+
+    if (
+      !Array.isArray(node) &&
+      (node.name || node.displayName ||
+       node.shortDisplayName || node.abbreviation) &&
+      (node.leaders || node.items || node.entries)
+    ) {
+      found.push(node);
+    }
+
+    if (Array.isArray(node.categories)) {
+      found.push(...node.categories);
+    }
+
+    if (Array.isArray(node)) {
+      node.forEach(item => walk(item, depth + 1));
+      return;
+    }
+
+    Object.values(node).forEach(value =>
+      walk(value, depth + 1)
+    );
   }
 
-  return [];
-}
+  walk(payload);
 
+  return [...new Set(found)];
+}
 function findCategory(categories, stat) {
   const aliases = stat === "goals"
     ? ["goals", "totalgoals", "goalsscored"]
@@ -232,30 +259,90 @@ module.exports = async (req, res) => {
   `${ESPN}/${league}/seasons/${season}/types/2/leaders` +
   "?lang=en&region=us";
 
+  const base = `${ESPN}/${league}`;
+
+const urls = [
+  `${base}/seasons/${season}/leaders?limit=100&lang=en&region=us`,
+
+  `${base}/seasons/${season}/types/2/leaders?limit=100&lang=en&region=us`,
+
+  `https://site.api.espn.com/apis/site/v2/sports/soccer/${league}/leaders?season=${season}&lang=en&region=us`,
+
+  `https://site.web.api.espn.com/apis/site/v2/sports/soccer/${league}/leaders?season=${season}&lang=en&region=us`
+];
+
+let goals = [];
+let assists = [];
+let lastError = null;
+
+for (const url of urls) {
+  try {
     let payload = await getJSON(url);
     let categories = getCategories(payload);
 
-    if (!categories.length && payload.$ref) {
+    if (!categories.length && payload?.$ref) {
       payload = await getJSON(refURL(payload.$ref));
       categories = getCategories(payload);
     }
 
-    if (!categories.length) {
-      return res.status(502).json({
-        error: "espn_categories_missing",
-        league,
-        season,
-        details: "ESPN did not return player-stat categories."
-      });
+    categories = await Promise.all(
+      categories.map(async category => {
+        if (
+          category?.$ref &&
+          !category.name &&
+          !category.displayName
+        ) {
+          try {
+            return await getJSON(
+              refURL(category.$ref)
+            );
+          } catch {
+            return category;
+          }
+        }
+
+        return category;
+      })
+    );
+
+    const goalsCategory = findCategory(
+      categories,
+      "goals"
+    );
+
+    const assistsCategory = findCategory(
+      categories,
+      "assists"
+    );
+
+    const [newGoals, newAssists] = await Promise.all([
+      normalizePlayers(goalsCategory, "goals"),
+      normalizePlayers(assistsCategory, "assists")
+    ]);
+
+    if (newGoals.length || newAssists.length) {
+      goals = newGoals;
+      assists = newAssists;
+      break;
     }
 
-    const goalsCategory = findCategory(categories, "goals");
-    const assistsCategory = findCategory(categories, "assists");
+    lastError = new Error(
+      `Aucun buteur ou passeur trouvé : ${url}`
+    );
+  } catch (error) {
+    lastError = error;
+  }
+}
 
-    const [goals, assists] = await Promise.all([
-      normalizeLeaders(goalsCategory, "goals"),
-      normalizeLeaders(assistsCategory, "assists")
-    ]);
+if (!goals.length && !assists.length) {
+  return res.status(502).json({
+    error: "historical_players_failed",
+    competition,
+    season,
+    details: lastError?.message ||
+      "Aucune statistique disponible auprès des sources ESPN testées."
+  });
+}
 
     return res.status(200).json({
       provider: "ESPN",
