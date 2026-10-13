@@ -405,6 +405,349 @@ if (historicalPlayersSlug) {
 }
 
      
+/* =========================================
+   BAKHIRAFOOT — HISTORICAL PLAYER LEADERS
+   SOFASCORE SEASON STATISTICS
+   ========================================= */
+
+const historicalPlayersSlug = String(
+  req?.query?.historicalPlayers || ""
+).trim();
+
+if (historicalPlayersSlug) {
+  const seasonYear = Number(req?.query?.season);
+
+  if (!Number.isInteger(seasonYear)) {
+    return output(400, {
+      error: "Saison invalide."
+    });
+  }
+
+  const tournamentAliases = {
+    "english-premier-league": [
+      "Premier League"
+    ],
+    "spanish-la-liga": [
+      "LaLiga",
+      "La Liga"
+    ],
+    "italian-serie-a": [
+      "Serie A"
+    ],
+    "bundesliga": [
+      "Bundesliga"
+    ],
+    "french-ligue-1": [
+      "Ligue 1"
+    ],
+    "netherlands-eredivisie": [
+      "Eredivisie"
+    ],
+    "uefa-champions-league": [
+      "UEFA Champions League"
+    ],
+    "uefa-europa-league": [
+      "UEFA Europa League"
+    ],
+    "uefa-europa-conference-league": [
+      "UEFA Conference League",
+      "UEFA Europa Conference League"
+    ],
+    "fifa-world-cup": [
+      "FIFA World Cup",
+      "World Cup"
+    ],
+    "uefa-european-championship": [
+      "European Championship",
+      "UEFA Euro"
+    ],
+    "caf-africa-cup-of-nations": [
+      "Africa Cup of Nations",
+      "African Cup of Nations"
+    ],
+    "afc-asian-cup": [
+      "AFC Asian Cup"
+    ],
+    "conmebol-copa-america": [
+      "Copa America",
+      "Copa América"
+    ],
+    "uefa-nations-league": [
+      "UEFA Nations League"
+    ],
+    "english-football-league-championship": [
+      "Championship",
+      "EFL Championship"
+    ],
+    "italian-serie-b": [
+      "Serie B"
+    ],
+    "brazilian-serie-a": [
+      "Brasileirao Serie A",
+      "Brasileirao"
+    ],
+    "egyptian-premier-league": [
+      "Egyptian Premier League"
+    ],
+    "saudi-professional-league": [
+      "Saudi Pro League",
+      "Saudi Professional League"
+    ],
+    "portuguese-primera-liga": [
+      "Primeira Liga",
+      "Liga Portugal"
+    ],
+    "turkish-super-league": [
+      "Super Lig",
+      "Süper Lig"
+    ],
+    "belgian-pro-league": [
+      "Belgian Pro League"
+    ],
+    "scottish-premiership": [
+      "Scottish Premiership"
+    ],
+    "argentine-division-1": [
+      "Liga Profesional",
+      "Argentine Division 1"
+    ],
+    "the-botola-pro": [
+      "Botola Pro",
+      "Botola Pro Inwi"
+    ]
+  };
+
+  const normalizeSofaName = value =>
+    String(value || "")
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .toLowerCase()
+      .replace(/[^a-z0-9]/g, "");
+
+  function seasonStartYear(item) {
+    const text = [
+      item?.year,
+      item?.name
+    ].filter(Boolean).join(" ");
+
+    const fullYear = text.match(
+      /\b(19\d{2}|20\d{2})\s*[/\-]/
+    );
+
+    if (fullYear) {
+      return Number(fullYear[1]);
+    }
+
+    const shortYear = text.match(
+      /\b(\d{2})\s*\/\s*(\d{2})\b/
+    );
+
+    if (shortYear) {
+      const firstYear = Number(shortYear[1]);
+
+      return firstYear >= 80
+        ? 1900 + firstYear
+        : 2000 + firstYear;
+    }
+
+    const standaloneYear = text.match(
+      /\b(19\d{2}|20\d{2})\b/
+    );
+
+    return standaloneYear
+      ? Number(standaloneYear[1])
+      : null;
+  }
+
+  try {
+    const aliases =
+      tournamentAliases[historicalPlayersSlug];
+
+    if (!aliases) {
+      return output(404, {
+        error: "Compétition non configurée pour l'historique.",
+        competition: historicalPlayersSlug
+      });
+    }
+
+    const config = await getJSON(
+      `${SOFA}/config/unique-tournaments/en/football`
+    );
+
+    const tournaments = Array.isArray(
+      config?.uniqueTournaments
+    )
+      ? config.uniqueTournaments
+      : [];
+
+    const tournament = tournaments.find(item => {
+      const name = normalizeSofaName(item?.name);
+      const slug = normalizeSofaName(item?.slug);
+
+      return aliases.some(alias => {
+        const target = normalizeSofaName(alias);
+
+        return name === target || slug === target;
+      });
+    });
+
+    if (!tournament?.id) {
+      return output(404, {
+        error: "Compétition introuvable sur SofaScore.",
+        competition: historicalPlayersSlug
+      });
+    }
+
+    const seasonsData = await getJSON(
+      `${SOFA}/unique-tournament/${tournament.id}/seasons`
+    );
+
+    const seasons = Array.isArray(seasonsData?.seasons)
+      ? seasonsData.seasons
+      : [];
+
+    const selectedSeason = seasons.find(
+      item => seasonStartYear(item) === seasonYear
+    );
+
+    if (!selectedSeason?.id) {
+      return output(404, {
+        error: `Saison ${seasonYear} introuvable sur SofaScore.`,
+        competition: tournament.name
+      });
+    }
+
+    const statisticsUrl =
+      `${SOFA}/unique-tournament/${tournament.id}` +
+      `/season/${selectedSeason.id}/statistics`;
+
+    async function getSeasonPlayers(stat) {
+      const params = new URLSearchParams({
+        limit: "100",
+        order: `-${stat}`,
+        offset: "0",
+        accumulation: "total",
+        fields: "goals,assists,appearances,rating"
+      });
+
+      const payload = await getJSON(
+        `${statisticsUrl}?${params.toString()}`
+      );
+
+      return Array.isArray(payload?.results)
+        ? payload.results
+        : [];
+    }
+
+    const [goalRows, assistRows] = await Promise.all([
+      getSeasonPlayers("goals"),
+      getSeasonPlayers("assists")
+    ]);
+
+    function normalizeSeasonPlayer(row, stat) {
+      const player = row?.player || {};
+      const team = row?.team || {};
+
+      const name =
+        player?.name ||
+        player?.shortName ||
+        "";
+
+      const total = Number(row?.[stat]);
+
+      if (
+        !name ||
+        !Number.isFinite(total) ||
+        total <= 0
+      ) {
+        return null;
+      }
+
+      const playerId = player?.id || "";
+      const teamId = team?.id || "";
+
+      const photo = playerId
+        ? `${SOFA}/player/${playerId}/image`
+        : "";
+
+      const teamLogo = teamId
+        ? `${SOFA}/team/${teamId}/image`
+        : "";
+
+      return {
+        name,
+        player_name: name,
+        value: total,
+        [stat]: total,
+        appearances: row?.appearances ?? null,
+        player: {
+          name,
+          full_name: name,
+          photo,
+          photo_url: photo,
+          image: photo,
+          logo: photo,
+          team: {
+            name: team?.name || "Équipe non renseignée",
+            logo: teamLogo
+          }
+        },
+        team: {
+          name: team?.name || "Équipe non renseignée",
+          logo: teamLogo
+        }
+      };
+    }
+
+    const goals = goalRows
+      .map(row => normalizeSeasonPlayer(row, "goals"))
+      .filter(Boolean)
+      .sort((a, b) => b.goals - a.goals)
+      .slice(0, 5);
+
+    const assists = assistRows
+      .map(row => normalizeSeasonPlayer(row, "assists"))
+      .filter(Boolean)
+      .sort((a, b) => b.assists - a.assists)
+      .slice(0, 5);
+
+    if (!goals.length && !assists.length) {
+      return output(502, {
+        error: "SofaScore n'a renvoyé aucun joueur exploitable.",
+        competition: tournament.name,
+        season: seasonYear
+      });
+    }
+
+    return output(200, {
+      provider: "SofaScore",
+      competition: tournament.name,
+      season: seasonYear,
+      data: {
+        goals,
+        assists
+      }
+    });
+
+  } catch (error) {
+    console.error(
+      "BAKHIRAFOOT HISTORICAL PLAYERS ERROR:",
+      error?.message || error
+    );
+
+    return output(502, {
+      error: "Impossible de charger les statistiques historiques.",
+      details: error?.message || "Erreur inconnue",
+      competition: historicalPlayersSlug,
+      season: seasonYear,
+      data: {
+        goals: [],
+        assists: []
+      }
+    });
+  }
+}
+
      async function getTheSportsDBMatches(date) {
   try {
 
