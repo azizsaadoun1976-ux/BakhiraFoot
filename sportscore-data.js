@@ -6178,8 +6178,8 @@ async function fetchHistoricalESPNPlayers(competitionSlug, season) {
 
   const request = (async () => {
     const url =
-      `/api?historicalPlayers=${encodeURIComponent(competitionSlug)}` +
-      `&season=${encodeURIComponent(season)}`;
+  `/api/historical-players?competition=${encodeURIComponent(competitionSlug)}` +
+  `&season=${encodeURIComponent(season)}`;
 
     const payload = await fetchHistoricalJSONWithTimeout(
       url,
