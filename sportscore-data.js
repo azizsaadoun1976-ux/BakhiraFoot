@@ -6168,129 +6168,43 @@ function parseHistoricalESPNByAthlete(payload, stat) {
    
 
 
-async function fetchHistoricalESPNPlayers(espnCode, season) {
-  const cacheKey = `${espnCode}:${season}`;
+
+async function fetchHistoricalESPNPlayers(competitionSlug, season) {
+  const cacheKey = `${competitionSlug}:${season}`;
 
   if (historicalESPNPlayersCache.has(cacheKey)) {
     return historicalESPNPlayersCache.get(cacheKey);
   }
 
   const request = (async () => {
-    const base =
-      "https://site.web.api.espn.com/apis/common/v3/sports/soccer/" +
-      `${encodeURIComponent(espnCode)}/statistics/byathlete`;
+    const url =
+      `/api?historicalPlayers=${encodeURIComponent(competitionSlug)}` +
+      `&season=${encodeURIComponent(season)}`;
 
-    async function loadStat(stat) {
-      const variants = stat === "goals"
-        ? [
-            {
-              category: "offensive",
-              sort: "offensive.goals:desc"
-            },
-            {
-              category: "offensive",
-              sort: "offensive.totalGoals:desc"
-            },
-            {
-              category: "scoring",
-              sort: "scoring.goals:desc"
-            }
-          ]
-        : [
-            {
-              category: "offensive",
-              sort: "offensive.assists:desc"
-            },
-            {
-              category: "scoring",
-              sort: "scoring.assists:desc"
-            }
-          ];
+    const payload = await fetchHistoricalJSONWithTimeout(
+      url,
+      25000
+    );
 
-      const diagnostics = [];
-
-      for (const variant of variants) {
-        const params = new URLSearchParams({
-          region: "us",
-          lang: "en",
-          contentorigin: "espn",
-          isqualified: "false",
-          limit: "50",
-          page: "1",
-          category: variant.category,
-          sort: variant.sort,
-          season: String(season),
-          seasontype: "2"
-        });
-
-        const url = `${base}?${params.toString()}`;
-
-        try {
-          const payload = await fetchHistoricalJSONWithTimeout(
-            url,
-            7000
-          );
-
-          const players = parseHistoricalESPNByAthlete(
-            payload,
-            stat
-          );
-
-          if (players.length) {
-            console.info(
-              `BakhiraFoot — ${stat} historiques trouvés`,
-              {
-                season,
-                category: variant.category,
-                sort: variant.sort,
-                count: players.length
-              }
-            );
-
-            return players;
-          }
-
-          diagnostics.push({
-            category: variant.category,
-            sort: variant.sort,
-            keys: Object.keys(payload || {}),
-            athleteCount: Array.isArray(payload?.athletes)
-              ? payload.athletes.length
-              : 0,
-            firstAthleteKeys:
-              Object.keys(payload?.athletes?.[0] || {}),
-            categoryNames: Array.isArray(payload?.categories)
-              ? payload.categories.map(item =>
-                  item?.name || item?.displayName || ""
-                )
-              : []
-          });
-
-        } catch (error) {
-          diagnostics.push({
-            category: variant.category,
-            sort: variant.sort,
-            error: error.message
-          });
-        }
-      }
-
-      console.warn(
-        `BakhiraFoot — aucune donnée exploitable pour ${stat}, saison ${season}`,
-        diagnostics
+    if (payload?.error) {
+      throw new Error(
+        payload.details || payload.error
       );
-
-      return [];
     }
 
-    const [goals, assists] = await Promise.all([
-      loadStat("goals"),
-      loadStat("assists")
-    ]);
+    const data = payload?.data || {};
+
+    const goals = Array.isArray(data.goals)
+      ? data.goals
+      : [];
+
+    const assists = Array.isArray(data.assists)
+      ? data.assists
+      : [];
 
     if (!goals.length && !assists.length) {
       throw new Error(
-        `ESPN n'a fourni aucune statistique exploitable pour ${season}.`
+        `SofaScore n'a retourné aucun buteur ou passeur pour ${season}.`
       );
     }
 
@@ -6511,8 +6425,8 @@ if (playersBox) {
           const playerTimeout = new Promise((_, reject) => {
             playerTimer = setTimeout(() => {
               historicalESPNPlayersCache.delete(
-                `${espnCode}:${year}`
-              );
+  `${select.dataset.competitionSlug || espnCode}:${year}`
+);
 
               reject(
                 new Error("Délai des statistiques dépassé.")
@@ -6521,7 +6435,10 @@ if (playersBox) {
           });
 
           Promise.race([
-            fetchHistoricalESPNPlayers(espnCode, year),
+            fetchHistoricalESPNPlayers(
+  select.dataset.competitionSlug || espnCode,
+  year
+)
             playerTimeout
           ])
             .then(historicalPlayers => {
