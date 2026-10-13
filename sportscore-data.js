@@ -5615,31 +5615,91 @@ function normalizeESPNHistoricalGroups(payload) {
   return groups;
 }
 
-async function fetchHistoricalESPNStandings(
-  espnCode,
-  season
-) {
-  if (!espnCode || !Number.isInteger(Number(season))) {
+
+async function fetchHistoricalESPNStandings(espnCode, season) {
+  if (
+    !espnCode ||
+    !Number.isInteger(Number(season))
+  ) {
     throw new Error("Code de compétition ou saison invalide.");
   }
 
-  const url =
-    "https://site.api.espn.com/apis/v2/sports/soccer/" +
-    `${encodeURIComponent(espnCode)}/standings` +
-    `?season=${encodeURIComponent(season)}`;
+  const bases = [
+    "https://site.api.espn.com/apis/v2/sports/soccer/",
+    "https://site.web.api.espn.com/apis/v2/sports/soccer/"
+  ];
 
-  const payload = await fetchJSON(url);
+  let lastError = null;
 
-  const groups = normalizeESPNHistoricalGroups(payload);
+  for (const base of bases) {
+    const controller = new AbortController();
+    let timer = null;
 
-  if (!groups.length) {
-    throw new Error(
-      `Aucun classement historique disponible pour la saison ${season}.`
-    );
+    const url =
+      `${base}${encodeURIComponent(espnCode)}/standings` +
+      `?season=${encodeURIComponent(season)}`;
+
+    try {
+      const request = fetch(url, {
+        method: "GET",
+        headers: {
+          Accept: "application/json"
+        },
+        signal: controller.signal
+      }).then(async response => {
+        if (!response.ok) {
+          throw new Error(`ESPN HTTP ${response.status}`);
+        }
+
+        return response.json();
+      });
+
+      const timeout = new Promise((_, reject) => {
+        timer = setTimeout(() => {
+          controller.abort();
+
+          reject(
+            new Error("ESPN timeout après 8 secondes.")
+          );
+        }, 8000);
+      });
+
+      const payload = await Promise.race([
+        request,
+        timeout
+      ]);
+
+      const groups = normalizeESPNHistoricalGroups(payload);
+
+      if (groups.length > 0) {
+        return groups;
+      }
+
+      lastError = new Error(
+        `ESPN n'a renvoyé aucun classement pour ${season}.`
+      );
+
+    } catch (error) {
+      lastError = error;
+
+      console.warn(
+        "BakhiraFoot — source historique indisponible:",
+        url,
+        error
+      );
+    } finally {
+      if (timer !== null) {
+        clearTimeout(timer);
+      }
+    }
   }
 
-  return groups;
+  throw new Error(
+    `Classement historique indisponible pour ${season}. ` +
+    `${lastError?.message || ""}`
+  );
 }
+
 
 
 /* =========================================
