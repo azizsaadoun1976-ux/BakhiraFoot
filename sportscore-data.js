@@ -5616,6 +5616,7 @@ function normalizeESPNHistoricalGroups(payload) {
 }
 
 
+
 async function fetchHistoricalESPNStandings(espnCode, season) {
   if (
     !espnCode ||
@@ -5624,24 +5625,22 @@ async function fetchHistoricalESPNStandings(espnCode, season) {
     throw new Error("Code de compétition ou saison invalide.");
   }
 
-  const bases = [
-    "https://site.api.espn.com/apis/v2/sports/soccer/",
-    "https://site.web.api.espn.com/apis/v2/sports/soccer/"
+  const urls = [
+    "https://site.api.espn.com/apis/v2/sports/soccer/" +
+    `${encodeURIComponent(espnCode)}/standings?season=${season}`,
+
+    "https://site.web.api.espn.com/apis/v2/sports/soccer/" +
+    `${encodeURIComponent(espnCode)}/standings?season=${season}`
   ];
 
   let lastError = null;
 
-  for (const base of bases) {
+  for (const url of urls) {
     const controller = new AbortController();
-    let timer = null;
-
-    const url =
-      `${base}${encodeURIComponent(espnCode)}/standings` +
-      `?season=${encodeURIComponent(season)}`;
+    let timer;
 
     try {
       const request = fetch(url, {
-        method: "GET",
         headers: {
           Accept: "application/json"
         },
@@ -5657,11 +5656,8 @@ async function fetchHistoricalESPNStandings(espnCode, season) {
       const timeout = new Promise((_, reject) => {
         timer = setTimeout(() => {
           controller.abort();
-
-          reject(
-            new Error("ESPN timeout après 8 secondes.")
-          );
-        }, 8000);
+          reject(new Error("Délai dépassé après 7 secondes."));
+        }, 7000);
       });
 
       const payload = await Promise.race([
@@ -5676,29 +5672,25 @@ async function fetchHistoricalESPNStandings(espnCode, season) {
       }
 
       lastError = new Error(
-        `ESPN n'a renvoyé aucun classement pour ${season}.`
+        `Aucun classement reçu pour la saison ${season}.`
       );
 
     } catch (error) {
       lastError = error;
 
       console.warn(
-        "BakhiraFoot — source historique indisponible:",
-        url,
+        "BakhiraFoot — échec du classement historique:",
         error
       );
     } finally {
-      if (timer !== null) {
-        clearTimeout(timer);
-      }
+      clearTimeout(timer);
     }
   }
 
-  throw new Error(
-    `Classement historique indisponible pour ${season}. ` +
-    `${lastError?.message || ""}`
-  );
+  throw lastError ||
+    new Error(`Classement ${season} indisponible.`);
 }
+
 
 
 
