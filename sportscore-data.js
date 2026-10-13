@@ -5617,6 +5617,7 @@ function normalizeESPNHistoricalGroups(payload) {
 
 
 
+
 async function fetchHistoricalESPNStandings(espnCode, season) {
   if (
     !espnCode ||
@@ -5627,10 +5628,10 @@ async function fetchHistoricalESPNStandings(espnCode, season) {
 
   const urls = [
     "https://site.api.espn.com/apis/v2/sports/soccer/" +
-    `${encodeURIComponent(espnCode)}/standings?season=${season}`,
+      `${encodeURIComponent(espnCode)}/standings?season=${season}`,
 
     "https://site.web.api.espn.com/apis/v2/sports/soccer/" +
-    `${encodeURIComponent(espnCode)}/standings?season=${season}`
+      `${encodeURIComponent(espnCode)}/standings?season=${season}`
   ];
 
   let lastError = null;
@@ -5641,54 +5642,42 @@ async function fetchHistoricalESPNStandings(espnCode, season) {
 
     try {
       const request = fetch(url, {
-        headers: {
-          Accept: "application/json"
-        },
+        headers: { Accept: "application/json" },
         signal: controller.signal
       }).then(async response => {
         if (!response.ok) {
-          throw new Error(`ESPN HTTP ${response.status}`);
+          throw new Error(`HTTP ${response.status}`);
         }
 
         return response.json();
       });
 
-      const timeout = new Promise((_, reject) => {
+      const timeout = new Promise((resolve, reject) => {
         timer = setTimeout(() => {
           controller.abort();
-          reject(new Error("Délai dépassé après 7 secondes."));
+          reject(new Error("Timeout après 7 secondes."));
         }, 7000);
       });
 
-      const payload = await Promise.race([
-        request,
-        timeout
-      ]);
-
+      const payload = await Promise.race([request, timeout]);
       const groups = normalizeESPNHistoricalGroups(payload);
 
-      if (groups.length > 0) {
+      if (groups.length) {
         return groups;
       }
 
       lastError = new Error(
-        `Aucun classement reçu pour la saison ${season}.`
+        `Aucun classement trouvé pour ${season}.`
       );
-
     } catch (error) {
       lastError = error;
-
-      console.warn(
-        "BakhiraFoot — échec du classement historique:",
-        error
-      );
+      console.warn("Historique ESPN:", url, error);
     } finally {
       clearTimeout(timer);
     }
   }
 
-  throw lastError ||
-    new Error(`Classement ${season} indisponible.`);
+  throw lastError || new Error("Classement historique indisponible.");
 }
 
 
