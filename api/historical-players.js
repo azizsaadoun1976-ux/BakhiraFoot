@@ -119,11 +119,13 @@ async function getJSON(url) {
   try {
     const response = await fetch(url, {
       signal: controller.signal,
-      headers: {
-        Accept: "application/json",
-        "User-Agent": "Mozilla/5.0",
-        Referer: "https://www.sofascore.com/"
-      }
+     headers: {
+  Accept: "application/json",
+  "User-Agent": "Mozilla/5.0",
+  "X-Requested-With": "XMLHttpRequest",
+  Origin: "https://www.sofascore.com",
+  Referer: "https://www.sofascore.com/"
+}
     });
 
     const text = await response.text();
