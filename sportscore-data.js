@@ -6378,10 +6378,15 @@ if (playersBox) {
           }
 
           // نعرضو الترتيب مباشرة.
-          standingsBox.innerHTML = `
+                    standingsBox.innerHTML = `
             ${renderQualificationLegend(usefulGroups, competition)}
             ${tablesHTML}
           `;
+
+          // نرجعو بلاصة الهدافين والأسيستات للصفحة
+          if (playersBox) {
+            standingsBox.appendChild(playersBox);
+          }
 
           setHistoricalSeasonSections(card, false);
 
