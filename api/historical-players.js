@@ -327,76 +327,200 @@ module.exports = async (req, res) => {
       });
     }
 
-    async function getLeaders(stat) {
+    
+async function getLeaders(stat) {
+  const aliases = stat === "goals"
+    ? ["goals", "totalgoals", "goalscored"]
+    : ["assists", "totalassists", "goalassists"];
+
+  const shortLabels = stat === "goals"
+    ? ["g", "gls"]
+    : ["a", "ast"];
+
+  const normalize = value =>
+    String(value || "")
+      .normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "")
+      .toLowerCase()
+      .replace(/[^a-z0-9]/g, "");
+
+  const toNumber = value => {
+    const raw = value?.value ??
+      value?.total ??
+      value?.displayValue ??
+      value;
+
+    if (raw === null || raw === undefined || raw === "") {
+      return null;
+    }
+
+    const result = Number(String(raw).replace(/,/g, ""));
+    return Number.isFinite(result) ? result : null;
+  };
+
+  const attempts = [
+    { category: "offensive", sort: `${stat}:desc` },
+    { category: "scoring", sort: `${stat}:desc` },
+    { category: "offensive", sort: `offensive.${stat}:desc` },
+    { category: "scoring", sort: `scoring.${stat}:desc` }
+  ];
+
+  let lastError = null;
+
+  for (const attempt of attempts) {
+    try {
       const params = new URLSearchParams({
         region: "us",
         lang: "en",
         contentorigin: "espn",
-        category: "offensive",
+        category: attempt.category,
         season: String(season),
         seasontype: "2",
         page: "1",
         limit: "50",
-        sort: `offensive.${stat}:desc`
+        sort: attempt.sort
       });
 
       const url =
         `${ESPN}/${league}/statistics/byathlete?${params}`;
 
       const payload = await getJSON(url);
-      const rows = getRows(payload);
-      const players = normalizeRows(rows, stat);
+      const rows = Array.isArray(payload.athletes)
+        ? payload.athletes
+        : [];
 
-      if (!players.length) {
-        throw new Error(
-          `ESPN returned no ${stat} leaders for ${league}, season ${season}.`
+      const metadata = Array.isArray(payload.categories)
+        ? payload.categories
+        : [];
+
+      const players = rows.map(row => {
+        const athlete = row.athlete || row.player || row;
+        const name =
+          athlete.displayName ||
+          athlete.fullName ||
+          athlete.shortName ||
+          athlete.name ||
+          "";
+
+        const categories = Array.isArray(row.categories)
+          ? row.categories
+          : [];
+
+        const category =
+          categories.find(item =>
+            /scoring|offensive/i.test(
+              `${item.name || ""} ${item.displayName || ""}`
+            )
+          ) ||
+          categories.find(item => {
+            const names = item.names || [];
+            return names.some(name =>
+              aliases.includes(normalize(name))
+            );
+          }) ||
+          categories[0] ||
+          row.statistics ||
+          row.stats ||
+          {};
+
+        const meta = metadata.find(item =>
+          normalize(item.name) === normalize(category.name)
+        ) || metadata.find(item =>
+          /scoring|offensive/i.test(
+            `${item.name || ""} ${item.displayName || ""}`
+          )
+        ) || {};
+
+        const names = category.names || meta.names || [];
+        const labels = category.labels || meta.labels || [];
+        const totals =
+          category.totals ||
+          category.values ||
+          category.statistics?.totals ||
+          [];
+
+        let index = names.findIndex(name =>
+          aliases.includes(normalize(name))
         );
+
+        if (index < 0) {
+          index = labels.findIndex(label =>
+            shortLabels.includes(normalize(label))
+          );
+        }
+
+        let value = index >= 0
+          ? toNumber(totals[index])
+          : null;
+
+        if (value === null) {
+          for (const key of aliases) {
+            if (row[key] !== undefined) {
+              value = toNumber(row[key]);
+              if (value !== null) break;
+            }
+          }
+        }
+
+        if (!name || value === null || value <= 0) {
+          return null;
+        }
+
+        const sourceTeam = row.team || athlete.team || {};
+        const team = {
+          name:
+            sourceTeam.displayName ||
+            sourceTeam.name ||
+            sourceTeam.shortDisplayName ||
+            "",
+          logo:
+            sourceTeam.logos?.[0]?.href ||
+            sourceTeam.logo ||
+            ""
+        };
+
+        const photo =
+          athlete.headshot?.href ||
+          athlete.headshot?.url ||
+          (typeof athlete.headshot === "string"
+            ? athlete.headshot
+            : "") ||
+          "";
+
+        return {
+          name,
+          player_name: name,
+          value,
+          [stat]: value,
+          player: {
+            id: athlete.id || "",
+            name,
+            full_name: athlete.fullName || name,
+            photo,
+            photo_url: photo,
+            image: photo,
+            logo: photo,
+            team,
+            [stat]: value
+          },
+          team
+        };
+      })
+      .filter(Boolean)
+      .sort((a, b) => b.value - a.value)
+      .slice(0, 5);
+
+      if (players.length) {
+        return players;
       }
 
-      return players;
+      lastError = new Error(
+        `ESPN returned no ${stat} rows for ${league}, season ${season}.`
+      );
+    } catch (error) {
+      lastError = error;
     }
-
-    const [goalsResult, assistsResult] = await Promise.allSettled([
-  getLeaders("goals"),
-  getLeaders("assists")
-]);
-
-const goals =
-  goalsResult.status === "fulfilled"
-    ? goalsResult.value
-    : [];
-
-const assists =
-  assistsResult.status === "fulfilled"
-    ? assistsResult.value
-    : [];
-
-if (!goals.length && !assists.length) {
-  throw new Error(
-    goalsResult.reason?.message ||
-    assistsResult.reason?.message ||
-    "Aucune statistique disponible."
-  );
-}
-    return res.status(200).json({
-      provider: "ESPN",
-      competition,
-      league,
-      season,
-      data: {
-        goals,
-        assists
-      }
-    });
-  } catch (error) {
-    console.error(
-      "BakhiraFoot historical players:",
-      error?.message || error
-    );
-
-    return res.status(502).json({
-      error: "historical_players_failed",
-      details: error?.message || "Erreur inconnue"
-    });
   }
-};
+
+  throw lastError || new Error(`Aucun ${stat} trouvé.`);
+}
