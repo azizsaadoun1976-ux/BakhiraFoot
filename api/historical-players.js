@@ -76,9 +76,21 @@ async function getJSON(url) {
 }
 
 function findStatValue(root, stat) {
-  const aliases = stat === "goals"
-    ? ["goals", "goal", "totalgoals", "goalsscored", "goalscored"]
-    : ["assists", "assist", "totalassists"];
+ const aliases = stat === "goals"
+    ? [
+        "goals",
+        "goal",
+        "totalgoals",
+        "goalsscored",
+        "goalscored"
+      ]
+    : [
+        "assists",
+        "assist",
+        "totalassists",
+        "goalassists",
+        "goalassist"
+      ];
 
   const labels = stat === "goals"
     ? ["g", "gls", "goals"]
@@ -320,12 +332,12 @@ module.exports = async (req, res) => {
         region: "us",
         lang: "en",
         contentorigin: "espn",
-        category: stat,
+        category: "offensive",
         season: String(season),
         seasontype: "2",
         page: "1",
         limit: "50",
-        sort: `${stat}:desc`
+        sort: `offensive.${stat}:desc`
       });
 
       const url =
@@ -344,11 +356,28 @@ module.exports = async (req, res) => {
       return players;
     }
 
-    const [goals, assists] = await Promise.all([
-      getLeaders("goals"),
-      getLeaders("assists")
-    ]);
+    const [goalsResult, assistsResult] = await Promise.allSettled([
+  getLeaders("goals"),
+  getLeaders("assists")
+]);
 
+const goals =
+  goalsResult.status === "fulfilled"
+    ? goalsResult.value
+    : [];
+
+const assists =
+  assistsResult.status === "fulfilled"
+    ? assistsResult.value
+    : [];
+
+if (!goals.length && !assists.length) {
+  throw new Error(
+    goalsResult.reason?.message ||
+    assistsResult.reason?.message ||
+    "Aucune statistique disponible."
+  );
+}
     return res.status(200).json({
       provider: "ESPN",
       competition,
