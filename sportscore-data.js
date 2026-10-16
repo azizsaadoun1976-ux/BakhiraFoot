@@ -9516,8 +9516,9 @@ body.dark .ss-zone-caption {
     addStyles();
 
 
+    /* Les matchs d'accueil sont chargés par script.js via /api?date=.
+       On évite de lancer un second chargeur sur le même #homeMatches. */
     await Promise.all([
-      loadTodayMatches(),
       loadAllStandings()
     ]);
 
