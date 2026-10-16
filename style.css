@@ -14825,31 +14825,3 @@ body.dark .filter.active,body.dark .filter:hover,html.dark body .filter.active,h
 @media(prefers-reduced-motion:reduce){
  html{scroll-behavior:auto}*,*::before,*::after{animation-duration:.01ms!important;animation-iteration-count:1!important;scroll-behavior:auto!important;transition-duration:.01ms!important}
 }
-
-
-/* FINAL LAYOUT OVERRIDE: sidebar stays hidden on every viewport */
-body .layout > aside,
-body.layout > aside {
-  display: none !important;
-  visibility: hidden !important;
-  width: 0 !important;
-  min-width: 0 !important;
-  flex: 0 0 0 !important;
-  padding: 0 !important;
-  margin: 0 !important;
-  border: 0 !important;
-}
-
-body .layout {
-  display: block !important;
-  width: 100% !important;
-  max-width: 1450px !important;
-}
-
-body .layout > main {
-  display: block !important;
-  width: 100% !important;
-  max-width: none !important;
-  min-width: 0 !important;
-  flex: none !important;
-}
