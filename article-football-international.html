@@ -1,13 +1,15 @@
+```html
 <!DOCTYPE html>
 <html lang="fr">
 <head>
   <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
 
-  <title>Pourquoi les grandes compétitions attirent autant de supporters ? – BakhiraFoot</title>
+  <title>Pourquoi les grandes compétitions de football attirent-elles autant de supporters ? – BakhiraFoot</title>
 
   <meta
     name="description"
-    content="Découvrez pourquoi les grandes compétitions de football attirent autant de supporters à travers le monde."
+    content="Coupe du monde, CAN et Ligue des champions : découvrez comment les enjeux sportifs, les phases de groupes, les matchs à élimination directe et les supporters rendent ces compétitions passionnantes."
   >
 
   <meta name="robots" content="index, follow">
@@ -17,55 +19,168 @@
     href="https://bakhira-foot.vercel.app/article-football-international.html"
   >
 
-  <link rel="icon" href="favicon.svg">
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
   <link rel="stylesheet" href="style.css">
 
   <style>
     .article-page {
       max-width: 900px;
       margin: 40px auto;
-      padding: 0 20px;
+      padding: 0 20px 30px;
     }
 
     .article-header {
       text-align: center;
-      margin-bottom: 30px;
+      margin-bottom: 28px;
     }
 
     .article-header h1 {
-      font-size: 36px;
-      margin-bottom: 12px;
+      font-size: clamp(27px, 4vw, 36px);
+      line-height: 1.35;
+      margin-bottom: 14px;
+    }
+
+    .article-category {
+      display: inline-block;
+      padding: 7px 12px;
+      border-radius: 8px;
+      background: #20d486;
+      color: #062016;
+      font-size: 12px;
+      font-weight: 900;
+    }
+
+    .article-meta {
+      font-size: 14px;
+      line-height: 1.7;
+      opacity: 0.8;
     }
 
     .article-content {
-      background: rgba(255,255,255,0.05);
-      border-radius: 18px;
+      background: #fff;
+      color: #253139;
+      border: 1px solid #e1e6e9;
+      border-radius: 16px;
       padding: 30px;
-      line-height: 1.8;
+      line-height: 1.85;
     }
 
     .article-content h2 {
-      margin-top: 30px;
+      margin-top: 32px;
+      margin-bottom: 12px;
+      font-size: 23px;
+      line-height: 1.4;
+      color: #087c50;
+    }
+
+    .article-content h3 {
+      margin-top: 22px;
+      font-size: 18px;
+    }
+
+    .article-content p,
+    .article-content li {
+      font-size: 16px;
+      color: #52616b;
     }
 
     .article-content p {
       margin: 15px 0;
     }
 
+    .article-content ul {
+      padding-left: 24px;
+    }
+
+    .article-content li {
+      margin: 9px 0;
+    }
+
+    .article-content a:not(.back) {
+      color: #087c50;
+      text-decoration: underline;
+      text-underline-offset: 3px;
+    }
+
+    .article-intro {
+      font-size: 18px !important;
+      color: #354650 !important;
+    }
+
+    .article-note {
+      margin: 22px 0;
+      padding: 16px 18px;
+      border-left: 4px solid #20d486;
+      border-radius: 8px;
+      background: #effaf4;
+    }
+
+    .article-note p {
+      margin: 0;
+      color: #30483d;
+    }
+
     .back {
       display: inline-block;
-      margin-top: 25px;
+      margin-top: 28px;
+      padding: 12px 18px;
+      background: #20d486;
+      color: #062016;
+      border-radius: 9px;
       text-decoration: none;
-      font-weight: bold;
+      font-weight: 900;
+    }
+
+    .dark .article-content {
+      background: #182128;
+      color: #e9eef1;
+      border-color: #29343d;
+    }
+
+    .dark .article-content p,
+    .dark .article-content li {
+      color: #c5cfd5;
+    }
+
+    .dark .article-content h2 {
+      color: #54e6a4;
+    }
+
+    .dark .article-intro {
+      color: #e0e8ec !important;
+    }
+
+    .dark .article-note {
+      background: #20372e;
+      border-left-color: #20d486;
+    }
+
+    .dark .article-note p {
+      color: #d9f3e5;
+    }
+
+    .dark .article-content a:not(.back) {
+      color: #66e9ad;
     }
 
     @media (max-width: 600px) {
-      .article-header h1 {
-        font-size: 27px;
+      .article-page {
+        margin-top: 24px;
+        padding-right: 14px;
+        padding-left: 14px;
       }
 
       .article-content {
-        padding: 20px;
+        padding: 20px 17px;
+      }
+
+      .article-content h2 {
+        font-size: 21px;
+      }
+
+      .article-content p,
+      .article-content li {
+        font-size: 15px;
       }
     }
   </style>
@@ -73,111 +188,284 @@
 
 <body>
 
-  <header>
-    <div class="logo">
-      <a href="index.html">
-        <img src="logo.svg" alt="BakhiraFoot">
-      </a>
-    </div>
+<header>
+  <div class="logo">
+    <a href="index.html" aria-label="Accueil BakhiraFoot">
+      <img src="logo.svg" alt="BakhiraFoot - Football">
+    </a>
+  </div>
 
-    <nav>
-      <a href="index.html">Accueil</a>
-      <a href="articles.html">Articles</a>
-      <a href="about.html">À propos</a>
-      <a href="contact.html">Contact</a>
-    </nav>
+  <nav>
+    <a href="index.html">Accueil</a>
+    <a href="articles.html">Articles</a>
+    <a href="about.html">À propos</a>
+    <a href="contact.html">Contact</a>
+  </nav>
+</header>
+
+<main class="article-page">
+
+  <header class="article-header">
+    <span class="article-category">🌍 FOOTBALL INTERNATIONAL</span>
+
+    <h1>Pourquoi les grandes compétitions de football attirent-elles autant de supporters ?</h1>
+
+    <p class="article-meta">
+      Comprendre les enjeux sportifs, les formats de compétition et la passion des supporters.
+    </p>
   </header>
 
-  <main class="article-page">
+  <article class="article-content">
 
-    <div class="article-header">
-      <h1>Pourquoi les grandes compétitions attirent autant de supporters ?</h1>
-      <p>🌍 Football international — BakhiraFoot</p>
+    <p class="article-intro">
+      La Coupe du monde, la Coupe d'Afrique des nations et la Ligue des
+      champions font partie des compétitions qui suscitent un grand intérêt
+      auprès des amateurs de football. Pourtant, leur popularité ne dépend
+      pas seulement de la présence de joueurs célèbres. Le format des
+      rencontres, l'importance des résultats, les rivalités sportives et
+      les émotions vécues par les supporters contribuent aussi à leur succès.
+    </p>
+
+    <h2>1. La représentation d'un pays ou d'un club</h2>
+
+    <p>
+      Les compétitions entre équipes nationales ont une dimension particulière.
+      Lorsqu'une sélection joue, les supporters peuvent avoir le sentiment
+      de soutenir leur pays et de partager une expérience avec des personnes
+      qu'ils ne connaissent pas personnellement. Les couleurs du maillot,
+      les chants et les rassemblements donnent à ces matchs une signification
+      qui dépasse parfois le résultat sportif.
+    </p>
+
+    <p>
+      Les compétitions entre clubs créent un autre type d'attachement.
+      Les supporters suivent leur équipe pendant toute la saison, connaissent
+      son histoire et attendent les grandes rencontres avec leurs rivaux.
+      Une confrontation européenne entre deux clubs prestigieux peut ainsi
+      devenir un événement attendu bien avant le coup d'envoi.
+    </p>
+
+    <p>
+      Au Maroc, le soutien à la sélection nationale peut rassembler des
+      supporters de différentes villes et générations. Cet attachement
+      explique en partie pourquoi les grandes rencontres internationales
+      provoquent autant de discussions, dans les familles, les cafés et
+      sur les réseaux sociaux.
+    </p>
+
+    <h2>2. Le suspense des phases de groupes</h2>
+
+    <p>
+      Certaines compétitions commencent par une phase de groupes. Les équipes
+      y disputent plusieurs rencontres afin de tenter de se qualifier pour
+      le tour suivant. Chaque point peut compter, et le classement évolue
+      au fil des résultats.
+    </p>
+
+    <p>
+      Imaginons une équipe qui perd son premier match. Elle doit alors
+      obtenir de meilleurs résultats lors des rencontres suivantes pour
+      conserver ses chances de qualification. Une victoire peut relancer
+      son parcours, tandis qu'un match nul peut être insuffisant selon
+      les résultats des autres équipes et les règles du groupe.
+    </p>
+
+    <p>
+      Pour suivre correctement cette phase, il faut regarder le nombre
+      de points, les matchs joués, les buts marqués et encaissés, ainsi
+      que les critères de départage prévus par le règlement de la
+      compétition. La différence de buts peut notamment être importante,
+      mais l'ordre exact des critères varie selon le tournoi.
+    </p>
+
+    <div class="article-note">
+      <p>
+        <strong>Conseil de lecture :</strong> un classement ne raconte pas
+        toute l'histoire d'un groupe. Pour comprendre la situation d'une
+        équipe, consultez également ses prochains matchs et les résultats
+        de ses concurrents directs.
+      </p>
     </div>
 
-    <article class="article-content">
+    <h2>3. Pourquoi les matchs à élimination directe sont-ils si intenses ?</h2>
 
-      <p>
-        Les grandes compétitions de football réunissent des millions de
-        supporters autour d'un même événement. Elles permettent aux
-        spectateurs de suivre leurs équipes et leurs joueurs préférés tout en
-        vivant des moments sportifs importants.
-      </p>
+    <p>
+      Dans une phase à élimination directe, les équipes doivent généralement
+      gagner leur confrontation pour continuer dans la compétition.
+      Une défaite peut mettre fin à leur parcours. Cette pression modifie
+      parfois la manière de jouer : certaines équipes prennent davantage
+      de risques, tandis que d'autres privilégient la prudence pour éviter
+      d'encaisser un but.
+    </p>
 
-      <h2>La passion pour les équipes nationales</h2>
+    <p>
+      Selon le règlement, une rencontre à égalité peut se poursuivre en
+      prolongation, puis éventuellement être décidée par une séance de
+      tirs au but. Ces situations rendent le résultat difficile à prévoir
+      et peuvent transformer une rencontre en un moment marquant pour
+      les joueurs comme pour les supporters.
+    </p>
 
-      <p>
-        Les compétitions internationales peuvent créer un sentiment
-        d'appartenance particulier. Les supporters suivent leur sélection
-        nationale et partagent les matchs avec leur famille, leurs amis et
-        leur communauté.
-      </p>
+    <p>
+      Il faut également distinguer les matchs simples des confrontations
+      en aller-retour. Dans certaines compétitions de clubs, deux équipes
+      jouent chacune sur leur terrain et le résultat global détermine
+      le qualifié. Le règlement propre à chaque tournoi doit être consulté
+      pour connaître les modalités exactes de qualification.
+    </p>
 
-      <h2>Des matchs avec beaucoup d'enjeu</h2>
+    <h2>4. Les stars, mais aussi le travail collectif</h2>
 
-      <p>
-        Dans une grande compétition, chaque rencontre peut avoir une
-        importance particulière. Une victoire peut permettre à une équipe de
-        continuer son parcours tandis qu'une défaite peut entraîner son
-        élimination.
-      </p>
+    <p>
+      Les grands joueurs attirent l'attention grâce à leur technique,
+      leur vision du jeu et leur capacité à changer le cours d'un match.
+      Les supporters attendent leurs buts, leurs passes décisives et
+      leurs actions importantes. Les duels entre joueurs de haut niveau
+      peuvent aussi donner une dimension supplémentaire à une rencontre.
+    </p>
 
-      <h2>Les grandes stars du football</h2>
+    <p>
+      Cependant, le football reste un sport collectif. Un attaquant peut
+      marquer grâce au travail de ses coéquipiers, un milieu peut aider
+      l'équipe à conserver le ballon et un défenseur peut empêcher une
+      occasion dangereuse sans apparaître dans les statistiques offensives.
+    </p>
 
-      <p>
-        Les grandes compétitions permettent également aux supporters de voir
-        certains des meilleurs joueurs du monde. Les performances individuelles
-        et les confrontations entre joueurs attirent beaucoup d'attention.
-      </p>
+    <p>
+      Pour comprendre la performance d'un joueur, il est donc utile de
+      combiner les statistiques disponibles avec l'observation du match.
+      Le nombre de buts ou de passes décisives est important, mais ne
+      décrit pas à lui seul la contribution d'un joueur à son équipe.
+    </p>
 
-      <h2>Un événement suivi dans le monde entier</h2>
+    <h2>5. Les rivalités et les styles de jeu</h2>
 
-      <p>
-        Grâce à la télévision, aux sites sportifs et aux réseaux sociaux, les
-        matchs peuvent être suivis par des supporters situés dans différents
-        pays. Les réactions, les analyses et les discussions continuent
-        souvent avant et après les rencontres.
-      </p>
+    <p>
+      Les grandes compétitions opposent des équipes qui peuvent avoir
+      des traditions, des effectifs et des approches tactiques différents.
+      Certaines cherchent à contrôler la possession, tandis que d'autres
+      préfèrent défendre avec discipline puis attaquer rapidement.
+      Ces différences rendent les confrontations intéressantes à analyser.
+    </p>
 
-      <h2>Une expérience collective</h2>
+    <p>
+      Les rivalités historiques ajoutent une dimension émotionnelle.
+      Les supporters se souviennent des rencontres précédentes, des
+      qualifications obtenues dans les dernières minutes et des occasions
+      manquées. Mais le passé ne garantit jamais le même résultat :
+      la forme du moment, les blessures, les choix tactiques et les
+      circonstances du match peuvent changer la situation.
+    </p>
 
-      <p>
-        Regarder un grand match est souvent une expérience collective. Les
-        supporters peuvent se retrouver dans les stades, dans les cafés ou
-        chez eux pour partager les émotions liées au football.
-      </p>
+    <h2>6. La télévision, les sites sportifs et les réseaux sociaux</h2>
 
-      <h2>Conclusion</h2>
+    <p>
+      Les moyens de suivre le football se sont multipliés. Selon les
+      droits de diffusion et les services disponibles dans leur pays,
+      les supporters peuvent regarder les matchs à la télévision ou
+      en ligne. Les sites sportifs permettent également de consulter
+      les scores, les classements et les statistiques.
+    </p>
 
-      <p>
-        Les grandes compétitions attirent donc les supporters grâce à la
-        combinaison de la passion, de l'enjeu sportif, des grands joueurs et
-        de l'expérience collective. Le football devient alors un événement
-        capable de réunir des personnes de différentes régions et cultures.
-      </p>
+    <p>
+      Les réseaux sociaux prolongent les discussions avant et après
+      les rencontres. Les supporters y partagent leurs réactions,
+      débattent des décisions de l'entraîneur et commentent les
+      performances des joueurs. Ces échanges permettent de suivre
+      l'actualité d'une compétition même lorsqu'on ne regarde pas
+      le match en direct.
+    </p>
 
-      <a class="back" href="articles.html">
-        ← Retour aux articles
-      </a>
+    <p>
+      Il reste toutefois important de vérifier les informations auprès
+      de sources fiables, notamment lorsqu'il s'agit d'une blessure,
+      d'un transfert ou d'une décision officielle. Une publication
+      partagée de nombreuses fois n'est pas nécessairement exacte.
+    </p>
 
-    </article>
+    <h2>7. Comment mieux suivre une grande compétition ?</h2>
 
-  </main>
+    <p>
+      Pour comprendre le parcours d'une équipe, il est utile de suivre
+      plusieurs éléments plutôt que de se limiter à son dernier résultat.
+      Voici une méthode simple :
+    </p>
 
-  <footer>
-    <div style="margin-bottom:10px;">
-      © 2026 BakhiraFoot — Made By Saâd Bouajaji
-    </div>
+    <ul>
+      <li>
+        <strong>Consulter le calendrier :</strong> repérer les rencontres
+        déjà jouées et les prochains adversaires.
+      </li>
+      <li>
+        <strong>Vérifier le classement :</strong> comprendre le nombre
+        de points et les possibilités de qualification.
+      </li>
+      <li>
+        <strong>Observer les résultats récents :</strong> distinguer
+        une bonne série d'un résultat isolé.
+      </li>
+      <li>
+        <strong>Examiner les statistiques :</strong> comparer les buts
+        marqués et encaissés, lorsque ces données sont disponibles.
+      </li>
+      <li>
+        <strong>Lire le règlement :</strong> connaître les critères
+        de départage et les règles de qualification propres au tournoi.
+      </li>
+    </ul>
 
-    <div style="display:flex;justify-content:center;gap:18px;flex-wrap:wrap;">
-      <a href="index.html">Accueil</a>
-      <a href="articles.html">Articles</a>
-      <a href="about.html">À propos</a>
-      <a href="contact.html">Contact</a>
-      <a href="privacy.html">Confidentialité</a>
-      <a href="terms.html">Conditions</a>
-    </div>
-  </footer>
+    <p>
+      Cette approche aide à mieux comprendre les enjeux d'une rencontre
+      et à éviter certaines erreurs, comme croire qu'une équipe est
+      automatiquement qualifiée après une seule victoire.
+    </p>
+
+    <h2>Conclusion</h2>
+
+    <p>
+      Les grandes compétitions attirent les supporters grâce à plusieurs
+      facteurs : l'attachement à une sélection ou à un club, le suspense
+      des phases de groupes, la pression des matchs à élimination directe,
+      le talent des joueurs et les échanges entre supporters.
+    </p>
+
+    <p>
+      Pour apprécier pleinement ces événements, il est intéressant de
+      combiner l'émotion du match avec une meilleure compréhension du
+      règlement, du classement et des performances. Les résultats
+      prennent alors davantage de sens et permettent de suivre le
+      parcours des équipes avec plus de recul.
+    </p>
+
+    <p>
+      Sur <a href="index.html">BakhiraFoot</a>, vous pouvez retrouver
+      les rubriques consacrées aux scores et aux compétitions afin
+      de suivre les résultats et les classements disponibles.
+    </p>
+
+    <a class="back" href="articles.html">
+      ← Retour aux articles
+    </a>
+
+  </article>
+
+</main>
+
+<footer>
+  <div style="margin-bottom:10px;">
+    © 2026 BakhiraFoot
+  </div>
+
+  <div style="display:flex;justify-content:center;gap:18px;flex-wrap:wrap;">
+    <a href="index.html">Accueil</a>
+    <a href="articles.html">Articles</a>
+    <a href="about.html">À propos</a>
+    <a href="contact.html">Contact</a>
+    <a href="privacy.html">Confidentialité</a>
+    <a href="terms.html">Conditions</a>
+  </div>
+</footer>
 
 </body>
 </html>
+```
