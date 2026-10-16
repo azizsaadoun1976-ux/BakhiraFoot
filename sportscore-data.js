@@ -6292,10 +6292,10 @@ const originalPlayersHTML = playersBox
         const currentRequest = ++requestNumber;
 
         if (selectedValue === "current") {
+          // originalHTML contient déjà le classement et les deux blocs joueurs.
+          // Après innerHTML, l'ancien playersBox est détaché du DOM :
+          // ne pas le modifier, sinon les statistiques visibles restent vides.
           standingsBox.innerHTML = originalHTML;
-if (playersBox) {
-  playersBox.innerHTML = originalPlayersHTML;
-}
           setHistoricalSeasonSections(card, true);
 
           status.textContent =
