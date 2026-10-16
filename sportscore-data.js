@@ -8052,9 +8052,74 @@ body.dark .ss-table-header {
   background: #e2e8f0;
 }
 
+/* Dark mode: keep qualification labels readable, not merely dimmed */
 body.dark .ss-zone-caption,
-body.dark .ss-zone-legend-item {
-  filter: brightness(.9);
+html.dark .ss-zone-caption {
+  filter: none !important;
+  font-weight: 900;
+  text-shadow: none;
+}
+
+body.dark .ss-zone-ucl,
+html.dark .ss-zone-ucl {
+  color: #bfdbfe !important;
+  background: #172f54 !important;
+}
+body.dark .ss-zone-ucl-playoff,
+html.dark .ss-zone-ucl-playoff {
+  color: #dbeafe !important;
+  background: #1e3550 !important;
+}
+body.dark .ss-zone-uel,
+html.dark .ss-zone-uel {
+  color: #fed7aa !important;
+  background: #4a2818 !important;
+}
+body.dark .ss-zone-uecl,
+body.dark .ss-zone-europe-playoff,
+html.dark .ss-zone-uecl,
+html.dark .ss-zone-europe-playoff {
+  color: #e9d5ff !important;
+  background: #39204f !important;
+}
+body.dark .ss-zone-caf-cl,
+html.dark .ss-zone-caf-cl {
+  color: #99f6e4 !important;
+  background: #123b39 !important;
+}
+body.dark .ss-zone-caf-confed,
+html.dark .ss-zone-caf-confed {
+  color: #a5f3fc !important;
+  background: #123943 !important;
+}
+body.dark .ss-zone-relegation-playoff,
+html.dark .ss-zone-relegation-playoff {
+  color: #fde68a !important;
+  background: #493715 !important;
+}
+body.dark .ss-zone-relegation,
+html.dark .ss-zone-relegation {
+  color: #fecaca !important;
+  background: #4a2025 !important;
+}
+body.dark .ss-zone-stage-direct,
+html.dark .ss-zone-stage-direct {
+  color: #bbf7d0 !important;
+  background: #173d2a !important;
+}
+body.dark .ss-zone-stage-playoff,
+html.dark .ss-zone-stage-playoff {
+  color: #fef08a !important;
+  background: #433713 !important;
+}
+body.dark .ss-zone-eliminated,
+html.dark .ss-zone-eliminated {
+  color: #e2e8f0 !important;
+  background: #303c49 !important;
+}
+body.dark .ss-zone-legend-item,
+html.dark .ss-zone-legend-item {
+  color: #dce6ed !important;
 }
 
 @media (max-width: 600px) {
