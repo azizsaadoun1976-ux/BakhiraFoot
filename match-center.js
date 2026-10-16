@@ -1360,6 +1360,15 @@
     "click",
     event => {
 
+      /*
+       * script.js already owns the main match-details modal.
+       * Do not run this legacy handler alongside it: both handlers
+       * target #matchDetailsContent and can overwrite each other's UI.
+       */
+      if (typeof window.openMatchDetails === "function") {
+        return;
+      }
+
       const card =
         event.target.closest(
           ".match-card"
