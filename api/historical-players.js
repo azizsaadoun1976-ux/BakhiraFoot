@@ -237,7 +237,7 @@ function categoryMatches(category, stat) {
 
   if (stat === "goals") {
     return labels.some(label => {
-      if (["ga", "g", "goals", "goal"].includes(label)) return true;
+      if (["g", "gls", "goals", "goal"].includes(label)) return true;
       if (label.includes("assist") || label.includes("against")) return false;
       return label.includes("goal") || label.includes("but") || label === "scoring";
     });
