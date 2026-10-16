@@ -78,8 +78,14 @@ module.exports = async (req, res) => {
    HISTORICAL PLAYER LEADERS — SOFASCORE
    ========================================= */
 
+/* Le frontend historique appelle /api/historical-players?competition=...,
+   tandis que l'ancienne route utilisait ?historicalPlayers=... .
+   Accepter les deux noms évite la rupture entre la route Vercel et l'API. */
 const historicalPlayersSlug = String(
-  req?.query?.historicalPlayers || ""
+  req?.query?.historicalPlayers ||
+  req?.query?.competition ||
+  req?.query?.slug ||
+  ""
 ).trim();
 
 if (historicalPlayersSlug) {
