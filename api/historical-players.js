@@ -13,6 +13,9 @@ const LEAGUES = {
   "english-premier-league": "eng.1",
   "spanish-la-liga": "esp.1",
   "italian-serie-a": "ita.1",
+  /* Keep both historical slugs supported: the current standings UI uses
+     "bundesliga", while older saved links may use "german-bundesliga". */
+  "bundesliga": "ger.1",
   "german-bundesliga": "ger.1",
   "french-ligue-1": "fra.1",
   "netherlands-eredivisie": "ned.1",
@@ -206,18 +209,22 @@ function categoryMatches(category, stat) {
     category?.name,
     category?.displayName,
     category?.shortDisplayName,
-    category?.abbreviation
+    category?.abbreviation,
+    category?.description
   ].filter(Boolean).map(normalize);
 
   if (stat === "goals") {
-    return labels.some(label => [
-      "goal", "goals", "totalgoals", "goalscored", "goalsscored", "goalscoring", "scoring", "buts", "but"
-    ].includes(label));
+    return labels.some(label => {
+      if (["ga", "g", "goals", "goal"].includes(label)) return true;
+      if (label.includes("assist") || label.includes("against")) return false;
+      return label.includes("goal") || label.includes("but") || label === "scoring";
+    });
   }
 
-  return labels.some(label => [
-    "assist", "assists", "totalassists", "goalassist", "goalassists", "passesdecisives", "passdecisive"
-  ].includes(label));
+  return labels.some(label => {
+    if (["a", "ast", "assist", "assists"].includes(label)) return true;
+    return label.includes("assist") || label.includes("passdecisive");
+  });
 }
 
 async function getCategoryRows(category) {
@@ -365,7 +372,12 @@ module.exports = async (req, res) => {
     return res.status(405).json({ error: "method_not_allowed" });
   }
 
-  const competition = String(req.query?.competition || "").trim();
+  const competition = String(
+    req.query?.competition ||
+    req.query?.historicalPlayers ||
+    req.query?.slug ||
+    ""
+  ).trim();
   const season = Number(req.query?.season);
   const league = LEAGUES[competition];
 
