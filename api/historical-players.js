@@ -227,6 +227,57 @@ function categoryMatches(category, stat) {
   });
 }
 
+/* ESPN sometimes nests goals/assists inside a parent category
+   such as "Offensive". Flatten category-only containers before matching,
+   while leaving actual player rows to getCategoryRows(). */
+async function flattenLeaderCategories(input, depth = 0, visited = new Set()) {
+  if (!Array.isArray(input) || depth > 6) return [];
+
+  const output = [];
+
+  for (const item of input) {
+    let category;
+    try {
+      category = await resolveEntity(item);
+    } catch {
+      continue;
+    }
+
+    if (!category || typeof category !== "object" || visited.has(category)) {
+      continue;
+    }
+    visited.add(category);
+    output.push(category);
+
+    let children = Array.isArray(category.categories)
+      ? category.categories
+      : [];
+
+    if (!children.length && category.leaders !== undefined) {
+      try {
+        const leaders = await resolveEntity(category.leaders);
+        if (Array.isArray(leaders?.categories)) {
+          children = leaders.categories;
+        } else if (Array.isArray(leaders)) {
+          children = leaders.filter(child =>
+            child && typeof child === "object" &&
+            (child.categories !== undefined || child.leaders !== undefined) &&
+            (child.name || child.displayName || child.$ref)
+          );
+        }
+      } catch {
+        // Keep the parent category; other ESPN endpoints may still work.
+      }
+    }
+
+    if (children.length) {
+      output.push(...await flattenLeaderCategories(children, depth + 1, visited));
+    }
+  }
+
+  return output;
+}
+
 async function getCategoryRows(category) {
   const resolved = await resolveEntity(category);
   for (const key of ["leaders", "items", "entries", "results", "athletes"]) {
@@ -352,8 +403,12 @@ async function fetchSeasonLeaders(league, season) {
   for (const url of urls) {
     try {
       const payload = await getJSON(url);
-      const categories = await findCategories(payload);
-      if (categories.length) {
+      const foundCategories = await findCategories(payload);
+      const categories = await flattenLeaderCategories(foundCategories);
+      if (categories.some(category =>
+        categoryMatches(category, "goals") ||
+        categoryMatches(category, "assists")
+      )) {
         return { categories, source: url };
       }
       lastError = new Error(`No leader categories in ESPN response: ${url}`);
