@@ -37,13 +37,49 @@ module.exports = async (req, res) => {
       const timeout = setTimeout(() => controller.abort(), 15000);
 
       try {
+        // Send provider-matched headers instead of one generic request profile.
+        // This can reduce false cross-origin blocks on ESPN/SofaScore fallbacks.
+        let host = "";
+        try {
+          host = new URL(url).hostname.toLowerCase();
+        } catch (_) {}
+
+        const isESPN = host.endsWith("espn.com") || host.endsWith("espncdn.com");
+        const isTSDB = host.endsWith("thesportsdb.com");
+        const isSofa = host === "api.sofascore.com" || host.endsWith(".sofascore.com");
+        const isSportScore = host === "sportscore.com" || host.endsWith(".sportscore.com");
+
+        const referer = isESPN
+          ? "https://www.espn.com/"
+          : isTSDB
+            ? "https://www.thesportsdb.com/"
+            : isSofa
+              ? "https://www.sofascore.com/"
+              : isSportScore
+                ? "https://sportscore.com/"
+                : undefined;
+
+        const origin = isESPN
+          ? "https://www.espn.com"
+          : isTSDB
+            ? "https://www.thesportsdb.com"
+            : isSofa
+              ? "https://www.sofascore.com"
+              : isSportScore
+                ? "https://sportscore.com"
+                : undefined;
+
+        const headers = {
+          Accept: "application/json",
+          "User-Agent":
+            "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/154 Safari/537.36"
+        };
+        if (referer) headers.Referer = referer;
+        if (origin) headers.Origin = origin;
+
         const response = await fetch(url, {
           method: "GET",
-          headers: {
-            Accept: "application/json",
-            "User-Agent":
-              "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 Chrome/154 Safari/537.36"
-          },
+          headers,
           cache: "no-store",
           signal: controller.signal
         });
