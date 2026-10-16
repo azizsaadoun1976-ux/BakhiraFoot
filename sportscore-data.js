@@ -6204,7 +6204,7 @@ async function fetchHistoricalESPNPlayers(competitionSlug, season) {
 
     if (!goals.length && !assists.length) {
       throw new Error(
-        `SofaScore n'a retourné aucun buteur ou passeur pour ${season}.`
+        `La source historique n'a retourné aucun buteur ou passeur pour ${season}.`
       );
     }
 
