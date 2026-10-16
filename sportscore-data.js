@@ -7219,9 +7219,15 @@ function renderSeasonSelector(competition) {
     "argentine-division-1"
   ]);
 
+  /*
+   * "Saison actuelle" already represents the live/current standings.
+   * Start the historical list at the previous year to avoid showing the
+   * current season twice (for example 2026/27 beside "Saison actuelle").
+   */
+  const currentYear = new Date().getUTCFullYear();
   const years = editions[slug] || Array.from(
     { length: 15 },
-    (_, index) => new Date().getUTCFullYear() - index
+    (_, index) => currentYear - 1 - index
   );
 
   function seasonLabel(year) {
