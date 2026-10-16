@@ -99,6 +99,25 @@ module.exports = async (req, res) => {
 
   try {
 
+    /*
+     * Keep upstream request headers aligned with the provider.
+     * Using a SofaScore Origin for ESPN/TheSportsDB can look like
+     * a cross-site request and may trigger upstream anti-bot rules.
+     */
+    const host = new URL(url).hostname.toLowerCase();
+    const isESPN = host.endsWith("espn.com") || host.endsWith("espncdn.com");
+    const isTSDB = host.endsWith("thesportsdb.com");
+    const referer = isESPN
+      ? "https://www.espn.com/"
+      : isTSDB
+        ? "https://www.thesportsdb.com/"
+        : "https://www.sofascore.com/";
+    const origin = isESPN
+      ? "https://www.espn.com"
+      : isTSDB
+        ? "https://www.thesportsdb.com"
+        : "https://www.sofascore.com";
+
     const response =
       await fetch(
         url,
@@ -112,11 +131,9 @@ module.exports = async (req, res) => {
             "User-Agent":
               "Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/154.0.0.0 Safari/537.36",
 
-            Referer:
-              "https://www.sofascore.com/",
+            Referer: referer,
 
-            Origin:
-              "https://www.sofascore.com"
+            Origin: origin
           },
 
           cache:
