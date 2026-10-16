@@ -87,18 +87,18 @@
   </header>
 
 <!-- Annonce AdSense responsive -->
-<div style="width:100%;max-width:1000px;margin:16px auto;text-align:center;">
+<div class="ad-top">
   <ins class="adsbygoogle"
        style="display:block"
        data-ad-client="ca-pub-4186453820862227"
        data-ad-slot="8803102521"
        data-ad-format="auto"
        data-full-width-responsive="true"></ins>
+
   <script>
     (adsbygoogle = window.adsbygoogle || []).push({});
   </script>
 </div>
-
   <div class="layout">
 
     <!-- ================= SIDEBAR ================= -->
@@ -134,16 +134,53 @@
             </div>
           </div>
 
-          <div class="sea-scene">
-            <div class="sun">☀️</div>
-            <div class="ball-floating">⚽</div>
-            <div class="boat">🚢</div>
-            <div class="wave wave1"></div>
-            <div class="wave wave2"></div>
-            <div class="wave wave3"></div>
-          </div>
-        </div>
+          <div class="hero-live-panel" aria-label="Centre de football en direct">
+  <div class="live-panel-top">
+    <span class="live-panel-brand">
+      <span class="live-dot"></span>
+      LIVE CENTER
+    </span>
+    <span class="live-panel-ball">⚽</span>
+  </div>
 
+  <div class="pitch-visual" aria-hidden="true">
+    <div class="pitch-halfway"></div>
+    <div class="pitch-center-circle"></div>
+    <div class="pitch-box pitch-box-left"></div>
+    <div class="pitch-box pitch-box-right"></div>
+    <div class="pitch-goal pitch-goal-left"></div>
+    <div class="pitch-goal pitch-goal-right"></div>
+    <div class="pitch-ball"></div>
+  </div>
+
+  <div class="live-panel-bottom">
+    <div>
+      <strong>Le football en direct</strong>
+      <span>Scores · Matchs · Compétitions</span>
+    </div>
+    <span class="live-panel-arrow">↗</span>
+  </div>
+</div>
+
+<!-- MATCHS DU JOUR : données SportScore -->
+<section class="home-live-section" aria-labelledby="home-live-title">
+  <div class="home-live-heading">
+    <div>
+      <span class="section-kicker">LE FOOTBALL EN DIRECT</span>
+      <h2 id="home-live-title">Matchs du jour</h2>
+      <p>Suivez les rencontres et leurs résultats.</p>
+    </div>
+
+    <button type="button" class="home-live-more" onclick="go('scores')">
+      Tous les matchs <span aria-hidden="true">→</span>
+    </button>
+  </div>
+
+  <div id="homeMatches" class="home-live-matches">
+    <div class="home-live-loading">Chargement des matchs…</div>
+  </div>
+</section>
+          
         <!-- ACTUALITÉS -->
         <div class="head">
           <h2>Actualités du football</h2>
