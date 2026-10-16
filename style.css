@@ -14829,8 +14829,7 @@ body.dark .filter.active,body.dark .filter:hover,html.dark body .filter.active,h
 
 /* FINAL LAYOUT OVERRIDE: sidebar stays hidden on every viewport */
 body .layout > aside,
-body.layout > aside,
-body aside {
+body.layout > aside {
   display: none !important;
   visibility: hidden !important;
   width: 0 !important;
