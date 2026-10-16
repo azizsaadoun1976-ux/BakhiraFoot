@@ -159,35 +159,57 @@ async function findCategories(input, depth = 0, visited = new Set()) {
   visited.add(node);
 
   if (Array.isArray(node)) {
+    const all = [];
     for (const item of node) {
       const found = await findCategories(item, depth + 1, visited);
-      if (found.length) return found;
+      all.push(...found);
     }
-    return [];
+    return all;
   }
 
-  if (Array.isArray(node.categories)) {
-    return Promise.all(node.categories.map(item => resolveEntity(item)));
+  // ESPN may return categories directly or inside a paged items collection.
+  if (node.categories !== undefined) {
+    const items = await collectionItems(node.categories);
+    if (items.length) {
+      const resolved = await Promise.all(items.map(async item => {
+        try { return await resolveEntity(item); }
+        catch { return item && typeof item === "object" ? item : null; }
+      }));
+      return resolved.filter(Boolean);
+    }
+    const nested = await findCategories(node.categories, depth + 1, visited);
+    if (nested.length) return nested;
   }
 
   if (node.leaders !== undefined) {
-    const leaders = await resolveEntity(node.leaders);
+    let leaders;
+    try { leaders = await resolveEntity(node.leaders); }
+    catch { leaders = node.leaders; }
 
-    if (Array.isArray(leaders?.categories)) {
-      return Promise.all(leaders.categories.map(item => resolveEntity(item)));
+    if (leaders?.categories !== undefined) {
+      const items = await collectionItems(leaders.categories);
+      if (items.length) {
+        const resolved = await Promise.all(items.map(async item => {
+          try { return await resolveEntity(item); }
+          catch { return item && typeof item === "object" ? item : null; }
+        }));
+        return resolved.filter(Boolean);
+      }
     }
 
     if (Array.isArray(leaders)) {
       const categories = leaders.filter(item =>
         item && typeof item === "object" &&
         (item.name || item.displayName || item.$ref) &&
-        (item.leaders !== undefined || item.items !== undefined || item.entries !== undefined || item.$ref)
+        (item.leaders !== undefined || item.items !== undefined ||
+         item.entries !== undefined || item.categories !== undefined || item.$ref)
       );
       if (categories.length) {
-        const resolved = await Promise.all(categories.map(item => resolveEntity(item)));
-        if (resolved.some(item => Array.isArray(item?.leaders) || Array.isArray(item?.items) || Array.isArray(item?.entries))) {
-          return resolved;
-        }
+        const resolved = await Promise.all(categories.map(async item => {
+          try { return await resolveEntity(item); }
+          catch { return item; }
+        }));
+        if (resolved.length) return resolved;
       }
     }
 
