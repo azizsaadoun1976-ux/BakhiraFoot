@@ -1,94 +1,217 @@
+```html
 <!doctype html>
 <html lang="fr">
 <head>
-<meta charset="utf-8">
-<meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
 
-<title>Comprendre le fonctionnement d'un championnat – BakhiraFoot</title>
+  <title>Comment fonctionne un championnat de football ? Classement et points – BakhiraFoot</title>
 
-<meta
-  name="description"
-  content="Comprendre comment fonctionne un championnat de football, le classement et les journées."
->
+  <meta
+    name="description"
+    content="Apprenez à comprendre un championnat de football : points, différence de buts, journées, matchs en retard, départages et qualification."
+  >
 
-<meta name="robots" content="index, follow">
+  <meta name="robots" content="index, follow">
 
-<link
-  rel="canonical"
-  href="https://bakhira-foot.vercel.app/article-championnat.html"
->
+  <link
+    rel="canonical"
+    href="https://bakhira-foot.vercel.app/article-championnat.html"
+  >
 
-<link rel="icon" type="image/svg+xml" href="favicon.svg">
-<link rel="stylesheet" href="style.css">
+  <link rel="icon" type="image/svg+xml" href="favicon.svg">
+  <link rel="stylesheet" href="style.css">
 
-<style>
-.article-page{
-  max-width:900px;
-  margin:auto;
-}
+  <style>
+    .article-page {
+      max-width: 900px;
+      margin: 0 auto;
+      padding: 0 16px 30px;
+    }
 
-.article-card{
-  background:#fff;
-  border:1px solid #e1e6e9;
-  border-radius:12px;
-  padding:30px;
-  margin-top:20px;
-}
+    .article-card {
+      background: #fff;
+      color: #253139;
+      border: 1px solid #e1e6e9;
+      border-radius: 12px;
+      padding: 30px;
+      margin-top: 24px;
+    }
 
-.article-card h1{
-  margin-top:10px;
-}
+    .article-card h1 {
+      margin: 16px 0;
+      font-size: clamp(27px, 4vw, 36px);
+      line-height: 1.35;
+    }
 
-.article-card p{
-  color:#68757e;
-  line-height:1.8;
-  font-size:16px;
-}
+    .article-card h2 {
+      margin-top: 32px;
+      margin-bottom: 12px;
+      font-size: 23px;
+      line-height: 1.4;
+      color: #087c50;
+    }
 
-.category{
-  display:inline-block;
-  background:#20d486;
-  color:#062016;
-  padding:6px 10px;
-  border-radius:7px;
-  font-size:12px;
-  font-weight:900;
-}
+    .article-card h3 {
+      margin-top: 22px;
+      font-size: 18px;
+    }
 
-.back{
-  display:inline-block;
-  margin-top:25px;
-  background:#20d486;
-  color:#062016;
-  padding:12px 18px;
-  border-radius:9px;
-  text-decoration:none;
-  font-weight:900;
-}
+    .article-card p,
+    .article-card li {
+      color: #52616b;
+      font-size: 16px;
+      line-height: 1.85;
+    }
 
-.dark .article-card{
-  background:#182128;
-  color:#e9eef1;
-  border-color:#29343d;
-}
+    .article-card p {
+      margin: 15px 0;
+    }
 
-.dark .article-card p{
-  color:#bac4ca;
-}
-</style>
+    .article-card ul {
+      padding-left: 24px;
+    }
 
+    .article-card li {
+      margin: 9px 0;
+    }
+
+    .category {
+      display: inline-block;
+      background: #20d486;
+      color: #062016;
+      padding: 7px 11px;
+      border-radius: 7px;
+      font-size: 12px;
+      font-weight: 900;
+    }
+
+    .article-intro {
+      font-size: 18px !important;
+      color: #354650 !important;
+    }
+
+    .article-note {
+      margin: 22px 0;
+      padding: 16px 18px;
+      border-left: 4px solid #20d486;
+      border-radius: 8px;
+      background: #effaf4;
+    }
+
+    .article-note p {
+      margin: 0;
+      color: #30483d;
+    }
+
+    .article-table-wrap {
+      overflow-x: auto;
+      margin: 20px 0;
+    }
+
+    .article-table {
+      width: 100%;
+      border-collapse: collapse;
+      min-width: 420px;
+    }
+
+    .article-table th,
+    .article-table td {
+      padding: 12px;
+      text-align: left;
+      border: 1px solid #dce5e8;
+      line-height: 1.6;
+    }
+
+    .article-table th {
+      background: #effaf4;
+      color: #087c50;
+    }
+
+    .article-table td {
+      color: #52616b;
+    }
+
+    .back {
+      display: inline-block;
+      margin-top: 28px;
+      background: #20d486;
+      color: #062016;
+      padding: 12px 18px;
+      border-radius: 9px;
+      text-decoration: none;
+      font-weight: 900;
+    }
+
+    .dark .article-card {
+      background: #182128;
+      color: #e9eef1;
+      border-color: #29343d;
+    }
+
+    .dark .article-card p,
+    .dark .article-card li {
+      color: #c5cfd5;
+    }
+
+    .dark .article-card h2 {
+      color: #54e6a4;
+    }
+
+    .dark .article-intro {
+      color: #e0e8ec !important;
+    }
+
+    .dark .article-note {
+      background: #20372e;
+      border-left-color: #20d486;
+    }
+
+    .dark .article-note p {
+      color: #d9f3e5;
+    }
+
+    .dark .article-table th {
+      background: #20372e;
+      color: #70eab3;
+    }
+
+    .dark .article-table td {
+      color: #c5cfd5;
+    }
+
+    .dark .article-table th,
+    .dark .article-table td {
+      border-color: #35434b;
+    }
+
+    @media (max-width: 600px) {
+      .article-card {
+        padding: 20px 17px;
+      }
+
+      .article-card h2 {
+        font-size: 21px;
+      }
+
+      .article-card p,
+      .article-card li {
+        font-size: 15px;
+      }
+    }
+  </style>
 </head>
 
 <body>
 
 <header>
-
   <div class="logo">
-    <img src="logo.svg" alt="BakhiraFoot - Football">
+    <a href="index.html" aria-label="Accueil BakhiraFoot">
+      <img src="logo.svg" alt="BakhiraFoot - Football">
+    </a>
   </div>
 
   <nav>
-
     <a href="index.html"
        style="color:#aeb9c1;text-decoration:none;padding:22px 12px;font-weight:800;">
       Accueil
@@ -108,50 +231,322 @@
        style="color:#aeb9c1;text-decoration:none;padding:22px 12px;font-weight:800;">
       Contact
     </a>
-
   </nav>
-
 </header>
 
 <main>
-
   <div class="article-page">
 
     <article class="article-card">
 
-      <span class="category">🏆 COMPÉTITIONS</span>
+      <span class="category">🏆 COMPRENDRE LES COMPÉTITIONS</span>
 
-      <h1>Comprendre le fonctionnement d'un championnat</h1>
+      <h1>Comment fonctionne un championnat de football ?</h1>
+
+      <p class="article-intro">
+        Un championnat de football est une compétition dans laquelle
+        plusieurs équipes s'affrontent selon un calendrier établi.
+        Mais comment une équipe obtient-elle des points ? Pourquoi
+        une équipe peut-elle dépasser une autre au classement ?
+        Et comment détermine-t-on les places de qualification ou
+        de relégation ? Voici les principaux éléments pour comprendre
+        le fonctionnement d'un championnat.
+      </p>
+
+      <h2>1. Les journées et le calendrier</h2>
 
       <p>
-        Un championnat de football se déroule généralement sur
-        plusieurs journées. Les équipes se rencontrent selon
-        un calendrier établi au début ou au cours de la saison.
+        Dans un championnat organisé sur plusieurs journées, chaque
+        journée correspond à une série de rencontres prévues dans
+        le calendrier. Selon le format retenu, toutes les équipes
+        peuvent jouer une fois par journée, même si des reports
+        ou des matchs décalés peuvent modifier temporairement
+        le nombre de rencontres disputées.
       </p>
 
       <p>
-        Après chaque rencontre, les résultats permettent de mettre
-        à jour le classement. Les points obtenus dépendent du résultat
-        du match selon les règles de la compétition concernée.
+        Dans un championnat où chaque équipe rencontre toutes les
+        autres deux fois, une fois à domicile et une fois à l'extérieur,
+        le nombre total de journées dépend du nombre d'équipes.
+        Par exemple, avec 20 équipes et un calendrier classique
+        aller-retour, chaque équipe dispute 38 matchs.
       </p>
 
       <p>
-        Au fil des journées, le classement peut donc évoluer.
-        Une équipe peut progresser grâce à une série de bons résultats,
-        tandis qu'une autre peut perdre des places après plusieurs
-        rencontres sans victoire.
+        Jouer à domicile peut offrir des repères familiers et le soutien
+        du public. À l'extérieur, l'équipe doit s'adapter au terrain,
+        à l'ambiance et aux conditions de la rencontre. Ces facteurs
+        peuvent influencer un match, mais ils ne déterminent jamais
+        à eux seuls son résultat.
+      </p>
+
+      <h2>2. Comment les points sont-ils attribués ?</h2>
+
+      <p>
+        Dans de nombreux championnats, une victoire rapporte trois
+        points, un match nul rapporte un point à chaque équipe et
+        une défaite ne rapporte aucun point. Ce système encourage
+        les équipes à chercher la victoire, car elle rapporte davantage
+        qu'un match nul.
+      </p>
+
+      <div class="article-table-wrap">
+        <table class="article-table">
+          <thead>
+            <tr>
+              <th>Résultat</th>
+              <th>Points obtenus</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td>Victoire</td>
+              <td>3 points</td>
+            </tr>
+            <tr>
+              <td>Match nul</td>
+              <td>1 point pour chaque équipe</td>
+            </tr>
+            <tr>
+              <td>Défaite</td>
+              <td>0 point</td>
+            </tr>
+          </tbody>
+        </table>
+      </div>
+
+      <p>
+        Prenons un exemple simple : une équipe gagne trois matchs et
+        fait un match nul. Elle obtient dix points, car ses trois
+        victoires lui rapportent neuf points et le match nul lui en
+        rapporte un. Cette méthode permet de calculer rapidement
+        les points à partir des résultats.
+      </p>
+
+      <div class="article-note">
+        <p>
+          <strong>À retenir :</strong> vérifiez toujours le règlement
+          de la compétition concernée. Le système de trois points
+          pour une victoire est très répandu, mais les règles propres
+          au tournoi restent la référence.
+        </p>
+      </div>
+
+      <h2>3. Comment lire le classement ?</h2>
+
+      <p>
+        Le classement présente les équipes en fonction des critères
+        définis par le règlement du championnat. On y trouve
+        généralement le nombre de matchs joués, les victoires,
+        les matchs nuls, les défaites, les buts marqués, les buts
+        encaissés, la différence de buts et le total de points.
+      </p>
+
+      <ul>
+        <li>
+          <strong>MJ — Matchs joués :</strong> nombre de rencontres
+          disputées par l'équipe.
+        </li>
+        <li>
+          <strong>V — Victoires :</strong> nombre de matchs gagnés.
+        </li>
+        <li>
+          <strong>N — Matchs nuls :</strong> nombre de matchs terminés
+          à égalité.
+        </li>
+        <li>
+          <strong>D — Défaites :</strong> nombre de matchs perdus.
+        </li>
+        <li>
+          <strong>BP — Buts pour :</strong> nombre total de buts marqués.
+        </li>
+        <li>
+          <strong>BC — Buts contre :</strong> nombre total de buts encaissés.
+        </li>
+        <li>
+          <strong>Diff. — Différence de buts :</strong> buts marqués
+          moins buts encaissés.
+        </li>
+        <li>
+          <strong>Pts — Points :</strong> total des points obtenus.
+        </li>
+      </ul>
+
+      <h2>4. Comprendre la différence de buts</h2>
+
+      <p>
+        La différence de buts est calculée en soustrayant les buts
+        encaissés des buts marqués. Elle permet de comparer la production
+        offensive et les résultats défensifs d'une équipe.
       </p>
 
       <p>
-        Le calendrier joue également un rôle important. Les équipes
-        doivent gérer plusieurs rencontres et maintenir leurs
-        performances tout au long de la saison.
+        Par exemple, si une équipe marque 25 buts et en encaisse 15,
+        sa différence de buts est de +10. Si une autre marque 20 buts
+        et en encaisse 18, sa différence est de +2.
       </p>
 
       <p>
-        À la fin de la compétition, le classement final permet
-        de déterminer les équipes qui atteignent les différentes
-        positions prévues par le règlement du championnat.
+        Si deux équipes ont le même nombre de points, la différence
+        de buts peut servir à les départager dans certaines compétitions.
+        Toutefois, elle n'est pas le premier critère partout :
+        certains règlements donnent la priorité aux confrontations
+        directes ou à d'autres critères. Il faut donc vérifier le
+        règlement officiel du championnat.
+      </p>
+
+      <h2>5. Pourquoi le classement change-t-il chaque semaine ?</h2>
+
+      <p>
+        Après chaque rencontre, les points et les statistiques des
+        équipes sont mis à jour. Une victoire peut permettre à une
+        équipe de gagner plusieurs places si les concurrents directs
+        perdent des points. À l'inverse, une défaite peut faire reculer
+        une équipe lorsque ses adversaires gagnent.
+      </p>
+
+      <p>
+        Les matchs nuls ont aussi leur importance. Une équipe peut
+        rester invaincue pendant plusieurs journées sans beaucoup
+        progresser si elle partage régulièrement les points avec
+        ses adversaires. Le nombre de victoires compte donc dans
+        l'analyse des performances, même si le classement officiel
+        dépend des critères prévus par le règlement.
+      </p>
+
+      <h2>6. Que signifie un match en retard ?</h2>
+
+      <p>
+        Un match en retard est une rencontre qui n'a pas été jouée
+        à la date initialement prévue. Cela peut arriver pour différentes
+        raisons, par exemple en raison de contraintes de calendrier,
+        de conditions météorologiques ou de la participation d'une
+        équipe à une autre compétition.
+      </p>
+
+      <p>
+        Lorsqu'une équipe a disputé moins de matchs que ses concurrentes,
+        son classement doit être interprété avec prudence. Elle peut
+        avoir la possibilité de gagner des points supplémentaires
+        en jouant sa rencontre reportée, mais le résultat n'est jamais
+        garanti.
+      </p>
+
+      <p>
+        Pour comparer correctement deux équipes, regardez donc à la
+        fois leurs points et le nombre de matchs joués. Un total de
+        points plus élevé ne signifie pas toujours qu'une équipe a
+        réalisé une meilleure performance moyenne si elle a joué
+        davantage de rencontres.
+      </p>
+
+      <h2>7. Qualification pour les compétitions et relégation</h2>
+
+      <p>
+        Selon le championnat et son règlement, les équipes les mieux
+        classées peuvent obtenir une place dans une compétition
+        continentale ou internationale. Dans d'autres cas, certaines
+        places peuvent donner accès à des tours de qualification
+        plutôt qu'à une participation directe.
+      </p>
+
+      <p>
+        En bas du classement, les équipes les moins bien classées
+        peuvent être reléguées dans une division inférieure. Certaines
+        compétitions prévoient également des matchs de barrage entre
+        des équipes de divisions différentes.
+      </p>
+
+      <p>
+        Le nombre de places qualificatives et de places de relégation
+        n'est pas identique partout. Il peut changer selon la saison,
+        les règles de la fédération et les modalités propres à la
+        compétition. Il est donc préférable de consulter les règles
+        officielles plutôt que de supposer que les mêmes positions
+        ont la même signification dans tous les championnats.
+      </p>
+
+      <h2>8. Pourquoi le calendrier est-il important ?</h2>
+
+      <p>
+        Une équipe peut devoir jouer plusieurs rencontres sur une
+        courte période, parfois dans différentes compétitions.
+        L'entraîneur doit alors gérer la fatigue, les blessures,
+        les suspensions et le temps de jeu des joueurs.
+      </p>
+
+      <p>
+        La difficulté des prochains adversaires peut également influencer
+        la préparation. Une série de matchs contre des équipes bien
+        classées peut représenter un défi important, tandis qu'une
+        équipe en difficulté cherchera souvent à profiter de chaque
+        rencontre pour obtenir des points.
+      </p>
+
+      <p>
+        Pour analyser une série de résultats, il est donc utile de
+        regarder non seulement les scores, mais aussi le calendrier,
+        les absences connues et le niveau des adversaires. Ces éléments
+        donnent davantage de contexte, sans permettre de prévoir
+        avec certitude le résultat d'un futur match.
+      </p>
+
+      <h2>9. Comment analyser un classement efficacement ?</h2>
+
+      <p>
+        Pour mieux comprendre la situation d'un club, vous pouvez
+        suivre une méthode simple :
+      </p>
+
+      <ul>
+        <li>
+          Comparer le total de points et le nombre de matchs joués.
+        </li>
+        <li>
+          Vérifier les victoires, les matchs nuls et les défaites.
+        </li>
+        <li>
+          Examiner les buts marqués, les buts encaissés et la
+          différence de buts.
+        </li>
+        <li>
+          Observer les résultats récents sans oublier le niveau
+          des adversaires rencontrés.
+        </li>
+        <li>
+          Consulter le règlement officiel pour comprendre les
+          critères de départage, la qualification et la relégation.
+        </li>
+      </ul>
+
+      <p>
+        Aucun indicateur ne suffit à lui seul pour résumer la qualité
+        d'une équipe. Le classement montre sa situation dans la
+        compétition, tandis que les résultats et les statistiques
+        aident à comprendre une partie de son parcours.
+      </p>
+
+      <h2>Conclusion</h2>
+
+      <p>
+        Un championnat de football est bien plus qu'une simple liste
+        d'équipes. Pour le comprendre, il faut connaître le système
+        de points, savoir lire la différence de buts, tenir compte
+        des matchs en retard et consulter les règles de qualification
+        et de relégation.
+      </p>
+
+      <p>
+        Ces éléments permettent de mieux interpréter les évolutions
+        du classement au fil de la saison. Ils aident également à
+        comparer les performances des équipes sans se limiter à
+        leur dernière rencontre.
+      </p>
+
+      <p>
+        Retrouvez les scores et les compétitions disponibles sur
+        <a href="index.html">BakhiraFoot</a> pour suivre les résultats
+        et consulter les classements proposés sur le site.
       </p>
 
       <a class="back" href="articles.html">
@@ -161,44 +556,23 @@
     </article>
 
   </div>
-
 </main>
 
 <footer>
-
   <div style="margin-bottom:10px;">
-    © 2026 BakhiraFoot — Made By Saâd Bouajaji
+    © 2026 BakhiraFoot
   </div>
 
   <div style="display:flex;justify-content:center;gap:18px;flex-wrap:wrap;">
-
-    <a href="index.html" style="color:inherit;text-decoration:none;">
-      Accueil
-    </a>
-
-    <a href="articles.html" style="color:inherit;text-decoration:none;">
-      Articles
-    </a>
-
-    <a href="about.html" style="color:inherit;text-decoration:none;">
-      À propos
-    </a>
-
-    <a href="contact.html" style="color:inherit;text-decoration:none;">
-      Contact
-    </a>
-
-    <a href="privacy.html" style="color:inherit;text-decoration:none;">
-      Confidentialité
-    </a>
-
-    <a href="terms.html" style="color:inherit;text-decoration:none;">
-      Conditions
-    </a>
-
+    <a href="index.html" style="color:inherit;text-decoration:none;">Accueil</a>
+    <a href="articles.html" style="color:inherit;text-decoration:none;">Articles</a>
+    <a href="about.html" style="color:inherit;text-decoration:none;">À propos</a>
+    <a href="contact.html" style="color:inherit;text-decoration:none;">Contact</a>
+    <a href="privacy.html" style="color:inherit;text-decoration:none;">Confidentialité</a>
+    <a href="terms.html" style="color:inherit;text-decoration:none;">Conditions</a>
   </div>
-
 </footer>
 
 </body>
 </html>
+```
