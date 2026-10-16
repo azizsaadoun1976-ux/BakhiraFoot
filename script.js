@@ -10973,54 +10973,34 @@ function initSearch() {
 ========================================================= */
 
 function initTheme() {
-
-  const button =
-    $("theme");
-
+  const button = $("theme");
   if (!button) return;
 
-  const saved =
-    localStorage.getItem(
-      "bakhirafoot-theme"
+  const applyTheme = dark => {
+    // Keep <html> and <body> in sync; qualification and page styles use both.
+    document.documentElement.classList.toggle("dark", dark);
+    document.body.classList.toggle("dark", dark);
+
+    button.textContent = dark ? "☀" : "☾";
+    button.setAttribute(
+      "aria-label",
+      dark ? "Activer le mode clair" : "Activer le mode sombre"
     );
+    button.setAttribute("title", dark ? "Mode sombre activé" : "Mode clair activé");
+  };
 
-  if (saved === "dark") {
-
-    document.body.classList.add(
-      "dark"
-    );
-
-    button.textContent =
-      "☀";
+  const saved = localStorage.getItem("bakhirafoot-theme");
+  if (saved === "dark" || saved === "light") {
+    applyTheme(saved === "dark");
+  } else {
+    applyTheme(window.matchMedia("(prefers-color-scheme: dark)").matches);
   }
 
-  button.addEventListener(
-    "click",
-    () => {
-
-      document.body.classList.toggle(
-        "dark"
-      );
-
-      const dark =
-        document.body.classList.contains(
-          "dark"
-        );
-
-      button.textContent =
-        dark
-          ? "☀"
-          : "☾";
-
-      localStorage.setItem(
-        "bakhirafoot-theme",
-        dark
-          ? "dark"
-          : "light"
-      );
-
-    }
-  );
+  button.addEventListener("click", () => {
+    const dark = !document.body.classList.contains("dark");
+    applyTheme(dark);
+    localStorage.setItem("bakhirafoot-theme", dark ? "dark" : "light");
+  });
 }
 
 /* =========================================================
