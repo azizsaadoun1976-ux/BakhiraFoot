@@ -2853,16 +2853,24 @@
       }
 
       const index =
-        Number(
-          card.dataset.matchIndex
-        );
+        Number(card.dataset.matchIndex);
 
-      if (
-        !Number.isInteger(
-          index
-        ) ||
-        index < 0
-      ) {
+      if (!Number.isInteger(index) || index < 0) {
+        const cardIdentifier = String(
+          card.dataset.fixtureId ||
+          card.dataset.matchSlug ||
+          card.dataset.slug ||
+          card.dataset.fixture ||
+          ""
+        ).trim();
+
+        if (!cardIdentifier || typeof window.bfOpenMatchDetails !== "function") {
+          return;
+        }
+
+        event.preventDefault();
+        event.stopImmediatePropagation();
+        window.bfOpenMatchDetails(cardIdentifier);
         return;
       }
 
