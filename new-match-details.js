@@ -148,11 +148,13 @@
       return null;
     }
 
+    // Provider detail endpoints require the provider's event ID first.
+    // Human-readable slugs can be stale or unrelated to the upstream ID.
     let value =
       String(
         first(
-          slug,
           id,
+          slug,
           ""
         ) || ""
       ).trim();
@@ -2863,37 +2865,33 @@
       }
 
       const sources =
-        getExternalSources(
-          match
-        );
+        getExternalSources(match);
 
       /*
-       * أهم سطر:
-       *
-       * الماتشات القديمة
-       * ما نتدخلوش فيها نهائياً.
+       * One details entry point for every fixture.
+       * External providers use their upstream event IDs;
+       * legacy SportScore fixtures keep their own slug/ID.
        */
+      const external = sources[0] || null;
+      const identifier = external
+        ? external.value
+        : String(
+            match?.fixture?.slug ||
+            match?.slug ||
+            match?.fixture?.id ||
+            match?.id ||
+            card?.dataset?.fixtureId ||
+            ""
+          ).trim();
 
-      if (
-        !sources.length
-      ) {
-
+      if (!identifier || typeof window.bfOpenMatchDetails !== "function") {
         return;
-
       }
 
-      /*
-       * غير هنا
-       * كنوقفو onclick القديم.
-       */
-
       event.preventDefault();
-
       event.stopImmediatePropagation();
 
-      await openNewMatch(
-        index
-      );
+      window.bfOpenMatchDetails(identifier);
 
     },
 
