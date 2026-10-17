@@ -740,14 +740,9 @@
       return "🟥";
     }
 
-    if (
-      type.includes(
-        "sub"
-      )
-    ) {
-      return "🔄";
-    }
-
+    if (type.includes("sub")) return "🔄";
+    if (type.includes("injur") || type.includes("hurt")) return "🤕";
+    if (type.includes("assist")) return "🅰️";
     return "•";
   }
 
@@ -1248,6 +1243,19 @@
         font-size:9px;
         font-weight:950;
       }
+      .bf-new-safe-shirt{position:absolute;right:-2px;top:24px;min-width:19px;height:19px;padding:0 4px;display:flex;align-items:center;justify-content:center;border-radius:999px;background:#fff;color:#111827;border:1px solid rgba(0,0,0,.18);font-size:9px;font-weight:950;box-shadow:0 2px 5px rgba(0,0,0,.25)}
+      .bf-new-safe-player-role{margin-top:2px;padding:2px 4px;border-radius:4px;background:rgba(0,0,0,.72);color:#fff;font-size:7px;font-weight:800}
+      .bf-new-safe-stat-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:9px}
+      .bf-new-safe-stat{padding:11px;border-radius:10px;background:rgba(127,127,127,.07);min-width:0}
+      .bf-new-safe-stat-label{font-size:10px;opacity:.72;margin-bottom:6px}
+      .bf-new-safe-stat-values{display:grid;grid-template-columns:1fr 1fr;gap:8px;font-size:13px;font-weight:950}
+      .bf-new-safe-stat-values span:last-child{text-align:right}
+      .bf-new-safe-mvp{display:flex;align-items:center;gap:12px;padding:12px;border-radius:12px;background:rgba(250,204,21,.12);margin-bottom:14px}
+      .bf-new-safe-mvp img{width:48px;height:48px;border-radius:50%;object-fit:cover}
+      .bf-new-safe-mvp-name{font-size:13px;font-weight:950}
+      .bf-new-safe-mvp-note{font-size:10px;opacity:.7;margin-top:3px}
+      .bf-new-safe-player-events{display:flex;gap:3px;flex-wrap:wrap;margin-top:3px;font-size:10px}
+      @media(max-width:600px){.bf-new-safe-stat-grid{grid-template-columns:repeat(2,minmax(0,1fr))}}
 
       .bf-new-safe-event{
         display:grid;
@@ -1502,10 +1510,8 @@
         );
 
       if (
-        p.includes("goal") ||
-        p.includes("keeper") ||
-        p === "gk" ||
-        p === "g"
+        p.includes("goal") || p.includes("keeper") ||
+        ["gk","g","goalkeeper"].includes(p)
       ) {
 
         groups.gk.push(
@@ -1513,11 +1519,8 @@
         );
 
       } else if (
-        p.includes("def") ||
-        p.includes("back") ||
-        p.includes("cb") ||
-        p.includes("lb") ||
-        p.includes("rb")
+        ["d","df","def","defender","cb","lcb","rcb","lb","rb","lwb","rwb"].includes(p) ||
+        p.includes("def") || p.includes("back") || p.includes("centre back") || p.includes("center back")
       ) {
 
         groups.def.push(
@@ -1525,11 +1528,8 @@
         );
 
       } else if (
-        p.includes("mid") ||
-        p.includes("mf") ||
-        p.includes("cm") ||
-        p.includes("dm") ||
-        p.includes("am")
+        ["m","mf","mid","midfielder","cm","lcm","rcm","dm","cdm","ldm","rdm","am","cam","lam","ram","lm","rm"].includes(p) ||
+        p.includes("mid") || p.includes("wing back")
       ) {
 
         groups.mid.push(
@@ -1537,12 +1537,8 @@
         );
 
       } else if (
-        p.includes("att") ||
-        p.includes("fwd") ||
-        p.includes("fw") ||
-        p.includes("strik") ||
-        p.includes("wing") ||
-        p.includes("forward")
+        ["f","fw","fwd","att","attacker","st","cf","ss","lw","rw","lf","rf"].includes(p) ||
+        p.includes("att") || p.includes("fwd") || p.includes("strik") || p.includes("wing") || p.includes("forward")
       ) {
 
         groups.att.push(
@@ -1884,6 +1880,7 @@
                         `
                     }
 
+                    <span class="bf-new-safe-shirt">${esc(playerNumber(player))}</span>
                     <div
                       class="bf-new-safe-player-name"
                     >
@@ -1893,6 +1890,7 @@
                         )
                       )}
                     </div>
+                    <div class="bf-new-safe-player-role">${esc(playerPosition(player) || "Position inconnue")}</div>
 
                     ${
                       rating !== null
@@ -1934,7 +1932,8 @@
      ========================================================= */
 
   function renderPlayers(
-    lineup
+    lineup,
+    details
   ) {
 
     if (
@@ -2027,12 +2026,9 @@
                 <div
                   class="bf-new-safe-pos"
                 >
-                  ${esc(
-                    playerPosition(
-                      player
-                    )
-                  )}
+                  ${esc(playerPosition(player) || "Position indisponible")}
                 </div>
+                <div class="bf-new-safe-player-events">${esc(playerEventBadges(player, details))}</div>
 
               </div>
 
@@ -2191,9 +2187,49 @@
       .join("");
   }
 
+  function statRows(details) {
+    const raw = first(details?.statistics, details?.stats, details?.matchStatistics, []);
+    if (!Array.isArray(raw) || !raw.length) return [];
+    const homeName = norm(details?.teams?.home?.name), awayName = norm(details?.teams?.away?.name);
+    const hb = raw.find(x => norm(x?.team?.name || x?.team_name || x?.side) === homeName || ["home","host"].includes(norm(x?.side)));
+    const ab = raw.find(x => norm(x?.team?.name || x?.team_name || x?.side) === awayName || ["away","guest"].includes(norm(x?.side)));
+    const hs = arr(hb?.statistics || hb?.stats || hb?.statisticsItems), as = arr(ab?.statistics || ab?.stats || ab?.statisticsItems);
+    const label = x => String(first(x?.type?.name, x?.type, x?.name, x?.label, x?.key, x?.stat?.name, ""));
+    const value = x => first(x?.value, x?.displayValue, x?.stat?.value, x?.total, x?.display, null);
+    const all = [...new Set([...hs.map(label), ...as.map(label)].filter(Boolean))];
+    return all.map(name => { const h=hs.find(x=>norm(label(x))===norm(name)); const a=as.find(x=>norm(label(x))===norm(name)); return {label:name,home:h?value(h):null,away:a?value(a):null}; });
+  }
+
+  function renderStatistics(details) {
+    const rows = statRows(details);
+    const priority = ["ball possession","possession","total shots","shots on target","shots off target","corner kicks","corners","fouls","yellow cards","red cards","offsides","passes","accurate passes","expected goals","xg"];
+    rows.sort((a,b)=>{const rank=x=>{const i=priority.findIndex(p=>norm(x).includes(p));return i<0?999:i;};return rank(a.label)-rank(b.label);});
+    if (!rows.length) return '<div class="bf-new-safe-empty">Statistiques détaillées indisponibles pour cette rencontre.</div>';
+    return '<div class="bf-new-safe-stat-grid">' + rows.map(row=>'<div class="bf-new-safe-stat"><div class="bf-new-safe-stat-label">' + esc(row.label) + '</div><div class="bf-new-safe-stat-values"><span>' + esc(row.home ?? "—") + '</span><span>' + esc(row.away ?? "—") + '</span></div></div>').join("") + '</div>';
+  }
+
+  function playerEventBadges(player, details) {
+    const name=norm(playerName(player)); if(!name) return ""; const badges=[];
+    getEvents(details).forEach(event=>{
+      const names=[eventPlayer(event),event?.player?.name,event?.player_name,event?.assist?.name,event?.assist?.player?.name].map(norm); if(!names.includes(name)) return;
+      const type=eventType(event);
+      if(type.includes("goal")||type.includes("score")) badges.push("⚽"); else if(type.includes("yellow")) badges.push("🟨"); else if(type.includes("red")) badges.push("🟥");
+      else if(type.includes("sub")) badges.push("🔄"); else if(type.includes("injur")||type.includes("hurt")) badges.push("🤕");
+      if(eventAssist(event) && norm(eventAssist(event))===name) badges.push("🅰️");
+    });
+    return [...new Set(badges)].join(" ");
+  }
+
+  function renderMvp(homeLineup, awayLineup) {
+    const best=[...homeLineup.players,...awayLineup.players].map(player=>({player,rating:playerRating(player)})).filter(x=>x.rating!==null&&x.rating>=0&&x.rating<=10).sort((a,b)=>b.rating-a.rating)[0];
+    if(!best) return '<div class="bf-new-safe-empty">Le MVP et les notes officielles ne sont pas fournis par la source pour ce match.</div>';
+    const photo=playerPhoto(best.player);
+    return '<div class="bf-new-safe-mvp">' + (photo ? '<img src="' + esc(photo) + '" alt="' + esc(playerName(best.player)) + '" loading="lazy" referrerpolicy="no-referrer">' : '<span>⭐</span>') + '<div><div class="bf-new-safe-mvp-name">🏆 MVP · ' + esc(playerName(best.player)) + '</div><div class="bf-new-safe-mvp-note">Meilleure note disponibile : ' + esc(Number(best.rating).toFixed(1)) + '/10</div></div></div>';
+  }
+
   /* =========================================================
      RENDER DETAILS
-     ========================================================= */
+     =========================================================
 
   function renderDetails(
     details,
@@ -2510,6 +2546,16 @@
       </div>
 
 
+      <div class="bf-new-safe-section">
+        <div class="bf-new-safe-title">🏆 MVP / Meilleure note</div>
+        ${renderMvp(homeLineup, awayLineup)}
+      </div>
+
+      <div class="bf-new-safe-section">
+        <div class="bf-new-safe-title">📊 Statistiques du match</div>
+        ${renderStatistics(details)}
+      </div>
+
       <div
         class="bf-new-safe-section"
       >
@@ -2535,7 +2581,8 @@
             </b>
 
             ${renderPlayers(
-              homeLineup
+              homeLineup,
+              details
             )}
 
           </div>
@@ -2552,7 +2599,8 @@
             </b>
 
             ${renderPlayers(
-              awayLineup
+              awayLineup,
+              details
             )}
 
           </div>
