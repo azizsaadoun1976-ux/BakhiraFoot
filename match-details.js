@@ -3014,7 +3014,7 @@ function pitchPositions(lineup, side) {
    */
   slots.forEach(slot => {
     let bestPlayer = null;
-    let bestScore = -1;
+    let bestScore = 0;
 
     fieldPlayers.forEach(player => {
       if (used.has(player)) return;
@@ -3155,6 +3155,17 @@ function pitchPositions(lineup, side) {
       ) {
         score = Math.max(score, 950);
       }
+
+      /*
+       * أدوار عامة من المصادر اللي ما كتعطيش
+       * LB/CB/CM/ST بالتحديد.
+       */
+      const isDefSlot = slot.role.some(x => ["LB","RB","LWB","RWB","CB","LCB","RCB"].includes(x));
+      const isMidSlot = slot.role.some(x => ["LM","RM","LCM","RCM","CM","DM","CDM","LDM","RDM","AM","CAM","LAM","RAM"].includes(x));
+      const isAttSlot = slot.role.some(x => ["LW","RW","LF","RF","ST","CF","LST","RST"].includes(x));
+      if (["D","DF","DEF","DEFENDER","BACK"].includes(r) && isDefSlot) score = Math.max(score, 300);
+      if (["M","MF","MID","MIDFIELDER"].includes(r) && isMidSlot) score = Math.max(score, 300);
+      if (["F","FW","FWD","ATT","ATTACKER","FORWARD"].includes(r) && isAttSlot) score = Math.max(score, 300);
 
       /*
        * مهاجم
