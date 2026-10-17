@@ -1490,7 +1490,7 @@
       return [];
     }
 
-    /* Prefer real provider coordinates when they exist for the full XI. */
+    /* Trust provider coordinates only when the coordinate scale is recognizable. */
     const coords = players.map(player => {
       const p = getPlayerObject(player);
       const rawX = first(player?.x, player?.coord_x, player?.coordinate_x, p?.x, p?.coord_x, p?.coordinate_x);
@@ -1498,14 +1498,21 @@
       const x = Number(rawX), y = Number(rawY);
       return { player, x, y, valid: rawX !== null && rawX !== undefined && rawX !== "" && rawY !== null && rawY !== undefined && rawY !== "" && Number.isFinite(x) && Number.isFinite(y) && x >= 0 && y >= 0 && x <= 100 && y <= 100 };
     });
-    if (coords.length >= 10 && coords.filter(item => item.valid).length === coords.length) {
-      const smallGrid = coords.every(item => item.x <= 11 && item.y <= 11);
-      return coords.map(item => {
-        let x = item.x, y = item.y;
-        if (smallGrid) { x = 8 + ((x - 1) / 9) * 84; y = 8 + ((y - 1) / 9) * 84; }
-        if (side === "away") y = 100 - y;
-        return { player: item.player, x: Math.max(6, Math.min(94, x)), y: Math.max(6, Math.min(94, y)) };
-      });
+    if (coords.length >= 10 && coords.every(item => item.valid)) {
+      const xs = coords.map(item => item.x), ys = coords.map(item => item.y);
+      const minX = Math.min(...xs), maxX = Math.max(...xs), minY = Math.min(...ys), maxY = Math.max(...ys);
+      const normalized = minX >= 0 && minY >= 0 && maxX <= 1 && maxY <= 1 && maxX - minX >= 0.2 && maxY - minY >= 0.2;
+      const integerGrid = xs.every(v => Number.isInteger(v) && v >= 1 && v <= 11) && ys.every(v => Number.isInteger(v) && v >= 1 && v <= 11) && maxX - minX >= 3 && maxY - minY >= 3;
+      const percentages = maxX > 11 && maxY > 11 && maxX - minX >= 15 && maxY - minY >= 15;
+      if (normalized || integerGrid || percentages) {
+        return coords.map(item => {
+          let x = item.x, y = item.y;
+          if (normalized) { x = 8 + x * 84; y = 8 + y * 84; }
+          else if (integerGrid) { x = 8 + ((x - 1) / 10) * 84; y = 8 + ((y - 1) / 10) * 84; }
+          if (side === "away") y = 100 - y;
+          return { player: item.player, x: Math.max(6, Math.min(94, x)), y: Math.max(6, Math.min(94, y)) };
+        });
+      }
     }
 
     const groups = {
