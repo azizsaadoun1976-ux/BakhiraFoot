@@ -604,7 +604,7 @@ async function loadTodayMatches() {
       const status = String(match?.status || "").toLowerCase();
       const text = String(match?.status_text || "").toLowerCase();
       if (isLive(status, text)) return 0;
-      if (/finished|complete|ended|full.?time|(^|\\b)ft(\\b|$)|after.?extra/i.test(status + " " + text)) return 2;
+      if (/finished|complete|ended|full.?time|(^|\b)ft(\b|$)|after.?extra/i.test(status + " " + text)) return 2;
       return 1;
     };
 
