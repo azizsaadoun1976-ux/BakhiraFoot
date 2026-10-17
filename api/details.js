@@ -1091,6 +1091,75 @@ async function sofaDetails(
       );
 
 
+    /* ESPN summary: extract real team statistics and player data when available. */
+    const espnPlayerBlocks = arr(body?.boxscore?.players);
+    const espnLineups = [];
+    for (const block of espnPlayerBlocks) {
+      const blockTeam = block?.team || {};
+      const blockTeamId = String(first(blockTeam?.id, block?.teamId, ""));
+      const homeMatch = (blockTeamId && blockTeamId === String(homeTeamRaw?.id)) || norm(blockTeam?.displayName || blockTeam?.name) === norm(homeTeamRaw?.displayName || homeTeamRaw?.name);
+      const awayMatch = (blockTeamId && blockTeamId === String(awayTeamRaw?.id)) || norm(blockTeam?.displayName || blockTeam?.name) === norm(awayTeamRaw?.displayName || awayTeamRaw?.name);
+      const side = homeMatch ? "home" : awayMatch ? "away" : "";
+      if (!side) continue;
+      const playerMap = new Map();
+      const mergeEntry = (entry, statKeys = []) => {
+        const athlete = entry?.athlete || entry?.player || entry || {};
+        const athleteId = String(first(athlete?.id, entry?.athleteId, entry?.id, athlete?.displayName, athlete?.fullName, athlete?.name, ""));
+        if (!athleteId) return;
+        const statValues = arr(entry?.stats || entry?.statistics);
+        const stats = {};
+        statKeys.forEach((key, i) => { if (statValues[i] !== undefined) stats[String(key).toLowerCase()] = statValues[i]; });
+        const existing = playerMap.get(athleteId) || {};
+        const headshot = first(athlete?.headshot?.href, athlete?.headshot?.url, athlete?.headshot, athlete?.image?.href, athlete?.image?.url, athlete?.image, athlete?.photo, "");
+        playerMap.set(athleteId, {
+          ...existing,
+          id: athleteId,
+          name: first(athlete?.displayName, athlete?.fullName, athlete?.full_name, athlete?.name, existing.name, ""),
+          number: first(athlete?.jersey, athlete?.shirtNumber, athlete?.number, existing.number, null),
+          position: first(athlete?.position?.abbreviation, athlete?.position?.displayName, athlete?.position?.name, typeof athlete?.position === "string" ? athlete.position : null, existing.position, ""),
+          photo: first(headshot, existing.photo, ""),
+          rating: first(athlete?.rating, entry?.rating, stats.rating, stats.matchrating, existing.rating, null),
+          stats: { ...(existing.stats || {}), ...stats },
+          starter: first(entry?.starter, athlete?.starter, entry?.isStarter, athlete?.isStarter, entry?.starting, athlete?.starting, existing.starter),
+          substitute: first(entry?.substitute, athlete?.substitute, existing.substitute)
+        });
+      };
+      arr(block?.athletes).forEach(entry => mergeEntry(entry));
+      arr(block?.statistics).forEach(statGroup => {
+        const keys = arr(statGroup?.keys);
+        arr(statGroup?.athletes).forEach(entry => mergeEntry(entry, keys));
+      });
+      const allPlayers = [...playerMap.values()];
+      const hasStarterFlags = allPlayers.some(player => typeof player.starter === "boolean" || typeof player.substitute === "boolean");
+      const starters = hasStarterFlags
+        ? allPlayers.filter(player => player.starter === true || (player.starter !== false && player.substitute !== true)).slice(0, 11)
+        : allPlayers.length <= 11 ? allPlayers.slice(0, 11) : [];
+      const substitutes = hasStarterFlags ? allPlayers.filter(player => !starters.includes(player)) : [];
+      const teamInfo = side === "home" ? home : away;
+      espnLineups.push({
+        team: teamInfo, side,
+        formation: first(block?.formation, block?.tactics?.formation, "—"),
+        startXI: starters, substitutes, players: [...starters, ...substitutes]
+      });
+    }
+
+    const espnTeamStats = arr(body?.boxscore?.teams).map(block => {
+      const blockTeam = block?.team || {};
+      const blockTeamId = String(first(blockTeam?.id, block?.teamId, ""));
+      const homeMatch = (blockTeamId && blockTeamId === String(homeTeamRaw?.id)) || norm(blockTeam?.displayName || blockTeam?.name) === norm(homeTeamRaw?.displayName || homeTeamRaw?.name);
+      const awayMatch = (blockTeamId && blockTeamId === String(awayTeamRaw?.id)) || norm(blockTeam?.displayName || blockTeam?.name) === norm(awayTeamRaw?.displayName || awayTeamRaw?.name);
+      const side = homeMatch ? "home" : awayMatch ? "away" : "";
+      if (!side) return null;
+      return {
+        team: side === "home" ? home : away,
+        side,
+        statistics: arr(block?.statistics).map(stat => ({
+          type: first(stat?.name, stat?.displayName, stat?.label, stat?.abbreviation, "Stat"),
+          value: first(stat?.displayValue, stat?.value, stat?.display, null)
+        }))
+      };
+    }).filter(Boolean);
+
     const league = {
 
       id:
@@ -1251,14 +1320,11 @@ async function sofaDetails(
       incidents:
         events,
 
-      lineups:
-        [],
+      lineups: espnLineups,
 
-      statistics:
-        [],
+      statistics: espnTeamStats,
 
-      players:
-        [],
+      players: espnLineups.flatMap(lineup => lineup.players),
 
       provider:
         "ESPN"
