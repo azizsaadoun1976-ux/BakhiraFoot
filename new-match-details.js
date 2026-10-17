@@ -1509,7 +1509,7 @@
 
       if (
         p.includes("goal") || p.includes("keeper") ||
-        ["gk","g","goalkeeper"].includes(p)
+        ["gk","g","goalkeeper","goalie"].includes(p)
       ) {
 
         groups.gk.push(
@@ -1517,7 +1517,8 @@
         );
 
       } else if (
-        ["d","df","def","defender","cb","lcb","rcb","lb","rb","lwb","rwb"].includes(p) ||
+        ["d","df","def","defender","cb","lcb","rcb","lb","rb","lwb","rwb","d l","d c","d r","df l","df c","df r","d lc","d rc"].includes(p) ||
+        /^d(f)? (l|c|r|lc|rc)$/.test(p) ||
         p.includes("def") || p.includes("back") || p.includes("centre back") || p.includes("center back")
       ) {
 
@@ -1526,7 +1527,8 @@
         );
 
       } else if (
-        ["m","mf","mid","midfielder","cm","lcm","rcm","dm","cdm","ldm","rdm","am","cam","lam","ram","lm","rm"].includes(p) ||
+        ["m","mf","mid","midfielder","cm","lcm","rcm","dm","cdm","ldm","rdm","am","cam","lam","ram","lm","rm","m l","m c","m r","mf l","mf c","mf r"].includes(p) ||
+        /^m(f)? (l|c|r)$/.test(p) ||
         p.includes("mid") || p.includes("wing back")
       ) {
 
@@ -1542,7 +1544,8 @@
         groups.wide.push(player);
 
       } else if (
-        ["f","fw","fwd","att","attacker","st","cf","ss","forward","striker"].includes(p) ||
+        ["f","fw","fwd","att","attacker","st","cf","ss","forward","striker","f l","f c","f r","fw l","fw c","fw r"].includes(p) ||
+        /^f(wd?)? (l|c|r)$/.test(p) ||
         p.includes("att") || p.includes("fwd") || p.includes("strik") || p.includes("forward")
       ) {
 
@@ -1657,11 +1660,11 @@
 
     function lateralRank(player) {
       const p = norm(playerPosition(player)).replace(/[^a-z0-9]+/g, "");
-      if (/(^|)(leftback|leftwingback|lb|lwb|leftmidfielder|lm|leftwing|lw|lf|lcm|ldm|lst)$/.test(p)) return 0;
-      if (/(rightback|rightwingback|rb|rwb|rightmidfielder|rm|rightwing|rw|rf|rcm|rdm|rst)$/.test(p)) return 4;
+      if (/(leftback|leftwingback|lb|lwb|leftmidfielder|lm|leftwing|lw|lf|lcm|ldm|lst|^dl$|^dfl$|^ml$|^mfl$|^fl$|^fwl$)$/.test(p)) return 0;
+      if (/(rightback|rightwingback|rb|rwb|rightmidfielder|rm|rightwing|rw|rf|rcm|rdm|rst|^dr$|^dfr$|^mr$|^mfr$|^fr$|^fwr$)$/.test(p)) return 4;
       if (/(leftcentreback|leftcenterback|lcb)$/.test(p)) return 1;
       if (/(rightcentreback|rightcenterback|rcb)$/.test(p)) return 3;
-      if (/(centreback|centerback|cb|centralmidfielder|cm|dm|cdm|st|cf)$/.test(p)) return 2;
+      if (/(centreback|centerback|cb|centralmidfielder|cm|dm|cdm|st|cf|^dc$|^dfc$|^mc$|^mfc$|^fc$|^fwc$)$/.test(p)) return 2;
       return 2;
     }
     rows.forEach(row => row.sort((a,b) => lateralRank(a) - lateralRank(b)));
