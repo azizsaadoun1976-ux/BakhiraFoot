@@ -666,43 +666,30 @@
      EVENTS
      ========================================================= */
 
-  function getEvents(
-    details
-  ) {
-    return arr(
-      first(
-        details?.events,
-        details?.incidents,
-        details?.plays,
-        []
-      )
-    );
+  function getEvents(details) {
+    const keys = ["events", "incidents", "plays", "injuries", "cards", "goals"];
+    const combined = [];
+    const seen = new Set();
+    for (const key of keys) {
+      const list = Array.isArray(details?.[key]) ? details[key] : [];
+      for (const event of list) {
+        const identity = String(first(event?.id, event?.event_id, event?.incidentId,
+          [event?.minute, event?.elapsed, event?.time?.elapsed, event?.type?.name || event?.type,
+           event?.player?.name || event?.player_name || event?.athlete?.displayName || event?.name].join("|")));
+        if (!seen.has(identity)) { seen.add(identity); combined.push(event); }
+      }
+    }
+    return combined;
   }
 
-  function eventType(
-    event
-  ) {
-    return norm(
-      first(
-
-        typeof event?.type ===
-          "object"
-
-          ? event?.type?.name
-
-          : event?.type,
-
-        event?.incidentType,
-
-        event?.kind,
-
-        event?.detail,
-
-        event?.text,
-
-        ""
-      )
-    );
+  function eventType(event) {
+    const values = [
+      typeof event?.type === "object" ? event?.type?.name : event?.type,
+      typeof event?.type === "object" ? event?.type?.text : "",
+      event?.incidentType, event?.kind, event?.detail, event?.text,
+      event?.description, event?.commentary, event?.injury?.type, event?.card?.type
+    ];
+    return norm(values.filter(v => v !== null && v !== undefined && v !== "").join(" "));
   }
 
   function eventIcon(
@@ -776,26 +763,19 @@
     );
   }
 
-  function eventAssist(
-    event
-  ) {
-    return String(
-      first(
-        event?.assist
-          ?.name,
-
-        event?.assist
-          ?.player
-          ?.name,
-
-        event
-          ?.participants?.[1]
-          ?.athlete
-          ?.displayName,
-
-        ""
-      )
-    );
+  function eventAssist(event) {
+    return String(first(
+      typeof event?.assist === "string" ? event.assist : null,
+      event?.assist?.name,
+      event?.assist?.player?.name,
+      event?.assistPlayer?.name,
+      event?.assist_player?.name,
+      event?.assist_name,
+      event?.assistName,
+      event?.assists?.[0]?.name,
+      event?.participants?.[1]?.athlete?.displayName,
+      ""
+    ));
   }
 
   function eventMinute(
@@ -2229,15 +2209,35 @@
 
   function statRows(details) {
     const raw = first(details?.statistics, details?.stats, details?.matchStatistics, []);
-    if (!Array.isArray(raw) || !raw.length) return [];
+    const label = item => String(first(item?.type?.name, typeof item?.type === "string" ? item.type : null,
+      item?.name, item?.label, item?.key, item?.stat?.name, ""));
+    const value = item => first(item?.value, item?.displayValue, item?.stat?.value, item?.total, item?.display, null);
+    const blocks = Array.isArray(raw) ? raw : (raw && typeof raw === "object" ? [
+      { side: "home", statistics: first(raw.home, raw.host, raw.homeTeam, raw.homeStatistics, []) },
+      { side: "away", statistics: first(raw.away, raw.guest, raw.awayTeam, raw.awayStatistics, []) }
+    ] : []);
+    if (!blocks.length) return [];
     const homeName = norm(details?.teams?.home?.name), awayName = norm(details?.teams?.away?.name);
-    const hb = raw.find(x => norm(x?.team?.name || x?.team_name || x?.side) === homeName || ["home","host"].includes(norm(x?.side)));
-    const ab = raw.find(x => norm(x?.team?.name || x?.team_name || x?.side) === awayName || ["away","guest"].includes(norm(x?.side)));
-    const hs = arr(hb?.statistics || hb?.stats || hb?.statisticsItems), as = arr(ab?.statistics || ab?.stats || ab?.statisticsItems);
-    const label = x => String(first(x?.type?.name, x?.type, x?.name, x?.label, x?.key, x?.stat?.name, ""));
-    const value = x => first(x?.value, x?.displayValue, x?.stat?.value, x?.total, x?.display, null);
-    const all = [...new Set([...hs.map(label), ...as.map(label)].filter(Boolean))];
-    return all.map(name => { const h=hs.find(x=>norm(label(x))===norm(name)); const a=as.find(x=>norm(label(x))===norm(name)); return {label:name,home:h?value(h):null,away:a?value(a):null}; });
+    const homeBlock = blocks.find(x => norm(x?.team?.name || x?.team_name || x?.side) === homeName || ["home","host"].includes(norm(x?.side)));
+    const awayBlock = blocks.find(x => norm(x?.team?.name || x?.team_name || x?.side) === awayName || ["away","guest"].includes(norm(x?.side)));
+    const homeStats = arr(homeBlock?.statistics || homeBlock?.stats || homeBlock?.statisticsItems || homeBlock?.data);
+    const awayStats = arr(awayBlock?.statistics || awayBlock?.stats || awayBlock?.statisticsItems || awayBlock?.data);
+    const allLabels = [...new Set([...homeStats.map(label), ...awayStats.map(label)].filter(Boolean))];
+    if (allLabels.length) return allLabels.map(name => {
+      const h = homeStats.find(item => norm(label(item)) === norm(name));
+      const a = awayStats.find(item => norm(label(item)) === norm(name));
+      return { label: name, home: h ? value(h) : null, away: a ? value(a) : null };
+    });
+    if (blocks.length >= 2) {
+      const hs = arr(blocks[0]?.statistics || blocks[0]?.stats || blocks[0]?.statisticsItems);
+      const as = arr(blocks[1]?.statistics || blocks[1]?.stats || blocks[1]?.statisticsItems);
+      const names = [...new Set([...hs.map(label), ...as.map(label)].filter(Boolean))];
+      return names.map(name => {
+        const h=hs.find(item=>norm(label(item))===norm(name)), a=as.find(item=>norm(label(item))===norm(name));
+        return {label:name,home:h?value(h):null,away:a?value(a):null};
+      });
+    }
+    return [];
   }
 
   function renderStatistics(details) {
