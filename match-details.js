@@ -2272,6 +2272,30 @@ function buildLineup(
       Array.isArray(root)
     ) {
 
+      /*
+       * بعض المصادر كترجع lineups كمصفوفة ديال الفريقين:
+       * [{ team: {...}, formation, startXI, substitutes }, ...]
+       * ما خاصناش نتعاملو مع كل lineup بحال إلا هو لاعب.
+       */
+      const teamLineupBlock = root.find(item =>
+        teamMatches(item, team) &&
+        (
+          Array.isArray(item?.startXI) ||
+          Array.isArray(item?.startingXI) ||
+          Array.isArray(item?.starting_xi) ||
+          Array.isArray(item?.starters) ||
+          Array.isArray(item?.players) ||
+          Array.isArray(item?.substitutes) ||
+          Array.isArray(item?.subs) ||
+          Array.isArray(item?.bench)
+        )
+      );
+
+      if (teamLineupBlock) {
+        extractFromBlock(teamLineupBlock);
+        continue;
+      }
+
       const teamPlayers =
         root.filter(
           player =>
@@ -3770,6 +3794,47 @@ function normalizeEvent(event, index) {
 
   return map;
 }
+
+  /* =========================================================
+     PLAYER KEY
+     Normalize player objects and event names to the same key.
+     This helper is used by pitch badges and player rows.
+  ========================================================= */
+  function playerKey(player) {
+    if (player === null || player === undefined) return "";
+
+    let value = player;
+
+    if (typeof value === "object") {
+      const nested = value.player && typeof value.player === "object"
+        ? value.player
+        : {};
+      value = first(
+        value.name,
+        value.player_name,
+        value.playerName,
+        value.short_name,
+        value.shortName,
+        value.full_name,
+        value.fullName,
+        nested.name,
+        nested.player_name,
+        nested.playerName,
+        nested.short_name,
+        nested.full_name,
+        value.id,
+        value.player_id,
+        value.playerId,
+        nested.id,
+        nested.player_id,
+        ""
+      );
+    }
+
+    return norm(value)
+      .replace(/[^a-z0-9]+/g, " ")
+      .trim();
+  }
 
   /* =========================================================
      PITCH EVENT BADGES
