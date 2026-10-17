@@ -1376,24 +1376,57 @@ function getPlayerPosition(player) {
   let raw =
     first(
       /* direct */
+      /* Prefer precise tactical-position fields before broad role labels. */
+      player?.position_abbreviation,
+      player?.positionAbbreviation,
+      player?.position_code,
+      player?.positionCode,
+      player?.position_name,
+      player?.positionName,
       player?.position,
       player?.pos,
       player?.role,
-      player?.positionName,
-      player?.position_name,
+      player?.formation_position,
+      player?.formationPosition,
+      player?.lineup_position,
+      player?.lineupPosition,
 
-      /* nested */
+      /* nested player/provider variants */
+      player?.player?.position_abbreviation,
+      player?.player?.positionAbbreviation,
+      player?.player?.position_code,
+      player?.player?.positionCode,
+      player?.player?.position_name,
+      player?.player?.positionName,
       player?.player?.position,
       player?.player?.pos,
       player?.player?.role,
+      player?.player?.formation_position,
+      player?.player?.formationPosition,
+      player?.player?.lineup_position,
+      player?.player?.lineupPosition,
 
-      /* statistics */
+      /* stats sometimes carry the only exact role */
+      player?.statistics?.position_abbreviation,
+      player?.statistics?.positionAbbreviation,
+      player?.statistics?.position_code,
+      player?.statistics?.positionCode,
       player?.statistics?.position,
       player?.statistics?.positionName,
 
+      p?.position_abbreviation,
+      p?.positionAbbreviation,
+      p?.position_code,
+      p?.positionCode,
+      p?.position_name,
+      p?.positionName,
       p?.position,
       p?.pos,
       p?.role,
+      p?.formation_position,
+      p?.formationPosition,
+      p?.lineup_position,
+      p?.lineupPosition,
 
       ""
     );
