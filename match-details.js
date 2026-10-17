@@ -1429,8 +1429,14 @@ function getPlayerPosition(player) {
 
     lwb: "LWB",
     "left wing back": "LWB",
+    "d l": "LB",
+    "df l": "LB",
 
     lcb: "LCB",
+    "d lc": "LCB",
+    "df lc": "LCB",
+    "d c": "CB",
+    "df c": "CB",
     "left centre back": "LCB",
     "left center back": "LCB",
 
@@ -1441,6 +1447,8 @@ function getPlayerPosition(player) {
 
     rcb: "RCB",
     "right centre back": "RCB",
+    "d rc": "RCB",
+    "df rc": "RCB",
     "right center back": "RCB",
 
     rb: "RB",
@@ -1450,8 +1458,20 @@ function getPlayerPosition(player) {
 
     rwb: "RWB",
     "right wing back": "RWB",
+    "d r": "RB",
+    "df r": "RB",
 
     ldm: "LDM",
+    "m l": "LM",
+    "mf l": "LM",
+    "m lc": "LCM",
+    "mf lc": "LCM",
+    "m c": "CM",
+    "mf c": "CM",
+    "m rc": "RCM",
+    "mf rc": "RCM",
+    "m r": "RM",
+    "mf r": "RM",
     dm: "DM",
     cdm: "DM",
     rdm: "RDM",
@@ -1479,6 +1499,12 @@ function getPlayerPosition(player) {
     "right winger": "RW",
 
     st: "ST",
+    "f c": "ST",
+    "fw c": "ST",
+    "f l": "LF",
+    "fw l": "LF",
+    "f r": "RF",
+    "fw r": "RF",
     cf: "CF",
     ss: "SS",
     striker: "ST",
