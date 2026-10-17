@@ -5123,6 +5123,8 @@ function manOfTheMatch(
     }
 
     const requestId = ++activeDetailsRequest;
+    const detailsController = new AbortController();
+    const detailsTimeout = setTimeout(() => detailsController.abort(), 18000);
 
     const modal =
       createModal();
@@ -5189,6 +5191,7 @@ const response =
     detailsUrl,
     {
       cache: "no-store",
+      signal: detailsController.signal,
       headers: {
         Accept:
           "application/json"
@@ -5200,6 +5203,7 @@ const response =
       const rawText =
         await response.text();
 
+      clearTimeout(detailsTimeout);
       if (requestId !== activeDetailsRequest) return;
 
       if (!response.ok) {
@@ -5571,12 +5575,17 @@ const response =
     }
     catch (error) {
 
+      clearTimeout(detailsTimeout);
       if (requestId !== activeDetailsRequest) return;
 
       console.error(
         "BAKHIRAFOOT DETAILS ERROR:",
         error
       );
+
+      const errorMessage = error?.name === "AbortError"
+        ? "Le serveur met trop de temps à répondre. Réessayez dans quelques instants."
+        : (error?.message || "Erreur lors du chargement.");
 
       content.innerHTML = `
         <div class="bfmd-section">
@@ -5592,8 +5601,7 @@ const response =
             "
           >
             ${esc(
-              error?.message ||
-              "Erreur lors du chargement."
+              errorMessage
             )}
           </div>
 
