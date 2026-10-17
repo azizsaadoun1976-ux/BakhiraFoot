@@ -4087,28 +4087,14 @@ function normalizeEvent(event, index) {
 
 ${
   rating !== null &&
-  rating !== undefined
+  rating !== undefined && rating !== ""
     ? `
       <div class="bfmd-rating">
-        ⭐ ${esc(
-          Number(rating).toFixed(1)
-        )}
+        ⭐ ${esc(Number(rating).toFixed(1))}
       </div>
     `
     : ""
 }
-  ⭐ ${
-    rating !== null &&
-    rating !== undefined &&
-    rating !== ""
-      ? esc(
-          Number(
-            rating
-          ).toFixed(1)
-        )
-      : "—"
-  }
-</div>
 
               </div>
             `;
