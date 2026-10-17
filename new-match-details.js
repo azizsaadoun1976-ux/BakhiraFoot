@@ -1490,6 +1490,23 @@
       return [];
     }
 
+    /* Prefer real provider coordinates when they exist for the full XI. */
+    const coords = players.map(player => {
+      const p = getPlayerObject(player);
+      const x = Number(first(player?.x, player?.coord_x, player?.coordinate_x, p?.x, p?.coord_x, p?.coordinate_x));
+      const y = Number(first(player?.y, player?.coord_y, player?.coordinate_y, p?.y, p?.coord_y, p?.coordinate_y));
+      return { player, x, y, valid: Number.isFinite(x) && Number.isFinite(y) && x >= 0 && y >= 0 && x <= 100 && y <= 100 };
+    });
+    if (coords.length >= 10 && coords.filter(item => item.valid).length === coords.length) {
+      const smallGrid = coords.every(item => item.x <= 11 && item.y <= 11);
+      return coords.map(item => {
+        let x = item.x, y = item.y;
+        if (smallGrid) { x = 8 + ((x - 1) / 9) * 84; y = 8 + ((y - 1) / 9) * 84; }
+        if (side === "away") y = 100 - y;
+        return { player: item.player, x: Math.max(6, Math.min(94, x)), y: Math.max(6, Math.min(94, y)) };
+      });
+    }
+
     const groups = {
       gk: [],
       def: [],
