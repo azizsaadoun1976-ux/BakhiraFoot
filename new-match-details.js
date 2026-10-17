@@ -2844,7 +2844,8 @@
           [
             ".match-card",
             ".bf-score-pro-card",
-            ".bf-score-professional-match"
+            ".bf-score-professional-match",
+            '[data-search-type="match"]'
           ].join(",")
         );
 
