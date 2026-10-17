@@ -406,9 +406,22 @@ function getSeasonOptions(competition) {
     match.league ||
     "Football";
 
+  const fixtureIdentifier =
+    match?.slug ||
+    match?.fixture?.slug ||
+    match?.match_slug ||
+    match?.fixture_id ||
+    match?.match_id ||
+    match?.id ||
+    "";
+
   return `
     <article
       class="match-card bf-pro-match-card"
+      data-fixture-id="${escapeHTML(fixtureIdentifier)}"
+      role="button"
+      tabindex="0"
+      aria-label="Afficher les détails du match"
     >
 
       <!-- COMPETITION -->
