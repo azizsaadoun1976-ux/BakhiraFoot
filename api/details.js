@@ -85,6 +85,15 @@ module.exports = async (req, res) => {
       : null;
   }
 
+  function norm(value) {
+    return String(value ?? "")
+      .normalize("NFD")
+      .replace(/[\\u0300-\\u036f]/g, "")
+      .toLowerCase()
+      .replace(/[^a-z0-9]+/g, " ")
+      .trim();
+  }
+
 
  async function getJSON(url) {
 
