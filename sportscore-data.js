@@ -599,8 +599,22 @@ async function loadTodayMatches() {
     }
 
 
+    // Keep live matches first, then scheduled fixtures, then completed matches.
+    const priority = match => {
+      const status = String(match?.status || "").toLowerCase();
+      const text = String(match?.status_text || "").toLowerCase();
+      if (isLive(status, text)) return 0;
+      if (/finished|complete|ended|full.?time|(^|\\b)ft(\\b|$)|after.?extra/i.test(status + " " + text)) return 2;
+      return 1;
+    };
+
+    const orderedMatches = matches
+      .map((match, index) => ({ match, index, priority: priority(match) }))
+      .sort((a, b) => a.priority - b.priority || a.index - b.index)
+      .map(item => item.match);
+
     homeContainer.innerHTML =
-      matches
+      orderedMatches
         .slice(0, 12)
         .map(renderMatch)
         .join("");
