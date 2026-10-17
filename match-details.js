@@ -2854,9 +2854,10 @@ function pitchPositions(lineup, side) {
 
   /* Use actual coordinates from SportScore/provider before any formation fallback. */
   const coords = players.map(player => {
-    const x = Number(first(player?.x, player?.coord_x, player?.coordinate_x, player?.player?.x, player?.player?.coord_x, player?.player?.coordinate_x));
-    const y = Number(first(player?.y, player?.coord_y, player?.coordinate_y, player?.player?.y, player?.player?.coord_y, player?.player?.coordinate_y));
-    return { player, x, y, valid: Number.isFinite(x) && Number.isFinite(y) && x >= 0 && y >= 0 && x <= 100 && y <= 100 };
+    const rawX = first(player?.x, player?.coord_x, player?.coordinate_x, player?.player?.x, player?.player?.coord_x, player?.player?.coordinate_x);
+    const rawY = first(player?.y, player?.coord_y, player?.coordinate_y, player?.player?.y, player?.player?.coord_y, player?.player?.coordinate_y);
+    const x = Number(rawX), y = Number(rawY);
+    return { player, x, y, valid: rawX !== null && rawX !== undefined && rawX !== "" && rawY !== null && rawY !== undefined && rawY !== "" && Number.isFinite(x) && Number.isFinite(y) && x >= 0 && y >= 0 && x <= 100 && y <= 100 };
   });
   if (coords.length >= 10 && coords.every(item => item.valid)) {
     const smallGrid = coords.every(item => item.x <= 11 && item.y <= 11);
