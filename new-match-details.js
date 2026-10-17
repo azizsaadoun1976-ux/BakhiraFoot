@@ -1493,9 +1493,10 @@
     /* Prefer real provider coordinates when they exist for the full XI. */
     const coords = players.map(player => {
       const p = getPlayerObject(player);
-      const x = Number(first(player?.x, player?.coord_x, player?.coordinate_x, p?.x, p?.coord_x, p?.coordinate_x));
-      const y = Number(first(player?.y, player?.coord_y, player?.coordinate_y, p?.y, p?.coord_y, p?.coordinate_y));
-      return { player, x, y, valid: Number.isFinite(x) && Number.isFinite(y) && x >= 0 && y >= 0 && x <= 100 && y <= 100 };
+      const rawX = first(player?.x, player?.coord_x, player?.coordinate_x, p?.x, p?.coord_x, p?.coordinate_x);
+      const rawY = first(player?.y, player?.coord_y, player?.coordinate_y, p?.y, p?.coord_y, p?.coordinate_y);
+      const x = Number(rawX), y = Number(rawY);
+      return { player, x, y, valid: rawX !== null && rawX !== undefined && rawX !== "" && rawY !== null && rawY !== undefined && rawY !== "" && Number.isFinite(x) && Number.isFinite(y) && x >= 0 && y >= 0 && x <= 100 && y <= 100 };
     });
     if (coords.length >= 10 && coords.filter(item => item.valid).length === coords.length) {
       const smallGrid = coords.every(item => item.x <= 11 && item.y <= 11);
