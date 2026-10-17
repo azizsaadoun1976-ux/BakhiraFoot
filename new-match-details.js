@@ -624,29 +624,24 @@
 
     }
 
+    const firstArray = values => values.find(value => Array.isArray(value) && value.length) || [];
+    const explicitStarters = firstArray([block?.startXI, block?.startingXI, block?.starting_xi, block?.xi, block?.starters]);
+    const allPlayers = firstArray([block?.players, block?.lineup, block?.roster, explicitStarters, block?.substitutes]);
+    const substitutes = firstArray([block?.substitutes, block?.subs, block?.bench]);
+    const markedStarters = allPlayers.filter(player => player?.substitute !== true && player?.starter !== false);
+    const hasSubstituteMarkers = allPlayers.some(player => player?.substitute === true || player?.starter === false);
+    const starters = explicitStarters.length
+      ? explicitStarters.slice(0, 11)
+      : hasSubstituteMarkers
+        ? markedStarters.slice(0, 11)
+        : allPlayers.length <= 11 ? allPlayers.slice(0, 11) : [];
+
     return {
-
-      formation:
-        String(
-          first(
-            block?.formation,
-            block?.tactics
-              ?.formation,
-            "—"
-          )
-        ),
-
-      players:
-        arr(
-          first(
-            block?.players,
-            block?.startXI,
-            block?.startingXI,
-            block?.xi,
-            []
-          )
-        )
-
+      formation: String(first(block?.formation, block?.tactics?.formation, "—")),
+      players: allPlayers.length ? allPlayers : [...starters, ...substitutes],
+      starters,
+      substitutes,
+      pitchAvailable: starters.length > 0
     };
   }
 
@@ -1450,17 +1445,11 @@
     lineup,
     side
   ) {
-    const players =
-      lineup.players.slice(
-        0,
-        11
-      );
+    const players = (lineup.starters?.length
+      ? lineup.starters
+      : lineup.pitchAvailable ? lineup.players.slice(0, 11) : []).slice(0, 11);
 
-    if (
-      !players.length
-    ) {
-      return [];
-    }
+    if (!players.length) return [];
 
     /* Trust provider coordinates only when the coordinate scale is recognizable. */
     const coords = players.map(player => {
@@ -1755,44 +1744,16 @@
     side
   ) {
 
-    if (
-      !lineup.players.length
-    ) {
-
+    if (!getPitchPlayers(lineup, side).length) {
       return `
-
-        <div
-          class="bf-new-safe-panel"
-        >
-
-          <div
-            class="bf-new-safe-pitch-head"
-          >
-
-            <span>
-              ${esc(
-                team.name
-              )}
-            </span>
-
-            <span>
-              ${esc(
-                lineup.formation
-              )}
-            </span>
-
+        <div class="bf-new-safe-panel">
+          <div class="bf-new-safe-pitch-head">
+            <span>${esc(team.name)}</span>
+            <span>${esc(lineup.formation)}</span>
           </div>
-
-          <div
-            class="bf-new-safe-empty"
-          >
-            Composition indisponible
-          </div>
-
+          <div class="bf-new-safe-empty">Composition officielle indisponible. Aucun joueur n’est placé au hasard sur le terrain.</div>
         </div>
-
       `;
-
     }
 
     return `
