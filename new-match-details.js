@@ -464,31 +464,19 @@
     );
   }
 
-  function playerPhoto(
-    player
-  ) {
-    const p =
-      getPlayerObject(
-        player
-      );
-
-    return String(
-      first(
-        player?.photo,
-        player?.image,
-        player?.picture,
-        player?.headshot,
-        player?.avatar,
-
-        p?.photo,
-        p?.image,
-        p?.picture,
-        p?.headshot,
-        p?.avatar,
-
-        ""
-      )
+  function playerPhoto(player) {
+    const p = getPlayerObject(player);
+    const value = first(
+      player?.photo, player?.image, player?.picture, player?.headshot, player?.avatar,
+      p?.photo, p?.image, p?.picture, p?.headshot, p?.avatar,
+      player?.profileImage, player?.profile_image,
+      p?.profileImage, p?.profile_image
     );
+    if (typeof value === "string") return value;
+    if (value && typeof value === "object") {
+      return String(first(value.href, value.url, value.src, value.imageUrl, value.image_url, value.path, ""));
+    }
+    return "";
   }
 
   function playerRating(
