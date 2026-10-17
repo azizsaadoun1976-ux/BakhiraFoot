@@ -25,6 +25,7 @@
    */
 
   const DETAILS_API = "/api?fixture=";
+  let activeDetailsRequest = 0;
 
   /* =========================================================
      BASIC HELPERS
@@ -5121,6 +5122,8 @@ function manOfTheMatch(
       return;
     }
 
+    const requestId = ++activeDetailsRequest;
+
     const modal =
       createModal();
 
@@ -5196,6 +5199,8 @@ const response =
       
       const rawText =
         await response.text();
+
+      if (requestId !== activeDetailsRequest) return;
 
       if (!response.ok) {
         throw new Error(
@@ -5565,6 +5570,8 @@ const response =
 
     }
     catch (error) {
+
+      if (requestId !== activeDetailsRequest) return;
 
       console.error(
         "BAKHIRAFOOT DETAILS ERROR:",
