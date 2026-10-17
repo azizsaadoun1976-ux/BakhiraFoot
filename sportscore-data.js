@@ -575,17 +575,81 @@ async function loadTodayMatches() {
     const date =
       todayUTC();
 
+    // Use the same server-side API as the Scores page.
+    // This avoids browser-side SportScore failures/CORS blocking.
     const data =
       await fetchJSON(
-        `${API}/v1/fixtures/?sport=football&date=${date}&limit=200&src=${SRC}`
+        `/api?date=${encodeURIComponent(date)}`
       );
 
-    const matches =
-      Array.isArray(
-        data?.matches
-      )
-        ? data.matches
-        : [];
+    const sourceMatches =
+      Array.isArray(data?.data)
+        ? data.data
+        : Array.isArray(data?.matches)
+          ? data.matches
+          : [];
+
+    const matches = sourceMatches.map(match => ({
+      ...match,
+      id:
+        match?.id ||
+        match?.fixture?.id ||
+        match?.fixture?.slug ||
+        "",
+      slug:
+        match?.slug ||
+        match?.fixture?.slug ||
+        match?.fixture?.id ||
+        "",
+      home:
+        match?.home ||
+        match?.home_team?.name ||
+        match?.teams?.home?.name ||
+        "Équipe locale",
+      away:
+        match?.away ||
+        match?.away_team?.name ||
+        match?.teams?.away?.name ||
+        "Équipe visiteuse",
+      home_logo:
+        match?.home_logo ||
+        match?.home_team?.logo ||
+        match?.teams?.home?.logo ||
+        "",
+      away_logo:
+        match?.away_logo ||
+        match?.away_team?.logo ||
+        match?.teams?.away?.logo ||
+        "",
+      home_score:
+        match?.home_score ??
+        match?.goals?.home ??
+        match?.score?.home ??
+        null,
+      away_score:
+        match?.away_score ??
+        match?.goals?.away ??
+        match?.score?.away ??
+        null,
+      status:
+        match?.status ||
+        match?.fixture?.status?.short ||
+        "NS",
+      status_text:
+        match?.status_text ||
+        match?.fixture?.status?.long ||
+        "",
+      time:
+        match?.time ||
+        match?.fixture?.date ||
+        "",
+      competition:
+        typeof match?.competition === "string"
+          ? match.competition
+          : match?.competition?.name ||
+            match?.league?.name ||
+            "Football"
+    }));
 
     if (!matches.length) {
 
