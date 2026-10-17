@@ -438,11 +438,33 @@
 
     const value =
       first(
+        /* Exact role/code fields first; generic role labels last. */
+        player?.position_abbreviation,
+        player?.positionAbbreviation,
+        player?.position_code,
+        player?.positionCode,
+        player?.position_name,
+        player?.positionName,
+        player?.formation_position,
+        player?.formationPosition,
+        player?.lineup_position,
+        player?.lineupPosition,
         player?.position,
         player?.pos,
         player?.role,
+        p?.position_abbreviation,
+        p?.positionAbbreviation,
+        p?.position_code,
+        p?.positionCode,
+        p?.position_name,
+        p?.positionName,
+        p?.formation_position,
+        p?.formationPosition,
+        p?.lineup_position,
+        p?.lineupPosition,
         p?.position,
         p?.pos,
+        p?.role,
         ""
       );
 
