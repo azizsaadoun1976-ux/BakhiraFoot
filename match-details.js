@@ -5112,6 +5112,77 @@ function manOfTheMatch(
   }
 
   /* =========================================================
+     MATCH STATISTICS — supports SportScore + SofaScore shapes
+  ========================================================= */
+
+  function getMatchStatistics(details) {
+    const source = first(details?.statistics, details?.stats, null);
+    const rows = [];
+    const clean = value => value === undefined || value === null || value === "" ? "—" : String(value);
+    const add = (label, home, away) => {
+      if (!label || (home == null && away == null)) return;
+      rows.push({ label: String(label), home: clean(home), away: clean(away) });
+    };
+
+    if (Array.isArray(source)) {
+      const allBlock = source.find(block => String(block?.period || "").toUpperCase() === "ALL") || source[0];
+      if (Array.isArray(allBlock?.groups)) {
+        for (const group of allBlock.groups) {
+          for (const item of Array.isArray(group?.statisticsItems) ? group.statisticsItems : []) {
+            add(item?.name || item?.key || item?.label, item?.home ?? item?.homeValue, item?.away ?? item?.awayValue);
+          }
+        }
+      }
+      if (!rows.length && source.length >= 2) {
+        const homeBlock = source.find(block => /home|domicile/i.test(String(block?.team?.name || block?.team?.side || ""))) || source[0];
+        const awayBlock = source.find(block => /away|extérieur|exterieur/i.test(String(block?.team?.name || block?.team?.side || ""))) || source[1];
+        const homeStats = Array.isArray(homeBlock?.statistics) ? homeBlock.statistics : Array.isArray(homeBlock?.stats) ? homeBlock.stats : [];
+        const awayStats = Array.isArray(awayBlock?.statistics) ? awayBlock.statistics : Array.isArray(awayBlock?.stats) ? awayBlock.stats : [];
+        const byName = new Map();
+        for (const item of homeStats) {
+          const label = item?.type || item?.name || item?.key;
+          if (label) byName.set(String(label), { label: String(label), home: clean(item?.value ?? item?.displayValue ?? item?.total), away: "—" });
+        }
+        for (const item of awayStats) {
+          const label = item?.type || item?.name || item?.key;
+          if (!label) continue;
+          const key = String(label);
+          const current = byName.get(key) || { label: key, home: "—", away: "—" };
+          current.away = clean(item?.value ?? item?.displayValue ?? item?.total);
+          byName.set(key, current);
+        }
+        rows.push(...byName.values());
+      }
+    } else if (source && typeof source === "object") {
+      const homeStats = Array.isArray(source.home) ? source.home : Array.isArray(source.home?.statistics) ? source.home.statistics : [];
+      const awayStats = Array.isArray(source.away) ? source.away : Array.isArray(source.away?.statistics) ? source.away.statistics : [];
+      const byName = new Map();
+      for (const item of homeStats) {
+        const label = item?.type || item?.name || item?.key;
+        if (label) byName.set(String(label), { label: String(label), home: clean(item?.value ?? item?.total), away: "—" });
+      }
+      for (const item of awayStats) {
+        const label = item?.type || item?.name || item?.key;
+        if (label) {
+          const current = byName.get(String(label)) || { label: String(label), home: "—", away: "—" };
+          current.away = clean(item?.value ?? item?.total);
+          byName.set(String(label), current);
+        }
+      }
+      rows.push(...byName.values());
+    }
+    return rows.slice(0, 24);
+  }
+
+  function renderMatchStatistics(details) {
+    const rows = getMatchStatistics(details);
+    const content = rows.length
+      ? rows.map(row => '<div class="bfmd-stat-row"><div class="bfmd-stat-values"><strong>' + esc(row.home) + '</strong><span>' + esc(row.label) + '</span><strong>' + esc(row.away) + '</strong></div></div>').join("")
+      : '<div class="bfmd-empty">Les statistiques détaillées ne sont pas disponibles pour cette rencontre.</div>';
+    return '<div class="bfmd-section bfmd-statistics-section"><div class="bfmd-title">📊 Statistiques du match</div><div class="bfmd-statistics">' + content + '</div></div>';
+  }
+
+  /* =========================================================
      OPEN BY IDENTIFIER
   ========================================================= */
 
@@ -5506,6 +5577,8 @@ const response =
         ${renderSummary(
           events
         )}
+
+        ${renderMatchStatistics(details)}
 
         <div class="bfmd-section">
 
