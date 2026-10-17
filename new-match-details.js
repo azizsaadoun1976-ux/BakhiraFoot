@@ -1,6 +1,15 @@
 (function () {
   "use strict";
 
+  // Load the shared professional visual layer without changing page structure.
+  if (!document.querySelector('link[data-bf-pro-polish]')) {
+    const polish = document.createElement("link");
+    polish.rel = "stylesheet";
+    polish.href = "/pro-polish.css?v=20261017-1";
+    polish.dataset.bfProPolish = "true";
+    document.head.appendChild(polish);
+  }
+
   /* =========================================================
      BAKHIRAFOOT PRO - NEW MATCH DETAILS SAFE VERSION
 
