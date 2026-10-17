@@ -190,3 +190,163 @@ body.dark #bfMatchDetailsModal .bfmd-stat-row{border-color:var(--bf-line)}
 body.dark #bfMatchDetailsModal .bfmd-stat-values strong{color:#edf4fb}
 body.dark #bfMatchDetailsModal .bfmd-stat-values span{color:#aebed0}
 @media(max-width:600px){#bfMatchDetailsModal .bfmd-stat-values{grid-template-columns:38px minmax(80px,1fr) 38px;gap:7px}#bfMatchDetailsModal .bfmd-stat-values strong{font-size:12px}#bfMatchDetailsModal .bfmd-stat-values span{font-size:10px}}
+
+
+/* =========================================================
+   BAKHIRAFOOT LIVE SPORTS REDESIGN — HOME + MATCH CENTER
+   Visual-only layer: preserves existing markup, IDs and API.
+   ========================================================= */
+:root{
+  --bf-live:#19d995;
+  --bf-live-deep:#079b68;
+  --bf-night:#071321;
+  --bf-night-2:#0d1b2b;
+  --bf-panel:#fff;
+  --bf-copy:#122033;
+  --bf-subtle:#718096;
+  --bf-stroke:rgba(139,156,177,.23);
+}
+body{background:linear-gradient(180deg,#f4f7fb 0%,#eef3f7 100%);color:var(--bf-copy)}
+.ad-top{min-height:0}
+.layout{max-width:1600px}
+main{padding-top:20px}
+.page.active{animation:bf-live-enter .26s ease both}
+@keyframes bf-live-enter{from{opacity:.45;transform:translateY(7px)}to{opacity:1;transform:translateY(0)}}
+
+/* Strong broadcast-style hero */
+.hero{
+  min-height:390px;
+  padding:clamp(24px,3.5vw,52px);
+  border-radius:28px;
+  background:
+    radial-gradient(ellipse at 78% 20%,rgba(25,217,149,.22),transparent 34%),
+    radial-gradient(ellipse at 100% 100%,rgba(22,105,145,.42),transparent 43%),
+    linear-gradient(118deg,#071321 0%,#0b2637 55%,#0b3c46 100%);
+  box-shadow:0 22px 55px rgba(6,21,39,.2);
+}
+.hero:after{content:"";position:absolute;inset:0;pointer-events:none;opacity:.14;background-image:linear-gradient(rgba(255,255,255,.06) 1px,transparent 1px),linear-gradient(90deg,rgba(255,255,255,.06) 1px,transparent 1px);background-size:32px 32px;mask-image:linear-gradient(90deg,transparent,#000)}
+.hero-content{max-width:650px}
+.hero-badge{background:rgba(25,217,149,.1);border-color:rgba(25,217,149,.3);color:#b7ffe1}
+.hero small{letter-spacing:.16em}
+.hero h1{font-size:clamp(32px,3.8vw,54px);line-height:1.03;letter-spacing:-.055em}
+.hero p{font-size:clamp(14px,1.15vw,16px);max-width:560px;color:#c5d4df}
+.hero-feature-pills{display:flex;flex-wrap:wrap;gap:8px;margin:18px 0 22px}
+.hero-feature-pills span{padding:8px 11px;border:1px solid rgba(255,255,255,.13);border-radius:999px;background:rgba(255,255,255,.055);font-size:11px;font-weight:800;color:#dce9ef}
+.hero-actions{gap:11px}
+.hero-actions .green{background:var(--bf-live);box-shadow:0 8px 24px rgba(25,217,149,.16)}
+.hero-live-panel{position:relative;z-index:2;flex:0 1 370px;min-width:245px;padding:16px;border:1px solid rgba(255,255,255,.15);border-radius:22px;background:linear-gradient(145deg,rgba(255,255,255,.12),rgba(255,255,255,.035));box-shadow:0 22px 55px rgba(0,0,0,.2);backdrop-filter:blur(10px)}
+.live-panel-top,.live-panel-bottom{display:flex;align-items:center;justify-content:space-between;gap:10px}
+.live-panel-brand{font-size:10px;letter-spacing:.14em;font-weight:950;color:#d7ffec}
+.live-dot{display:inline-block;width:7px;height:7px;margin-right:6px;border-radius:50%;background:#ff4757;box-shadow:0 0 0 5px rgba(255,71,87,.12)}
+.live-panel-ball{font-size:20px}
+.pitch-visual{position:relative;aspect-ratio:1.2;margin:15px 0;overflow:hidden;border:1px solid rgba(226,255,236,.58);border-radius:10px;background:repeating-linear-gradient(90deg,#116442 0,#116442 10%,#14734a 10%,#14734a 20%)}
+.pitch-visual:before{content:"";position:absolute;inset:0 50%;border-left:1px solid rgba(255,255,255,.6)}
+.pitch-halfway{position:absolute;inset:0 50%;border-left:1px solid rgba(255,255,255,.6)}
+.pitch-center-circle{position:absolute;width:28%;aspect-ratio:1;left:36%;top:32%;border:1px solid rgba(255,255,255,.6);border-radius:50%}
+.pitch-box{position:absolute;top:25%;height:50%;width:13%;border:1px solid rgba(255,255,255,.65)}
+.pitch-box-left{left:0;border-left:0}.pitch-box-right{right:0;border-right:0}
+.pitch-goal{position:absolute;top:38%;height:24%;width:3%;border:1px solid rgba(255,255,255,.6)}
+.pitch-goal-left{left:0;border-left:0}.pitch-goal-right{right:0;border-right:0}
+.pitch-ball{position:absolute;left:62%;top:37%;width:10px;height:10px;border-radius:50%;background:#fff;box-shadow:0 0 16px rgba(255,255,255,.9)}
+.live-panel-bottom{padding:2px 2px 0}
+.live-panel-bottom strong,.live-panel-bottom span{display:block}
+.live-panel-bottom strong{font-size:13px;color:#fff}
+.live-panel-bottom div>span{margin-top:4px;font-size:10px;color:#a9bdc9}
+.live-panel-arrow{display:grid;place-items:center;width:34px;height:34px;border-radius:11px;background:rgba(25,217,149,.15);color:#8fffd0;font-size:19px}
+
+/* Homepage sections feel like a real sports product */
+.home-live-section{margin-top:24px;padding:clamp(16px,2vw,26px);background:var(--bf-panel);border:1px solid var(--bf-stroke);border-radius:22px;box-shadow:0 10px 28px rgba(17,32,52,.045)}
+.home-live-heading{display:flex;align-items:center;justify-content:space-between;gap:16px;margin-bottom:17px}
+.section-kicker{display:inline-flex;align-items:center;gap:7px;margin-bottom:7px;color:#0b9b68;font-size:10px;font-weight:950;letter-spacing:.15em}
+.home-live-heading h2,.home-news-heading h2{font-size:clamp(20px,2vw,27px);letter-spacing:-.04em;font-weight:900}
+.home-live-heading p{margin:7px 0 0;color:var(--bf-subtle);font-size:13px;line-height:1.6}
+.home-live-more,.home-news-heading>button{padding:11px 14px;border:1px solid #dbe6e9;background:#f8fbfa;color:#087b50;border-radius:12px;font-size:12px;font-weight:900;white-space:nowrap}
+.home-live-matches{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:12px}
+.home-live-loading{grid-column:1/-1;padding:22px;border:1px dashed var(--bf-stroke);border-radius:14px;color:var(--bf-subtle);text-align:center}
+.home-news-heading{align-items:center;margin:26px 0 14px}
+.home-news-heading h2{margin:0}
+.home-news-heading .section-kicker{margin-bottom:6px}
+.page>h1{margin:8px 0 20px}
+.scores-header,.competitions-page-head{padding:22px 24px;background:linear-gradient(135deg,#fff,#f7fbfa);box-shadow:0 8px 25px rgba(17,32,52,.04)}
+.dates{padding:4px 0 9px;scrollbar-width:thin}
+.dates button{border-color:#e0e7ee;border-radius:11px;background:#fff}
+.dates button.selected{background:#0b1a2b;border-color:#0b1a2b;box-shadow:0 6px 15px rgba(11,26,43,.16)}
+.leagueHead{display:flex;align-items:center;gap:10px;background:#f8fafc;border-color:#e2e8f0}
+.row{transition:background .16s ease,border-color .16s ease}
+.row:hover{background:#f8fffb;border-color:#bdebd8}
+.card,.league,.table{box-shadow:0 7px 22px rgba(17,32,52,.04)}
+footer{margin-top:28px;border-top:1px solid var(--bf-stroke);background:rgba(255,255,255,.5)}
+
+/* Match details: broadcast-grade score header, clear information hierarchy */
+#bfMatchDetailsModal{z-index:10000}
+#bfMatchDetailsModal .bfmd-overlay{display:flex;align-items:center;justify-content:center;padding:clamp(8px,2vw,24px);background:rgba(3,10,21,.82);backdrop-filter:blur(15px) saturate(140%)}
+#bfMatchDetailsModal .bfmd-box{color:var(--bf-copy);background:#f7f9fc;border:1px solid rgba(255,255,255,.18);border-radius:25px;box-shadow:0 35px 110px rgba(0,0,0,.5)}
+#bfMatchDetailsModal .bfmd-header{position:relative;overflow:hidden;background:radial-gradient(ellipse at 50% 0%,rgba(25,217,149,.16),transparent 65%),linear-gradient(145deg,#fff,#f0f6f8);border-color:#dce8eb}
+#bfMatchDetailsModal .bfmd-header:after{content:"";position:absolute;left:0;right:0;bottom:0;height:3px;background:linear-gradient(90deg,#0b8e60,#24dda0,#0b8e60)}
+#bfMatchDetailsModal .bfmd-team img{filter:drop-shadow(0 4px 7px rgba(16,24,40,.12))}
+#bfMatchDetailsModal .bfmd-score{font-weight:1000;color:#0a1828;font-variant-numeric:tabular-nums}
+#bfMatchDetailsModal .bfmd-status{background:#e8f9f1;color:#087b50;letter-spacing:.04em}
+#bfMatchDetailsModal .bfmd-info span{background:#eaf0f5;color:#4b5b6c}
+#bfMatchDetailsModal .bfmd-section{background:#fff;border-color:#e0e7ee;box-shadow:0 5px 17px rgba(15,23,42,.025)}
+#bfMatchDetailsModal .bfmd-title{color:#142338;border-bottom-color:#e7edf2}
+#bfMatchDetailsModal .bfmd-summary-box{background:linear-gradient(145deg,#f7fafc,#edf4f7);border:1px solid #e4ebf0}
+#bfMatchDetailsModal .bfmd-summary-value{color:#0b8e60;font-variant-numeric:tabular-nums}
+#bfMatchDetailsModal .bfmd-pitch-card{background:#fff;border-color:#dce6e8}
+#bfMatchDetailsModal .bfmd-pitch-head{background:#f5f9fa;color:#1b2c40}
+#bfMatchDetailsModal .bfmd-player{border:1px solid rgba(255,255,255,.12)}
+#bfMatchDetailsModal .bfmd-row{border:1px solid #e6edf1;background:#fbfcfd}
+#bfMatchDetailsModal .bfmd-empty{background:#f8fafc;color:#68788a;border-color:#d6e0e7}
+#bfMatchDetailsModal .bfmd-close{position:sticky;top:0;z-index:10;background:#fff;color:#26384a;box-shadow:0 4px 14px rgba(15,23,42,.12)}
+body.dark{background:#0b111b;color:#e8eef6;--bf-panel:#101a28;--bf-copy:#e8eef6;--bf-subtle:#9bacc0;--bf-stroke:rgba(148,163,184,.18)}
+body.dark .home-live-section,body.dark .scores-header,body.dark .competitions-page-head{background:#101a28;color:#e8eef6;border-color:#263548}
+body.dark .home-live-heading p,body.dark .card p{color:#9bacc0}
+body.dark .home-live-more,body.dark .home-news-heading>button{background:#132337;color:#6ce9b8;border-color:#294154}
+body.dark .home-live-loading{color:#a7b5c7;border-color:#34475a}
+body.dark .leagueHead{background:#152235;color:#e8eef6;border-color:#293b50}
+body.dark .row{background:#101a28;border-color:#263548;color:#e8eef6}
+body.dark .row:hover{background:#132a27}
+body.dark .dates button{background:#111e2d;color:#c9d5e3;border-color:#2a3b4f}
+body.dark .dates button.selected{background:#19b982;color:#04170f;border-color:#19b982}
+body.dark footer{background:#0b111b;border-color:#263548}
+body.dark #bfMatchDetailsModal .bfmd-box{background:#0e1826;color:#e7eef6;border-color:#2a3b50}
+body.dark #bfMatchDetailsModal .bfmd-header{background:radial-gradient(ellipse at 50% 0%,rgba(25,217,149,.13),transparent 65%),linear-gradient(145deg,#142337,#101b2a);border-color:#2a3b50}
+body.dark #bfMatchDetailsModal .bfmd-score,body.dark #bfMatchDetailsModal .bfmd-title,body.dark #bfMatchDetailsModal .bfmd-team>span{color:#f0f6fc}
+body.dark #bfMatchDetailsModal .bfmd-status{background:#123c30;color:#75f0bf}
+body.dark #bfMatchDetailsModal .bfmd-info span{background:#1a2a3d;color:#c0cede}
+body.dark #bfMatchDetailsModal .bfmd-section{background:#111e2d;border-color:#2a3b50}
+body.dark #bfMatchDetailsModal .bfmd-summary-box{background:#152337;border-color:#2b4054}
+body.dark #bfMatchDetailsModal .bfmd-summary-value{color:#62e8b5}
+body.dark #bfMatchDetailsModal .bfmd-pitch-card{background:#111e2d;border-color:#2a3b50}
+body.dark #bfMatchDetailsModal .bfmd-pitch-head{background:#18283a;color:#e7eef6}
+body.dark #bfMatchDetailsModal .bfmd-row{background:#142236;border-color:#293b50;color:#e7eef6}
+body.dark #bfMatchDetailsModal .bfmd-empty{background:#132033;color:#aab9ca;border-color:#33485e}
+body.dark #bfMatchDetailsModal .bfmd-close{background:#142236;color:#e7eef6;border-color:#2a3b50}
+@media(max-width:1000px){
+ .hero{align-items:flex-start}
+ .hero-live-panel{flex-basis:300px}
+ .home-live-matches{grid-template-columns:1fr}
+}
+@media(max-width:760px){
+ header{gap:8px}
+ .hero{min-height:0;display:block;padding:25px 20px}
+ .hero-live-panel{max-width:420px;margin:24px 0 0}
+ .home-live-heading{align-items:flex-start;flex-direction:column}
+ .home-live-heading h2{margin-top:0}
+ .home-live-more{align-self:flex-start}
+ .home-news-heading{gap:12px;align-items:flex-start}
+ .home-live-section{padding:15px}
+ #bfMatchDetailsModal .bfmd-overlay{align-items:flex-start;padding:6px}
+ #bfMatchDetailsModal .bfmd-box{max-height:calc(100dvh - 12px);padding:50px 10px 12px;border-radius:17px}
+ #bfMatchDetailsModal .bfmd-header{padding:13px 5px}
+ #bfMatchDetailsModal .bfmd-summary{grid-template-columns:repeat(3,minmax(0,1fr))}
+ #bfMatchDetailsModal .bfmd-pitches{grid-template-columns:1fr}
+}
+@media(max-width:480px){
+ .hero h1{font-size:32px}
+ .hero-feature-pills{gap:6px}
+ .hero-feature-pills span{font-size:10px;padding:7px 9px}
+ .hero-actions{align-items:stretch}
+ .home-news-heading{flex-direction:column}
+ #bfMatchDetailsModal .bfmd-team img,#bfMatchDetailsModal .bfmd-fallback{width:42px;height:42px}
+ #bfMatchDetailsModal .bfmd-score{font-size:27px}
+}
