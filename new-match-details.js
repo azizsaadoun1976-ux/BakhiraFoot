@@ -2899,21 +2899,25 @@
         getExternalSources(match);
 
       /*
-       * One details entry point for every fixture.
-       * External providers use their upstream event IDs;
-       * legacy SportScore fixtures keep their own slug/ID.
+       * External-provider fixtures must use openNewMatch(index):
+       * it tries SofaScore, ESPN, then TheSportsDB if a provider fails.
+       * SportScore fixtures keep the legacy details handler.
        */
-      const external = sources[0] || null;
-      const identifier = external
-        ? external.value
-        : String(
-            match?.fixture?.slug ||
-            match?.slug ||
-            match?.fixture?.id ||
-            match?.id ||
-            card?.dataset?.fixtureId ||
-            ""
-          ).trim();
+      if (sources.length) {
+        event.preventDefault();
+        event.stopImmediatePropagation();
+        openNewMatch(index);
+        return;
+      }
+
+      const identifier = String(
+        match?.fixture?.slug ||
+        match?.slug ||
+        match?.fixture?.id ||
+        match?.id ||
+        card?.dataset?.fixtureId ||
+        ""
+      ).trim();
 
       if (!identifier || typeof window.bfOpenMatchDetails !== "function") {
         return;
