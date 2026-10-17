@@ -17,6 +17,7 @@
   window.__BF_NEW_MATCH_DETAILS_SAFE__ = true;
 
   const API = "/api?fixture=";
+  let activeNewDetailsRequest = 0;
 
   const arr = value =>
     Array.isArray(value)
@@ -2690,6 +2691,7 @@
     index
   ) {
 
+    const requestId = ++activeNewDetailsRequest;
     const match =
       getMatch(index);
 
@@ -2763,6 +2765,10 @@
             source
           );
 
+        if (requestId !== activeNewDetailsRequest) {
+          return true;
+        }
+
         renderDetails(
           details,
           source.source
@@ -2771,6 +2777,10 @@
         return true;
 
       } catch (error) {
+
+        if (requestId !== activeNewDetailsRequest) {
+          return true;
+        }
 
         lastError =
           error;
@@ -2813,6 +2823,18 @@
   /* =========================================================
      CLICK INTERCEPTOR
      ========================================================= */
+
+  document.addEventListener(
+    "keydown",
+    function (event) {
+      if (event.key !== "Enter" && event.key !== " ") return;
+      const card = event.target?.closest?.(".match-card, .bf-score-pro-card, .bf-score-professional-match, [data-search-type=\"match\"]");
+      if (!card || card.getAttribute("role") !== "button") return;
+      event.preventDefault();
+      card.click();
+    },
+    true
+  );
 
   document.addEventListener(
     "click",
