@@ -1654,6 +1654,17 @@
 
     const result = [];
 
+    function lateralRank(player) {
+      const p = norm(playerPosition(player)).replace(/[^a-z0-9]+/g, "");
+      if (/(^|)(leftback|leftwingback|lb|lwb|leftmidfielder|lm|leftwing|lw|lf|lcm|ldm|lst)$/.test(p)) return 0;
+      if (/(rightback|rightwingback|rb|rwb|rightmidfielder|rm|rightwing|rw|rf|rcm|rdm|rst)$/.test(p)) return 4;
+      if (/(leftcentreback|leftcenterback|lcb)$/.test(p)) return 1;
+      if (/(rightcentreback|rightcenterback|rcb)$/.test(p)) return 3;
+      if (/(centreback|centerback|cb|centralmidfielder|cm|dm|cdm|st|cf)$/.test(p)) return 2;
+      return 2;
+    }
+    rows.forEach(row => row.sort((a,b) => lateralRank(a) - lateralRank(b)));
+
     rows.forEach(
       (
         row,
@@ -2209,13 +2220,21 @@
   }
 
   function playerEventBadges(player, details) {
-    const name=norm(playerName(player)); if(!name) return ""; const badges=[];
-    getEvents(details).forEach(event=>{
-      const names=[eventPlayer(event),event?.player?.name,event?.player_name,event?.assist?.name,event?.assist?.player?.name].map(norm); if(!names.includes(name)) return;
-      const type=eventType(event);
-      if(type.includes("goal")||type.includes("score")) badges.push("⚽"); else if(type.includes("yellow")) badges.push("🟨"); else if(type.includes("red")) badges.push("🟥");
-      else if(type.includes("sub")) badges.push("🔄"); else if(type.includes("injur")||type.includes("hurt")) badges.push("🤕");
-      if(eventAssist(event) && norm(eventAssist(event))===name) badges.push("🅰️");
+    const name = norm(playerName(player));
+    if (!name) return "";
+    const badges = [];
+    getEvents(details).forEach(event => {
+      const scorer = norm(first(event?.player?.name, event?.player_name, event?.athlete?.displayName, event?.participants?.[0]?.athlete?.displayName, eventPlayer(event)));
+      const assist = norm(eventAssist(event));
+      const type = eventType(event);
+      if (scorer === name) {
+        if (type.includes("goal") || type.includes("score")) badges.push("⚽");
+        else if (type.includes("yellow")) badges.push("🟨");
+        else if (type.includes("red")) badges.push("🟥");
+        else if (type.includes("sub")) badges.push("🔄");
+        else if (type.includes("injur") || type.includes("hurt")) badges.push("🤕");
+      }
+      if (assist && assist === name) badges.push("🅰️");
     });
     return [...new Set(badges)].join(" ");
   }
