@@ -673,9 +673,13 @@
     for (const key of keys) {
       const list = Array.isArray(details?.[key]) ? details[key] : [];
       for (const event of list) {
-        const identity = String(first(event?.id, event?.event_id, event?.incidentId,
-          [event?.minute, event?.elapsed, event?.time?.elapsed, event?.type?.name || event?.type,
-           event?.player?.name || event?.player_name || event?.athlete?.displayName || event?.name].join("|")));
+        const signature = [
+          event?.minute ?? event?.elapsed ?? event?.time?.elapsed,
+          typeof event?.type === "object" ? event?.type?.name : event?.type,
+          event?.player?.name || event?.player_name || event?.athlete?.displayName || event?.name,
+          event?.detail || event?.text
+        ].filter(value => value !== null && value !== undefined && value !== "").join("|");
+        const identity = String(first(event?.id, event?.event_id, event?.incidentId, signature || JSON.stringify(event)));
         if (!seen.has(identity)) { seen.add(identity); combined.push(event); }
       }
     }
