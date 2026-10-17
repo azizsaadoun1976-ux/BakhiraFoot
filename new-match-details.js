@@ -1539,14 +1539,14 @@
 
       } else if (
         ["lw","rw","lf","rf","leftwinger","rightwinger"].includes(p) ||
-        p.includes("winger") || p.includes("wing forward")
+        p.includes("winger") || p.includes("wing forward") || p.includes("wing")
       ) {
 
         groups.wide.push(player);
 
       } else if (
         ["f","fw","fwd","att","attacker","st","cf","ss","forward","striker"].includes(p) ||
-        p.includes("att") || p.includes("fwd") || p.includes("strik") || p === "forward"
+        p.includes("att") || p.includes("fwd") || p.includes("strik") || p.includes("forward")
       ) {
 
         groups.att.push(
