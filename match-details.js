@@ -3683,7 +3683,7 @@ function normalizeEvent(event, index) {
   const map = new Map();
 
   function data(name) {
-    const key = norm(name);
+    const key = playerKey(name);
 
     if (!key) {
       return null;
