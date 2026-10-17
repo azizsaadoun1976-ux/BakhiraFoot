@@ -5,7 +5,7 @@
   if (!document.querySelector('link[data-bf-pro-polish]')) {
     const polish = document.createElement("link");
     polish.rel = "stylesheet";
-    polish.href = "/pro-polish.css?v=20261017-1";
+    polish.href = "/pro-polish.css?v=20261017-2";
     polish.dataset.bfProPolish = "true";
     document.head.appendChild(polish);
   }
