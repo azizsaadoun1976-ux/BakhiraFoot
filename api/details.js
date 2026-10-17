@@ -1139,7 +1139,7 @@ async function sofaDetails(
       espnLineups.push({
         team: teamInfo, side,
         formation: first(block?.formation, block?.tactics?.formation, "—"),
-        startXI: starters, substitutes, players: [...starters, ...substitutes]
+        startXI: starters, substitutes, players: hasStarterFlags || starters.length ? [...starters, ...substitutes] : allPlayers
       });
     }
 
