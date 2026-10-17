@@ -1636,37 +1636,22 @@ return {
     }
 
  function imageOf(value) {
-  if (
-    !value ||
-    typeof value !== "object"
-  ) {
-    return "";
-  }
-
-  return (
-    value.picture ||
-    value.image ||
-    value.photo ||
-    value.avatar ||
-    value.logo ||
-    value.icon ||
-    value.image_url ||
-    value.imageUrl ||
-    value.logo_url ||
-    value.logoUrl ||
-    value.image_path ||
-    value.imagePath ||
-    value.logo_path ||
-    value.logoPath ||
-    value.badge ||
-    value.badge_url ||
-    value.badgeUrl ||
-    value.strBadge ||
-    value.strBadgeLogo ||
-    value.team_logo ||
-    value.teamLogo ||
-    ""
+  if (!value || typeof value !== "object") return "";
+  const candidate = first(
+    value.picture, value.image, value.photo, value.avatar,
+    value.headshot, value.cutout, value.strCutout, value.strThumb,
+    value.image_url, value.imageUrl, value.logo_url, value.logoUrl,
+    value.image_path, value.imagePath, value.logo_path, value.logoPath,
+    value.badge, value.badge_url, value.badgeUrl, value.strBadge,
+    value.strBadgeLogo, value.team_logo, value.teamLogo,
+    value.profileImage, value.profile_image, value.thumbnail,
+    value.thumb, value.media?.[0]?.url, value.images?.[0]?.url
   );
+  if (typeof candidate === "string") return candidate;
+  if (candidate && typeof candidate === "object") {
+    return first(candidate.href, candidate.url, candidate.src, candidate.imageUrl, candidate.image_url, candidate.path, "");
+  }
+  return "";
 }
 
     function toISODate(value) {
