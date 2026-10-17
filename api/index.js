@@ -1369,15 +1369,22 @@ function adaptSofaWorldMatch(event) {
     null;
 
 
+ const isESPN =
+  String(event?.id || "").startsWith("espn-") ||
+  String(event?.provider || "").toLowerCase() === "espn";
+
+ const rawEventId =
+  String(event?.id || "").replace(/^(?:sofa|espn)-/i, "");
+
  const sourceId =
-  event?.id
-    ? `sofa-${event.id}`
+  rawEventId
+    ? `${isESPN ? "espn" : "sofa"}-${rawEventId}`
     : "";
 
 return {
 
   id:
-    sourceId ||
+    rawEventId ||
     null,
 
   slug:
@@ -1385,7 +1392,7 @@ return {
     null,
 
   provider:
-    "SofaScore",
+    isESPN ? "ESPN" : "SofaScore",
 
      
     home_team: {
@@ -4613,42 +4620,47 @@ try {
     }
 
     catch (error) {
-      if (matchDate === today) {
+      console.warn(
+        "SPORTSCORE DATE REQUEST FAILED:",
+        error?.message || error
+      );
+
+      try {
         body = await getJSON(
-          `${SPORTSCORE}/matches/?sport=football&limit=100`
+          `${SPORTSCORE}/fixtures/?sport=football&date=${encodeURIComponent(
+            matchDate
+          )}&limit=200`
         );
-      }
+      } catch (secondError) {
+        console.warn(
+          "SPORTSCORE DATE FALLBACK FAILED:",
+          secondError?.message || secondError
+        );
 
-      else {
-        try {
-          body = await getJSON(
-            `${SPORTSCORE}/fixtures/?sport=football&date=${encodeURIComponent(
-              matchDate
-            )}&limit=100`
+        const fallbackRaw = await getSofaWorldMatches(matchDate);
+        const fallbackMatches = fallbackRaw
+          .map(adaptSofaWorldMatch)
+          .filter(Boolean)
+          .map(normalizeMatch)
+          .filter(Boolean);
+
+        if (fallbackMatches.length) {
+          console.warn(
+            "USING SOFASCORE/ESPN DATE FALLBACK:",
+            fallbackMatches.length
           );
+
+          return output(200, {
+            data: fallbackMatches,
+            provider: "SofaScore/ESPN fallback"
+          });
         }
 
-        catch (secondError) {
-          return output(
-            secondError?.status ||
-              error?.status ||
-              502,
-
-            {
-              error:
-                secondError?.message ||
-                error?.message ||
-                "API request failed",
-
-              details:
-                secondError?.data ||
-                error?.data ||
-                null,
-
-              data: []
-            }
-          );
-        }
+        return output(502, {
+          error: "Impossible de charger les matchs",
+          details: secondError?.message || error?.message || null,
+          data: []
+        });
       }
     }
 
@@ -4656,6 +4668,29 @@ try {
   getMatches(body)
     .map(normalizeMatch)
     .filter(Boolean);
+
+    // If SportScore responds successfully but has no fixtures,
+    // use the already-defined world scoreboard fallback before enrichment.
+    if (!matches.length) {
+      const fallbackRaw = await getSofaWorldMatches(matchDate);
+      const fallbackMatches = fallbackRaw
+        .map(adaptSofaWorldMatch)
+        .filter(Boolean)
+        .map(normalizeMatch)
+        .filter(Boolean);
+
+      if (fallbackMatches.length) {
+        console.warn(
+          "USING SOFASCORE/ESPN EMPTY-DATE FALLBACK:",
+          fallbackMatches.length
+        );
+
+        return output(200, {
+          data: fallbackMatches,
+          provider: "SofaScore/ESPN fallback"
+        });
+      }
+    }
 
      /* =====================================================
    BAKHIRAFOOT - MAJOR COMPETITIONS
