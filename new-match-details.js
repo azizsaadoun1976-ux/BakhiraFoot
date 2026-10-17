@@ -1494,6 +1494,7 @@
       gk: [],
       def: [],
       mid: [],
+      wide: [],
       att: [],
       unknown: []
     };
@@ -1537,8 +1538,15 @@
         );
 
       } else if (
-        ["f","fw","fwd","att","attacker","st","cf","ss","lw","rw","lf","rf"].includes(p) ||
-        p.includes("att") || p.includes("fwd") || p.includes("strik") || p.includes("wing") || p.includes("forward")
+        ["lw","rw","lf","rf","leftwinger","rightwinger"].includes(p) ||
+        p.includes("winger") || p.includes("wing forward")
+      ) {
+
+        groups.wide.push(player);
+
+      } else if (
+        ["f","fw","fwd","att","attacker","st","cf","ss","forward","striker"].includes(p) ||
+        p.includes("att") || p.includes("fwd") || p.includes("strik") || p === "forward"
       ) {
 
         groups.att.push(
@@ -1608,25 +1616,21 @@
           formation.length - 1
         ) {
 
-          source =
-            groups.att.slice(
-              ai,
-              ai + count
-            );
+          source = groups.att.slice(ai, ai + count);
+          ai += source.length;
 
-          ai +=
-            source.length;
+          while (source.length < count && groups.wide.length) source.push(groups.wide.shift());
 
         } else {
 
-          source =
-            groups.mid.slice(
-              mi,
-              mi + count
-            );
+          source = groups.mid.slice(mi, mi + count);
+          mi += source.length;
 
-          mi +=
-            source.length;
+          /* In a four-line system, wingers occupy the attacking-midfield line,
+             not the lone striker's row. */
+          if (formation.length >= 4 && rowIndex === formation.length - 2) {
+            while (source.length < count && groups.wide.length) source.push(groups.wide.shift());
+          }
 
         }
 
