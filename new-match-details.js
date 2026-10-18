@@ -576,108 +576,6 @@
      LINEUP
      ========================================================= */
 
-function assignFormationRoleLabels(players, formation, readPosition) {
-  if (!Array.isArray(players) || players.length !== 11) return players || [];
-  const form = String(formation || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "")
-    .trim().replace(/[‐‑‒–—−]/g, "-").replace(/\s+/g, "");
-  const rows = form.split("-").map(Number);
-  if (rows.length < 2 || rows.length > 4 ||
-      rows.some(n => !Number.isInteger(n) || n < 1 || n > 5) ||
-      rows.reduce((sum, n) => sum + n, 0) !== 10) return players;
-
-  const aliases = {
-    g:"GK",gk:"GK",goalkeeper:"GK",goalie:"GK",keeper:"GK","1":"GK",
-    lb:"LB",leftback:"LB",leftfullback:"LB",dl:"LB",dfl:"LB",
-    lcb:"LCB",leftcentreback:"LCB",leftcenterback:"LCB",dlc:"LCB",dflc:"LCB",
-    cb:"CB",centreback:"CB",centerback:"CB",centraldefender:"CB",dc:"CB",dfc:"CB",
-    rcb:"RCB",rightcentreback:"RCB",rightcenterback:"RCB",drc:"RCB",dfrc:"RCB",
-    rb:"RB",rightback:"RB",rightfullback:"RB",dr:"RB",dfr:"RB",
-    lwb:"LWB",leftwingback:"LWB",rwb:"RWB",rightwingback:"RWB",
-    cdm:"CDM",dm:"CDM",defensivemidfielder:"CDM",ldm:"LDM",rdm:"RDM",
-    cm:"CM",mc:"CM",centralmidfielder:"CM",centralmidfield:"CM",mfc:"CM",
-    lcm:"LCM",leftcentralmidfielder:"LCM",mcl:"LCM",
-    rcm:"RCM",rightcentralmidfielder:"RCM",mcr:"RCM",
-    cam:"CAM",am:"CAM",attackingmidfielder:"CAM",lam:"LAM",ram:"RAM",
-    lm:"LM",leftmidfielder:"LM",ml:"LM",mfl:"LM",
-    rm:"RM",rightmidfielder:"RM",mr:"RM",mfr:"RM",
-    lw:"LW",leftwing:"LW",leftwinger:"LW",fl:"LW",fwl:"LW",
-    rw:"RW",rightwing:"RW",rightwinger:"RW",fr:"RW",fwr:"RW",
-    st:"ST",striker:"ST",cf:"CF",centreforward:"CF",centerforward:"CF",fc:"ST",fwc:"ST",
-    ss:"SS",secondstriker:"SS"
-  };
-  const detailed = new Set(["GK","LB","LCB","CB","RCB","RB","LWB","RWB","CDM","LDM","RDM",
-    "CM","LCM","RCM","CAM","LAM","RAM","LM","RM","LW","RW","ST","CF","SS"]);
-  const generic = {d:"DEF",df:"DEF",def:"DEF",defender:"DEF",defence:"DEF",defense:"DEF",back:"DEF","2":"DEF",
-    m:"MID",mf:"MID",mid:"MID",midfielder:"MID",midfield:"MID","3":"MID",
-    f:"FWD",fw:"FWD",fwd:"FWD",att:"FWD",attacker:"FWD",forward:"FWD","4":"FWD"};
-  const norm = value => {
-    if (value && typeof value === "object") value = value.displayName || value.display_name ||
-      value.position_name || value.positionName || value.abbreviation || value.shortName ||
-      value.name || value.label || value.code || value.value || "";
-    return String(value ?? "").normalize("NFD").replace(/[\u0300-\u036f]/g,"")
-      .toLowerCase().replace(/[^a-z0-9]+/g,"");
-  };
-  const role = value => aliases[norm(value)] || "";
-  const bucket = value => {
-    const k = norm(value), r = role(value);
-    if (r === "GK") return "gk";
-    if (r && ["LB","LCB","CB","RCB","RB","LWB","RWB"].includes(r)) return "def";
-    if (r && ["CDM","LDM","RDM","CM","LCM","RCM","CAM","LAM","RAM","LM","RM"].includes(r)) return "mid";
-    if (r && ["LW","RW","ST","CF","SS"].includes(r)) return "fwd";
-    if (["g","gk","goalkeeper","goalie","keeper","1"].includes(k)) return "gk";
-    return generic[k] === "DEF" ? "def" : generic[k] === "MID" ? "mid" : generic[k] === "FWD" ? "fwd" : "";
-  };
-  const defTargets = n => n===5?["LWB","LCB","CB","RCB","RWB"]:n===4?["LB","CB","CB","RB"]:
-    n===3?["LCB","CB","RCB"]:n===2?["LCB","RCB"]:n===1?["CB"]:Array.from({length:n},(_,i)=>i===0?"LB":i===n-1?"RB":"CB");
-  const fwdTargets = n => n===4?["LW","ST","ST","RW"]:n===3?["LW","ST","RW"]:n===2?["ST","ST"]:
-    n===1?["ST"]:Array.from({length:n},(_,i)=>i===0?"LW":i===n-1?"RW":"ST");
-  const midTargets = (n,f) => {
-    if (f==="4-2-3-1") {
-      if(n===5)return ["CDM","CDM","LW","CAM","RW"];
-      if(n===4)return ["CDM","CDM","CAM","CM"];
-      if(n===3)return ["CDM","CDM","CAM"];
-      if(n===2)return ["CDM","CDM"];
-    }
-    if (["4-3-3","5-3-2","4-3-2-1"].includes(f) && n===3) return ["CDM","CM","CM"];
-    if (f==="4-4-2" && n===4) return ["LM","CM","CM","RM"];
-    if (f==="4-1-4-1" && n===5) return ["CDM","LW","CM","CM","RW"];
-    if (f==="4-5-1" && n===5) return ["LM","CM","CDM","CM","RM"];
-    if (f==="3-4-3" && n===4) return ["LWB","CM","CM","RWB"];
-    if (f==="3-5-2" && n===5) return ["LWB","CM","CDM","CM","RWB"];
-    if (f==="4-2-2-2" && n===4) return ["CDM","CDM","CAM","CAM"];
-    if (f==="4-3-1-2" && n===4) return ["CM","CDM","CM","CAM"];
-    if(n===5)return ["LM","CM","CDM","CM","RM"];
-    if(n===4)return ["LM","CM","CM","RM"];
-    if(n===3)return ["CDM","CM","CM"];
-    if(n===2)return f.startsWith("4-2-")?["CDM","CDM"]:["CM","CM"];
-    if(n===1)return ["CDM"];
-    return Array.from({length:n},()=>"CM");
-  };
-
-  const rowsData = players.map(player => {
-    const value = readPosition(player), canonical = role(value);
-    return {player, bucket:bucket(value), exact:detailed.has(canonical)?canonical:""};
-  });
-  const assigned = rowsData.map(item=>item.exact);
-  for (const groupName of ["gk","def","mid","fwd"]) {
-    const group = rowsData.map((item,index)=>({...item,index})).filter(item=>item.bucket===groupName);
-    if (!group.length) continue;
-    const targets = groupName==="gk"?["GK"]:groupName==="def"?defTargets(group.length):
-      groupName==="mid"?midTargets(group.length,form):fwdTargets(group.length);
-    const available = [...targets];
-    for (const item of group) {
-      if (!assigned[item.index]) continue;
-      const idx = available.indexOf(assigned[item.index]);
-      if (idx>=0) available.splice(idx,1);
-    }
-    group.filter(item=>!assigned[item.index]).forEach((item,i)=>{
-      assigned[item.index] = available[i] || targets[i] ||
-        (groupName==="def"?"CB":groupName==="mid"?"CM":groupName==="fwd"?"ST":"GK");
-    });
-  }
-  return rowsData.map((item,index)=>({...item.player,tacticalPosition:assigned[index] || item.player?.tacticalPosition || ""}));
-}
-
   function getLineup(
     details,
     side,
@@ -810,30 +708,12 @@ function assignFormationRoleLabels(players, formation, readPosition) {
       formationParts.reduce((sum, value) => sum + value, 0) === 10;
 
     const finalFormation = isValidFormation ? formationText : "—";
-    const labelledStarters = assignFormationRoleLabels(starters, finalFormation, playerPosition);
-    const roleByKey = new Map();
-    const playerKeyForRoles = player => {
-      const p = getPlayerObject(player);
-      const id = first(player?.id, player?.player_id, player?.playerId, p?.id, p?.player_id, p?.playerId);
-      return id !== null && id !== undefined && String(id).trim()
-        ? `id:${String(id).trim()}`
-        : `name:${norm(playerName(player))}`;
-    };
-    labelledStarters.forEach(player => {
-      if (player?.tacticalPosition) roleByKey.set(playerKeyForRoles(player), player.tacticalPosition);
-    });
-    const labelledPlayers = (allPlayers.length ? allPlayers : [...starters, ...substitutes])
-      .map(player => {
-        const assignedRole = roleByKey.get(playerKeyForRoles(player));
-        return assignedRole ? { ...player, tacticalPosition: assignedRole } : player;
-      });
-
     return {
       formation: finalFormation,
-      players: labelledPlayers,
-      starters: labelledStarters,
+      players: allPlayers.length ? allPlayers : [...starters, ...substitutes],
+      starters,
       substitutes,
-      pitchAvailable: labelledStarters.length > 0
+      pitchAvailable: starters.length > 0
     };
   }
 
@@ -1684,7 +1564,7 @@ function assignFormationRoleLabels(players, formation, readPosition) {
       const rawX = first(player?.x, player?.coord_x, player?.coordinate_x, p?.x, p?.coord_x, p?.coordinate_x);
       const rawY = first(player?.y, player?.coord_y, player?.coordinate_y, p?.y, p?.coord_y, p?.coordinate_y);
       const x = Number(rawX), y = Number(rawY);
-      return { player, x, y, valid: rawX !== null && rawX !== undefined && rawX !== "" && rawY !== null && rawY !== undefined && rawY !== "" && Number.isFinite(x) && Number.isFinite(y) && x >= 0 && y >= 0 && x <= 120 && y <= 100 };
+      return { player, x, y, oriented:!!(player?.coordinatesOriented || p?.coordinatesOriented), valid: rawX !== null && rawX !== undefined && rawX !== "" && rawY !== null && rawY !== undefined && rawY !== "" && Number.isFinite(x) && Number.isFinite(y) && x >= 0 && y >= 0 && x <= 120 && y <= 100 };
     });
     if (coords.length >= 10 && coords.every(item => item.valid)) {
       const xs = coords.map(item => item.x), ys = coords.map(item => item.y);
@@ -1704,7 +1584,7 @@ function assignFormationRoleLabels(players, formation, readPosition) {
             x = 8 + (x / pitchLength) * 84;
             y = 8 + (y / pitchWidth) * 84;
           }
-          if (side === "away") y = 100 - y;
+          if (side === "away" && !item.oriented) y = 100 - y;
           return { player: item.player, x: Math.max(6, Math.min(94, x)), y: Math.max(6, Math.min(94, y)) };
         });
       }
@@ -1774,256 +1654,8 @@ function assignFormationRoleLabels(players, formation, readPosition) {
       });
     }
 
-    const groups = {
-      gk: [],
-      def: [],
-      mid: [],
-      wide: [],
-      att: [],
-      unknown: []
-    };
-
-    for (
-      const player of players
-    ) {
-
-      const p =
-        norm(
-          playerPosition(
-            player
-          )
-        );
-
-      if (
-        p.includes("goal") || p.includes("keeper") ||
-        ["gk","g","goalkeeper","goalie"].includes(p)
-      ) {
-
-        groups.gk.push(
-          player
-        );
-
-      } else if (
-        ["d","df","def","defender","cb","lcb","rcb","lb","rb","lwb","rwb","d l","d c","d r","df l","df c","df r","d lc","d rc"].includes(p) ||
-        /^d(f)? (l|c|r|lc|rc)$/.test(p) ||
-        p.includes("def") || p.includes("back") || p.includes("centre back") || p.includes("center back")
-      ) {
-
-        groups.def.push(
-          player
-        );
-
-      } else if (
-        ["m","mf","mid","midfielder","cm","lcm","rcm","dm","cdm","ldm","rdm","am","cam","lam","ram","lm","rm","m l","m c","m r","mf l","mf c","mf r"].includes(p) ||
-        /^m(f)? (l|c|r)$/.test(p) ||
-        p.includes("mid") || p.includes("wing back")
-      ) {
-
-        groups.mid.push(
-          player
-        );
-
-      } else if (
-        ["lw","rw","lf","rf","leftwinger","rightwinger"].includes(p) ||
-        p.includes("winger") || p.includes("wing forward") || p.includes("wing")
-      ) {
-
-        groups.wide.push(player);
-
-      } else if (
-        ["f","fw","fwd","att","attacker","st","cf","ss","forward","striker","f l","f c","f r","fw l","fw c","fw r"].includes(p) ||
-        /^f(wd?)? (l|c|r)$/.test(p) ||
-        p.includes("att") || p.includes("fwd") || p.includes("strik") || p.includes("forward")
-      ) {
-
-        groups.att.push(
-          player
-        );
-
-      } else {
-
-        groups.unknown.push(
-          player
-        );
-
-      }
-
-    }
-
-    const formationText = String(lineup.formation || "").trim().replace(/[‐‑‒–—−]/g, "-").replace(/\s+/g, "");
-    let formation = formationText.split("-").map(Number).filter(n => Number.isFinite(n) && n > 0);
-    if (
-      formationText === "—" ||
-      formation.length < 2 ||
-      formation.length > 4 ||
-      formation.reduce((sum, n) => sum + n, 0) !== 10
-    ) {
-      /* No verified formation and no valid grid/coordinates: never fake a 4-3-3. */
-      return [];
-    }
-
-    const rows = [
-      groups.gk.slice(0,1)
-    ];
-
-    let di = 0;
-    let mi = 0;
-    let ai = 0;
-    let ui = 0;
-
-    formation.forEach(
-      (
-        count,
-        rowIndex
-      ) => {
-
-        let source = [];
-
-        if (
-          rowIndex === 0
-        ) {
-
-          source =
-            groups.def.slice(
-              di,
-              di + count
-            );
-
-          di +=
-            source.length;
-
-        } else if (
-          rowIndex ===
-          formation.length - 1
-        ) {
-
-          source = groups.att.slice(ai, ai + count);
-          ai += source.length;
-
-          while (source.length < count && groups.wide.length) source.push(groups.wide.shift());
-
-        } else {
-
-          source = groups.mid.slice(mi, mi + count);
-          mi += source.length;
-
-          /* In a four-line system, wingers occupy the attacking-midfield line,
-             not the lone striker's row. */
-          if (formation.length >= 4 && rowIndex === formation.length - 2) {
-            while (source.length < count && groups.wide.length) source.push(groups.wide.shift());
-          }
-
-        }
-
-        while (
-          source.length <
-            count &&
-          ui <
-            groups.unknown.length
-        ) {
-
-          source.push(
-            groups.unknown[
-              ui++
-            ]
-          );
-
-        }
-
-        rows.push(
-          source
-        );
-
-      }
-    );
-
-    const result = [];
-
-    function lateralRank(player) {
-      const p = norm(playerPosition(player)).replace(/[^a-z0-9]+/g, "");
-      if (/(leftback|leftwingback|lb|lwb|leftmidfielder|lm|leftwing|lw|lf|lcm|ldm|lst|^dl$|^dfl$|^ml$|^mfl$|^fl$|^fwl$)$/.test(p)) return 0;
-      if (/(rightback|rightwingback|rb|rwb|rightmidfielder|rm|rightwing|rw|rf|rcm|rdm|rst|^dr$|^dfr$|^mr$|^mfr$|^fr$|^fwr$)$/.test(p)) return 4;
-      if (/(leftcentreback|leftcenterback|lcb)$/.test(p)) return 1;
-      if (/(rightcentreback|rightcenterback|rcb)$/.test(p)) return 3;
-      if (/(centreback|centerback|cb|centralmidfielder|cm|dm|cdm|st|cf|^dc$|^dfc$|^mc$|^mfc$|^fc$|^fwc$)$/.test(p)) return 2;
-      return 2;
-    }
-    rows.forEach(row => row.sort((a,b) => lateralRank(a) - lateralRank(b)));
-
-    rows.forEach(
-      (
-        row,
-        rowIndex
-      ) => {
-
-        row.forEach(
-          (
-            player,
-            playerIndex
-          ) => {
-
-            const x =
-              row.length === 1
-                ? 50
-                : 16 +
-                  68 *
-                    (
-                      playerIndex /
-                      Math.max(
-                        1,
-                        row.length - 1
-                      )
-                    );
-
-            let y =
-              rows.length === 1
-                ? 50
-                : 8 +
-                  84 *
-                    (
-                      rowIndex /
-                      Math.max(
-                        1,
-                        rows.length - 1
-                      )
-                    );
-
-            if (
-              side === "away"
-            ) {
-              y =
-                100 - y;
-            }
-
-            result.push({
-              player,
-
-              x:
-                Math.max(
-                  6,
-                  Math.min(
-                    94,
-                    x
-                  )
-                ),
-
-              y:
-                Math.max(
-                  6,
-                  Math.min(
-                    94,
-                    y
-                  )
-                )
-            });
-
-          }
-        );
-
-      }
-    );
-
-    return result;
+    /* Source provided no usable per-player position data: do not invent slots. */
+    return [];
   }
 
   /* =========================================================
@@ -3028,6 +2660,55 @@ function assignFormationRoleLabels(players, formation, readPosition) {
     return details;
   }
 
+
+  function hasOfficialLineupCoordinates(details) {
+    const groups = Array.isArray(details?.lineups) ? details.lineups : [];
+    if (groups.length < 2) return false;
+    return groups.slice(0,2).every(group => {
+      const starters = Array.isArray(group?.startXI) ? group.startXI
+        : Array.isArray(group?.starters) ? group.starters
+        : Array.isArray(group?.xi) ? group.xi : [];
+      if (starters.length !== 11) return false;
+      const points = starters.map(player => {
+        const p = getPlayerObject(player);
+        const objects = [player?.player,player,player?.raw?.player,player?.raw,p].filter(x=>x&&typeof x==="object");
+        for (const source of objects) {
+          const xRaw=source.x??source.coord_x??source.coordinate_x??source.pitch_x??source.pitchX;
+          const yRaw=source.y??source.coord_y??source.coordinate_y??source.pitch_y??source.pitchY;
+          if (xRaw===null||xRaw===undefined||xRaw===""||yRaw===null||yRaw===undefined||yRaw==="") continue;
+          const x=Number(xRaw),y=Number(yRaw);
+          if (Number.isFinite(x)&&Number.isFinite(y)&&x>=0&&x<=120&&y>=0&&y<=100) return {x,y};
+        }
+        return null;
+      });
+      if (points.every(Boolean)) {
+        if (Math.max(...points.map(p=>p.x))-Math.min(...points.map(p=>p.x))>10 &&
+            Math.max(...points.map(p=>p.y))-Math.min(...points.map(p=>p.y))>10) return true;
+      }
+      const grids=starters.map(player=>{
+        const p=getPlayerObject(player);
+        const sources=[player?.player,player,player?.raw?.player,player?.raw,p].filter(x=>x&&typeof x==="object");
+        for(const source of sources){
+          const value=source.grid??source.position_grid??source.positionGrid??source.formation_grid??source.formationGrid;
+          if(Array.isArray(value)&&value.length>=2){
+            const row=Number(value[0]),col=Number(value[1]);if(Number.isInteger(row)&&Number.isInteger(col))return {row,col};
+          }
+          if(value&&typeof value==="object"){
+            const row=Number(value.row??value.line??value.y),col=Number(value.column??value.col??value.slot??value.x);
+            if(Number.isInteger(row)&&Number.isInteger(col))return {row,col};
+          }
+          if(typeof value==="string"){
+            const match=value.trim().match(/^(\d+)\s*[:;,.-]\s*(\d+)$/);
+            if(match)return {row:Number(match[1]),col:Number(match[2])};
+          }
+        }
+        return null;
+      });
+      return grids.every(Boolean)&&new Set(grids.map(item=>item.row+":"+item.col)).size===11&&
+        new Set(grids.map(item=>item.row)).size>=3;
+    });
+  }
+
   /* =========================================================
      OPEN NEW MATCH
      ========================================================= */
@@ -3105,13 +2786,51 @@ function assignFormationRoleLabels(players, formation, readPosition) {
 
       try {
 
-        const details =
+        let details =
           await fetchDetails(
             source
           );
 
         if (requestId !== activeNewDetailsRequest) {
           return true;
+        }
+
+        if (!hasOfficialLineupCoordinates(details)) {
+          try {
+            const homeName = details?.teams?.home?.name || details?.home_team?.name ||
+              details?.home?.name || details?.lineups?.[0]?.team?.name || match?.home?.name || "";
+            const awayName = details?.teams?.away?.name || details?.away_team?.name ||
+              details?.away?.name || details?.lineups?.[1]?.team?.name || match?.away?.name || "";
+            const lookupDate = details?.fixture?.date || details?.date || details?.time ||
+              match?.fixture?.date || match?.date || match?.time || "";
+            if (homeName && awayName && lookupDate) {
+              const params = new URLSearchParams({
+                fixture: "sofa-fotmob-lookup",
+                home: String(homeName),
+                away: String(awayName),
+                date: String(lookupDate)
+              });
+              const response = await fetch("/api?" + params.toString(), {
+                cache: "no-store",
+                headers: { Accept: "application/json" }
+              });
+              const payload = await response.json();
+              const official = payload?.data || payload?.match || payload;
+              if (response.ok && hasOfficialLineupCoordinates(official)) {
+                details = { ...details, lineups: official.lineups };
+                console.info("BAKHIRAFOOT: exact official lineup coordinates loaded", {
+                  provider: official?.provider || "FotMob",
+                  home: homeName,
+                  away: awayName
+                });
+              } else {
+                console.warn("BAKHIRAFOOT: no exact official layout for this fixture",
+                  payload?.details || payload?.error || "No complete lineups");
+              }
+            }
+          } catch (layoutError) {
+            console.warn("BAKHIRAFOOT: official lineup fallback failed", layoutError);
+          }
         }
 
         renderDetails(
