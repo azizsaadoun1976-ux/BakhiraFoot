@@ -658,8 +658,30 @@
         ? markedStarters.slice(0, 11)
         : allPlayers.length <= 11 ? allPlayers.slice(0, 11) : [];
 
+    const rawFormation = [
+      typeof block?.formation === "string" ? block.formation : null,
+      block?.formation?.name,
+      block?.formation?.displayName,
+      block?.formation?.label,
+      block?.formation?.value,
+      block?.formation?.formation,
+      block?.tactics?.formation,
+      block?.formationName,
+      block?.formation_name,
+      block?.tacticalFormation,
+      block?.tactical_formation
+    ].find(value => value !== undefined && value !== null && String(value).trim() !== "");
+
+    let formationText = String(rawFormation || "").trim().replace(/[‐‑‒–—−]/g, "-").replace(/\s+/g, "");
+    if (/^\d{3,4}$/.test(formationText)) formationText = formationText.split("").join("-");
+    const formationParts = formationText.split("-").map(Number);
+    const isValidFormation = formationParts.length >= 2 &&
+      formationParts.length <= 4 &&
+      formationParts.every(value => Number.isInteger(value) && value >= 1 && value <= 5) &&
+      formationParts.reduce((sum, value) => sum + value, 0) === 10;
+
     return {
-      formation: String(first(block?.formation, block?.tactics?.formation, "—")),
+      formation: isValidFormation ? formationText : "—",
       players: allPlayers.length ? allPlayers : [...starters, ...substitutes],
       starters,
       substitutes,
@@ -1609,22 +1631,16 @@
 
     }
 
-    let formation =
-      String(
-        lineup.formation ||
-        "4-3-3"
-      )
-        .split("-")
-        .map(Number)
-        .filter(
-          n => n > 0
-        );
-
+    const formationText = String(lineup.formation || "").trim().replace(/[‐‑‒–—−]/g, "-").replace(/\s+/g, "");
+    let formation = formationText.split("-").map(Number).filter(n => Number.isFinite(n) && n > 0);
     if (
-      !formation.length
+      formationText === "—" ||
+      formation.length < 2 ||
+      formation.length > 4 ||
+      formation.reduce((sum, n) => sum + n, 0) !== 10
     ) {
-      formation =
-        [4,3,3];
+      /* No verified formation and no valid grid/coordinates: never fake a 4-3-3. */
+      return [];
     }
 
     const rows = [
