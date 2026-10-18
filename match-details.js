@@ -6143,16 +6143,17 @@ const response =
             ${renderPitch(awayLineup, "away", statsMap)}
           </div>
           <div class="bfmd-pitch-legend">
-            <span class="bfmd-chip bfmd-chip--goal">G = But</span>
-            <span class="bfmd-chip bfmd-chip--assist">A = Passe décisive</span>
-            <span class="bfmd-chip bfmd-chip--penalty">PEN = Penalty</span>
-            <span class="bfmd-chip bfmd-chip--own">CSC = But contre son camp</span>
-            <span class="bfmd-chip bfmd-chip--yellow">🟨 Jaune</span>
-            <span class="bfmd-chip bfmd-chip--red">🟥 Rouge</span>
-            <span class="bfmd-chip bfmd-chip--injury">INJ = Blessure</span>
-            <span class="bfmd-chip bfmd-chip--mvp">MVP</span>
-            <span class="bfmd-chip bfmd-chip--sub-in">IN / OUT</span>
-            <span class="bfmd-chip bfmd-chip--rating">★ Note</span>
+            <span class="bfmd-chip bfmd-chip--goal" title="But"><span>But</span>${performanceIcon("goal")}</span>
+            <span class="bfmd-chip bfmd-chip--assist" title="Passe décisive"><span>Passe décisive</span>${performanceIcon("assist")}</span>
+            <span class="bfmd-chip bfmd-chip--penalty" title="But sur penalty"><span>Penalty</span>${performanceIcon("penalty")}</span>
+            <span class="bfmd-chip bfmd-chip--own" title="But contre son camp"><span>But contre son camp</span>${performanceIcon("own")}</span>
+            <span class="bfmd-chip bfmd-chip--yellow" title="Carton jaune"><span>Carton jaune</span>${performanceIcon("yellow")}</span>
+            <span class="bfmd-chip bfmd-chip--red" title="Carton rouge"><span>Carton rouge</span>${performanceIcon("red")}</span>
+            <span class="bfmd-chip bfmd-chip--injury" title="Blessure"><span>Blessure</span>${performanceIcon("injury")}</span>
+            <span class="bfmd-chip bfmd-chip--mvp" title="Joueur du match"><span>Joueur du match</span>${performanceIcon("mvp")}</span>
+            <span class="bfmd-chip bfmd-chip--subIn" title="Entrée en jeu"><span>Entrée</span>${performanceIcon("subIn")}</span>
+            <span class="bfmd-chip bfmd-chip--subOut" title="Sortie du terrain"><span>Sortie</span>${performanceIcon("subOut")}</span>
+            <span class="bfmd-chip bfmd-chip--rating" title="Note du joueur"><span>Note</span>${performanceIcon("rating")}</span>
           </div>
         </div>
 
