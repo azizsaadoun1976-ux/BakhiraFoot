@@ -1437,11 +1437,15 @@ function getPlayerPosition(player) {
   ) {
     raw =
       first(
-        raw?.abbreviation,
+        /* Prefer the full tactical label: abbreviations like MID/DEF/FWD lose detail. */
+        raw?.displayName,
+        raw?.display_name,
+        raw?.name,
+        raw?.fullName,
+        raw?.full_name,
         raw?.shortName,
         raw?.short_name,
-        raw?.displayName,
-        raw?.name,
+        raw?.abbreviation,
         ""
       );
   }
@@ -1508,6 +1512,13 @@ function getPlayerPosition(player) {
     dm: "DM",
     cdm: "DM",
     rdm: "RDM",
+    "defensive midfielder": "DM",
+    "central defensive midfielder": "DM",
+    "holding midfielder": "DM",
+    "deep lying midfielder": "DM",
+    "deep lying playmaker": "DM",
+    "left defensive midfielder": "LDM",
+    "right defensive midfielder": "RDM",
 
     lm: "LM",
     lcm: "LCM",
@@ -1520,6 +1531,15 @@ function getPlayerPosition(player) {
     am: "AM",
     cam: "AM",
     ram: "RAM",
+    "attacking midfielder": "AM",
+    "central attacking midfielder": "AM",
+    "left attacking midfielder": "LAM",
+    "right attacking midfielder": "RAM",
+    "central midfielder": "CM",
+    "left central midfielder": "LCM",
+    "right central midfielder": "RCM",
+    "left midfielder": "LM",
+    "right midfielder": "RM",
 
     lw: "LW",
     lf: "LF",
