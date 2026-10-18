@@ -4734,10 +4734,19 @@ function getPlayerPosition(player) {
       "position_name", "positionName",
       "position_abbreviation", "positionAbbreviation",
       "position_code", "positionCode",
-      "formation_position", "formationPosition",
-      "lineup_position", "lineupPosition",
       "position", "pos", "role"
     ]) addPositionValue(source[key]);
+
+    /* formation_position / lineup_position can be numeric slot IDs, not roles. */
+    for (const key of [
+      "formation_position", "formationPosition",
+      "lineup_position", "lineupPosition"
+    ]) {
+      const value = source[key];
+      if (value === null || value === undefined || value === "") continue;
+      if (/^\d+$/.test(String(value).trim())) continue;
+      addPositionValue(value);
+    }
 
     if (source.games && typeof source.games === "object") {
       addPositionValue(source.games.position);
