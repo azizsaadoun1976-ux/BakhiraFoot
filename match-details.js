@@ -2922,566 +2922,167 @@ function buildLineup(
 
 function pitchPositions(lineup, side) {
   const players = arr(lineup?.xi).slice(0, 11);
-
   if (!players.length) return [];
 
-  /*
-   * Prefer the provider's lineup grid when available (common format: "row:column").
-   * This preserves each starter's actual tactical lane instead of guessing from
-   * broad labels such as MID/DEF/FWD.
-   */
-  const gridEntries = players.map(player => {
-    const rawGrid = first(
-      player?.grid, player?.position?.grid,
-      player?.player?.grid, player?.player?.position?.grid
-    );
-    let row = null, col = null;
-    if (Array.isArray(rawGrid) && rawGrid.length >= 2) {
-      row = Number(rawGrid[0]); col = Number(rawGrid[1]);
-    } else if (rawGrid && typeof rawGrid === "object") {
-      row = Number(first(rawGrid?.row, rawGrid?.y, rawGrid?.line));
-      col = Number(first(rawGrid?.column, rawGrid?.col, rawGrid?.x, rawGrid?.slot));
-    } else if (typeof rawGrid === "string") {
-      const match = rawGrid.trim().match(/^(\d+)\s*[:;,.-]\s*(\d+)$/);
-      if (match) { row = Number(match[1]); col = Number(match[2]); }
+  const objectsFor = player => [
+    player?.player,
+    player,
+    player?.raw?.player,
+    player?.raw,
+    player?.coordinates,
+    player?.player?.coordinates,
+    player?.position,
+    player?.player?.position
+  ].filter(value => value && typeof value === "object");
+
+  const readGrid = player => {
+    for (const source of objectsFor(player)) {
+      const value = source?.grid ?? source?.position_grid ?? source?.positionGrid;
+      if (Array.isArray(value) && value.length >= 2) {
+        const row = Number(value[0]), col = Number(value[1]);
+        if (Number.isInteger(row) && Number.isInteger(col)) return {row,col};
+      }
+      if (value && typeof value === "object") {
+        const row = Number(value.row ?? value.line ?? value.y);
+        const col = Number(value.column ?? value.col ?? value.slot ?? value.x);
+        if (Number.isInteger(row) && Number.isInteger(col)) return {row,col};
+      }
+      if (typeof value === "string") {
+        const match = value.trim().match(/^(\d+)\s*[:;,]\s*(\d+)$/);
+        if (match) return {row:Number(match[1]),col:Number(match[2])};
+      }
     }
-    return { player, row, col, valid: Number.isInteger(row) && row >= 0 && Number.isInteger(col) && col >= 0 && col <= 10 };
-  });
-  const gridRows = [...new Set(gridEntries.filter(item => item.valid).map(item => item.row))].sort((a,b) => a-b);
-  if (gridEntries.length >= 10 && gridEntries.every(item => item.valid) && gridRows.length >= 3) {
-    const minRow = gridRows[0], maxRow = gridRows[gridRows.length - 1];
-    return gridEntries.map(item => {
-      const columns = [...new Set(gridEntries.filter(other => other.row === item.row).map(other => other.col))].sort((a,b) => a-b);
-      const colIndex = columns.indexOf(item.col);
-      const x = columns.length <= 1 ? 50 : 10 + 80 * colIndex / (columns.length - 1);
-      let y = maxRow === minRow ? 50 : 8 + 84 * (item.row - minRow) / (maxRow - minRow);
-      if (side === "away") y = 100 - y;
-      return { player: item.player, x: Math.max(6, Math.min(94, x)), y: Math.max(6, Math.min(94, y)) };
-    });
-  }
-
-  /* Trust provider coordinates only when the coordinate scale is recognizable. */
-  const coords = players.map(player => {
-    const rawX = first(player?.x, player?.coord_x, player?.coordinate_x, player?.player?.x, player?.player?.coord_x, player?.player?.coordinate_x);
-    const rawY = first(player?.y, player?.coord_y, player?.coordinate_y, player?.player?.y, player?.player?.coord_y, player?.player?.coordinate_y);
-    const x = Number(rawX), y = Number(rawY);
-    return { player, x, y, valid: rawX !== null && rawX !== undefined && rawX !== "" && rawY !== null && rawY !== undefined && rawY !== "" && Number.isFinite(x) && Number.isFinite(y) && x >= 0 && y >= 0 && x <= 100 && y <= 100 };
-  });
-  if (coords.length >= 10 && coords.every(item => item.valid)) {
-    const xs = coords.map(item => item.x), ys = coords.map(item => item.y);
-    const minX = Math.min(...xs), maxX = Math.max(...xs), minY = Math.min(...ys), maxY = Math.max(...ys);
-    const normalized = minX >= 0 && minY >= 0 && maxX <= 1 && maxY <= 1 && maxX - minX >= 0.2 && maxY - minY >= 0.2;
-    const integerGrid = xs.every(v => Number.isInteger(v) && v >= 1 && v <= 11) && ys.every(v => Number.isInteger(v) && v >= 1 && v <= 11) && maxX - minX >= 3 && maxY - minY >= 3;
-    const percentages = maxX > 11 && maxY > 11 && maxX - minX >= 15 && maxY - minY >= 15;
-    if (normalized || integerGrid || percentages) {
-      return coords.map(item => {
-        let x = item.x, y = item.y;
-        if (normalized) { x = 8 + x * 84; y = 8 + y * 84; }
-        else if (integerGrid) { x = 8 + ((x - 1) / 10) * 84; y = 8 + ((y - 1) / 10) * 84; }
-        if (side === "away") y = 100 - y;
-        return { player: item.player, x: Math.max(6, Math.min(94, x)), y: Math.max(6, Math.min(94, y)) };
-      });
-    }
-  }
-
-  const formation = normalizeFormation(lineup?.formation);
-  const formationRows = formation.split("-").map(Number);
-  if (formation === "—" || formationRows.length < 2 || formationRows.length > 4 || formationRows.some(n => !Number.isInteger(n) || n < 1) || formationRows.reduce((sum,n) => sum+n,0) !== 10) return [];
-
-  const FORMATIONS = {
-    "4-3-3": [
-      { role: ["LB"], x: 10, y: 27 },
-      { role: ["LCB"], x: 33, y: 27 },
-      { role: ["RCB"], x: 67, y: 27 },
-      { role: ["RB"], x: 90, y: 27 },
-
-      { role: ["LCM","LDM"], x: 32, y: 50 },
-      { role: ["CM","DM","CDM"], x: 50, y: 46 },
-      { role: ["RCM","RDM"], x: 68, y: 50 },
-
-      { role: ["LW","LF"], x: 12, y: 78 },
-      { role: ["ST","CF"], x: 50, y: 84 },
-      { role: ["RW","RF"], x: 88, y: 78 }
-    ],
-
-    "4-2-3-1": [
-      { role: ["LB"], x: 10, y: 27 },
-      { role: ["LCB"], x: 33, y: 27 },
-      { role: ["RCB"], x: 67, y: 27 },
-      { role: ["RB"], x: 90, y: 27 },
-
-      { role: ["LDM","DM","CDM"], x: 37, y: 45 },
-      { role: ["RDM","DM","CDM"], x: 63, y: 45 },
-
-      { role: ["LW","LF"], x: 12, y: 67 },
-      { role: ["LAM","AM","CAM"], x: 50, y: 64 },
-      { role: ["RW","RF"], x: 88, y: 67 },
-
-      { role: ["ST","CF"], x: 50, y: 84 }
-    ],
-
-    "4-4-2": [
-      { role: ["LB"], x: 10, y: 27 },
-      { role: ["LCB"], x: 33, y: 27 },
-      { role: ["RCB"], x: 67, y: 27 },
-      { role: ["RB"], x: 90, y: 27 },
-
-      { role: ["LM","LWB"], x: 10, y: 52 },
-      { role: ["LCM","CM"], x: 36, y: 52 },
-      { role: ["RCM","CM"], x: 64, y: 52 },
-      { role: ["RM","RWB"], x: 90, y: 52 },
-
-      { role: ["LST","ST","CF"], x: 38, y: 82 },
-      { role: ["RST","ST","CF"], x: 62, y: 82 }
-    ],
-
-    "3-5-2": [
-      { role: ["LCB"], x: 25, y: 27 },
-      { role: ["CB"], x: 50, y: 27 },
-      { role: ["RCB"], x: 75, y: 27 },
-
-      { role: ["LWB"], x: 8, y: 46 },
-      { role: ["LCM","LDM"], x: 30, y: 50 },
-      { role: ["CM","DM","CDM"], x: 50, y: 47 },
-      { role: ["RCM","RDM"], x: 70, y: 50 },
-      { role: ["RWB"], x: 92, y: 46 },
-
-      { role: ["LST","ST","CF"], x: 38, y: 82 },
-      { role: ["RST","ST","CF"], x: 62, y: 82 }
-    ],
-
-    "3-4-3": [
-      { role: ["LCB"], x: 25, y: 27 },
-      { role: ["CB"], x: 50, y: 27 },
-      { role: ["RCB"], x: 75, y: 27 },
-
-      { role: ["LM","LWB"], x: 12, y: 50 },
-      { role: ["LCM","CM"], x: 38, y: 50 },
-      { role: ["RCM","CM"], x: 62, y: 50 },
-      { role: ["RM","RWB"], x: 88, y: 50 },
-
-      { role: ["LW","LF"], x: 12, y: 78 },
-      { role: ["ST","CF"], x: 50, y: 84 },
-      { role: ["RW","RF"], x: 88, y: 78 }
-    ],
-
-    "5-3-2": [
-      { role: ["LWB","LB"], x: 7, y: 30 },
-      { role: ["LCB"], x: 28, y: 27 },
-      { role: ["CB"], x: 50, y: 25 },
-      { role: ["RCB"], x: 72, y: 27 },
-      { role: ["RWB","RB"], x: 93, y: 30 },
-
-      { role: ["LCM","LDM"], x: 32, y: 50 },
-      { role: ["CM","DM","CDM"], x: 50, y: 46 },
-      { role: ["RCM","RDM"], x: 68, y: 50 },
-
-      { role: ["LST","ST","CF"], x: 38, y: 83 },
-      { role: ["RST","ST","CF"], x: 62, y: 83 }
-    ],
-
-    "5-4-1": [
-      { role: ["LWB","LB"], x: 7, y: 30 },
-      { role: ["LCB"], x: 28, y: 27 },
-      { role: ["CB"], x: 50, y: 25 },
-      { role: ["RCB"], x: 72, y: 27 },
-      { role: ["RWB","RB"], x: 93, y: 30 },
-
-      { role: ["LM"], x: 10, y: 52 },
-      { role: ["LCM","CM"], x: 36, y: 52 },
-      { role: ["RCM","CM"], x: 64, y: 52 },
-      { role: ["RM"], x: 90, y: 52 },
-
-      { role: ["ST","CF"], x: 50, y: 84 }
-    ]
+    return null;
   };
 
-  function generatedFormationSlots(rows) {
-    const rowY = {
-      2: [37, 83],
-      3: [27, 52, 83],
-      4: [25, 44, 65, 84],
-      5: [23, 38, 54, 69, 84]
-    }[rows.length] || rows.map((_,i) => 25 + 59 * i / Math.max(1, rows.length - 1));
+  const readXY = player => {
+    for (const source of objectsFor(player)) {
+      const xRaw = source.x ?? source.coord_x ?? source.coordinate_x ?? source.pitch_x ?? source.pitchX;
+      const yRaw = source.y ?? source.coord_y ?? source.coordinate_y ?? source.pitch_y ?? source.pitchY;
+      if (xRaw === undefined || yRaw === undefined || xRaw === null || yRaw === null || xRaw === "" || yRaw === "") continue;
+      const x = Number(xRaw), y = Number(yRaw);
+      if (Number.isFinite(x) && Number.isFinite(y) && x >= 0 && y >= 0 && x <= 100 && y <= 100) return {x,y};
+    }
+    return null;
+  };
 
-    return rows.flatMap((count, rowIndex) => {
-      let roles;
-      const last = rows.length - 1;
-      if (rowIndex === 0) {
-        roles = count === 3 ? [["LCB"],["CB"],["RCB"]]
-          : count === 4 ? [["LB"],["LCB"],["RCB"],["RB"]]
-          : count === 5 ? [["LWB"],["LCB"],["CB"],["RCB"],["RWB"]]
-          : Array.from({length:count}, () => ["CB"]);
-      } else if (rowIndex === last) {
-        roles = count === 1 ? [["ST"]]
-          : count === 2 ? [["LST"],["RST"]]
-          : count === 3 ? [["LW"],["ST"],["RW"]]
-          : count === 4 ? [["LW"],["LF"],["RF"],["RW"]]
-          : Array.from({length:count}, () => ["FWD"]);
-      } else if (rows.length === 4 && rowIndex === 1 && count === 2) {
-        roles = [["LDM","DM","CDM"],["RDM","DM","CDM"]];
-      } else if (rows.length === 4 && rowIndex === 2 && count === 3) {
-        roles = [["LW","LM"],["CAM","AM","CM"],["RW","RM"]];
-      } else if (count === 2) {
-        roles = [["LDM","LCM","CM"],["RDM","RCM","CM"]];
-      } else if (count === 3) {
-        roles = [["LCM","LDM","LM"],["CM","DM","CDM"],["RCM","RDM","RM"]];
-      } else if (count === 4) {
-        roles = [["LM","LWB"],["LCM","CM"],["RCM","CM"],["RM","RWB"]];
-      } else if (count === 5) {
-        roles = [["LM","LWB"],["LCM","LDM"],["CM","DM","CDM"],["RCM","RDM"],["RM","RWB"]];
-      } else {
-        roles = Array.from({length:count}, () => ["CM","DM","AM"]);
-      }
+  /* Trust real provider pitch coordinates first. */
+  const xy = players.map(player => ({player, ... (readXY(player) || {x:null,y:null})}));
+  if (xy.length >= 10 && xy.every(item => Number.isFinite(item.x) && Number.isFinite(item.y))) {
+    const xs = xy.map(item => item.x), ys = xy.map(item => item.y);
+    const minX = Math.min(...xs), maxX = Math.max(...xs), minY = Math.min(...ys), maxY = Math.max(...ys);
+    const normalized = maxX <= 1 && maxY <= 1 && maxX-minX >= 0.2 && maxY-minY >= 0.2;
+    const integerGrid = xs.every(v => Number.isInteger(v) && v >= 1 && v <= 11) &&
+      ys.every(v => Number.isInteger(v) && v >= 1 && v <= 11) && maxX-minX >= 3 && maxY-minY >= 3;
+    const percentages = maxX > 11 && maxY > 11 && maxX-minX >= 15 && maxY-minY >= 15;
+    if (normalized || integerGrid || percentages) {
+      return xy.map(item => {
+        let x=item.x, y=item.y;
+        if (normalized) { x=8+x*84; y=8+y*84; }
+        else if (integerGrid) { x=8+((x-1)/10)*84; y=8+((y-1)/10)*84; }
+        if (side === "away") y=100-y;
+        return {player:item.player,x:Math.max(6,Math.min(94,x)),y:Math.max(6,Math.min(94,y))};
+      });
+    }
+  }
 
-      return roles.map((role, index) => ({
-        role,
-        x: count === 1 ? 50 : 10 + 80 * index / (count - 1),
-        y: rowY[rowIndex]
-      }));
+  /* Next, use the provider's grid when it exists for all starters. */
+  const grids = players.map(player => ({player, ...(readGrid(player) || {row:null,col:null})}));
+  const validGrid = grids.length >= 10 &&
+    grids.every(item => Number.isInteger(item.row) && item.row >= 0 &&
+      Number.isInteger(item.col) && item.col >= 0 && item.col <= 10) &&
+    new Set(grids.map(item => `${item.row}:${item.col}`)).size === grids.length;
+  const gridRows = [...new Set(grids.map(item => item.row))].sort((a,b)=>a-b);
+  if (validGrid && gridRows.length >= 3 && gridRows.length <= 5) {
+    return grids.map(item => {
+      const cols = [...new Set(grids.filter(other=>other.row===item.row).map(other=>other.col))].sort((a,b)=>a-b);
+      const x = cols.length <= 1 ? 50 : 10 + 80*cols.indexOf(item.col)/(cols.length-1);
+      let y = gridRows.length <= 1 ? 50 : 8 + 84*gridRows.indexOf(item.row)/(gridRows.length-1);
+      if (side==="away") y=100-y;
+      return {player:item.player,x:Math.max(6,Math.min(94,x)),y:Math.max(6,Math.min(94,y))};
     });
   }
 
-  const slots = FORMATIONS[formation] || generatedFormationSlots(formationRows);
+  /* Only use the shape the provider actually supplied. No missing-formation 4-3-3. */
+  const formation = normalizeFormation(lineup?.formation);
+  const rowsCount = formation.split("-").map(Number);
+  if (formation==="—" || rowsCount.length<2 || rowsCount.length>4 ||
+      rowsCount.some(n=>!Number.isInteger(n)||n<1) ||
+      rowsCount.reduce((sum,n)=>sum+n,0)!==10) return [];
 
-  function roleOf(player) {
-    return norm(
-      getPlayerPosition(player)
-    )
-      .replace(/_/g, " ")
-      .replace(/-/g, " ")
-      .trim()
-      .toUpperCase();
+  const roleText = player => {
+    const value = getPlayerPosition(player);
+    if (value && typeof value==="object") return norm(value.displayName || value.name || value.label || value.abbreviation || "");
+    return norm(value).replace(/[_-]+/g," ").replace(/\s+/g," ").trim();
+  };
+  const roleKey = player => roleText(player).replace(/[^a-z0-9]/g,"");
+
+  function bucket(player) {
+    const p=roleText(player), k=roleKey(player);
+    if (["g","gk","goalkeeper","keeper","goalie"].includes(k) || /goalkeeper|goalie|keeper/.test(p)) return "gk";
+    if (["lw","rw","lf","rf","lwm","rwm"].includes(k) || /winger|left wing|right wing|wing forward/.test(p)) return "wide";
+    if (["d","df","def","defender","defence","defense","back","lb","lwb","lcb","cb","rcb","rb","rwb"].includes(k) ||
+        /defender|defence|defense|back|centre back|center back/.test(p)) return "def";
+    if (["m","mf","mid","midfielder","midfield","cm","mc","lcm","rcm","dm","cdm","ldm","rdm","am","cam","lam","ram","lm","rm"].includes(k) ||
+        /midfield/.test(p)) return "mid";
+    if (["f","fw","fwd","att","attacker","forward","st","cf","ss","lst","rst"].includes(k) ||
+        /striker|forward|attacker/.test(p)) return "att";
+    return "unknown";
+  }
+  function lateral(player) {
+    const p=roleText(player), k=roleKey(player);
+    if (["lb","lwb","lcb","lcm","ldm","lm","lam","lw","lf","lst","lwm"].includes(k) || p.startsWith("left ")) return 0;
+    if (["rb","rwb","rcb","rcm","rdm","rm","ram","rw","rf","rst","rwm"].includes(k) || p.startsWith("right ")) return 4;
+    return 2;
   }
 
-  function isGK(player) {
-    const r = roleOf(player);
-    return (
-      r === "GK" ||
-      r === "G" ||
-      r === "GOALKEEPER" ||
-      r === "KEEPER"
-    );
+  const keeper = players.find(player=>bucket(player)==="gk") || players[0];
+  const field = players.filter(player=>player!==keeper);
+  const used = new Set([keeper]);
+  const rows = rowsCount.map(()=>[]);
+
+  function fitScore(player,rowIndex) {
+    const b=bucket(player), last=rowsCount.length-1;
+    if (rowIndex===0) return b==="def"?120:b==="unknown"?35:b==="mid"?10:-15;
+    if (rowIndex===last) {
+      if (rowsCount.length===3) return b==="att"?120:b==="wide"?115:b==="unknown"?35:b==="mid"?25:-15;
+      return b==="att"?120:b==="unknown"?35:b==="wide"?20:b==="mid"?10:-15;
+    }
+    if (rowsCount.length>=4 && rowIndex===last-1) {
+      return b==="wide"?120:b==="mid"?105:b==="att"?25:b==="unknown"?35:-15;
+    }
+    return b==="mid"?120:b==="unknown"?35:b==="wide"?55:b==="att"?25:-15;
   }
 
-  const keeper =
-    players.find(isGK) ||
-    players[0];
-
-  const fieldPlayers =
-    players.filter(
-      player => player !== keeper
-    );
-
-  const result = [];
-
-  result.push({
-    player: keeper,
-    x: 50,
-    y: side === "away" ? 92 : 8
+  rowsCount.forEach((count,rowIndex)=>{
+    for (let slot=0;slot<count;slot++) {
+      let best=null,bestScore=-Infinity,bestIndex=Infinity;
+      field.forEach((player,index)=>{
+        if (used.has(player)) return;
+        const score=fitScore(player,rowIndex);
+        if (score>bestScore || (score===bestScore && index<bestIndex)) {
+          best=player;bestScore=score;bestIndex=index;
+        }
+      });
+      if (best) { rows[rowIndex].push(best); used.add(best); }
+    }
   });
+  const remaining=field.filter(player=>!used.has(player));
+  if (remaining.length) rows[rows.length-1].push(...remaining);
 
-  const used =
-    new Set([keeper]);
-
-  /*
-   * كنربط كل لاعب بالـslot ديالو
-   * حسب المركز الحقيقي ديالو.
-   */
-  slots.forEach(slot => {
-    let bestPlayer = null;
-    let bestScore = 0;
-
-    fieldPlayers.forEach(player => {
-      if (used.has(player)) return;
-
-      const r = roleOf(player);
-
-      let score = 0;
-
-      if (slot.role.includes(r)) {
-        score = 1000;
-      }
-
-      /*
-       * دفاع
-       */
-      if (
-        (
-          r === "LB" ||
-          r === "LWB"
-        ) &&
-        (
-          slot.role.includes("LB") ||
-          slot.role.includes("LWB")
-        )
-      ) {
-        score = Math.max(score, 900);
-      }
-
-      if (
-        (
-          r === "RB" ||
-          r === "RWB"
-        ) &&
-        (
-          slot.role.includes("RB") ||
-          slot.role.includes("RWB")
-        )
-      ) {
-        score = Math.max(score, 900);
-      }
-
-      if (
-        (
-          r === "CB" ||
-          r === "LCB" ||
-          r === "RCB"
-        ) &&
-        slot.role.some(x =>
-          ["CB","LCB","RCB"].includes(x)
-        )
-      ) {
-        score = Math.max(score, 850);
-      }
-
-      /*
-       * وسط
-       */
-      if (
-        (
-          r === "LM" ||
-          r === "LWB"
-        ) &&
-        slot.role.includes("LM")
-      ) {
-        score = Math.max(score, 850);
-      }
-
-      if (
-        (
-          r === "RM" ||
-          r === "RWB"
-        ) &&
-        slot.role.includes("RM")
-      ) {
-        score = Math.max(score, 850);
-      }
-
-      if (
-        (
-          r === "LDM" ||
-          r === "LDМ" ||
-          r === "LCM"
-        ) &&
-        slot.role.some(x =>
-          ["LDM","LCM","CM"].includes(x)
-        )
-      ) {
-        score = Math.max(score, 820);
-      }
-
-      if (
-        (
-          r === "RDM" ||
-          r === "RCM"
-        ) &&
-        slot.role.some(x =>
-          ["RDM","RCM","CM"].includes(x)
-        )
-      ) {
-        score = Math.max(score, 820);
-      }
-
-      if (
-        (
-          r === "DM" ||
-          r === "CDM"
-        ) &&
-        slot.role.some(x =>
-          ["DM","CDM"].includes(x)
-        )
-      ) {
-        score = Math.max(score, 900);
-      }
-
-      /*
-       * أجنحة
-       */
-      if (
-        (
-          r === "LW" ||
-          r === "LF"
-        ) &&
-        slot.role.some(x =>
-          ["LW","LF"].includes(x)
-        )
-      ) {
-        score = Math.max(score, 950);
-      }
-
-      if (
-        (
-          r === "RW" ||
-          r === "RF"
-        ) &&
-        slot.role.some(x =>
-          ["RW","RF"].includes(x)
-        )
-      ) {
-        score = Math.max(score, 950);
-      }
-
-      /*
-       * أدوار عامة من المصادر اللي ما كتعطيش
-       * LB/CB/CM/ST بالتحديد.
-       */
-      const isDefSlot = slot.role.some(x => ["LB","RB","LWB","RWB","CB","LCB","RCB"].includes(x));
-      const isMidSlot = slot.role.some(x => ["LM","RM","LCM","RCM","CM","DM","CDM","LDM","RDM","AM","CAM","LAM","RAM"].includes(x));
-      const isAttSlot = slot.role.some(x => ["LW","RW","LF","RF","ST","CF","LST","RST"].includes(x));
-      if (["D","DF","DEF","DEFENDER","BACK"].includes(r) && isDefSlot) score = Math.max(score, 300);
-      if (["M","MF","MID","MIDFIELDER"].includes(r) && isMidSlot) score = Math.max(score, 300);
-      if (["F","FW","FWD","ATT","ATTACKER","FORWARD"].includes(r) && isAttSlot) score = Math.max(score, 300);
-
-      /*
-       * مهاجم
-       */
-      if (
-        (
-          r === "ST" ||
-          r === "CF" ||
-          r === "SS"
-        ) &&
-        slot.role.some(x =>
-          ["ST","CF","LST","RST"].includes(x)
-        )
-      ) {
-        score = Math.max(score, 900);
-      }
-
-      if (score > bestScore) {
-        bestScore = score;
-        bestPlayer = player;
-      }
+  const rowY = {
+    2:[37,83], 3:[27,52,83], 4:[25,44,65,84], 5:[23,38,54,69,84]
+  }[rows.length] || rows.map((_,i)=>25+59*i/Math.max(1,rows.length-1));
+  const result=[{player:keeper,x:50,y:side==="away"?92:8}];
+  rows.forEach((row,rowIndex)=>{
+    row.sort((a,b)=>lateral(a)-lateral(b));
+    row.forEach((player,index)=>{
+      let y=rowY[rowIndex];
+      if (side==="away") y=100-y;
+      result.push({player,x:row.length<=1?50:10+80*index/(row.length-1),y:Math.max(5,Math.min(95,y))});
     });
-
-    if (bestPlayer) {
-      used.add(bestPlayer);
-
-      let y = slot.y;
-
-      if (side === "away") {
-        y = 100 - y;
-      }
-
-      result.push({
-        player: bestPlayer,
-        x: slot.x,
-        y: Math.max(
-          5,
-          Math.min(95, y)
-        )
-      });
-    }
   });
-
-  /*
-   * أي لاعب ما تـربطش بـslot
-   * ما نخليوهش يختفي.
-   */
-  const remaining =
-    fieldPlayers.filter(
-      player => !used.has(player)
-    );
-
-  remaining.forEach(
-    (player, index) => {
-      const r = roleOf(player);
-
-      let x = 50;
-      let y = 50;
-
-      if (
-        r === "LB" ||
-        r === "LWB"
-      ) {
-        x = 10;
-        y = 30;
-      }
-      else if (
-        r === "RB" ||
-        r === "RWB"
-      ) {
-        x = 90;
-        y = 30;
-      }
-      else if (
-        r === "LW" ||
-        r === "LF"
-      ) {
-        x = 12;
-        y = 78;
-      }
-      else if (
-        r === "RW" ||
-        r === "RF"
-      ) {
-        x = 88;
-        y = 78;
-      }
-      else if (
-        r === "DM" ||
-        r === "CDM"
-      ) {
-        x = 50;
-        y = 45;
-      }
-      else if (
-        r === "LM"
-      ) {
-        x = 12;
-        y = 52;
-      }
-      else if (
-        r === "RM"
-      ) {
-        x = 88;
-        y = 52;
-      }
-      else if (
-        r === "ST" ||
-        r === "CF"
-      ) {
-        x = 50;
-        y = 84;
-      }
-      else {
-        x =
-          30 +
-          (index * 20);
-
-        y = 52;
-      }
-
-      if (side === "away") {
-        y = 100 - y;
-      }
-
-      result.push({
-        player,
-        x: Math.max(
-          5,
-          Math.min(95, x)
-        ),
-        y: Math.max(
-          5,
-          Math.min(95, y)
-        )
-      });
-    }
-  );
-
-  return result.slice(0, 11);
+  return result;
 }
   
   /* =========================================================
