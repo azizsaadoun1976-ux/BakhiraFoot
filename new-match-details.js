@@ -436,37 +436,63 @@
         player
       );
 
-    const value =
-      first(
-        /* Exact role/code fields first; generic role labels last. */
-        player?.position_name,
-        player?.positionName,
-        player?.position_abbreviation,
-        player?.positionAbbreviation,
-        player?.position_code,
-        player?.positionCode,
-        player?.formation_position,
-        player?.formationPosition,
-        player?.lineup_position,
-        player?.lineupPosition,
-        player?.position,
-        player?.pos,
-        player?.role,
-        p?.position_name,
-        p?.positionName,
-        p?.position_abbreviation,
-        p?.positionAbbreviation,
-        p?.position_code,
-        p?.positionCode,
-        p?.formation_position,
-        p?.formationPosition,
-        p?.lineup_position,
-        p?.lineupPosition,
-        p?.position,
-        p?.pos,
-        p?.role,
-        ""
-      );
+    const raw = player?.raw?.player || player?.raw || {};
+    const candidates = [
+      player?.position_name, player?.positionName,
+      player?.position_abbreviation, player?.positionAbbreviation,
+      player?.position_code, player?.positionCode,
+      p?.position_name, p?.positionName,
+      p?.position_abbreviation, p?.positionAbbreviation,
+      p?.position_code, p?.positionCode,
+      raw?.position_name, raw?.positionName,
+      raw?.position_abbreviation, raw?.positionAbbreviation,
+      raw?.position_code, raw?.positionCode,
+      raw?.position, raw?.pos, raw?.role,
+      player?.position, player?.pos, player?.role,
+      p?.position, p?.pos, p?.role
+    ];
+
+    const labels = [];
+    for (const candidate of candidates) {
+      if (candidate === null || candidate === undefined || candidate === "") continue;
+      if (typeof candidate === "object") {
+        for (const key of [
+          "position_name", "positionName",
+          "position_abbreviation", "positionAbbreviation",
+          "position_code", "positionCode",
+          "abbreviation", "shortName", "short_name",
+          "displayName", "display_name", "name", "label", "code"
+        ]) {
+          const label = candidate[key];
+          if (label !== null && label !== undefined && String(label).trim()) labels.push(String(label).trim());
+        }
+      } else if (!/^\d+$/.test(String(candidate).trim())) {
+        labels.push(String(candidate).trim());
+      }
+    }
+
+    const broadRoles = new Set([
+      "d","df","def","defender","defence","defense",
+      "m","mf","mid","midfielder","midfield",
+      "f","fw","fwd","att","attacker","forward","striker"
+    ]);
+    const exactRole = labels.find(label =>
+      !broadRoles.has(norm(label).replace(/[^a-z0-9]/g, ""))
+    );
+    const slotCandidate = first(
+      player?.formation_slot, player?.formationSlot,
+      player?.lineup_position, player?.lineupPosition,
+      player?.formation_position, player?.formationPosition,
+      p?.formation_slot, p?.formationSlot,
+      p?.lineup_position, p?.lineupPosition,
+      p?.formation_position, p?.formationPosition
+    );
+    const textualSlot = slotCandidate !== null &&
+      slotCandidate !== undefined &&
+      !/^\d+$/.test(String(slotCandidate).trim())
+        ? String(slotCandidate)
+        : "";
+    const value = exactRole || labels[0] || textualSlot || "";
 
     if (
       typeof value ===
