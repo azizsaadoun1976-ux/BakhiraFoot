@@ -1777,7 +1777,7 @@ async function sofaDetails(
         player?.position?.label,player?.position?.abbreviation,player?.position?.name,
         player?.role?.label,player?.role?.name
       ];
-      const broad=new Set(["g","gk","d","df","def","m","mf","mid","f","fw","fwd","att","forward"]);
+      const broad=new Set(["d","df","def","defender","defence","defense","m","mf","mid","midfielder","midfield","f","fw","fwd","att","attacker","forward"]);
       for (const value of values) {
         if (typeof value!=="string" || !value.trim()) continue;
         const label=value.trim().toUpperCase().replace(/[^A-Z0-9]/g,"");
@@ -1817,8 +1817,7 @@ async function sofaDetails(
         cluster.entries.push(entry);
         cluster.y=cluster.entries.reduce((sum,item)=>sum+item.point.y,0)/cluster.entries.length;
       }
-      let defensive=clusters;
-      if (side==="away") defensive=[...clusters].reverse();
+      const defensive=clusters;
       const expected=[1,...rows];
       if (defensive.length!==expected.length || defensive.some((group,i)=>group.entries.length!==expected[i])) return new Map();
       const result=new Map();
@@ -1826,7 +1825,7 @@ async function sofaDetails(
       for (let row=1;row<defensive.length;row++) {
         const roles=templates[row-1], group=defensive[row].entries;
         if (!Array.isArray(roles) || roles.length!==group.length) return new Map();
-        const ordered=[...group].sort((a,b)=>side==="away"?b.point.x-a.point.x:a.point.x-b.point.x);
+        const ordered=[...group].sort((a,b)=>a.point.x-b.point.x);
         ordered.forEach((entry,i)=>result.set(entry.index,roles[i]));
       }
       return result;
