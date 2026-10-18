@@ -2712,9 +2712,20 @@ function normalizeMatch(item) {
         raw?.formationPosition,
         null
       );
+      const lineupPositionValue = first(
+        wrapper?.lineup_position,
+        wrapper?.lineupPosition,
+        raw?.lineup_position,
+        raw?.lineupPosition,
+        null
+      );
       const numericFormationPosition =
-        /^\\d+$/.test(String(formationPositionValue ?? "").trim())
+        /^\d+$/.test(String(formationPositionValue ?? "").trim())
           ? Number(formationPositionValue)
+          : null;
+      const numericLineupPosition =
+        /^\d+$/.test(String(lineupPositionValue ?? "").trim())
+          ? Number(lineupPositionValue)
           : null;
 
       const formationSlot = first(
@@ -2725,13 +2736,16 @@ function normalizeMatch(item) {
         numericFormationPosition >= 1 && numericFormationPosition <= 11
           ? numericFormationPosition
           : null,
+        numericLineupPosition >= 1 && numericLineupPosition <= 11
+          ? numericLineupPosition
+          : null,
         null
       );
 
       const position = first(
         positionName,
         typeof formationPositionValue === "string" &&
-          !/^\\d+$/.test(formationPositionValue.trim())
+          !/^\d+$/.test(formationPositionValue.trim())
           ? formationPositionValue
           : null,
         wrapper?.position,
@@ -2861,13 +2875,10 @@ function normalizeMatch(item) {
 
           formation_slot: formationSlot,
 
-          lineup_position: first(
-            wrapper?.lineup_position,
-            raw?.lineup_position,
-            wrapper?.lineupPosition,
-            raw?.lineupPosition,
-            null
-          ),
+          lineup_position:
+            numericLineupPosition === null
+              ? lineupPositionValue
+              : null,
 
           grid,
 
