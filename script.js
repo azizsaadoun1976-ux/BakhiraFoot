@@ -5592,6 +5592,8 @@ function getPitchPlayers(lineup) {
   return players.map(item => ({
     ...item.entry,
     player: item.player,
+    sourceX: item.sourceX,
+    sourceY: item.sourceY,
     _grid: validGrid ? `${item.row}:${item.col}` : "",
     _formationRows: formationRows,
     _providerGrid: validGrid
