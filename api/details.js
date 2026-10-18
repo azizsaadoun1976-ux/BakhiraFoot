@@ -4,6 +4,8 @@
    Old SportScore Details stay in api/index.js.
    ========================================================= */
 
+const FOTMOB_CACHE = new Map();
+
 module.exports = async (req, res) => {
 
   const fixture =
@@ -116,16 +118,21 @@ module.exports = async (req, res) => {
     const host = new URL(url).hostname.toLowerCase();
     const isESPN = host.endsWith("espn.com") || host.endsWith("espncdn.com");
     const isTSDB = host.endsWith("thesportsdb.com");
+    const isFotMob = host.endsWith("fotmob.com");
     const referer = isESPN
       ? "https://www.espn.com/"
       : isTSDB
         ? "https://www.thesportsdb.com/"
-        : "https://www.sofascore.com/";
+        : isFotMob
+          ? "https://www.fotmob.com/"
+          : "https://www.sofascore.com/";
     const origin = isESPN
       ? "https://www.espn.com"
       : isTSDB
         ? "https://www.thesportsdb.com"
-        : "https://www.sofascore.com";
+        : isFotMob
+          ? "https://www.fotmob.com"
+          : "https://www.sofascore.com";
 
     const response =
       await fetch(
