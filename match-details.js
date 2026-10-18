@@ -1131,6 +1131,79 @@
         #bfMatchDetailsModal .bfmd-event { grid-template-columns:42px 28px minmax(0,1fr); padding:10px; }
       }
 
+
+      /* Player performance belongs to each individual player card */
+      #bfMatchDetailsModal .bfmd-performance-list { gap:7px; padding:0 8px 10px; }
+      #bfMatchDetailsModal .bfmd-performance-player {
+        display:grid;
+        grid-template-columns:38px minmax(0,1fr) 38px;
+        grid-template-rows:auto auto;
+        align-items:center;
+        gap:4px 8px;
+        padding:9px 8px 8px;
+        border:1px solid rgba(139,177,211,.2);
+        border-left:3px solid rgba(94,234,212,.55);
+        border-radius:11px;
+        background:linear-gradient(120deg,rgba(30,54,77,.96),rgba(16,31,48,.98));
+        box-shadow:0 4px 12px rgba(0,0,0,.12);
+      }
+      #bfMatchDetailsModal .bfmd-performance-player:hover {
+        border-color:rgba(94,234,212,.45);
+        background:linear-gradient(120deg,rgba(35,65,91,.98),rgba(19,38,57,.98));
+      }
+      #bfMatchDetailsModal .bfmd-performance-avatar {
+        grid-column:1; grid-row:1 / span 2;
+        width:36px; height:36px; border-radius:10px;
+        border-color:rgba(179,218,244,.28); background:#203b54;
+      }
+      #bfMatchDetailsModal .bfmd-performance-details {
+        grid-column:2; grid-row:1; align-self:end;
+      }
+      #bfMatchDetailsModal .bfmd-performance-name { font-size:10px; line-height:1.25; }
+      #bfMatchDetailsModal .bfmd-performance-position { font-size:8px; }
+      #bfMatchDetailsModal .bfmd-performance-rating {
+        grid-column:3; grid-row:1;
+        min-width:36px; min-height:32px;
+        display:flex; align-items:center; justify-content:center;
+        padding:4px; border-radius:8px;
+        font-size:12px; border:1px solid rgba(143,174,207,.15);
+      }
+      #bfMatchDetailsModal .bfmd-performance-tags--inside {
+        grid-column:2 / 4; grid-row:2;
+        display:flex; align-items:center; flex-wrap:wrap;
+        gap:4px; margin:3px 0 0; min-height:17px;
+      }
+      #bfMatchDetailsModal .bfmd-performance-tag {
+        padding:3px 5px; border-radius:5px; font-size:8px;
+        border:1px solid rgba(151,181,211,.12);
+      }
+      #bfMatchDetailsModal .bfmd-performance-no-event {
+        display:inline-flex; color:#8da4bd; font-size:8px;
+        line-height:1.3; padding:2px 0;
+      }
+      #bfMatchDetailsModal .bfmd-performance-tag--goal { border-color:rgba(52,211,153,.2); }
+      #bfMatchDetailsModal .bfmd-performance-tag--yellow { border-color:rgba(250,204,21,.22); }
+      #bfMatchDetailsModal .bfmd-performance-tag--red { border-color:rgba(251,113,133,.23); }
+      #bfMatchDetailsModal .bfmd-performance-tag--own { border-color:rgba(244,114,182,.23); }
+      #bfMatchDetailsModal .bfmd-performance-tag--penalty { border-color:rgba(251,191,36,.23); }
+      #bfMatchDetailsModal .bfmd-performance-tag--assist { border-color:rgba(56,189,248,.23); }
+      @media(max-width:1120px) {
+        #bfMatchDetailsModal .bfmd-performance-list { display:flex; }
+        #bfMatchDetailsModal .bfmd-performance-player { grid-template-columns:38px minmax(0,1fr) 40px; }
+      }
+      @media(max-width:760px) {
+        #bfMatchDetailsModal .bfmd-performance-list { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); }
+        #bfMatchDetailsModal .bfmd-performance-player { grid-template-columns:34px minmax(0,1fr) 34px; gap:4px 6px; padding:8px 6px; }
+        #bfMatchDetailsModal .bfmd-performance-avatar { width:32px; height:32px; }
+        #bfMatchDetailsModal .bfmd-performance-name { font-size:9px; }
+        #bfMatchDetailsModal .bfmd-performance-rating { min-width:32px; min-height:29px; font-size:10px; }
+        #bfMatchDetailsModal .bfmd-performance-tags--inside { gap:3px; }
+        #bfMatchDetailsModal .bfmd-performance-tag { font-size:7px; padding:3px 4px; }
+      }
+      @media(max-width:470px) {
+        #bfMatchDetailsModal .bfmd-performance-list { grid-template-columns:minmax(0,1fr); }
+      }
+
     `;
 
     document.head.appendChild(style);
@@ -4372,12 +4445,18 @@ function normalizeEvent(event, index) {
       ? '<img class="bfmd-performance-photo" src="' + esc(photo) + '" alt="" loading="lazy" onerror="this.style.display=\'none\';this.nextElementSibling.style.display=\'flex\';">' +
         '<span class="bfmd-performance-number" style="display:none">' + esc(number) + '</span>'
       : '<span class="bfmd-performance-number">' + esc(number) + '</span>';
-    return '<div class="bfmd-performance-player">' +
+    const performanceHTML = markers.length
+      ? markers.join("")
+      : '<span class="bfmd-performance-no-event">Aucune action individuelle enregistrée</span>';
+    return '<article class="bfmd-performance-player" aria-label="Performance de ' + esc(name) + '">' +
       '<div class="bfmd-performance-avatar">' + avatar + '</div>' +
-      '<div class="bfmd-performance-details"><div class="bfmd-performance-name" title="' + esc(name) + '">' + esc(name) + '</div>' +
-      '<div class="bfmd-performance-position">' + esc(getPlayerPosition(player) || "Titulaire") + '</div>' +
-      '<div class="bfmd-performance-tags">' + (markers.length ? markers.join("") : '<span class="bfmd-performance-no-event">Aucun événement individuel</span>') + '</div></div>' +
-      '<div class="bfmd-performance-rating ' + ratingClass + '" title="Note du joueur">' + (hasRating ? ratingNumber.toFixed(1) : "—") + '</div></div>';
+      '<div class="bfmd-performance-details">' +
+        '<div class="bfmd-performance-name" title="' + esc(name) + '">' + esc(name) + '</div>' +
+        '<div class="bfmd-performance-position">' + esc(getPlayerPosition(player) || "Titulaire") + '</div>' +
+      '</div>' +
+      '<div class="bfmd-performance-rating ' + ratingClass + '" title="Note du joueur">' + (hasRating ? ratingNumber.toFixed(1) : "—") + '</div>' +
+      '<div class="bfmd-performance-tags bfmd-performance-tags--inside">' + performanceHTML + '</div>' +
+    '</article>';
   }
 
   function renderTeamPerformancePanel(lineup, statsMap, side) {
