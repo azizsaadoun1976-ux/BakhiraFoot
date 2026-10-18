@@ -5890,6 +5890,23 @@ function makePitchCoordinates(pitchPlayers, side) {
     return [];
   }
 
+  /*
+   * Even with a formation string, do not guess individual player slots if the
+   * provider supplies only generic D / MID / FWD roles and no grid/slot.
+   * In that case render the official XI list, not a fabricated pitch.
+   */
+  const genericPositionKeys = new Set([
+    "d", "df", "def", "defender", "defence", "defense", "back",
+    "m", "mf", "mid", "midfielder", "midfield",
+    "f", "fw", "fwd", "att", "attacker", "forward"
+  ]);
+  const exactRolesAvailable = players.every(item => {
+    if (positionBucket(item) === "gk") return true;
+    const key = positionKey(item);
+    return positionBucket(item) !== "unknown" && !genericPositionKeys.has(key);
+  });
+  if (!exactRolesAvailable) return [];
+
   const lines = formationRows.map(() => []);
   const locatedKeeper = players.find(item => positionBucket(item) === "gk");
   const keeper = locatedKeeper || players[0];
