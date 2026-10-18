@@ -5165,33 +5165,6 @@ function buildEventContributions(events) {
         item.goals += 1;
       }
 
-      if (
-        event?.assist?.id ||
-        event?.assist?.name
-      ) {
-        const assistId =
-          event?.assist?.id ||
-          null;
-
-        const assistName =
-          event?.assist?.name ||
-          "";
-
-        if (
-          (
-            assistId &&
-            key === `id-${assistId}`
-          ) ||
-          (
-            assistName &&
-            key ===
-              `name-${normalizeText(assistName)}`
-          )
-        ) {
-          item.assists += 1;
-        }
-      }
-
       if (type.includes("injur") || type.includes("hurt") || type.includes("medical") || detail.includes("injur") || detail.includes("hurt")) {
         item.injury += 1;
       }
@@ -6345,7 +6318,7 @@ function renderPitchPlayer(playerData, x, y) {
   add("YC", numberOrZero(playerData?.yellow) > 0, "yellow");
   add("RC", numberOrZero(playerData?.red) > 0, "red");
   add("INJ", numberOrZero(playerData?.injury) > 0, "injury");
-  add("MVP", playerData?.mvp === true, "mvp");
+  add(playerData?.mvpEstimated ? "MVP*" : "MVP", playerData?.mvp === true, "mvp");
   return '<div class="bf-pitch-player" style="left:' + x + '%;top:' + y + '%;" title="' + escapeHTML(playerData?.name || "") + '">' +
     '<div class="bf-pitch-role">' + escapeHTML(playerData?.position || "—") + '</div>' +
     '<div class="bf-pitch-identity"><span class="bf-shirt">' + escapeHTML(playerData?.number ?? "?") + '</span><span class="bf-pitch-name">' + escapeHTML(shortPlayerName(playerData?.name)) + '</span></div>' +
@@ -6357,13 +6330,35 @@ function renderPitchPlayer(playerData, x, y) {
    PITCH
 ========================================================= */
 
+function pitchPlayerIdentityKey(data) {
+  const id=data?.id;
+  if(id!==null && id!==undefined && String(id).trim()) return `id-${String(id).trim()}`;
+  const name=normalizeText(data?.name || "");
+  return name ? `name-${name}` : "";
+}
+
+function getMatchMvpCandidate(homeLineup, awayLineup, homeId, awayId, performanceMap, eventMap) {
+  const entries = [
+    ...(Array.isArray(homeLineup?.startXI) ? homeLineup.startXI.map(player=>({player,teamId:homeId})) : []),
+    ...(Array.isArray(awayLineup?.startXI) ? awayLineup.startXI.map(player=>({player,teamId:awayId})) : [])
+  ];
+  const candidates=entries.map(entry=>getPlayerData(entry.player,entry.teamId,performanceMap,eventMap));
+  const official=candidates.find(player=>player.mvp===true);
+  if(official){const key=pitchPlayerIdentityKey(official);if(key)return {key,official:true,name:official.name,rating:official.rating};}
+  const rated=candidates.filter(player=>player.rating!==null&&player.rating!==undefined&&player.rating!==""&&Number.isFinite(Number(player.rating))&&Number(player.rating)>=0&&Number(player.rating)<=10)
+    .sort((a,b)=>Number(b.rating)-Number(a.rating));
+  if(!rated.length)return null;
+  const best=rated[0],key=pitchPlayerIdentityKey(best);
+  return key?{key,official:false,name:best.name,rating:best.rating}:null;
+}
 function renderPitch(
   lineup,
   teamName,
   side,
   teamId,
   performanceMap,
-  eventMap
+  eventMap,
+  mvpCandidate = null
 ) {
 
   const formation =
@@ -6392,10 +6387,16 @@ function renderPitch(
           eventMap
         );
 
+      const identityKey=pitchPlayerIdentityKey(data);
+      const selectedForMvp=!!mvpCandidate && identityKey===mvpCandidate.key;
       return {
-        data,
-        x: item._x,
-        y: item._y
+        data:{
+          ...data,
+          mvp:data.mvp===true || selectedForMvp,
+          mvpEstimated:selectedForMvp && !mvpCandidate.official && data.mvp!==true
+        },
+        x:item._x,
+        y:item._y
       };
 
     });
@@ -6579,6 +6580,10 @@ function renderFormations(
     awayLineup?.formation ||
     "—";
 
+  const mvpCandidate=getMatchMvpCandidate(
+    homeLineup,awayLineup,homeId,awayId,performanceMap,eventMap
+  );
+
   return `
 
     <div class="bf-detail-section">
@@ -6619,7 +6624,8 @@ function renderFormations(
                 "home",
                 homeId,
                 performanceMap,
-                eventMap
+                eventMap,
+                mvpCandidate
               )
             : `
               <div class="bf-pitch-box">
@@ -6645,7 +6651,8 @@ function renderFormations(
                 "away",
                 awayId,
                 performanceMap,
-                eventMap
+                eventMap,
+                mvpCandidate
               )
             : `
               <div class="bf-pitch-box">
@@ -6664,6 +6671,7 @@ function renderFormations(
         }
 
       </div>
+      ${mvpCandidate && !mvpCandidate.official ? '<div class="bf-mvp-note">MVP estimé à partir de la meilleure note disponible; la source ne le désigne pas officiellement.</div>' : ""}
 
     </div>
   `;
@@ -10062,6 +10070,7 @@ function initSearch() {
     .bf-pitch-chip--goal { background:#087f5b; } .bf-pitch-chip--assist { background:#1d4ed8; }
     .bf-pitch-chip--yellow { background:#a16207; color:#fff7cc; } .bf-pitch-chip--red { background:#b91c1c; }
     .bf-pitch-chip--injury { background:#475569; } .bf-pitch-chip--mvp { background:#facc15; color:#172033; }
+    .bf-mvp-note { margin-top:10px; padding:8px 10px; border-left:3px solid #d4a500; border-radius:5px; background:rgba(250,204,21,.08); font-size:10px; font-weight:750; opacity:.78; }
     .bf-pitch-rating { margin-top:0; padding:2px 5px; background:#e7edf5; color:#142033; border-radius:4px; font-size:9px; font-weight:950; }
     .bf-player-row { border:1px solid rgba(128,145,166,.13); background:rgba(128,145,166,.055); }
     .bf-player-actions { gap:4px; }
