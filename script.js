@@ -4796,6 +4796,58 @@ function parsePitchGrid(value) {
     ? { row, col } : null;
 }
 
+function getPlayerFormationSlot(player) {
+  const sources = [
+    player?.raw?.player,
+    player?.raw,
+    player?.player?.raw?.player,
+    player?.player?.raw,
+    player?.player,
+    player?.player?.position,
+    player?.position,
+    player
+  ].filter(value => value && typeof value === "object");
+
+  const keys = [
+    "formation_position", "formationPosition",
+    "formation_position_id", "formationPositionId",
+    "formation_slot", "formationSlot",
+    "lineup_position", "lineupPosition"
+  ];
+
+  for (const source of sources) {
+    for (const key of keys) {
+      let value = source[key];
+      if (value && typeof value === "object") {
+        value = value.number ?? value.slot ?? value.position ?? value.value ?? value.id ?? value.code;
+      }
+      if (value === null || value === undefined || value === "") continue;
+      const slot = Number(value);
+      if (Number.isInteger(slot) && slot >= 1 && slot <= 11) return slot;
+    }
+  }
+  return null;
+}
+
+function formationSlotToGrid(slot, formationRows) {
+  if (!Number.isInteger(slot) || slot < 1 || slot > 11 ||
+      !Array.isArray(formationRows) ||
+      formationRows.reduce((sum, count) => sum + count, 0) !== 10) return null;
+
+  const rows = [1, ...formationRows];
+  let remaining = slot - 1;
+  for (let rowIndex = 0; rowIndex < rows.length; rowIndex++) {
+    const count = rows[rowIndex];
+    if (remaining < count) {
+      /* Provider slot numbers are commonly ordered right-to-left. */
+      const column = count - remaining;
+      return `${rowIndex + 1}:${column}`;
+    }
+    remaining -= count;
+  }
+  return null;
+}
+
 function getPlayerCoordinates(player) {
   const objects = [
     player?.player,
@@ -5552,17 +5604,11 @@ function getPitchPlayers(lineup) {
     : [];
   if (!starters.length) return [];
 
-  /*
-   * Never invent 4-3-3 when the provider omitted its formation.
-   * We keep the actual formation if one was sent, and validate provider
-   * grid independently so 4-4-2, 3-5-2, 4-2-3-1, etc. remain valid.
-   */
-  const formation = String(
-    typeof lineup?.formation === "object"
-      ? (lineup?.formation?.name || lineup?.formation?.label || lineup?.formation?.value || "")
-      : (lineup?.formation || lineup?.tacticalFormation || lineup?.formationName || lineup?.formation_name || "")
-  ).trim().replace(/\s+/g, "");
-
+  /* Never invent 4-3-3: preserve only a real formation from the source. */
+  const rawFormation = typeof lineup?.formation === "object"
+    ? (lineup?.formation?.name || lineup?.formation?.label || lineup?.formation?.value || "")
+    : (lineup?.formation || lineup?.tacticalFormation || lineup?.formationName || lineup?.formation_name || "");
+  const formation = String(rawFormation).trim().replace(/[‐‑‒–—−]/g, "-").replace(/\s+/g, "");
   let formationRows = formation.split("-").map(Number).filter(n => Number.isFinite(n) && n > 0);
   if (!formationRows.length || formationRows.reduce((sum, n) => sum + n, 0) !== 10) {
     formationRows = null;
@@ -5570,7 +5616,12 @@ function getPitchPlayers(lineup) {
 
   const players = starters.map((entry, index) => {
     const player = entry?.player || entry || {};
-    const parsed = parsePitchGrid(getPlayerGrid(entry));
+    const nativeGrid = parsePitchGrid(getPlayerGrid(entry));
+    const explicitSlot = getPlayerFormationSlot(entry);
+    const slotGrid = !nativeGrid && formationRows
+      ? parsePitchGrid(formationSlotToGrid(explicitSlot, formationRows))
+      : null;
+    const parsed = nativeGrid || slotGrid;
     const coords = getPlayerCoordinates(entry);
     return {
       ...entry,
@@ -5583,16 +5634,16 @@ function getPitchPlayers(lineup) {
     };
   });
 
+  /* Validate the provider's exact grid/slot data independently of the formation default. */
   const gridCells = players.map(item => `${item.row}:${item.col}`);
   const gridRows = [...new Set(players
     .filter(item => Number.isInteger(item.row) && Number.isInteger(item.col))
     .map(item => item.row))].sort((a, b) => a - b);
-
   const validGrid =
     players.length === 11 &&
     players.every(item =>
-      Number.isInteger(item.row) && item.row >= 0 &&
-      Number.isInteger(item.col) && item.col >= 0 && item.col <= 10
+      Number.isInteger(item.row) && item.row >= 1 &&
+      Number.isInteger(item.col) && item.col >= 1 && item.col <= 5
     ) &&
     new Set(gridCells).size === gridCells.length &&
     gridRows.length >= 3 && gridRows.length <= 5 &&
