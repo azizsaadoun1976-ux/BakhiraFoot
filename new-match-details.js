@@ -2072,21 +2072,34 @@
   function playerEventBadges(player, details) {
     const name = norm(playerName(player));
     if (!name) return "";
-    const badges = [];
+    const counts = { goals: 0, assists: 0, yellow: 0, red: 0, injury: 0, subs: 0 };
     getEvents(details).forEach(event => {
-      const scorer = norm(first(event?.player?.name, event?.player_name, event?.athlete?.displayName, event?.participants?.[0]?.athlete?.displayName, eventPlayer(event)));
+      const scorer = norm(first(
+        event?.player?.name,
+        event?.player_name,
+        event?.athlete?.displayName,
+        event?.participants?.[0]?.athlete?.displayName,
+        eventPlayer(event)
+      ));
       const assist = norm(eventAssist(event));
       const type = eventType(event);
       if (scorer === name) {
-        if (type.includes("goal") || type.includes("score")) badges.push("⚽");
-        else if (type.includes("yellow")) badges.push("🟨");
-        else if (type.includes("red")) badges.push("🟥");
-        else if (type.includes("sub")) badges.push("🔄");
-        else if (type.includes("injur") || type.includes("hurt")) badges.push("🤕");
+        if (type.includes("goal") || type.includes("score")) counts.goals += 1;
+        else if (type.includes("yellow")) counts.yellow += 1;
+        else if (type.includes("red")) counts.red += 1;
+        else if (type.includes("sub")) counts.subs += 1;
+        else if (type.includes("injur") || type.includes("hurt") || type.includes("medical")) counts.injury += 1;
       }
-      if (assist && assist === name) badges.push("🅰️");
+      if (assist && assist === name && (type.includes("goal") || type.includes("score"))) counts.assists += 1;
     });
-    return [...new Set(badges)].join(" ");
+    const badges = [];
+    if (counts.goals) badges.push("⚽ " + counts.goals);
+    if (counts.assists) badges.push("🅰️ " + counts.assists);
+    if (counts.injury) badges.push("🤕 " + counts.injury);
+    if (counts.yellow) badges.push("🟨 " + counts.yellow);
+    if (counts.red) badges.push("🟥 " + counts.red);
+    if (counts.subs) badges.push("🔄 " + counts.subs);
+    return badges.join(" · ");
   }
 
   function playerIsOfficialMvp(player) {
