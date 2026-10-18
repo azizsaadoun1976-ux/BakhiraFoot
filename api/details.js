@@ -1125,7 +1125,7 @@ async function sofaDetails(
           id: athleteId,
           name: first(athlete?.displayName, athlete?.fullName, athlete?.full_name, athlete?.name, existing.name, ""),
           number: first(athlete?.jersey, athlete?.shirtNumber, athlete?.number, existing.number, null),
-          position: first(athlete?.position?.abbreviation, athlete?.position?.displayName, athlete?.position?.name, typeof athlete?.position === "string" ? athlete.position : null, existing.position, ""),
+          position: first(athlete?.position?.displayName, athlete?.position?.name, athlete?.position?.abbreviation, typeof athlete?.position === "string" ? athlete.position : null, existing.position, ""),
           photo: first(headshot, existing.photo, ""),
           rating: first(athlete?.rating, entry?.rating, stats.rating, stats.matchrating, existing.rating, null),
           stats: { ...(existing.stats || {}), ...stats },
