@@ -4689,21 +4689,111 @@ function getPlayerNumber(player) {
 }
 
 function getPlayerPosition(player) {
-  return (
-    player?.player?.pos ||
-    player?.pos ||
-    player?.games?.position ||
-    player?.position ||
-    ""
-  );
+  if (!player || typeof player !== "object") return "";
+
+  /*
+   * The API adapter keeps the original provider object in "raw".
+   * Read that original object before the simplified pos/position fields,
+   * because those fields may only contain D / MID / FWD.
+   */
+  const sources = [
+    player?.raw?.player,
+    player?.raw,
+    player?.player?.raw?.player,
+    player?.player?.raw,
+    player?.player,
+    player?.games,
+    player
+  ].filter(value => value && typeof value === "object");
+
+  const candidates = [];
+  const addPositionValue = value => {
+    if (value === null || value === undefined || value === "") return;
+    if (typeof value === "object") {
+      for (const key of [
+        "displayName", "display_name", "fullName", "full_name",
+        "positionName", "position_name", "label", "title",
+        "name", "shortName", "short_name", "abbreviation",
+        "code", "slug", "value"
+      ]) {
+        const nested = value[key];
+        if (nested !== null && nested !== undefined && String(nested).trim()) {
+          candidates.push(String(nested).trim());
+        }
+      }
+      return;
+    }
+    if (typeof value === "string" || typeof value === "number") {
+      const text = String(value).trim();
+      if (text) candidates.push(text);
+    }
+  };
+
+  for (const source of sources) {
+    for (const key of [
+      "position_name", "positionName",
+      "formation_position", "formationPosition",
+      "lineup_position", "lineupPosition",
+      "position", "pos", "role"
+    ]) addPositionValue(source[key]);
+
+    if (source.games && typeof source.games === "object") {
+      addPositionValue(source.games.position);
+    }
+  }
+
+  const generic = new Set([
+    "g", "gk", "goalkeeper", "keeper", "goalie",
+    "d", "df", "def", "defender", "defence", "defense", "back",
+    "m", "mf", "mid", "midfielder", "midfield",
+    "f", "fw", "fwd", "att", "attacker", "forward"
+  ]);
+
+  const keyOf = value => normalizeText(value).replace(/[^a-z0-9]/g, "");
+  return candidates.find(value => !generic.has(keyOf(value))) || candidates[0] || "";
 }
 
 function getPlayerGrid(player) {
-  return (
-    player?.player?.grid ||
-    player?.grid ||
-    null
-  );
+  const values = [
+    player?.player?.grid,
+    player?.grid,
+    player?.raw?.player?.grid,
+    player?.raw?.grid,
+    player?.player?.position?.grid,
+    player?.raw?.player?.position?.grid,
+    player?.raw?.position?.grid,
+    player?.position?.grid,
+    player?.raw?.coordinates?.grid
+  ];
+  return values.find(value => value !== null && value !== undefined && value !== "") ?? null;
+}
+
+function parsePitchGrid(value) {
+  if (value === null || value === undefined || value === "") return null;
+
+  if (Array.isArray(value) && value.length >= 2) {
+    const row = Number(value[0]), col = Number(value[1]);
+    return Number.isInteger(row) && Number.isInteger(col) && row >= 0 && col >= 0
+      ? { row, col } : null;
+  }
+
+  if (typeof value === "object") {
+    if (value.grid !== undefined) return parsePitchGrid(value.grid);
+    const rowRaw = value.row ?? value.line ?? value.y ?? value.vertical;
+    const colRaw = value.column ?? value.col ?? value.slot ?? value.x ?? value.horizontal;
+    if (rowRaw !== undefined && colRaw !== undefined) {
+      const row = Number(rowRaw), col = Number(colRaw);
+      return Number.isInteger(row) && Number.isInteger(col) && row >= 0 && col >= 0
+        ? { row, col } : null;
+    }
+    return null;
+  }
+
+  const match = String(value).trim().match(/^(\d+)\s*[:;,]\s*(\d+)$/);
+  if (!match) return null;
+  const row = Number(match[1]), col = Number(match[2]);
+  return Number.isInteger(row) && Number.isInteger(col) && row >= 0 && col >= 0
+    ? { row, col } : null;
 }
 
 function getPlayerPhoto(player) {
@@ -5419,886 +5509,234 @@ function getPositionRow(position) {
 }
 
 function getPitchPlayers(lineup) {
-  if (!lineup) {
-    return [];
-  }
+  if (!lineup) return [];
 
-  const starters =
-    Array.isArray(lineup?.startXI)
-      ? lineup.startXI
-      : [];
+  const starters = Array.isArray(lineup?.startXI)
+    ? lineup.startXI.slice(0, 11)
+    : [];
+  if (!starters.length) return [];
 
-  if (!starters.length) {
-    return [];
-  }
-
-  const formation =
-    String(
-      lineup?.formation || "4-3-3"
-    )
-      .trim()
-      .replace(/\s+/g, "");
-
-  let formationRows =
-    formation
-      .split("-")
-      .map(Number)
-      .filter(
-        n =>
-          Number.isFinite(n) &&
-          n > 0
-      );
-
-  if (
-    formationRows.length === 0 ||
-    formationRows.reduce(
-      (sum, n) => sum + n,
-      0
-    ) !== 10
-  ) {
+  const formation = String(lineup?.formation || "4-3-3").trim().replace(/\s+/g, "");
+  let formationRows = formation.split("-").map(Number).filter(n => Number.isFinite(n) && n > 0);
+  if (!formationRows.length || formationRows.reduce((sum, n) => sum + n, 0) !== 10) {
     formationRows = [4, 3, 3];
   }
 
-  const expectedRows = [
-    1,
-    ...formationRows
-  ];
+  const players = starters.map((entry, index) => {
+    const player = entry?.player || entry || {};
+    const parsed = parsePitchGrid(getPlayerGrid(entry));
+    return { entry, player, index, row: parsed?.row ?? null, col: parsed?.col ?? null };
+  });
 
-  const players =
-    starters.map(
-      (entry, index) => {
-
-        const player =
-          entry?.player ||
-          entry ||
-          {};
-
-        const rawGrid =
-          getPlayerGrid(entry);
-
-        let row = null;
-        let col = null;
-
-        const match =
-          String(
-            rawGrid || ""
-          ).match(
-            /(\d+)\s*:\s*(\d+)/
-          );
-
-        if (match) {
-          row = Number(match[1]);
-          col = Number(match[2]);
-        }
-
-        return {
-          entry,
-          player,
-          index,
-          row,
-          col
-        };
-      }
-    );
-
-  /* =====================================================
-     CHECK GRID
-  ===================================================== */
-
-  const gridOK =
-    players.every(
-      item =>
-        Number.isFinite(item.row) &&
-        Number.isFinite(item.col) &&
-        item.row >= 1 &&
-        item.col >= 1
-    );
-
+  const gridOK = players.every(item =>
+    Number.isInteger(item.row) && item.row >= 0 &&
+    Number.isInteger(item.col) && item.col >= 0
+  );
   let validGrid = gridOK;
 
   if (validGrid) {
-    const positions =
-      players.map(
-        item =>
-          `${item.row}:${item.col}`
-      );
-
-    if (
-      new Set(positions).size !==
-      positions.length
-    ) {
-      validGrid = false;
-    }
+    const cells = players.map(item => `${item.row}:${item.col}`);
+    const rows = [...new Set(players.map(item => item.row))];
+    const rowCounts = rows.map(row => players.filter(item => item.row === row).length);
+    validGrid =
+      new Set(cells).size === cells.length &&
+      rows.length >= 3 && rows.length <= 5 &&
+      rowCounts.every(count => count >= 1 && count <= 5);
   }
 
-  if (validGrid) {
-    const counts = {};
-
-    players.forEach(
-      item => {
-        counts[item.row] =
-          (counts[item.row] || 0) + 1;
-      }
-    );
-
-    const actualRows =
-      Object.keys(counts)
-        .map(Number)
-        .sort(
-          (a, b) => a - b
-        );
-
-    const actualCounts =
-      actualRows.map(
-        row => counts[row]
-      );
-
-    if (
-      actualCounts.length !==
-      expectedRows.length
-    ) {
-      validGrid = false;
-    }
-    else {
-      for (
-        let i = 0;
-        i < expectedRows.length;
-        i++
-      ) {
-        if (
-          actualCounts[i] !==
-          expectedRows[i]
-        ) {
-          validGrid = false;
-          break;
-        }
-      }
-    }
-  }
-
-  /* =====================================================
-     GRID صحيح
-  ===================================================== */
-
-  if (validGrid) {
-    return players.map(
-      item => ({
-        ...item.entry,
-        player: item.player,
-        _grid:
-          `${item.row}:${item.col}`
-      })
-    );
-  }
-
-  /* =====================================================
-     GRID خاسر
-     نخليه فارغ باش makePitchCoordinates
-     تعتمد على position
-  ===================================================== */
-
-  return players.map(
-    item => ({
-      ...item.entry,
-      player: item.player,
-      _grid: ""
-    })
-  );
+  return players.map(item => ({
+    ...item.entry,
+    player: item.player,
+    _grid: validGrid ? `${item.row}:${item.col}` : "",
+    _formationRows: formationRows,
+    _providerGrid: validGrid
+  }));
 }
-function makePitchCoordinates(
-  pitchPlayers,
-  side
-) {
-  if (!Array.isArray(pitchPlayers)) {
-    return [];
+
+function makePitchCoordinates(pitchPlayers, side) {
+  if (!Array.isArray(pitchPlayers) || !pitchPlayers.length) return [];
+
+  const players = pitchPlayers.slice(0, 11);
+
+  /* First choice: real provider grid coordinates, even if position labels are only MID/DEF/FWD. */
+  const gridEntries = players.map(item => {
+    const parsed = parsePitchGrid(item?._grid) || parsePitchGrid(getPlayerGrid(item));
+    return { item, row: parsed?.row ?? null, col: parsed?.col ?? null };
+  });
+  const gridRows = [...new Set(gridEntries.filter(item =>
+    Number.isInteger(item.row) && Number.isInteger(item.col)
+  ).map(item => item.row))].sort((a, b) => a - b);
+  const gridCells = gridEntries.map(item => `${item.row}:${item.col}`);
+  const gridUsable =
+    players.length >= 10 &&
+    gridEntries.every(item =>
+      Number.isInteger(item.row) && item.row >= 0 &&
+      Number.isInteger(item.col) && item.col >= 0
+    ) &&
+    new Set(gridCells).size === gridCells.length &&
+    gridRows.length >= 3 && gridRows.length <= 5 &&
+    gridRows.every(row => gridEntries.filter(item => item.row === row).length <= 5);
+
+  if (gridUsable) {
+    return gridEntries.map(entry => {
+      const columns = [...new Set(gridEntries.filter(other => other.row === entry.row)
+        .map(other => other.col))].sort((a, b) => a - b);
+      const columnIndex = columns.indexOf(entry.col);
+      const x = columns.length <= 1 ? 50 : 10 + 80 * columnIndex / (columns.length - 1);
+      const rowIndex = gridRows.indexOf(entry.row);
+      let y = gridRows.length <= 1 ? 50 : 8 + 84 * rowIndex / (gridRows.length - 1);
+      if (side === "away") y = 100 - y;
+      return {
+        ...entry.item,
+        _x: Math.max(5, Math.min(95, x)),
+        _y: Math.max(7, Math.min(93, y))
+      };
+    });
   }
-
-  const rows = {};
-
-  /* =====================================================
-     POSITION -> X
-  ===================================================== */
-
-  function positionX(position) {
-    const p =
-      normalizeText(
-        position
-      )
-        .replace(/_/g, " ")
-        .replace(/-/g, " ")
-        .trim();
-
-    /*
-     * GOALKEEPER
-     */
-    if (
-      p === "g" ||
-      p === "gk" ||
-      p.includes("goalkeeper") ||
-      p.includes("gardien") ||
-      p.includes("keeper")
-    ) {
-      return 50;
-    }
-
-    /*
-     * LEFT DEFENCE
-     */
-    if (
-      p === "lb" ||
-      p === "lwb" ||
-      p.includes("left back") ||
-      p.includes("left wing back")
-    ) {
-      return p === "lwb" ||
-        p.includes("wing back")
-        ? 8
-        : 12;
-    }
-
-    if (
-      p === "lcb" ||
-      p.includes("left centre back") ||
-      p.includes("left center back")
-    ) {
-      return 32;
-    }
-
-    /*
-     * CENTRE DEFENCE
-     */
-    if (
-      p === "cb" ||
-      p === "d" ||
-      p === "df" ||
-      p === "def"
-    ) {
-      return 50;
-    }
-
-    /*
-     * RIGHT DEFENCE
-     */
-    if (
-      p === "rcb" ||
-      p.includes("right centre back") ||
-      p.includes("right center back")
-    ) {
-      return 68;
-    }
-
-    if (
-      p === "rb" ||
-      p === "rwb" ||
-      p.includes("right back") ||
-      p.includes("right wing back")
-    ) {
-      return p === "rwb" ||
-        p.includes("wing back")
-        ? 92
-        : 88;
-    }
-
-    /*
-     * DEFENSIVE MIDFIELD
-     */
-    if (
-      p === "ldm"
-    ) {
-      return 35;
-    }
-
-    if (
-      p === "dm" ||
-      p === "cdm"
-    ) {
-      return 50;
-    }
-
-    if (
-      p === "rdm"
-    ) {
-      return 65;
-    }
-
-    /*
-     * WIDE MIDFIELD
-     */
-    if (
-      p === "lm" ||
-      p === "lwm" ||
-      p.includes("left midfield")
-    ) {
-      return 12;
-    }
-
-    if (
-      p === "rm" ||
-      p === "rwm" ||
-      p.includes("right midfield")
-    ) {
-      return 88;
-    }
-
-    /*
-     * CENTRAL MIDFIELD
-     */
-    if (
-      p === "lcm"
-    ) {
-      return 35;
-    }
-
-    if (
-      p === "cm" ||
-      p === "mc" ||
-      p === "m" ||
-      p === "mf" ||
-      p.includes("central midfield")
-    ) {
-      return 50;
-    }
-
-    if (
-      p === "rcm"
-    ) {
-      return 65;
-    }
-
-    /*
-     * ATTACKING MIDFIELD
-     */
-    if (
-      p === "lam"
-    ) {
-      return 32;
-    }
-
-    if (
-      p === "am" ||
-      p === "cam"
-    ) {
-      return 50;
-    }
-
-    if (
-      p === "ram"
-    ) {
-      return 68;
-    }
-
-    /*
-     * LEFT WING
-     */
-    if (
-      p === "lw" ||
-      p === "lf" ||
-      p.includes("left wing") ||
-      p.includes("left winger")
-    ) {
-      return 10;
-    }
-
-    /*
-     * RIGHT WING
-     */
-    if (
-      p === "rw" ||
-      p === "rf" ||
-      p.includes("right wing") ||
-      p.includes("right winger")
-    ) {
-      return 90;
-    }
-
-    /*
-     * STRIKER / CENTRE FORWARD
-     */
-    if (
-      p === "st" ||
-      p === "cf" ||
-      p === "ss" ||
-      p === "f" ||
-      p === "fw" ||
-      p === "att" ||
-      p.includes("striker") ||
-      p.includes("centre forward") ||
-      p.includes("center forward") ||
-      p.includes("forward")
-    ) {
-      return 50;
-    }
-
-    return null;
-  }
-
-  /* =====================================================
-     READ GRID
-  ===================================================== */
-
-  pitchPlayers.forEach(
-    (
-      item,
-      index
-    ) => {
-
-      const match =
-        String(
-          item?._grid || ""
-        ).match(
-          /(\d+)\s*:\s*(\d+)/
-        );
-
-      let row = 0;
-      let col = 0;
-
-      if (match) {
-        row =
-          Number(
-            match[1]
-          );
-
-        col =
-          Number(
-            match[2]
-          );
-      }
-
-      if (!row) {
-        row =
-          getPositionRow(
-            getPlayerPosition(item)
-          );
-      }
-
-      if (!row) {
-        row = 3;
-      }
-
-      if (!col) {
-        col =
-          index + 1;
-      }
-
-      if (!rows[row]) {
-        rows[row] = [];
-      }
-
-      rows[row].push({
-        item,
-        row,
-        col,
-        index
-      });
-
-    }
-  );
-
-  const maxRow =
-    Math.max(
-      ...Object.keys(rows)
-        .map(Number),
-      4
-    );
-
-  const coordinates = [];
-
-  /* =====================================================
-     BUILD ROWS
-  ===================================================== */
-
-  Object.keys(rows)
-    .map(Number)
-    .sort(
-      (a, b) =>
-        a - b
-    )
-    .forEach(
-      row => {
-
-        const list =
-          rows[row];
-
-        /*
-         * داخل نفس الخط:
-         * اليسار -> الوسط -> اليمين
-         */
-        list.sort(
-          (a, b) => {
-
-            const ax =
-              positionX(
-                getPlayerPosition(
-                  a.item
-                )
-              );
-
-            const bx =
-              positionX(
-                getPlayerPosition(
-                  b.item
-                )
-              );
-
-            /*
-             * إلا كان عندنا مركز حقيقي
-             */
-            if (
-              ax !== null &&
-              bx !== null &&
-              ax !== bx
-            ) {
-              return ax - bx;
-            }
-
-            /*
-             * fallback: grid column
-             */
-            return (
-              a.col - b.col
-            );
-          }
-        );
-
-        const count =
-          list.length;
-
-        list.forEach(
-          (
-            entry,
-            positionIndex
-          ) => {
-
-            const player =
-              entry.item;
-
-          const exactX =
-  positionX(
-    getPlayerPosition(
-      player
-    )
-  );
-
-let x;
-let y;
-
-            /*
-             * POSITION الحقيقي
-             */
-            if (
-              exactX !== null
-            ) {
-              x = exactX;
-
-              /*
-               * إذا كان أكثر من لاعب عند
-               * نفس المركز العام، نعطيهم
-               * فرق صغير.
-               */
-              const samePosition =
-                list.filter(
-                  other =>
-                    positionX(
-                      getPlayerPosition(
-                        other.item
-                      )
-                    ) === exactX
-                );
-
-if (
-  samePosition.length > 1
-) {
-  const localIndex =
-    samePosition.findIndex(
-      other =>
-        other.item === player
-    );
 
   /*
-   * نستعملو grid column إلا كان موجود
-   * باش اللاعبين بنفس position
-   * يتوزعو حسب المكان الحقيقي ديالهم.
+   * No trustworthy provider grid: create the lines from the advertised formation.
+   * This is the crucial fallback for feeds that provide only generic D / MID / FWD.
    */
-  const cols =
-    samePosition
-      .map(other => {
-        const match =
-          String(
-            other.item?._grid || ""
-          ).match(
-            /(\d+)\s*:\s*(\d+)/
-          );
+  const declaredRows = players.find(item => Array.isArray(item?._formationRows))?._formationRows;
+  let formationRows = Array.isArray(declaredRows) ? declaredRows.map(Number).filter(n => n > 0) : [4, 3, 3];
+  if (!formationRows.length || formationRows.reduce((sum, n) => sum + n, 0) !== 10) {
+    formationRows = [4, 3, 3];
+  }
 
-        return match
-          ? Number(match[2])
-          : null;
-      })
-      .filter(
-        value =>
-          Number.isFinite(value)
-      );
+  const positionText = item => normalizeText(getPlayerPosition(item))
+    .replace(/[_-]+/g, " ").replace(/\s+/g, " ").trim();
+  const positionKey = item => positionText(item).replace(/[^a-z0-9]/g, "");
 
-  if (
-    cols.length === samePosition.length &&
-    new Set(cols).size === cols.length
-  ) {
-    const currentCol =
-      Number(
-        String(
-          player?._grid || ""
-        )
-          .match(
-            /(\d+)\s*:\s*(\d+)/
-          )?.[2] || 0
-      );
+  function positionBucket(item) {
+    const p = positionText(item);
+    const k = positionKey(item);
+    if (["g", "gk", "goalkeeper", "keeper", "goalie"].includes(k) ||
+        p.includes("goalkeeper") || p.includes("goalie") || p.includes("keeper")) return "gk";
 
-    const minCol =
-      Math.min(...cols);
+    if (["d", "df", "def", "defender", "defence", "defense", "back",
+      "lb", "lwb", "lcb", "cb", "rcb", "rb", "rwb"].includes(k) ||
+        p.includes("defender") || p.includes("defence") || p.includes("defense") ||
+        p.includes("back") || p.includes("centre back") || p.includes("center back")) return "def";
 
-    const maxCol =
-      Math.max(...cols);
+    if (["m", "mf", "mid", "midfielder", "midfield", "cm", "mc", "lcm", "rcm",
+      "dm", "cdm", "ldm", "rdm", "am", "cam", "lam", "ram", "lm", "rm", "lwm", "rwm"].includes(k) ||
+        p.includes("midfielder") || p.includes("midfield")) return "mid";
 
-    if (
-      currentCol &&
-      minCol !== maxCol
-    ) {
-      x =
-        12 +
-        (
-          (
-            currentCol -
-            minCol
-          ) /
-          (
-            maxCol -
-            minCol
-          )
-        ) *
-        76;
+    if (["f", "fw", "fwd", "att", "attacker", "forward", "st", "cf", "ss",
+      "lw", "rw", "lf", "rf"].includes(k) ||
+        p.includes("striker") || p.includes("forward") || p.includes("winger") ||
+        p.includes("left wing") || p.includes("right wing")) return "att";
+
+    return "unknown";
+  }
+
+  function laneRank(item) {
+    const p = positionText(item);
+    const k = positionKey(item);
+    if (["lb", "lwb", "lcb", "lcm", "ldm", "lm", "lam", "lw", "lf", "lst", "lwm"].includes(k) ||
+        p.startsWith("left ")) return 0;
+    if (["rb", "rwb", "rcb", "rcm", "rdm", "rm", "ram", "rw", "rf", "rst", "rwm"].includes(k) ||
+        p.startsWith("right ")) return 4;
+    return 2;
+  }
+
+  const locatedKeeper = players.find(item => positionBucket(item) === "gk");
+  const keeper = locatedKeeper || players[0];
+  const used = new Set([keeper]);
+  const outfield = players.filter(item => item !== keeper);
+  const lines = formationRows.map(() => []);
+
+  function midfieldSpecialityScore(item, lineIndex) {
+    const p = positionText(item);
+    const k = positionKey(item);
+    if (formationRows.length < 4) return 0;
+    if (lineIndex === 1) {
+      if (["dm", "cdm", "ldm", "rdm"].includes(k) || p.includes("defensive midfielder")) return 35;
+      if (["am", "cam", "lam", "ram"].includes(k) || p.includes("attacking midfielder")) return -15;
+    }
+    if (lineIndex === formationRows.length - 2) {
+      if (["am", "cam", "lam", "ram", "lm", "rm", "lw", "rw", "lf", "rf"].includes(k) ||
+          p.includes("attacking midfielder") || p.includes("winger")) return 35;
+      if (["dm", "cdm", "ldm", "rdm"].includes(k) || p.includes("defensive midfielder")) return -15;
+      if (["st", "cf", "ss", "striker"].includes(k) || p.includes("striker")) return -25;
+    }
+    return 0;
+  }
+
+  function scoreForLine(item, lineIndex) {
+    const bucket = positionBucket(item);
+    const last = formationRows.length - 1;
+    let score;
+    if (lineIndex === 0) {
+      score = bucket === "def" ? 100 : bucket === "unknown" ? 35 : bucket === "mid" ? 15 : -10;
+    } else if (lineIndex === last) {
+      score = bucket === "att" ? 100 : bucket === "unknown" ? 35 : bucket === "mid" ? 15 : -10;
+    } else {
+      score = bucket === "mid" ? 100 : bucket === "unknown" ? 35 : bucket === "att" ? 25 : 10;
+      score += midfieldSpecialityScore(item, lineIndex);
+    }
+    return score;
+  }
+
+  for (let lineIndex = 0; lineIndex < formationRows.length; lineIndex++) {
+    const count = formationRows[lineIndex];
+    for (let slot = 0; slot < count; slot++) {
+      let best = null;
+      let bestScore = -Infinity;
+      outfield.forEach((item, index) => {
+        if (used.has(item)) return;
+        const score = scoreForLine(item, lineIndex);
+        if (score > bestScore || (score === bestScore && (!best || index < outfield.indexOf(best)))) {
+          best = item;
+          bestScore = score;
+        }
+      });
+      if (best) {
+        lines[lineIndex].push(best);
+        used.add(best);
+      }
     }
   }
-  else {
-    /*
-     * fallback إلا ما كانش grid صالح
-     */
-    const offsets =
-      samePosition.length === 2
-        ? [-20, 20]
-        : samePosition.length === 3
-          ? [-22, 0, 22]
-          : samePosition.length === 4
-            ? [-27, -9, 9, 27]
-            : [0];
 
-    x =
-      exactX +
-      (
-        offsets[
-          localIndex
-        ] ??
-        0
-      );
-  }
-}
-            }
+  /* If a malformed feed supplied extra rows/players, keep every remaining player visible. */
+  const remaining = outfield.filter(item => !used.has(item));
+  if (remaining.length) lines[lines.length - 1].push(...remaining);
 
-            /*
-             * FALLBACK GRID
-             */
-            else if (
-              count === 1
-            ) {
-              x = 50;
-            }
-            else {
-              x =
-                12 +
-                (
-                  (
-                    positionIndex /
-                    (
-                      count - 1
-                    )
-                  ) *
-                  76
-                );
-            }
+  const yByLineCount = {
+    1: [84],
+    2: [35, 84],
+    3: [27, 52, 84],
+    4: [25, 43, 65, 84],
+    5: [24, 39, 54, 69, 84]
+  };
+  const lineYs = yByLineCount[lines.length] || lines.map((_, index) =>
+    27 + 57 * index / Math.max(1, lines.length - 1)
+  );
 
-           /* =====================================================
-   Y حسب المركز الكروي
-   ===================================================== */
+  const result = [];
+  let keeperY = side === "away" ? 92 : 8;
+  result.push({
+    ...keeper,
+    _x: 50,
+    _y: keeperY
+  });
 
-const pos =
-  normalizeText(
-    getPlayerPosition(player)
-  )
-    .replace(/_/g, " ")
-    .replace(/-/g, " ")
-    .trim();
+  lines.forEach((line, lineIndex) => {
+    line.sort((a, b) => laneRank(a) - laneRank(b));
+    line.forEach((item, playerIndex) => {
+      const x = line.length <= 1 ? 50 : 10 + 80 * playerIndex / (line.length - 1);
+      let y = lineYs[lineIndex];
+      if (side === "away") y = 100 - y;
+      result.push({
+        ...item,
+        _x: Math.max(5, Math.min(95, x)),
+        _y: Math.max(7, Math.min(93, y))
+      });
+    });
+  });
 
-/*
- * GK
- */
-if (
-  pos === "gk" ||
-  pos === "g" ||
-  pos.includes("goalkeeper") ||
-  pos.includes("keeper")
-) {
-  y = 8;
-}
-
-/*
- * DEFENCE
- */
-else if (
-  pos === "lb" ||
-  pos === "lwb" ||
-  pos === "rb" ||
-  pos === "rwb" ||
-  pos === "cb" ||
-  pos === "lcb" ||
-  pos === "rcb" ||
-  pos === "d" ||
-  pos === "df" ||
-  pos === "def"
-) {
-  y = 27;
-}
-
-/*
- * DEFENSIVE MIDFIELD
- */
-else if (
-  pos === "dm" ||
-  pos === "cdm" ||
-  pos === "ldm" ||
-  pos === "rdm"
-) {
-  y = 43;
-}
-
-/*
- * CENTRAL / WIDE MIDFIELD
- */
-else if (
-  pos === "lm" ||
-  pos === "rm" ||
-  pos === "lcm" ||
-  pos === "cm" ||
-  pos === "mc" ||
-  pos === "rcm" ||
-  pos === "am" ||
-  pos === "cam" ||
-  pos === "lam" ||
-  pos === "ram" ||
-  pos === "m" ||
-  pos === "mf"
-) {
-  y = 52;
-}
-
-/*
- * ATTACKING MIDFIELD
- */
-else if (
-  pos.includes("attacking midfield")
-) {
-  y = 64;
-}
-
-/*
- * WINGS
- */
-else if (
-  pos === "lw" ||
-  pos === "lf" ||
-  pos.includes("left wing")
-) {
-  y = 76;
-}
-
-else if (
-  pos === "rw" ||
-  pos === "rf" ||
-  pos.includes("right wing")
-) {
-  y = 76;
-}
-
-/*
- * FORWARDS
- */
-else if (
-  pos === "st" ||
-  pos === "cf" ||
-  pos === "ss" ||
-  pos === "f" ||
-  pos === "fw" ||
-  pos === "att" ||
-  pos.includes("striker") ||
-  pos.includes("forward")
-) {
-  y = 84;
-}
-
-/*
- * Fallback
- */
-else {
-  y =
-    9 +
-    (
-      78 *
-      (
-        (row - 1) /
-        Math.max(
-          1,
-          maxRow - 1
-        )
-      )
-    );
-}
-
-/*
- * Away كيلعب مقلوب
- */
-if (
-  side === "away"
-) {
-  y =
-    100 - y;
-}
-
-            coordinates.push({
-              ...player,
-
-              _x:
-                Math.max(
-                  5,
-                  Math.min(
-                    95,
-                    x
-                  )
-                ),
-
-              _y:
-                Math.max(
-                  7,
-                  Math.min(
-                    93,
-                    y
-                  )
-                )
-            });
-
-          }
-        );
-
-      }
-    );
-
-  return coordinates;
+  return result;
 }
 
 /* =========================================================
