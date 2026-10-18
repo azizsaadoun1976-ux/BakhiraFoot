@@ -3061,62 +3061,6 @@ function pitchPositions(lineup, side) {
     });
   }
 
-  /* Prefer exact numbered slots from the source before role-based estimates. */
-  const slotFormation = normalizeFormation(lineup?.formation);
-  const slotRows = slotFormation.split("-").map(Number);
-  const validSlotFormation = slotFormation !== "—" &&
-    slotRows.length >= 2 && slotRows.length <= 4 &&
-    slotRows.every(n => Number.isInteger(n) && n >= 1 && n <= 5) &&
-    slotRows.reduce((sum,n)=>sum+n,0) === 10;
-  const sourceSlot = player => {
-    const values = [
-      player?.formation_slot, player?.formationSlot,
-      player?.lineup_position, player?.lineupPosition,
-      player?.formation_position, player?.formationPosition,
-      player?.raw?.formation_slot, player?.raw?.formationSlot,
-      player?.raw?.lineup_position, player?.raw?.lineupPosition,
-      player?.raw?.formation_position, player?.raw?.formationPosition,
-      player?.raw?.player?.formation_slot, player?.raw?.player?.formationSlot,
-      player?.raw?.player?.lineup_position, player?.raw?.player?.lineupPosition,
-      player?.raw?.player?.formation_position, player?.raw?.player?.formationPosition,
-      player?.player?.formation_slot, player?.player?.formationSlot,
-      player?.player?.lineup_position, player?.player?.lineupPosition,
-      player?.player?.formation_position, player?.player?.formationPosition
-    ];
-    for (const value of values) {
-      const item = value && typeof value === "object"
-        ? (value.slot ?? value.number ?? value.position ?? value.value)
-        : value;
-      if (item === null || item === undefined || String(item).trim() === "") continue;
-      const n = Number(item);
-      if (Number.isInteger(n) && n >= 1 && n <= 11) return n;
-    }
-    return null;
-  };
-  const slotEntries = players.map(player => ({ player, slot: sourceSlot(player) }));
-  if (players.length === 11 && validSlotFormation &&
-      slotEntries.every(item => item.slot !== null) &&
-      new Set(slotEntries.map(item => item.slot)).size === 11) {
-    const rowCounts = [1, ...slotRows];
-    return slotEntries.map(item => {
-      let remaining = item.slot - 1;
-      let rowIndex = 0, column = 1;
-      for (let i = 0; i < rowCounts.length; i++) {
-        if (remaining < rowCounts[i]) {
-          rowIndex = i;
-          column = rowCounts[i] - remaining;
-          break;
-        }
-        remaining -= rowCounts[i];
-      }
-      const count = rowCounts[rowIndex];
-      const x = count <= 1 ? 50 : 10 + 80 * (column - 1) / (count - 1);
-      let y = 8 + 84 * rowIndex / Math.max(1, rowCounts.length - 1);
-      if (side === "away") y = 100 - y;
-      return { player: item.player, x: Math.max(6, Math.min(94, x)), y: Math.max(6, Math.min(94, y)) };
-    });
-  }
-
   /* Exact source coordinates/grid/slots only. Do not assign positions from generic D/M/F labels. */
   return [];
 }
