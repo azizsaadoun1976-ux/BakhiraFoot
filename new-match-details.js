@@ -2618,8 +2618,12 @@
         return null;
       });
       if (points.every(Boolean)) {
-        if (Math.max(...points.map(p=>p.x))-Math.min(...points.map(p=>p.x))>10 &&
-            Math.max(...points.map(p=>p.y))-Math.min(...points.map(p=>p.y))>10) return true;
+        const xs=points.map(p=>p.x), ys=points.map(p=>p.y);
+        const spreadX=Math.max(...xs)-Math.min(...xs), spreadY=Math.max(...ys)-Math.min(...ys);
+        const normalized=Math.max(...xs)<=1 && Math.max(...ys)<=1 && spreadX>=0.2 && spreadY>=0.2;
+        const integerGrid=xs.every(v=>Number.isInteger(v)&&v>=1&&v<=11) &&
+          ys.every(v=>Number.isInteger(v)&&v>=1&&v<=11) && spreadX>=3 && spreadY>=3;
+        if(normalized || integerGrid || (spreadX>=10 && spreadY>=10)) return true;
       }
       const grids=starters.map(player=>{
         const p=getPlayerObject(player);
