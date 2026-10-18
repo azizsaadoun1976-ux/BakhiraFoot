@@ -985,6 +985,152 @@
         .bfmd-stat-values { grid-template-columns:34px minmax(0,1fr) 34px; gap:4px; font-size:9px; }
       }
 
+
+      /* BAKHIRAFOOT MATCH CENTRE 2.0 */
+      #bfMatchDetailsModal .bfmd-box { width:min(1680px,100%); padding:clamp(12px,1.7vw,26px); color:#edf4ff; background:#07111e; border:1px solid rgba(135,164,194,.25); }
+      #bfMatchDetailsModal .bfmd-overlay { padding:clamp(6px,1.3vw,18px); }
+      #bfMatchDetailsModal .bfmd-header { padding:clamp(18px,2.3vw,34px); background:radial-gradient(ellipse at 50% 0%,rgba(46,104,157,.26),transparent 55%),linear-gradient(110deg,#101f31,#0b1726 50%,#18263b); border:1px solid rgba(155,185,217,.18); }
+      #bfMatchDetailsModal .bfmd-status { color:#a7f3d0; background:rgba(16,185,129,.12); border-color:rgba(52,211,153,.22); }
+      #bfMatchDetailsModal .bfmd-section { margin-top:14px; padding:clamp(12px,1.35vw,20px); border:1px solid rgba(134,164,197,.16); border-radius:16px; background:linear-gradient(155deg,#0e1a2a,#0b1523); }
+      #bfMatchDetailsModal .bfmd-title { display:flex; align-items:center; gap:10px; margin-bottom:14px; color:#f6f9ff; font-size:12px; letter-spacing:.1em; font-weight:950; }
+      #bfMatchDetailsModal .bfmd-title::before { content:""; display:block; width:3px; height:16px; border-radius:4px; background:linear-gradient(#5eead4,#38bdf8); }
+      #bfMatchDetailsModal .bfmd-summary { grid-template-columns:repeat(8,minmax(0,1fr)); gap:8px; }
+      #bfMatchDetailsModal .bfmd-summary-box { min-width:0; min-height:92px; padding:10px 6px; display:flex; flex-direction:column; align-items:center; justify-content:center; gap:3px; border:1px solid rgba(147,178,210,.14); border-radius:12px; background:linear-gradient(155deg,#14253a,#0e1b2b); }
+      #bfMatchDetailsModal .bfmd-summary-icon { min-height:17px; color:#8ce8d5; font-size:13px; font-weight:950; }
+      #bfMatchDetailsModal .bfmd-summary-value { color:#f7fbff; font-size:22px; line-height:1.1; font-weight:950; font-variant-numeric:tabular-nums; }
+      #bfMatchDetailsModal .bfmd-summary-label { max-width:100%; color:#9eb4cc; opacity:1; font-size:9px; line-height:1.35; text-align:center; overflow-wrap:anywhere; }
+      #bfMatchDetailsModal .bfmd-summary-box--yellow .bfmd-summary-icon { color:#facc15; }
+      #bfMatchDetailsModal .bfmd-summary-box--red .bfmd-summary-icon { color:#fb7185; }
+      #bfMatchDetailsModal .bfmd-summary-box--own-goals .bfmd-summary-icon { color:#f9a8d4; }
+      #bfMatchDetailsModal .bfmd-summary-box--penalties .bfmd-summary-icon { color:#fde68a; }
+      #bfMatchDetailsModal .bfmd-match-analysis { padding:clamp(10px,1vw,16px); }
+      #bfMatchDetailsModal .bfmd-tactics-layout { display:grid; grid-template-columns:minmax(218px,.78fr) minmax(510px,1.9fr) minmax(218px,.78fr); align-items:stretch; gap:12px; min-width:0; }
+      #bfMatchDetailsModal .bfmd-tactics-center { min-width:0; }
+      #bfMatchDetailsModal .bfmd-tactics-caption { display:flex; align-items:center; justify-content:space-between; gap:10px; flex-wrap:wrap; padding:0 2px 10px; color:#91a9c4; font-size:8px; font-weight:900; letter-spacing:.1em; }
+      #bfMatchDetailsModal .bfmd-tactics-caption span:first-child { color:#75e4ce; }
+      #bfMatchDetailsModal .bfmd-pitches { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); align-items:start; gap:10px; }
+      #bfMatchDetailsModal .bfmd-pitch-card { min-width:0; overflow:hidden; border:1px solid rgba(133,167,197,.2); border-radius:14px; background:#0a1725; box-shadow:0 14px 28px rgba(0,0,0,.2); }
+      #bfMatchDetailsModal .bfmd-pitch-head { min-height:52px; display:flex; align-items:center; justify-content:space-between; gap:5px; padding:9px 10px; background:#12243a; border-bottom:1px solid rgba(141,172,205,.15); color:#eaf3ff; font-size:10px; }
+      #bfMatchDetailsModal .bfmd-pitch-team { min-width:0; display:flex; align-items:center; gap:7px; font-weight:950; }
+      #bfMatchDetailsModal .bfmd-pitch-team img { width:25px; height:25px; object-fit:contain; flex:0 0 auto; }
+      #bfMatchDetailsModal .bfmd-pitch-team > span:last-child { overflow:hidden; white-space:nowrap; text-overflow:ellipsis; }
+      #bfMatchDetailsModal .bfmd-pitch-team-mark { width:25px; height:25px; display:grid; place-items:center; border-radius:8px; background:#20344b; }
+      #bfMatchDetailsModal .bfmd-formation { flex:0 0 auto; padding:5px 7px; color:#c8f9ee; background:#16463f; border:1px solid rgba(94,234,212,.18); font-size:9px; }
+      #bfMatchDetailsModal .bfmd-pitch { position:relative; isolation:isolate; width:100%; aspect-ratio:.72; overflow:hidden; background:repeating-linear-gradient(0deg,rgba(255,255,255,.035) 0 8.33%,transparent 8.33% 16.66%),linear-gradient(135deg,#176b43,#0f5a37); }
+      #bfMatchDetailsModal .bfmd-border { inset:9px; border:1px solid rgba(240,255,248,.76); }
+      #bfMatchDetailsModal .bfmd-half { left:9px; right:9px; height:1px; background:rgba(240,255,248,.76); }
+      #bfMatchDetailsModal .bfmd-circle { width:22%; border:1px solid rgba(240,255,248,.76); }
+      #bfMatchDetailsModal .bfmd-center-dot { width:5px; height:5px; }
+      #bfMatchDetailsModal .bfmd-box-line { left:25%; right:25%; height:16%; border:1px solid rgba(240,255,248,.78); }
+      #bfMatchDetailsModal .bfmd-box-line.top { top:9px; border-top:0; }
+      #bfMatchDetailsModal .bfmd-box-line.bottom { bottom:9px; border-bottom:0; }
+      #bfMatchDetailsModal .bfmd-goal-box { position:absolute; z-index:1; left:39%; width:22%; height:3%; pointer-events:none; border-left:1px solid rgba(255,255,255,.72); border-right:1px solid rgba(255,255,255,.72); }
+      #bfMatchDetailsModal .bfmd-goal-box.top { top:0; border-top:0; border-bottom:1px solid rgba(255,255,255,.72); }
+      #bfMatchDetailsModal .bfmd-goal-box.bottom { bottom:0; border-top:1px solid rgba(255,255,255,.72); border-bottom:0; }
+      #bfMatchDetailsModal .bfmd-penalty-spot { position:absolute; z-index:1; left:calc(50% - 2px); width:4px; height:4px; border-radius:50%; background:rgba(255,255,255,.9); transform:translateX(-50%); }
+      #bfMatchDetailsModal .bfmd-penalty-spot.top { top:20%; }
+      #bfMatchDetailsModal .bfmd-penalty-spot.bottom { bottom:20%; }
+      #bfMatchDetailsModal .bfmd-player { z-index:5; width:clamp(58px,6.3vw,94px); gap:0; transform:translate(-50%,-50%); pointer-events:none; }
+      #bfMatchDetailsModal .bfmd-photo-wrap { width:clamp(25px,2.5vw,38px); height:clamp(25px,2.5vw,38px); border:2px solid #d8fff0; box-shadow:0 3px 9px rgba(0,0,0,.5); }
+      #bfMatchDetailsModal .bfmd-number-only { width:clamp(25px,2.5vw,38px); height:clamp(25px,2.5vw,38px); color:#061827; background:#d8fff0; border:2px solid #fff; font-size:10px; }
+      #bfMatchDetailsModal .bfmd-number { right:-5px; bottom:-4px; min-width:17px; height:17px; padding:0 3px; border:1px solid #0f392c; color:#082017; background:#8cf0cf; font-size:8px; }
+      #bfMatchDetailsModal .bfmd-pitch-card[data-side="away"] .bfmd-number-only,#bfMatchDetailsModal .bfmd-pitch-card[data-side="away"] .bfmd-number { color:#fff; background:#f87171; border-color:#7f1d1d; }
+      #bfMatchDetailsModal .bfmd-name { width:auto; max-width:100%; margin-top:4px; padding:3px 5px; color:#fff; background:rgba(3,12,20,.94); border:1px solid rgba(255,255,255,.18); border-radius:5px; font-size:clamp(6px,.64vw,9px); line-height:1.1; text-align:center; }
+      #bfMatchDetailsModal .bfmd-role { margin-top:2px; padding:2px 4px; border-radius:4px; color:#d9f7ef; background:rgba(2,18,13,.82); font-size:7px; }
+      #bfMatchDetailsModal .bfmd-pitch-empty { position:absolute; z-index:8; inset:20px; display:grid; place-items:center; padding:12px; text-align:center; color:#d8e8f8; background:rgba(3,18,29,.72); border:1px dashed rgba(255,255,255,.24); border-radius:10px; font-size:11px; font-weight:850; }
+      #bfMatchDetailsModal .bfmd-pitch-foot { display:flex; justify-content:space-between; gap:7px; padding:8px 10px; color:#93abc4; background:#0d1b2a; font-size:8px; font-weight:850; }
+      #bfMatchDetailsModal .bfmd-performance-panel { min-width:0; overflow:hidden; display:flex; flex-direction:column; border:1px solid rgba(134,164,197,.2); border-radius:14px; background:linear-gradient(180deg,#102137,#0b1726); }
+      #bfMatchDetailsModal .bfmd-performance-head { min-height:67px; display:flex; align-items:center; gap:8px; padding:10px; background:linear-gradient(110deg,rgba(37,76,111,.43),rgba(11,24,39,.6)); border-bottom:1px solid rgba(139,169,201,.16); }
+      #bfMatchDetailsModal .bfmd-performance-logo,#bfMatchDetailsModal .bfmd-performance-logo-fallback { flex:0 0 auto; width:34px; height:34px; object-fit:contain; }
+      #bfMatchDetailsModal .bfmd-performance-logo-fallback { display:grid; place-items:center; border-radius:9px; background:#20374e; }
+      #bfMatchDetailsModal .bfmd-performance-team-name { min-width:0; flex:1; display:flex; flex-direction:column; gap:4px; }
+      #bfMatchDetailsModal .bfmd-performance-team-name span { color:#f3f7ff; font-size:10px; font-weight:950; line-height:1.25; overflow-wrap:anywhere; }
+      #bfMatchDetailsModal .bfmd-performance-team-name small { color:#8ba4bf; font-size:8px; font-weight:800; }
+      #bfMatchDetailsModal .bfmd-team-average { flex:0 0 auto; min-width:38px; display:flex; flex-direction:column; align-items:center; gap:2px; padding:5px 4px; border:1px solid rgba(94,234,212,.2); border-radius:7px; background:rgba(20,83,73,.26); }
+      #bfMatchDetailsModal .bfmd-team-average strong { color:#8ff1d8; font-size:14px; font-weight:950; }
+      #bfMatchDetailsModal .bfmd-team-average small { color:#9ab8c6; font-size:6px; font-weight:950; letter-spacing:.1em; }
+      #bfMatchDetailsModal .bfmd-performance-team-stats { display:grid; grid-template-columns:repeat(4,minmax(0,1fr)); gap:4px; padding:8px; border-bottom:1px solid rgba(139,169,201,.13); }
+      #bfMatchDetailsModal .bfmd-performance-team-stats > div { display:flex; flex-direction:column; align-items:center; gap:3px; min-width:0; padding:6px 2px; border-radius:7px; background:rgba(143,174,207,.07); }
+      #bfMatchDetailsModal .bfmd-performance-team-stats strong { color:#edf6ff; font-size:14px; line-height:1; }
+      #bfMatchDetailsModal .bfmd-performance-team-stats span { color:#90a8c3; font-size:7px; }
+      #bfMatchDetailsModal .bfmd-performance-list-heading { display:flex; justify-content:space-between; gap:5px; padding:10px 9px 7px; color:#7edecb; font-size:7px; font-weight:950; letter-spacing:.06em; }
+      #bfMatchDetailsModal .bfmd-performance-list-heading span:last-child { color:#829bb6; }
+      #bfMatchDetailsModal .bfmd-performance-list { max-height:570px; overflow-y:auto; scrollbar-width:thin; display:flex; flex-direction:column; gap:4px; padding:0 7px 8px; }
+      #bfMatchDetailsModal .bfmd-performance-player { display:grid; grid-template-columns:31px minmax(0,1fr) 32px; align-items:center; gap:6px; min-width:0; padding:6px 5px; border:1px solid rgba(142,171,202,.09); border-radius:8px; background:rgba(30,49,70,.48); }
+      #bfMatchDetailsModal .bfmd-performance-avatar { width:30px; height:30px; overflow:hidden; display:grid; place-items:center; border-radius:8px; background:#1b344c; border:1px solid rgba(150,186,220,.17); }
+      #bfMatchDetailsModal .bfmd-performance-photo { display:block; width:100%; height:100%; object-fit:cover; }
+      #bfMatchDetailsModal .bfmd-performance-number { width:100%; height:100%; display:flex; align-items:center; justify-content:center; color:#d9e9f9; font-size:10px; font-weight:950; }
+      #bfMatchDetailsModal .bfmd-performance-details { min-width:0; }
+      #bfMatchDetailsModal .bfmd-performance-name { color:#eef5ff; font-size:9px; line-height:1.2; font-weight:950; overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+      #bfMatchDetailsModal .bfmd-performance-position { margin-top:2px; color:#819bb7; font-size:7px; line-height:1.2; font-weight:750; }
+      #bfMatchDetailsModal .bfmd-performance-tags { display:flex; align-items:center; gap:3px; flex-wrap:wrap; min-height:12px; margin-top:3px; }
+      #bfMatchDetailsModal .bfmd-performance-tag { display:inline-flex; align-items:center; padding:2px 3px; border-radius:3px; background:#1a2f43; color:#c9def1; font-size:7px; font-weight:900; line-height:1; }
+      #bfMatchDetailsModal .bfmd-performance-tag--goal { color:#a7f3d0; background:rgba(16,185,129,.13); }
+      #bfMatchDetailsModal .bfmd-performance-tag--penalty { color:#fde68a; background:rgba(245,158,11,.15); }
+      #bfMatchDetailsModal .bfmd-performance-tag--own { color:#f9a8d4; background:rgba(236,72,153,.12); }
+      #bfMatchDetailsModal .bfmd-performance-tag--assist { color:#7dd3fc; background:rgba(14,165,233,.13); }
+      #bfMatchDetailsModal .bfmd-performance-tag--yellow { color:#fde047; background:rgba(250,204,21,.12); }
+      #bfMatchDetailsModal .bfmd-performance-tag--red { color:#fda4af; background:rgba(244,63,94,.13); }
+      #bfMatchDetailsModal .bfmd-performance-tag--sub { color:#c4b5fd; background:rgba(139,92,246,.12); }
+      #bfMatchDetailsModal .bfmd-performance-no-event { color:#7088a2; font-size:7px; font-weight:700; }
+      #bfMatchDetailsModal .bfmd-performance-rating { min-width:30px; text-align:center; padding:5px 2px; border-radius:6px; color:#91a5ba; background:#17283a; font-size:10px; font-weight:950; font-variant-numeric:tabular-nums; }
+      #bfMatchDetailsModal .bfmd-grade--high { color:#09291f; background:#78e8bf; }
+      #bfMatchDetailsModal .bfmd-grade--good { color:#153328; background:#b8f2d9; }
+      #bfMatchDetailsModal .bfmd-grade--low { color:#ffcfb5; background:#59382e; }
+      #bfMatchDetailsModal .bfmd-stat-values span { color:#9ab1ca; opacity:1; }
+      #bfMatchDetailsModal .bfmd-stat-row { border-color:rgba(139,169,201,.14); }
+      #bfMatchDetailsModal .bfmd-event { padding:12px; border:1px solid rgba(139,169,201,.12); border-radius:10px; background:rgba(28,46,68,.56); }
+      #bfMatchDetailsModal .bfmd-event-icon { display:flex; justify-content:center; align-items:center; min-width:28px; min-height:28px; border-radius:8px; color:#dcecff; background:#20344a; font-size:10px; font-weight:950; }
+      #bfMatchDetailsModal .bfmd-event-icon--goal { color:#9bf5d7; background:rgba(16,185,129,.13); }
+      #bfMatchDetailsModal .bfmd-event-icon--penalty { color:#fde68a; background:rgba(245,158,11,.14); }
+      #bfMatchDetailsModal .bfmd-event-icon--own { color:#f9a8d4; background:rgba(236,72,153,.14); }
+      #bfMatchDetailsModal .bfmd-event-icon--penalty_missed { color:#fecaca; background:rgba(239,68,68,.13); }
+      #bfMatchDetailsModal .bfmd-event-icon--yellow { color:#fde047; background:rgba(250,204,21,.14); }
+      #bfMatchDetailsModal .bfmd-event-icon--red { color:#fda4af; background:rgba(244,63,94,.14); }
+      #bfMatchDetailsModal .bfmd-event-type { display:inline-flex; margin-left:6px; vertical-align:middle; padding:3px 5px; border-radius:4px; font-size:7px; letter-spacing:.04em; font-weight:950; }
+      #bfMatchDetailsModal .bfmd-event-type--goal { color:#9bf5d7; background:rgba(16,185,129,.13); }
+      #bfMatchDetailsModal .bfmd-event-type--penalty { color:#fde68a; background:rgba(245,158,11,.14); }
+      #bfMatchDetailsModal .bfmd-event-type--own { color:#f9a8d4; background:rgba(236,72,153,.14); }
+      #bfMatchDetailsModal .bfmd-event-type--missed { color:#fecaca; background:rgba(239,68,68,.14); }
+      #bfMatchDetailsModal .bfmd-event-player { color:#f4f8ff; display:flex; align-items:center; flex-wrap:wrap; gap:4px; }
+      #bfMatchDetailsModal .bfmd-event-team,#bfMatchDetailsModal .bfmd-event-detail { color:#9bb0c8; opacity:1; }
+      #bfMatchDetailsModal .bfmd-event-assist { color:#7de6cc; opacity:1; }
+      @media(max-width:1260px) {
+        #bfMatchDetailsModal .bfmd-tactics-layout { grid-template-columns:minmax(190px,.72fr) minmax(440px,1.7fr) minmax(190px,.72fr); }
+        #bfMatchDetailsModal .bfmd-player { width:64px; }
+      }
+      @media(max-width:1120px) {
+        #bfMatchDetailsModal .bfmd-tactics-layout { grid-template-columns:repeat(2,minmax(0,1fr)); }
+        #bfMatchDetailsModal .bfmd-tactics-center { grid-column:1 / -1; grid-row:1; }
+        #bfMatchDetailsModal .bfmd-performance-panel--home { grid-column:1; grid-row:2; }
+        #bfMatchDetailsModal .bfmd-performance-panel--away { grid-column:2; grid-row:2; }
+        #bfMatchDetailsModal .bfmd-pitches { gap:8px; }
+      }
+      @media(max-width:760px) {
+        #bfMatchDetailsModal .bfmd-summary { grid-template-columns:repeat(4,minmax(0,1fr)); }
+        #bfMatchDetailsModal .bfmd-summary-box { min-height:78px; padding:8px 4px; }
+        #bfMatchDetailsModal .bfmd-summary-value { font-size:19px; }
+        #bfMatchDetailsModal .bfmd-tactics-layout { grid-template-columns:minmax(0,1fr); }
+        #bfMatchDetailsModal .bfmd-tactics-center { grid-column:1; grid-row:1; }
+        #bfMatchDetailsModal .bfmd-performance-panel--home { grid-column:1; grid-row:2; }
+        #bfMatchDetailsModal .bfmd-performance-panel--away { grid-column:1; grid-row:3; }
+        #bfMatchDetailsModal .bfmd-performance-list { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); }
+        #bfMatchDetailsModal .bfmd-list-heading { font-size:8px; }
+        #bfMatchDetailsModal .bfmd-pitch { aspect-ratio:.79; }
+        #bfMatchDetailsModal .bfmd-player { width:70px; }
+        #bfMatchDetailsModal .bfmd-name { font-size:7px; }
+        #bfMatchDetailsModal .bfmd-performance-list { max-height:none; }
+      }
+      @media(max-width:470px) {
+        #bfMatchDetailsModal .bfmd-summary { grid-template-columns:repeat(2,minmax(0,1fr)); }
+        #bfMatchDetailsModal .bfmd-pitches { grid-template-columns:minmax(0,1fr); }
+        #bfMatchDetailsModal .bfmd-pitch { aspect-ratio:.74; }
+        #bfMatchDetailsModal .bfmd-player { width:80px; }
+        #bfMatchDetailsModal .bfmd-name { font-size:9px; }
+        #bfMatchDetailsModal .bfmd-performance-list { grid-template-columns:minmax(0,1fr); }
+        #bfMatchDetailsModal .bfmd-event { grid-template-columns:42px 28px minmax(0,1fr); padding:10px; }
+      }
+
     `;
 
     document.head.appendChild(style);
@@ -3613,15 +3759,22 @@ function normalizeEvent(event, index) {
   /*
    * BUT
    */
+  const missedPenalty = /(?:missed|saved|miss|wide|failed)\s+(?:penalty|penaltie)|(?:penalty|penaltie)\s+(?:missed|saved|wide|failed)/.test(type + " " + detail);
+
   if (
-    type.includes("goal") ||
-    type.includes("but") ||
-    detail.includes("goal") ||
-    detail.includes("but") ||
-    detail === "goal" ||
-    obj(event?.goal)
+    !missedPenalty && (
+      type.includes("goal") ||
+      type.includes("but") ||
+      detail.includes("goal") ||
+      detail.includes("but") ||
+      detail === "goal" ||
+      obj(event?.goal)
+    )
   ) {
     kind = "goal";
+  }
+  else if (missedPenalty) {
+    kind = "penalty_missed";
   }
 
   /*
@@ -3696,6 +3849,35 @@ function normalizeEvent(event, index) {
     kind = "var";
   }
 
+  let goalType = "regular";
+  if (kind === "goal") {
+    const goalDescriptor = norm([
+      rawType, rawDetail, event?.incidentType, event?.incidentClass,
+      event?.goalType, event?.goal_type, event?.goal?.type,
+      event?.goal?.detail, event?.goal?.description
+    ].filter(value => value !== null && value !== undefined).join(" ")).replace(/[_-]+/g, " ");
+    const ownGoalFlag = [
+      event?.own_goal, event?.ownGoal, event?.is_own_goal,
+      event?.isOwnGoal, event?.goal?.own_goal, event?.goal?.ownGoal
+    ].some(value => value === true || value === 1 || value === "true");
+    const penaltyFlag = [
+      event?.is_penalty, event?.isPenalty, event?.penalty_goal,
+      event?.penaltyGoal, event?.goal?.penalty, event?.goal?.is_penalty,
+      event?.goal?.isPenalty
+    ].some(value => value === true || value === 1 || value === "true");
+    if (
+      ownGoalFlag ||
+      /\bown goal\b|\bauto[- ]?goal\b|\bautogoal\b|\bbut contre son camp\b|\bcontre son camp\b|\bautobut\b|\bcsc\b/.test(goalDescriptor)
+    ) {
+      goalType = "own";
+    } else if (
+      penaltyFlag ||
+      /\bpenalt(?:y|ies)\b|\bpenalty kick\b|\bpenalty goal\b|\bpenaltie\b|\btir au but\b|\bbut sur penalty\b/.test(goalDescriptor)
+    ) {
+      goalType = "penalty";
+    }
+  }
+
   const minute =
     first(
       event?.time?.elapsed,
@@ -3728,6 +3910,7 @@ function normalizeEvent(event, index) {
     kind,
     type: text(rawType),
     detail: text(rawDetail),
+    goalType,
     minute,
     extra,
     name,
@@ -3769,121 +3952,57 @@ function normalizeEvent(event, index) {
      EVENT MAP
   ========================================================= */
 
- function eventStatsMap(events) {
-  const map = new Map();
-
-  function data(name) {
-    const key = playerKey(name);
-
-    if (!key) {
-      return null;
-    }
-
-    if (!map.has(key)) {
-      map.set(key, {
-        goals: 0,
-        assists: 0,
-        yellow: 0,
-        red: 0,
-        injury: 0,
-        in: 0,
-        out: 0
+  function eventStatsMap(events) {
+    const map = new Map();
+    function data(name) {
+      const key = playerKey(name);
+      if (!key) return null;
+      if (!map.has(key)) map.set(key, {
+        goals: 0, penalties: 0, ownGoals: 0, assists: 0,
+        yellow: 0, red: 0, injury: 0, in: 0, out: 0
       });
+      return map.get(key);
     }
-
-    return map.get(key);
+    events.forEach(event => {
+      if (event.kind === "goal") {
+        const scorer = data(event.name);
+        if (scorer) {
+          if (event.goalType === "own") scorer.ownGoals++;
+          else {
+            scorer.goals++;
+            if (event.goalType === "penalty") scorer.penalties++;
+          }
+        }
+        if (event.assist && event.goalType !== "own" && event.goalType !== "penalty") {
+          const assist = data(event.assist);
+          if (assist) assist.assists++;
+        }
+      }
+      if (event.kind === "yellow") {
+        const player = data(event.name);
+        if (player) player.yellow++;
+      }
+      if (event.kind === "red") {
+        const player = data(event.name);
+        if (player) player.red++;
+      }
+      if (event.kind === "injury") {
+        const player = data(event.name);
+        if (player) player.injury++;
+      }
+      if (event.kind === "substitution") {
+        if (event.playerIn) {
+          const player = data(event.playerIn);
+          if (player) player.in++;
+        }
+        if (event.playerOut) {
+          const player = data(event.playerOut);
+          if (player) player.out++;
+        }
+      }
+    });
+    return map;
   }
-
-  events.forEach(event => {
-
-    /*
-     * GOAL
-     */
-    if (event.kind === "goal") {
-      const scorer =
-        data(event.name);
-
-      if (scorer) {
-        scorer.goals++;
-      }
-
-      /*
-       * ASSIST
-       */
-      if (event.assist) {
-        const assist =
-          data(event.assist);
-
-        if (assist) {
-          assist.assists++;
-        }
-      }
-    }
-
-    /*
-     * YELLOW
-     */
-    if (event.kind === "yellow") {
-      const player =
-        data(event.name);
-
-      if (player) {
-        player.yellow++;
-      }
-    }
-
-    /*
-     * RED
-     */
-    if (event.kind === "red") {
-      const player =
-        data(event.name);
-
-      if (player) {
-        player.red++;
-      }
-    }
-
-    /*
-     * INJURY
-     */
-    if (event.kind === "injury") {
-      const player =
-        data(event.name);
-
-      if (player) {
-        player.injury++;
-      }
-    }
-
-    /*
-     * SUBSTITUTION
-     */
-    if (event.kind === "substitution") {
-
-      if (event.playerIn) {
-        const player =
-          data(event.playerIn);
-
-        if (player) {
-          player.in++;
-        }
-      }
-
-      if (event.playerOut) {
-        const player =
-          data(event.playerOut);
-
-        if (player) {
-          player.out++;
-        }
-      }
-    }
-
-  });
-
-  return map;
-}
 
   /* =========================================================
      PLAYER KEY
@@ -3968,199 +4087,46 @@ function normalizeEvent(event, index) {
      RENDER PITCH
   ========================================================= */
 
-  function renderPitch(
-    lineup,
-    side,
-    statsMap
-  ) {
-    const team =
-      lineup.team;
+  function renderPitch(lineup, side, statsMap) {
+    const team = lineup?.team || {};
+    const teamHeader =
+      '<div class="bfmd-pitch-head"><div class="bfmd-pitch-team">' +
+        (team.logo ? '<img src="' + esc(team.logo) + '" alt="" loading="lazy">' : '<span class="bfmd-pitch-team-mark">⚽</span>') +
+        '<span>' + esc(team.name || "Équipe") + '</span>' +
+      '</div><span class="bfmd-formation">' + esc(lineup?.formation || "—") + '</span></div>';
+    const markings =
+      '<div class="bfmd-border"></div><div class="bfmd-half"></div>' +
+      '<div class="bfmd-circle"></div><div class="bfmd-center-dot"></div>' +
+      '<div class="bfmd-box-line top"></div><div class="bfmd-box-line bottom"></div>' +
+      '<div class="bfmd-goal-box top"></div><div class="bfmd-goal-box bottom"></div>' +
+      '<div class="bfmd-penalty-spot top"></div><div class="bfmd-penalty-spot bottom"></div>';
 
-    if (
-      !lineup.xi.length
-    ) {
-      return `
-        <div class="bfmd-pitch-card">
-
-          <div class="bfmd-pitch-head">
-            <span>
-              ${esc(
-                team.name
-              )}
-            </span>
-
-            <span class="bfmd-formation">
-              ${esc(
-                lineup.formation
-              )}
-            </span>
-          </div>
-
-          <div
-            class="bfmd-pitch"
-          >
-
-            <div class="bfmd-border"></div>
-            <div class="bfmd-half"></div>
-            <div class="bfmd-circle"></div>
-            <div class="bfmd-center-dot"></div>
-            <div class="bfmd-box-line top"></div>
-            <div class="bfmd-box-line bottom"></div>
-
-            <div
-              style="
-                position:absolute;
-                inset:0;
-                display:flex;
-                align-items:center;
-                justify-content:center;
-                color:#fff;
-                font-size:12px;
-                font-weight:900;
-                text-align:center;
-                padding:20px;
-              "
-            >
-              Composition indisponible
-            </div>
-
-          </div>
-
-        </div>
-      `;
+    if (!arr(lineup?.xi).length) {
+      return '<div class="bfmd-pitch-card" data-side="' + side + '">' + teamHeader +
+        '<div class="bfmd-pitch">' + markings + '<div class="bfmd-pitch-empty">Composition indisponible</div></div>' +
+        '<div class="bfmd-pitch-foot">Onze de départ non communiqué</div></div>';
     }
-
-    const positions =
-      pitchPositions(
-        lineup,
-        side
-      );
-
+    const positions = pitchPositions(lineup, side);
     if (!positions.length) {
-      return `
-        <div class="bfmd-pitch-card">
-          <div class="bfmd-pitch-head">
-            <span>${esc(team.name)}</span>
-            <span class="bfmd-formation">${esc(lineup.formation || "—")}</span>
-          </div>
-          <div class="bfmd-pitch" style="display:flex;align-items:center;justify-content:center;text-align:center;padding:20px;color:#fff;font-weight:850;">
-            Formation ou positions tactiques non fournies par la source pour ce match.
-          </div>
-        </div>
-      `;
+      return '<div class="bfmd-pitch-card" data-side="' + side + '">' + teamHeader +
+        '<div class="bfmd-pitch">' + markings + '<div class="bfmd-pitch-empty">Les positions tactiques ne sont pas fournies pour ce match.</div></div>' +
+        '<div class="bfmd-pitch-foot">' + arr(lineup.xi).length + ' titulaires</div></div>';
     }
-
-    const playersHTML =
-      positions
-        .map(
-          item => {
-
-            const player =
-              item.player;
-
-            const rating =
-              getPlayerRating(
-                player
-              );
-
-            return `
-              <div
-                class="bfmd-player"
-                style="
-                  left:${item.x}%;
-                  top:${item.y}%;
-                "
-                title="${esc(
-                  getPlayerName(
-                    player
-                  )
-                )}"
-              >
-
-                ${playerBadges(
-                  player,
-                  statsMap
-                )}
-
-                ${playerAvatar(
-                  player
-                )}
-
-               <div class="bfmd-name">
-  ${esc(
-    getPlayerName(
-      player
-    )
-  )}
-</div>
-
-<div class="bfmd-role">
-  ${esc(
-    getPlayerPosition(
-      player
-    ) || ""
-  )}
-</div>
-
-${
-  rating !== null &&
-  rating !== undefined && rating !== ""
-    ? `
-      <div class="bfmd-rating">
-         ${esc(Number(rating).toFixed(1))}
-      </div>
-    `
-    : ""
-}
-
-              </div>
-            `;
-          }
-        )
-        .join("");
-
-    return `
-      <div class="bfmd-pitch-card">
-
-        <div class="bfmd-pitch-head">
-
-          <span>
-            ${esc(
-              team.name
-            )}
-          </span>
-
-          <span class="bfmd-formation">
-            ${esc(
-              lineup.formation
-            )}
-          </span>
-
-        </div>
-
-        <div class="bfmd-pitch">
-
-          <div class="bfmd-border"></div>
-
-          <div class="bfmd-half"></div>
-
-          <div class="bfmd-circle"></div>
-
-          <div class="bfmd-center-dot"></div>
-
-          <div class="bfmd-box-line top"></div>
-
-          <div class="bfmd-box-line bottom"></div>
-
-          ${playersHTML}
-
-        </div>
-
-      </div>
-    `;
+    const playersHTML = positions.map(item => {
+      const player = item.player;
+      const name = getPlayerName(player);
+      const position = getPlayerPosition(player);
+      return '<div class="bfmd-player" style="left:' + item.x + '%;top:' + item.y + '%;" title="' + esc(name) + '">' +
+        playerAvatar(player) + '<div class="bfmd-name">' + esc(name) + '</div>' +
+        (position ? '<div class="bfmd-role">' + esc(position) + '</div>' : '') + '</div>';
+    }).join("");
+    return '<div class="bfmd-pitch-card" data-side="' + side + '">' + teamHeader +
+      '<div class="bfmd-pitch bfmd-pitch--' + side + '">' + markings + playersHTML + '</div>' +
+      '<div class="bfmd-pitch-foot"><span>' + esc(team.name || "Équipe") + '</span><span>' + arr(lineup.xi).length + ' titulaires</span></div></div>';
   }
 
   /* =========================================================
+     PLAYER ROW  /* =========================================================
      PLAYER ROW
   ========================================================= */
 
@@ -4383,19 +4349,89 @@ ${
     `;
   }
 
+  function renderPerformancePlayer(player, statsMap) {
+    const stats = statsMap.get(playerKey(player)) || {
+      goals: 0, penalties: 0, ownGoals: 0, assists: 0, yellow: 0, red: 0, in: 0, out: 0
+    };
+    const name = getPlayerName(player) || "Joueur";
+    const photo = getPlayerPhoto(player);
+    const number = getPlayerNumber(player);
+    const ratingRaw = getPlayerRating(player);
+    const ratingNumber = Number(ratingRaw);
+    const hasRating = ratingRaw !== null && ratingRaw !== undefined && ratingRaw !== "" && Number.isFinite(ratingNumber);
+    const ratingClass = !hasRating ? "" : (ratingNumber >= 8 ? "bfmd-grade--high" : ratingNumber >= 7 ? "bfmd-grade--good" : "bfmd-grade--low");
+    const markers = [];
+    if (stats.goals) markers.push('<span class="bfmd-performance-tag bfmd-performance-tag--goal" title="Buts">⚽ ' + stats.goals + '</span>');
+    if (stats.penalties) markers.push('<span class="bfmd-performance-tag bfmd-performance-tag--penalty" title="Buts sur penalty">PEN ' + stats.penalties + '</span>');
+    if (stats.ownGoals) markers.push('<span class="bfmd-performance-tag bfmd-performance-tag--own" title="But contre son camp">CSC ' + stats.ownGoals + '</span>');
+    if (stats.assists) markers.push('<span class="bfmd-performance-tag bfmd-performance-tag--assist" title="Passes décisives">A ' + stats.assists + '</span>');
+    if (stats.yellow) markers.push('<span class="bfmd-performance-tag bfmd-performance-tag--yellow" title="Cartons jaunes">🟨 ' + stats.yellow + '</span>');
+    if (stats.red) markers.push('<span class="bfmd-performance-tag bfmd-performance-tag--red" title="Cartons rouges">🟥 ' + stats.red + '</span>');
+    if (stats.in) markers.push('<span class="bfmd-performance-tag bfmd-performance-tag--sub" title="Entrées en jeu">IN</span>');
+    if (stats.out) markers.push('<span class="bfmd-performance-tag bfmd-performance-tag--sub" title="Sorties">OUT</span>');
+    const avatar = photo
+      ? '<img class="bfmd-performance-photo" src="' + esc(photo) + '" alt="" loading="lazy" onerror="this.style.display=\'none\';this.nextElementSibling.style.display=\'flex\';">' +
+        '<span class="bfmd-performance-number" style="display:none">' + esc(number) + '</span>'
+      : '<span class="bfmd-performance-number">' + esc(number) + '</span>';
+    return '<div class="bfmd-performance-player">' +
+      '<div class="bfmd-performance-avatar">' + avatar + '</div>' +
+      '<div class="bfmd-performance-details"><div class="bfmd-performance-name" title="' + esc(name) + '">' + esc(name) + '</div>' +
+      '<div class="bfmd-performance-position">' + esc(getPlayerPosition(player) || "Titulaire") + '</div>' +
+      '<div class="bfmd-performance-tags">' + (markers.length ? markers.join("") : '<span class="bfmd-performance-no-event">Aucun événement individuel</span>') + '</div></div>' +
+      '<div class="bfmd-performance-rating ' + ratingClass + '" title="Note du joueur">' + (hasRating ? ratingNumber.toFixed(1) : "—") + '</div></div>';
+  }
+
+  function renderTeamPerformancePanel(lineup, statsMap, side) {
+    const team = lineup?.team || {};
+    const starters = arr(lineup?.xi);
+    const totals = starters.reduce((sum, player) => {
+      const stats = statsMap.get(playerKey(player)) || {};
+      sum.goals += Number(stats.goals || 0);
+      sum.penalties += Number(stats.penalties || 0);
+      sum.ownGoals += Number(stats.ownGoals || 0);
+      sum.assists += Number(stats.assists || 0);
+      sum.yellow += Number(stats.yellow || 0);
+      sum.red += Number(stats.red || 0);
+      return sum;
+    }, { goals: 0, penalties: 0, ownGoals: 0, assists: 0, yellow: 0, red: 0 });
+    const ratings = starters.map(player => getPlayerRating(player)).filter(value =>
+      value !== null && value !== undefined && value !== "" && Number.isFinite(Number(value))
+    ).map(Number);
+    const average = ratings.length ? (ratings.reduce((total, value) => total + value, 0) / ratings.length).toFixed(1) : "—";
+    const logo = team.logo
+      ? '<img class="bfmd-performance-logo" src="' + esc(team.logo) + '" alt="" loading="lazy">'
+      : '<span class="bfmd-performance-logo-fallback">⚽</span>';
+    return '<aside class="bfmd-performance-panel bfmd-performance-panel--' + side + '">' +
+      '<div class="bfmd-performance-head">' + logo +
+        '<div class="bfmd-performance-team-name"><span>' + esc(team.name || "Équipe") + '</span><small>' + esc(lineup?.formation || "Formation inconnue") + '</small></div>' +
+        '<div class="bfmd-team-average" title="Moyenne des notes disponibles"><strong>' + average + '</strong><small>NOTE</small></div></div>' +
+      '<div class="bfmd-performance-team-stats"><div><strong>' + totals.goals + '</strong><span>Buts</span></div>' +
+        '<div><strong>' + totals.assists + '</strong><span>Passes</span></div><div><strong>' + totals.yellow + '</strong><span>Jaunes</span></div>' +
+        '<div><strong>' + totals.red + '</strong><span>Rouges</span></div></div>' +
+      '<div class="bfmd-performance-list-heading"><span>PERFORMANCES INDIVIDUELLES</span><span>' + starters.length + ' JOUEURS</span></div>' +
+      '<div class="bfmd-performance-list">' + (starters.length
+        ? starters.map(player => renderPerformancePlayer(player, statsMap)).join("")
+        : '<div class="bfmd-empty">Aucun joueur titulaire disponible.</div>') + '</div></aside>';
+  }
+
   /* =========================================================
      EVENTS
   ========================================================= */
 
   function eventIcon(event) {
+    if (event.kind === "goal") {
+      if (event.goalType === "own") return "CSC";
+      if (event.goalType === "penalty") return "PEN";
+      return "⚽";
+    }
     switch (event.kind) {
-      case "goal": return "GOAL";
-      case "yellow": return "YC";
-      case "red": return "RC";
-      case "substitution": return "SUB";
-      case "injury": return "INJ";
+      case "penalty_missed": return "PEN";
+      case "yellow": return "🟨";
+      case "red": return "🟥";
+      case "substitution": return "↕";
+      case "injury": return "✚";
       case "var": return "VAR";
-      default: return "EVENT";
+      default: return "•";
     }
   }
 
@@ -4532,10 +4568,18 @@ ${
                       "Événement";
                   }
 
-                  contentHTML =
-                    esc(
-                      playerText
-                    );
+                  if (event.kind === "goal") {
+                    const goalLabel = event.goalType === "own"
+                      ? '<span class="bfmd-event-type bfmd-event-type--own">BUT CONTRE SON CAMP</span>'
+                      : event.goalType === "penalty"
+                        ? '<span class="bfmd-event-type bfmd-event-type--penalty">BUT SUR PENALTY</span>'
+                        : '<span class="bfmd-event-type bfmd-event-type--goal">BUT</span>';
+                    contentHTML = '<span>' + esc(playerText || "Buteur non renseigné") + '</span>' + goalLabel;
+                  } else if (event.kind === "penalty_missed") {
+                    contentHTML = '<span>' + esc(playerText || "Penalty") + '</span><span class="bfmd-event-type bfmd-event-type--missed">PENALTY MANQUÉ</span>';
+                  } else {
+                    contentHTML = esc(playerText);
+                  }
                 }
 
                 const teamName =
@@ -4574,10 +4618,8 @@ ${
                       )}
                     </div>
 
-                    <div class="bfmd-event-icon">
-                      ${eventIcon(
-                        event
-                      )}
+                    <div class="bfmd-event-icon bfmd-event-icon--${event.kind} bfmd-event-icon--${event.kind === "goal" ? event.goalType : "default"}">
+                      ${eventIcon(event)}
                     </div>
 
                     <div>
@@ -4826,17 +4868,36 @@ ${
      SUMMARY
   ========================================================= */
 
- function renderSummary(events) {
-  const count=kind=>events.filter(event=>event.kind===kind).length;
-  const goals=count("goal");
-  const assists=events.filter(event=>event.kind==="goal"&&event.assist).length;
-  const yellow=count("yellow"), red=count("red"), substitutions=count("substitution"), injuries=count("injury");
-  const metrics=[["Buts",goals,"goals"],["Passes décisives",assists,"assists"],["Cartons jaunes",yellow,"yellow"],["Cartons rouges",red,"red"],["Remplacements",substitutions,"subs"],["Blessures signalées",injuries,"injuries"]];
-  return '<div class="bfmd-section"><div class="bfmd-title">Résumé de la rencontre</div><div class="bfmd-summary">' +
-    metrics.map(([label,value,kind])=>'<div class="bfmd-summary-box bfmd-summary-box--'+kind+'"><div class="bfmd-summary-value">'+value+'</div><div class="bfmd-summary-label">'+esc(label)+'</div></div>').join("") +
-    '</div></div>';
-}
+  function renderSummary(events) {
+    const count = kind => events.filter(event => event.kind === kind).length;
+    const goals = count("goal");
+    const penalties = events.filter(event => event.kind === "goal" && event.goalType === "penalty").length;
+    const ownGoals = events.filter(event => event.kind === "goal" && event.goalType === "own").length;
+    const assists = events.filter(event => event.kind === "goal" && event.assist && event.goalType !== "own" && event.goalType !== "penalty").length;
+    const yellow = count("yellow");
+    const red = count("red");
+    const substitutions = count("substitution");
+    const injuries = count("injury");
+    const metrics = [
+      ["⚽", "Buts", goals, "goals"],
+      ["P", "Buts sur penalty", penalties, "penalties"],
+      ["CSC", "Buts contre son camp", ownGoals, "own-goals"],
+      ["A", "Passes décisives", assists, "assists"],
+      ["🟨", "Cartons jaunes", yellow, "yellow"],
+      ["🟥", "Cartons rouges", red, "red"],
+      ["↕", "Remplacements", substitutions, "subs"],
+      ["✚", "Blessures signalées", injuries, "injuries"]
+    ];
+    return '<div class="bfmd-section bfmd-summary-section"><div class="bfmd-title">Résumé de la rencontre</div><div class="bfmd-summary">' +
+      metrics.map(([icon, label, value, kind]) =>
+        '<div class="bfmd-summary-box bfmd-summary-box--' + kind + '">' +
+          '<div class="bfmd-summary-icon">' + icon + '</div><div class="bfmd-summary-value">' + value + '</div>' +
+          '<div class="bfmd-summary-label">' + esc(label) + '</div></div>'
+      ).join("") + '</div></div>';
+  }
+
   /* =========================================================
+     MAN OF THE MATCH  /* =========================================================
      MAN OF THE MATCH
   ========================================================= */
 
@@ -5676,56 +5737,28 @@ const response =
             : ""
         }
 
-        ${renderSummary(
-          events
-        )}
+        ${renderSummary(events)}
 
         ${renderMatchStatistics(details)}
 
-        <div class="bfmd-section">
+        <div class="bfmd-section bfmd-match-analysis">
+          <div class="bfmd-title">PLAN TACTIQUE & PERFORMANCES</div>
+          <div class="bfmd-tactics-layout">
+            ${renderTeamPerformancePanel(homeLineup, statsMap, "home")}
 
-          <div class="bfmd-title">
-            Formations et compositions
+            <div class="bfmd-tactics-center">
+              <div class="bfmd-tactics-caption">
+                <span>FORMATIONS OFFICIELLES</span>
+                <span>ÉVÉNEMENTS DÉTAILLÉS CI-DESSOUS</span>
+              </div>
+              <div class="bfmd-pitches">
+                ${renderPitch(homeLineup, "home", statsMap)}
+                ${renderPitch(awayLineup, "away", statsMap)}
+              </div>
+            </div>
+
+            ${renderTeamPerformancePanel(awayLineup, statsMap, "away")}
           </div>
-
-          <div class="bfmd-pitches">
-
-            ${renderPitch(
-              homeLineup,
-              "home",
-              statsMap
-            )}
-
-            ${renderPitch(
-              awayLineup,
-              "away",
-              statsMap
-            )}
-
-          </div>
-
-        </div>
-
-        <div class="bfmd-section">
-
-          <div class="bfmd-title">
-            Joueurs
-          </div>
-
-          <div class="bfmd-players">
-
-            ${renderPlayerColumn(
-              homeLineup,
-              statsMap
-            )}
-
-            ${renderPlayerColumn(
-              awayLineup,
-              statsMap
-            )}
-
-          </div>
-
         </div>
 
         ${renderSubstitutions(
