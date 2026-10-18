@@ -6014,7 +6014,7 @@ function makePitchCoordinates(pitchPlayers, side) {
   if(tacticalUsable){
     return tacticalEntries.map(entry=>{
       const x=entry.rowSize<=1?50:10+80*entry.col/(entry.rowSize-1);
-      let y=8+84*entry.row/entry.rowCount;
+      let y=8+84*entry.row/Math.max(1,entry.rowCount-1);
       if(side==="away")y=100-y;
       return {...entry.item,_x:Math.max(5,Math.min(95,x)),_y:Math.max(5,Math.min(95,y))};
     });
@@ -6499,7 +6499,7 @@ function renderBench(
                 ${
                   data.rating !== null &&
                   data.rating !== undefined
-                    ? `⭐ ${escapeHTML(
+                    ? `Note ${escapeHTML(
                         Number(
                           data.rating
                         ).toFixed(1)
@@ -6547,7 +6547,7 @@ function renderFormations(
     <div class="bf-detail-section">
 
       <h3>
-        🧩 Formations & Compositions
+        Formations et compositions
       </h3>
 
       <div class="bf-formation-summary">
@@ -6704,7 +6704,7 @@ function renderPlayersSection(
     <div class="bf-detail-section">
 
       <h3>
-        ⭐ أداء اللاعبين
+        Notes des joueurs
       </h3>
 
       <div class="bf-player-columns">
@@ -6789,7 +6789,7 @@ function renderBenchSection(
     <div class="bf-detail-section">
 
       <h3>
-        🔄 Bancs
+        Remplaçants
       </h3>
 
       <div class="bf-bench-grid">
@@ -7047,7 +7047,7 @@ function renderEvents(
         if (assist) {
           assistHTML = `
             <div class="bf-event-assist">
-              🅰️ Passe décisive :
+              Passe décisive :
               ${escapeHTML(assist)}
             </div>
           `;
@@ -7475,7 +7475,7 @@ function renderMatchInformation(
               <div class="bf-detail-item">
 
                 <strong>
-                  🏟️ Stade
+                  Stade
                 </strong>
 
                 ${escapeHTML(venue)}
@@ -7497,7 +7497,7 @@ function renderMatchInformation(
               <div class="bf-detail-item">
 
                 <strong>
-                  👨‍⚖️ Arbitre
+                  Arbitre
                 </strong>
 
                 ${escapeHTML(referee)}
@@ -9129,7 +9129,7 @@ async function openMatchDetails(index) {
             <div class="bf-detail-section">
 
               <h3>
-                🧩 Formations & Compositions
+                Formations et compositions
               </h3>
 
               <div class="bf-detail-item">
@@ -9190,7 +9190,7 @@ async function openMatchDetails(index) {
             <div class="bf-detail-section">
 
               <h3>
-                📊 Statistiques du match
+                Statistiques du match
               </h3>
 
               ${renderStatistics(
