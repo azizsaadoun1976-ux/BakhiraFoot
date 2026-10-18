@@ -1367,83 +1367,106 @@ function getPlayerPosition(player) {
         }
       : player;
 
-  let raw =
-    first(
-      /* direct */
-      /* Prefer precise tactical-position fields before broad role labels. */
-      player?.position_name,
-      player?.positionName,
-      player?.position_abbreviation,
-      player?.positionAbbreviation,
-      player?.position_code,
-      player?.positionCode,
-      player?.position,
-      player?.pos,
-      player?.role,
-      player?.formation_position,
-      player?.formationPosition,
-      player?.lineup_position,
-      player?.lineupPosition,
+  const nonNumericRole = value => {
+    if (value === null || value === undefined || value === "") return "";
+    if (/^\d+$/.test(String(value).trim())) return "";
+    return value;
+  };
+  const sourceValues = [
+    /* Original provider tactical position names/abbreviations. */
+    player?.raw?.player?.position_name,
+    player?.raw?.player?.positionName,
+    player?.raw?.player?.position_abbreviation,
+    player?.raw?.player?.positionAbbreviation,
+    player?.raw?.player?.position_code,
+    player?.raw?.player?.positionCode,
+    player?.raw?.player?.position,
+    player?.raw?.position_name,
+    player?.raw?.positionName,
+    player?.raw?.position_abbreviation,
+    player?.raw?.positionAbbreviation,
+    player?.raw?.position_code,
+    player?.raw?.positionCode,
+    player?.raw?.position,
+    player?.raw?.pos,
+    player?.raw?.role,
+    player?.position_name,
+    player?.positionName,
+    player?.position_abbreviation,
+    player?.positionAbbreviation,
+    player?.position_code,
+    player?.positionCode,
+    player?.player?.position_name,
+    player?.player?.positionName,
+    player?.player?.position_abbreviation,
+    player?.player?.positionAbbreviation,
+    player?.player?.position_code,
+    player?.player?.positionCode,
+    player?.statistics?.position_abbreviation,
+    player?.statistics?.positionAbbreviation,
+    player?.statistics?.position_code,
+    player?.statistics?.positionCode,
+    player?.statistics?.positionName,
+    player?.statistics?.position,
+    player?.position,
+    player?.pos,
+    player?.role,
+    player?.player?.position,
+    player?.player?.pos,
+    player?.player?.role,
+    p?.position_name,
+    p?.positionName,
+    p?.position_abbreviation,
+    p?.positionAbbreviation,
+    p?.position_code,
+    p?.positionCode,
+    p?.position,
+    p?.pos,
+    p?.role,
+    nonNumericRole(player?.formation_position),
+    nonNumericRole(player?.formationPosition),
+    nonNumericRole(player?.lineup_position),
+    nonNumericRole(player?.lineupPosition),
+    nonNumericRole(player?.player?.formation_position),
+    nonNumericRole(player?.player?.formationPosition),
+    nonNumericRole(player?.player?.lineup_position),
+    nonNumericRole(player?.player?.lineupPosition),
+    nonNumericRole(p?.formation_position),
+    nonNumericRole(p?.formationPosition),
+    nonNumericRole(p?.lineup_position),
+    nonNumericRole(p?.lineupPosition)
+  ];
 
-      /* nested player/provider variants */
-      player?.player?.position_name,
-      player?.player?.positionName,
-      player?.player?.position_abbreviation,
-      player?.player?.positionAbbreviation,
-      player?.player?.position_code,
-      player?.player?.positionCode,
-      player?.player?.position,
-      player?.player?.pos,
-      player?.player?.role,
-      player?.player?.formation_position,
-      player?.player?.formationPosition,
-      player?.player?.lineup_position,
-      player?.player?.lineupPosition,
-
-      /* stats sometimes carry the only exact role */
-      player?.statistics?.position_abbreviation,
-      player?.statistics?.positionAbbreviation,
-      player?.statistics?.position_code,
-      player?.statistics?.positionCode,
-      player?.statistics?.position,
-      player?.statistics?.positionName,
-
-      p?.position_name,
-      p?.positionName,
-      p?.position_abbreviation,
-      p?.positionAbbreviation,
-      p?.position_code,
-      p?.positionCode,
-      p?.position,
-      p?.pos,
-      p?.role,
-      p?.formation_position,
-      p?.formationPosition,
-      p?.lineup_position,
-      p?.lineupPosition,
-
-      ""
-    );
-
-  if (
-    raw &&
-    typeof raw === "object"
-  ) {
-    raw =
-      first(
-        /* Prefer the full tactical label: abbreviations like MID/DEF/FWD lose detail. */
-        raw?.displayName,
-        raw?.display_name,
-        raw?.name,
-        raw?.fullName,
-        raw?.full_name,
-        raw?.shortName,
-        raw?.short_name,
-        raw?.abbreviation,
-        ""
-      );
+  const labels = [];
+  for (const candidate of sourceValues) {
+    if (candidate === null || candidate === undefined || candidate === "") continue;
+    if (typeof candidate === "object") {
+      for (const key of [
+        "position_name", "positionName",
+        "position_abbreviation", "positionAbbreviation",
+        "position_code", "positionCode",
+        "code", "abbreviation", "shortName", "short_name",
+        "displayName", "display_name", "name", "label", "slug"
+      ]) {
+        const label = candidate[key];
+        if (label !== null && label !== undefined && String(label).trim()) {
+          labels.push(String(label).trim());
+        }
+      }
+    } else if (!/^\d+$/.test(String(candidate).trim())) {
+      labels.push(String(candidate).trim());
+    }
   }
 
+  const broadRoles = new Set([
+    "d","df","def","defender","defence","defense",
+    "m","mf","mid","midfielder","midfield",
+    "f","fw","fwd","att","attacker","forward","striker"
+  ]);
+  let raw =
+    labels.find(label => !broadRoles.has(norm(label).replace(/[^a-z0-9]/g, ""))) ||
+    labels[0] ||
+    "";
   const value =
     norm(raw);
 
@@ -2963,7 +2986,7 @@ function pitchPositions(lineup, side) {
 
   const readGrid = player => {
     for (const source of objectsFor(player)) {
-      const value = source?.grid ?? source?.position_grid ?? source?.positionGrid;
+      const value = source?.grid ?? source?.position_grid ?? source?.positionGrid ?? source?.formation_grid ?? source?.formationGrid;
       if (Array.isArray(value) && value.length >= 2) {
         const row = Number(value[0]), col = Number(value[1]);
         if (Number.isInteger(row) && Number.isInteger(col)) return {row,col};
@@ -3047,6 +3070,12 @@ function pitchPositions(lineup, side) {
       player?.formation_slot, player?.formationSlot,
       player?.lineup_position, player?.lineupPosition,
       player?.formation_position, player?.formationPosition,
+      player?.raw?.formation_slot, player?.raw?.formationSlot,
+      player?.raw?.lineup_position, player?.raw?.lineupPosition,
+      player?.raw?.formation_position, player?.raw?.formationPosition,
+      player?.raw?.player?.formation_slot, player?.raw?.player?.formationSlot,
+      player?.raw?.player?.lineup_position, player?.raw?.player?.lineupPosition,
+      player?.raw?.player?.formation_position, player?.raw?.player?.formationPosition,
       player?.player?.formation_slot, player?.player?.formationSlot,
       player?.player?.lineup_position, player?.player?.lineupPosition,
       player?.player?.formation_position, player?.player?.formationPosition
