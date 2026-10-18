@@ -2500,6 +2500,27 @@ return `
           Aucun match dans ce filtre.
         </span>
       </div>
+
+    .bf-stat-teams { display:grid; grid-template-columns:minmax(0,1fr) 36px minmax(0,1fr); align-items:center; gap:8px; margin:0 0 12px; font-size:12px; font-weight:900; }
+    .bf-stat-teams div:first-child { text-align:right; }
+    .bf-stat-teams div:last-child { text-align:left; }
+    .bf-stat-teams span { text-align:center; opacity:.5; }
+    .bf-stat-table { display:flex; flex-direction:column; gap:5px; }
+    .bf-stat-row { display:grid; grid-template-columns:46px minmax(0,1fr) 46px; align-items:center; gap:7px; padding:8px 0; border-bottom:1px solid rgba(127,127,127,.12); }
+    .bf-stat-value-home,.bf-stat-value-away { font-size:11px; font-weight:950; font-variant-numeric:tabular-nums; }
+    .bf-stat-value-home { text-align:left; }
+    .bf-stat-value-away { text-align:right; }
+    .bf-stat-name { text-align:center; font-size:10px; font-weight:750; opacity:.8; }
+    .bf-stat-track { grid-column:1/-1; width:100%; display:flex; gap:3px; height:5px; margin-top:2px; }
+    .bf-stat-home,.bf-stat-away { display:block; height:5px; min-width:2px; border-radius:99px; }
+    .bf-stat-home { background:linear-gradient(90deg,#1d4ed8,#60a5fa); }
+    .bf-stat-away { background:linear-gradient(90deg,#fb7185,#e11d48); }
+    @media(max-width:600px) {
+      .bf-stat-row { grid-template-columns:32px minmax(0,1fr) 32px; gap:4px; }
+      .bf-stat-name { font-size:9px; }
+      .bf-stat-teams { grid-template-columns:minmax(0,1fr) 28px minmax(0,1fr); font-size:10px; }
+    }
+
     `;
 
 
@@ -2527,7 +2548,7 @@ return `
         >
 
           <span>
-            🏆 COMPÉTITIONS
+            COMPÉTITIONS
           </span>
 
           <small>
@@ -6900,7 +6921,7 @@ function renderEvents(
       <div class="bf-detail-section">
 
         <h3>
-          ⚡ Événements
+          Événements
         </h3>
 
         <div class="bf-detail-item">
@@ -7058,7 +7079,7 @@ function renderEvents(
     <div class="bf-detail-section">
 
       <h3>
-        ⚡ Événements
+        Événements
       </h3>
 
       <div class="bf-events">
@@ -7160,206 +7181,35 @@ function formatStatValue(value) {
 }
 
 function renderStatistics(statistics) {
-
-  const groups =
-    normalizeStatistics(
-      statistics
-    );
-
-  if (!groups.length) {
-    return `
-      <div class="bf-detail-item">
-        Aucune statistique disponible.
-      </div>
-    `;
-  }
-
-  const homeBlock =
-    groups[0] ||
-    {};
-
-  const awayBlock =
-    groups[1] ||
-    {};
-
-  const homeName =
-    homeBlock?.team?.name ||
-    "Domicile";
-
-  const awayName =
-    awayBlock?.team?.name ||
-    "Extérieur";
-
-  const homeStats =
-    flattenStatsForTeam(
-      homeBlock
-    );
-
-  const awayStats =
-    flattenStatsForTeam(
-      awayBlock
-    );
-
-  const preferredStats = [
-    {
-      key: "ball possession",
-      label: "Possession"
-    },
-    {
-      key: "total shots",
-      label: "Tirs"
-    },
-    {
-      key: "shots on goal",
-      label: "Tirs cadrés"
-    },
-    {
-      key: "corner kicks",
-      label: "Corners"
-    },
-    {
-      key: "offsides",
-      label: "Hors-jeu"
-    },
-    {
-      key: "fouls",
-      label: "Fautes"
-    },
-    {
-      key: "yellow cards",
-      label: "Cartons jaunes"
-    },
-    {
-      key: "red cards",
-      label: "Cartons rouges"
-    },
-    {
-      key: "goalkeeper saves",
-      label: "Arrêts"
-    }
+  const groups=normalizeStatistics(statistics);
+  if(!groups.length)return '<div class="bf-detail-item">Aucune statistique disponible.</div>';
+  const homeBlock=groups[0]||{}, awayBlock=groups[1]||{};
+  const homeName=homeBlock?.team?.name||"Domicile", awayName=awayBlock?.team?.name||"Extérieur";
+  const homeStats=flattenStatsForTeam(homeBlock), awayStats=flattenStatsForTeam(awayBlock);
+  const preferredStats=[
+    {key:"ball possession",label:"Possession"},{key:"total shots",label:"Tirs"},
+    {key:"shots on goal",label:"Tirs cadrés"},{key:"corner kicks",label:"Corners"},
+    {key:"offsides",label:"Hors-jeu"},{key:"fouls",label:"Fautes"},
+    {key:"yellow cards",label:"Cartons jaunes"},{key:"red cards",label:"Cartons rouges"},
+    {key:"goalkeeper saves",label:"Arrêts"}
   ];
-
-  const availableKeys = new Set([
-    ...Object.keys(homeStats),
-    ...Object.keys(awayStats)
-  ]);
-
-  const used = [];
-
-  preferredStats.forEach(stat => {
-
-    if (
-      availableKeys.has(
-        stat.key
-      )
-    ) {
-      used.push(stat);
-    }
-
-  });
-
-  /*
-     Si l'API utilise une autre nomenclature,
-     on rajoute les stats restantes.
-  */
-
-  availableKeys.forEach(key => {
-
-    if (
-      used.some(
-        item => item.key === key
-      )
-    ) {
-      return;
-    }
-
-    used.push({
-      key,
-      label: key
-    });
-
-  });
-
-  const rows =
-    used
-      .slice(0, 14)
-      .map(stat => {
-
-        const homeValue =
-          homeStats[
-            stat.key
-          ] ?? "-";
-
-        const awayValue =
-          awayStats[
-            stat.key
-          ] ?? "-";
-
-        return `
-          <div class="bf-stat-row">
-
-            <div class="bf-stat-value-home">
-              ${escapeHTML(
-                formatStatValue(
-                  homeValue
-                )
-              )}
-            </div>
-
-            <div class="bf-stat-name">
-              ${escapeHTML(
-                stat.label
-              )}
-            </div>
-
-            <div class="bf-stat-value-away">
-              ${escapeHTML(
-                formatStatValue(
-                  awayValue
-                )
-              )}
-            </div>
-
-          </div>
-        `;
-
-      })
-      .join("");
-
-  return `
-
-    <div
-      style="
-        display:grid;
-        grid-template-columns:1fr 40px 1fr;
-        gap:10px;
-        margin-bottom:14px;
-        font-weight:800;
-        font-size:12px;
-      "
-    >
-
-      <div style="text-align:right">
-        ${escapeHTML(homeName)}
-      </div>
-
-      <div style="text-align:center;opacity:.5">
-        VS
-      </div>
-
-      <div>
-        ${escapeHTML(awayName)}
-      </div>
-
-    </div>
-
-    <div class="bf-stat-table">
-      ${rows}
-    </div>
-
-  `;
+  const availableKeys=new Set([...Object.keys(homeStats),...Object.keys(awayStats)]);
+  const used=preferredStats.filter(stat=>availableKeys.has(stat.key));
+  availableKeys.forEach(key=>{if(!used.some(item=>item.key===key))used.push({key,label:key});});
+  const numeric=value=>{
+    if(value===null||value===undefined||value==="")return null;
+    const number=Number(String(value).replace("%","").replace(",",".").replace(/[^\d.\-]/g,""));
+    return Number.isFinite(number)?number:null;
+  };
+  const rows=used.slice(0,14).map(stat=>{
+    const homeValue=homeStats[stat.key]??"-",awayValue=awayStats[stat.key]??"-";
+    const h=numeric(homeValue),a=numeric(awayValue),total=Math.max(0,h||0)+Math.max(0,a||0);
+    const hw=total>0&&h!==null?Math.max(0,Math.min(100,h/total*100)):50;
+    const aw=total>0&&a!==null?Math.max(0,Math.min(100,a/total*100)):50;
+    return '<div class="bf-stat-row"><div class="bf-stat-value-home">' + escapeHTML(formatStatValue(homeValue)) + '</div><div class="bf-stat-name">' + escapeHTML(stat.label) + '</div><div class="bf-stat-value-away">' + escapeHTML(formatStatValue(awayValue)) + '</div><div class="bf-stat-track"><span class="bf-stat-home" style="width:' + hw.toFixed(1) + '%"></span><span class="bf-stat-away" style="width:' + aw.toFixed(1) + '%"></span></div></div>';
+  }).join("");
+  return '<div class="bf-stat-teams"><div>' + escapeHTML(homeName) + '</div><span>VS</span><div>' + escapeHTML(awayName) + '</div></div><div class="bf-stat-table">' + rows + '</div>';
 }
-
 /* =========================================================
    MATCH INFORMATION
 ========================================================= */
@@ -7414,7 +7264,7 @@ function renderMatchInformation(
     <div class="bf-detail-section">
 
       <h3>
-        📋 Informations
+        Informations
       </h3>
 
       <div class="bf-detail-grid">
@@ -8664,7 +8514,7 @@ async function openMatchDetails(index) {
   content.innerHTML = `
 
     <div class="bf-details-league">
-      🏆 ${escapeHTML(league)}
+      ${escapeHTML(league)}
     </div>
 
     <div class="bf-details-status-wrap">
@@ -8777,7 +8627,7 @@ async function openMatchDetails(index) {
       <div class="bf-detail-section">
 
         <div class="bf-detail-item">
-          ⚠️ Identifiant du match introuvable.
+          Identifiant du match introuvable.
         </div>
 
       </div>
@@ -8949,7 +8799,7 @@ async function openMatchDetails(index) {
     content.innerHTML = `
 
       <div class="bf-details-league">
-        🏆 ${escapeHTML(
+        ${escapeHTML(
           realLeague
         )}
       </div>
@@ -9185,7 +9035,7 @@ async function openMatchDetails(index) {
     content.innerHTML = `
 
       <div class="bf-details-league">
-        🏆 ${escapeHTML(
+        ${escapeHTML(
           league
         )}
       </div>
@@ -9554,7 +9404,7 @@ getLatestScheduledFixtureDate()
 
 const leagues = [
   {
-    name: "🏆 Champions League",
+    name: "Champions League",
     key: "Champions League",
     country: "Europe"
   },
@@ -9628,7 +9478,7 @@ function filterLeague(
   go("scores");
 
   toast(
-    `🏆 ${league}`
+    `${league}`
   );
 }
 
