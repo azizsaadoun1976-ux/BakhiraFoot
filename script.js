@@ -5070,6 +5070,7 @@ function buildEventContributions(events) {
         assists: 0,
         yellow: 0,
         red: 0,
+        injury: 0,
         shots: 0
       });
     }
@@ -5152,6 +5153,10 @@ function buildEventContributions(events) {
         ) {
           item.assists += 1;
         }
+      }
+
+      if (type.includes("injur") || type.includes("hurt") || type.includes("medical") || detail.includes("injur") || detail.includes("hurt")) {
+        item.injury += 1;
       }
 
       if (
@@ -5258,6 +5263,7 @@ function getEventContribution(
     assists: 0,
     yellow: 0,
     red: 0,
+    injury: 0,
     shots: 0
   };
 }
@@ -5388,6 +5394,29 @@ function getPlayerData(
       redApi ||
       eventData.red ||
       0,
+
+    injury:
+      numberOrZero(stats?.injury?.total ?? stats?.injuries?.total) ||
+      eventData.injury ||
+      0,
+
+    mvp: (() => {
+      const sources = [
+        player, player?.player, player?.raw, player?.raw?.player,
+        performance?.player, performance?.player?.player,
+        performance?.statistics
+      ].filter(value => value && typeof value === "object");
+      return sources.some(source => [
+        source.mvp, source.is_mvp, source.isMvp, source.isMVP,
+        source.man_of_the_match, source.manOfTheMatch,
+        source.player_of_match, source.playerOfMatch,
+        source.player_of_the_match, source.playerOfTheMatch,
+        source.award, source.awards
+      ].some(value => value === true || (
+        typeof value === "string" &&
+        /^(mvp|man of the match|player of the match|player of the game)$/i.test(value.trim())
+      )));
+    })(),
 
     keyPasses:
       numberOrZero(
@@ -6175,6 +6204,18 @@ function renderPitchPlayer(
       <span class="bf-pitch-marker red">
         🟥
       </span>
+    `;
+  }
+
+  if (numberOrZero(playerData?.injury) > 0) {
+    badges += `
+      <span class="bf-pitch-marker injury" title="Blessure signalée">🤕</span>
+    `;
+  }
+
+  if (playerData?.mvp === true) {
+    badges += `
+      <span class="bf-pitch-marker mvp" title="MVP officiel">👑 MVP</span>
     `;
   }
 
