@@ -5106,37 +5106,9 @@ function normalizeEvent(event, index) {
      SUMMARY
   ========================================================= */
 
-  function renderSummary(events) {
-    const count = kind => events.filter(event => event.kind === kind).length;
-    const goals = count("goal");
-    const penalties = events.filter(event => event.kind === "goal" && event.goalType === "penalty").length;
-    const ownGoals = events.filter(event => event.kind === "goal" && event.goalType === "own").length;
-    const assists = events.filter(event => event.kind === "goal" && event.assist && event.goalType !== "own" && event.goalType !== "penalty").length;
-    const yellow = count("yellow"), red = count("red"), substitutions = count("substitution"), injuries = count("injury");
-    const metrics = [
-      ["goal", "Buts", goals, "goals"],
-      ["penalty", "Buts sur penalty", penalties, "penalties"],
-      ["own", "Buts contre son camp", ownGoals, "own-goals"],
-      ["assist", "Passes décisives", assists, "assists"],
-      ["yellow", "Cartons jaunes", yellow, "yellow"],
-      ["red", "Cartons rouges", red, "red"],
-      ["substitution", "Remplacements", substitutions, "subs"],
-      ["injury", "Blessures signalées", injuries, "injuries"]
-    ];
-    return '<div class="bfmd-section bfmd-summary-section"><div class="bfmd-title">Résumé de la rencontre</div><div class="bfmd-summary">' +
-      metrics.map(([icon, label, value, kind]) =>
-        '<div class="bfmd-summary-box bfmd-summary-box--' + kind + '">' +
-          '<div class="bfmd-summary-icon">' + performanceIcon(icon) + '</div><div class="bfmd-summary-value">' + value + '</div>' +
-          '<div class="bfmd-summary-label">' + esc(label) + '</div></div>'
-      ).join("") + '</div></div>';
-  }
+  // Match summary panel intentionally removed.
 
-  /* =========================================================
-     MAN OF THE MATCH  /* =========================================================
-     MAN OF THE MATCH
-  ========================================================= */
-
-function manOfTheMatch(
+  function manOfTheMatch(
   details,
   lineups = []
 ) {
@@ -6128,7 +6100,7 @@ const response =
             : ""
         }
 
-        ${renderSummary(events)}
+        
 
         ${renderMatchStatistics(details)}
 
