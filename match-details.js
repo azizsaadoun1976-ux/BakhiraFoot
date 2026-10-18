@@ -3608,6 +3608,23 @@ function normalizeEvent(event, index) {
      PITCH EVENT BADGES
   ========================================================= */
 
+ function playerIsOfficialMvp(player) {
+  const sources = [
+    player, player?.player, player?.raw, player?.raw?.player,
+    player?.statistics, player?.stats
+  ].filter(value => value && typeof value === "object");
+  return sources.some(source => [
+    source.mvp, source.is_mvp, source.isMvp, source.isMVP,
+    source.man_of_the_match, source.manOfTheMatch,
+    source.player_of_match, source.playerOfMatch,
+    source.player_of_the_match, source.playerOfTheMatch,
+    source.award, source.awards
+  ].some(value => value === true || (
+    typeof value === "string" &&
+    /^(mvp|man of the match|player of the match|player of the game)$/i.test(value.trim())
+  )));
+ }
+
  function playerBadges(player, statsMap) {
   const stats =
     statsMap.get(
@@ -3652,6 +3669,10 @@ function normalizeEvent(event, index) {
     badges.push(
       `🤕 ${Number(stats.injury)}`
     );
+  }
+
+  if (playerIsOfficialMvp(player)) {
+    badges.push("👑 MVP");
   }
 
   if (Number(stats.in) > 0) {
