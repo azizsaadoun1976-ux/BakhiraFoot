@@ -3327,7 +3327,7 @@ function pitchPositions(lineup, side) {
   if(shapeUsable){
     return shapeEntries.map(item=>{
       const x=item.rowSize<=1?50:10+80*item.col/(item.rowSize-1);
-      let y=8+84*item.row/item.rowCount;
+      let y=8+84*item.row/Math.max(1,item.rowCount-1);
       if(side==="away")y=100-y;
       return {player:item.player,x:Math.max(6,Math.min(94,x)),y:Math.max(6,Math.min(94,y))};
     });
