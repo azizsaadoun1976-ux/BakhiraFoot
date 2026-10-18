@@ -918,10 +918,11 @@
       .bfmd-stat-values strong:first-child { text-align:left; }
       .bfmd-stat-values strong:last-child { text-align:right; }
       .bfmd-stat-values span { text-align:center; opacity:.8; font-weight:750; }
-      .bfmd-stat-track { display:grid; grid-template-columns:1fr 1fr; gap:3px; height:5px; margin-top:6px; }
+      .bfmd-stat-track { display:flex; gap:3px; height:5px; margin-top:6px; }
       .bfmd-stat-home,.bfmd-stat-away { display:block; height:5px; min-width:3px; border-radius:99px; }
-      .bfmd-stat-home { justify-self:end; background:linear-gradient(90deg,#1d4ed8,#60a5fa); }
-      .bfmd-stat-away { justify-self:start; background:linear-gradient(90deg,#fb7185,#e11d48); }
+      .bfmd-stat-home { background:linear-gradient(90deg,#1d4ed8,#60a5fa); }
+      .bfmd-stat-away { background:linear-gradient(90deg,#fb7185,#e11d48); }
+      .bfmd-motm-badge { display:inline-flex; align-items:center; justify-content:center; margin-right:6px; padding:4px 7px; border-radius:5px; background:#facc15; color:#422006; font-size:9px; line-height:1; font-weight:950; letter-spacing:.04em; }
       .bfmd-summary-box { border:1px solid rgba(100,116,139,.17); border-radius:12px; background:rgba(100,116,139,.055); }
       @media(max-width:650px) {
         .bfmd-player { width:66px; } .bfmd-photo-wrap { width:28px; height:28px; }
@@ -4250,7 +4251,7 @@ ${
             stats.in
               ? `
                 <span class="bfmd-badge">
-                  ↗️
+                  IN
                 </span>
               `
               : ""
@@ -4260,7 +4261,7 @@ ${
             stats.out
               ? `
                 <span class="bfmd-badge">
-                  ↙️
+                  OUT
                 </span>
               `
               : ""
@@ -4942,10 +4943,8 @@ function manOfTheMatch(
             : ""
         }
 
-        <span
-          class="bfmd-motm-star"
-        >
-          
+        <span class="bfmd-motm-badge">
+          ${esc(label === "Joueur du match" ? "MVP" : "NOTE")}
         </span>
 
         <span>
