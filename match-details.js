@@ -1377,12 +1377,12 @@ function getPlayerPosition(player) {
     first(
       /* direct */
       /* Prefer precise tactical-position fields before broad role labels. */
+      player?.position_name,
+      player?.positionName,
       player?.position_abbreviation,
       player?.positionAbbreviation,
       player?.position_code,
       player?.positionCode,
-      player?.position_name,
-      player?.positionName,
       player?.position,
       player?.pos,
       player?.role,
@@ -1392,12 +1392,12 @@ function getPlayerPosition(player) {
       player?.lineupPosition,
 
       /* nested player/provider variants */
+      player?.player?.position_name,
+      player?.player?.positionName,
       player?.player?.position_abbreviation,
       player?.player?.positionAbbreviation,
       player?.player?.position_code,
       player?.player?.positionCode,
-      player?.player?.position_name,
-      player?.player?.positionName,
       player?.player?.position,
       player?.player?.pos,
       player?.player?.role,
@@ -1414,12 +1414,12 @@ function getPlayerPosition(player) {
       player?.statistics?.position,
       player?.statistics?.positionName,
 
+      p?.position_name,
+      p?.positionName,
       p?.position_abbreviation,
       p?.positionAbbreviation,
       p?.position_code,
       p?.positionCode,
-      p?.position_name,
-      p?.positionName,
       p?.position,
       p?.pos,
       p?.role,
