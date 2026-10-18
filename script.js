@@ -8534,9 +8534,19 @@ function hasOfficialLineupCoordinates(lineups) {
       : Array.isArray(group?.starters) ? group.starters
       : Array.isArray(group?.xi) ? group.xi : [];
     if (starters.length !== 11) return false;
-    return starters.every(player =>
-      !!getPlayerCoordinates(player) || !!parsePitchGrid(getPlayerGrid(player))
-    );
+
+    const coordinates = starters.map(player => getPlayerCoordinates(player));
+    if (coordinates.every(Boolean)) {
+      const xs = coordinates.map(point => point.x), ys = coordinates.map(point => point.y);
+      if (Math.max(...xs) - Math.min(...xs) > 10 &&
+          Math.max(...ys) - Math.min(...ys) > 10) return true;
+    }
+
+    const grids = starters.map(player => parsePitchGrid(getPlayerGrid(player)));
+    if (grids.some(value => !value)) return false;
+    const keys = grids.map(value => value.row + ":" + value.col);
+    const rows = [...new Set(grids.map(value => value.row))];
+    return new Set(keys).size === 11 && rows.length >= 3 && rows.length <= 5;
   });
 }
 
