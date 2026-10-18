@@ -5629,11 +5629,7 @@ function getPitchPlayers(lineup) {
   const players = starters.map((entry, index) => {
     const player = entry?.player || entry || {};
     const nativeGrid = parsePitchGrid(getPlayerGrid(entry));
-    const explicitSlot = getPlayerFormationSlot(entry);
-    const slotGrid = !nativeGrid && formationRows
-      ? parsePitchGrid(formationSlotToGrid(explicitSlot, formationRows))
-      : null;
-    const parsed = nativeGrid || slotGrid;
+    const parsed = nativeGrid;
     const coords = getPlayerCoordinates(entry);
     return {
       ...entry,
