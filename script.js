@@ -5903,17 +5903,14 @@ function makePitchCoordinates(pitchPlayers, side) {
    * provider supplies only generic D / MID / FWD roles and no grid/slot.
    * In that case render the official XI list, not a fabricated pitch.
    */
-  const genericPositionKeys = new Set([
-    "d", "df", "def", "defender", "defence", "defense", "back",
-    "m", "mf", "mid", "midfielder", "midfield",
-    "f", "fw", "fwd", "att", "attacker", "forward"
-  ]);
-  const exactRolesAvailable = players.every(item => {
-    if (positionBucket(item) === "gk") return true;
-    const key = positionKey(item);
-    return positionBucket(item) !== "unknown" && !genericPositionKeys.has(key);
-  });
-  if (!exactRolesAvailable) return [];
+  /*
+   * SportScore frequently supplies only G / D / M / F plus the official
+   * formation, with no per-player grid. Do not hide the pitch in that case:
+   * map the known role groups onto the declared formation rows below.
+   * Exact coordinates/grid always win earlier in this function.
+   */
+  const roleGroupsAvailable = players.every(item => positionBucket(item) !== "unknown");
+  if (!roleGroupsAvailable) return [];
 
   const lines = formationRows.map(() => []);
   const locatedKeeper = players.find(item => positionBucket(item) === "gk");
