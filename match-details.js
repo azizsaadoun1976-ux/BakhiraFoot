@@ -2931,6 +2931,41 @@ function pitchPositions(lineup, side) {
 
   if (!players.length) return [];
 
+  /*
+   * Prefer the provider's lineup grid when available (common format: "row:column").
+   * This preserves each starter's actual tactical lane instead of guessing from
+   * broad labels such as MID/DEF/FWD.
+   */
+  const gridEntries = players.map(player => {
+    const rawGrid = first(
+      player?.grid, player?.position?.grid,
+      player?.player?.grid, player?.player?.position?.grid
+    );
+    let row = null, col = null;
+    if (Array.isArray(rawGrid) && rawGrid.length >= 2) {
+      row = Number(rawGrid[0]); col = Number(rawGrid[1]);
+    } else if (rawGrid && typeof rawGrid === "object") {
+      row = Number(first(rawGrid?.row, rawGrid?.y, rawGrid?.line));
+      col = Number(first(rawGrid?.column, rawGrid?.col, rawGrid?.x, rawGrid?.slot));
+    } else if (typeof rawGrid === "string") {
+      const match = rawGrid.trim().match(/^(\d+)\s*[:;,.-]\s*(\d+)$/);
+      if (match) { row = Number(match[1]); col = Number(match[2]); }
+    }
+    return { player, row, col, valid: Number.isInteger(row) && row >= 0 && Number.isInteger(col) && col >= 0 && col <= 10 };
+  });
+  const gridRows = [...new Set(gridEntries.filter(item => item.valid).map(item => item.row))].sort((a,b) => a-b);
+  if (gridEntries.length >= 10 && gridEntries.every(item => item.valid) && gridRows.length >= 3) {
+    const minRow = gridRows[0], maxRow = gridRows[gridRows.length - 1];
+    return gridEntries.map(item => {
+      const columns = [...new Set(gridEntries.filter(other => other.row === item.row).map(other => other.col))].sort((a,b) => a-b);
+      const colIndex = columns.indexOf(item.col);
+      const x = columns.length <= 1 ? 50 : 10 + 80 * colIndex / (columns.length - 1);
+      let y = maxRow === minRow ? 50 : 8 + 84 * (item.row - minRow) / (maxRow - minRow);
+      if (side === "away") y = 100 - y;
+      return { player: item.player, x: Math.max(6, Math.min(94, x)), y: Math.max(6, Math.min(94, y)) };
+    });
+  }
+
   /* Trust provider coordinates only when the coordinate scale is recognizable. */
   const coords = players.map(player => {
     const rawX = first(player?.x, player?.coord_x, player?.coordinate_x, player?.player?.x, player?.player?.coord_x, player?.player?.coordinate_x);
