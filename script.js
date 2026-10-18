@@ -4735,7 +4735,6 @@ function getPlayerPosition(player) {
       "position_abbreviation", "positionAbbreviation",
       "position_code", "positionCode",
       "formation_position", "formationPosition",
-      "formation_slot", "formationSlot",
       "lineup_position", "lineupPosition",
       "position", "pos", "role"
     ]) addPositionValue(source[key]);
