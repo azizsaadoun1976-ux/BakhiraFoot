@@ -7717,62 +7717,56 @@ function normalizeSofaLineup(
     );
 
   if (hasFirst) {
-
-    startXI =
-      players.filter(
-        player =>
-          player?.first === 1 ||
-          player?.first === true ||
-          player?.first === "1"
-      );
+    startXI = players.filter(
+      player =>
+        player?.first === 1 ||
+        player?.first === true ||
+        player?.first === "1"
+    );
 
     if (!bench.length) {
-
-      bench =
-        players.filter(
-          player =>
-            player?.first === 0 ||
-            player?.first === false ||
-            player?.first === "0"
-        );
-
-    }
-
-  } else {
-
-    startXI =
-      players.filter(
+      bench = players.filter(
         player =>
-          player?.substitute !== true &&
-          player?.starter !== false
+          player?.first === 0 ||
+          player?.first === false ||
+          player?.first === "0"
       );
-
+    }
+  } else {
+    startXI = players.filter(
+      player =>
+        player?.substitute !== true &&
+        player?.starter !== false
+    );
   }
 
+  const formationValue = [
+    typeof source?.formation === "string" ? source.formation : null,
+    source?.formation?.name,
+    source?.formation?.displayName,
+    source?.formation?.label,
+    source?.formation?.value,
+    source?.formation?.formation,
+    source?.formationName,
+    source?.formation_name,
+    source?.formationUsed,
+    source?.formation_used,
+    source?.tacticalFormation,
+    source?.tactical_formation,
+    source?.tactic,
+    source?.tactics?.formation
+  ].find(value =>
+    value !== undefined &&
+    value !== null &&
+    String(value).trim() !== ""
+  );
+
   return {
-
-    team:
-      team ||
-      source?.team ||
-      {},
-
-    formation:
-      source?.formation ||
-      source?.tacticalFormation ||
-      source?.tactic ||
-      "—",
-
-    coach:
-      source?.coach ||
-      source?.manager ||
-      null,
-
-    startXI:
-      startXI.slice(0, 11),
-
-    substitutes:
-      bench
-
+    team: team || source?.team || {},
+    formation: String(formationValue || "—"),
+    coach: source?.coach || source?.manager || null,
+    startXI: startXI.slice(0, 11),
+    substitutes: bench
   };
 }
 function adaptSportScoreDetails(
