@@ -1558,7 +1558,7 @@
     /* Use an explicit lineup slot only when all 11 starters have unique
        source slots and the source formation validates to ten outfield players. */
     const formationTextForSlots = String(lineup.formation || "")
-      .trim().replace(/[‐‑‒–—−]/g, "-").replace(/\\s+/g, "");
+      .trim().replace(/[‐‑‒–—−]/g, "-").replace(/\s+/g, "");
     const formationRowsForSlots = formationTextForSlots.split("-").map(Number);
     const validFormationForSlots =
       formationRowsForSlots.length >= 2 &&
@@ -1608,7 +1608,7 @@
           remaining -= counts[i];
         }
         const lineColumns = counts[rowIndex];
-        const x = lineColumns <= 1 ? 50 : 10 + 80 * (lineColumns - column) / (lineColumns - 1);
+        const x = lineColumns <= 1 ? 50 : 10 + 80 * (column - 1) / (lineColumns - 1);
         let y = 8 + 84 * rowIndex / Math.max(1, counts.length - 1);
         if (side === "away") y = 100 - y;
         return {
