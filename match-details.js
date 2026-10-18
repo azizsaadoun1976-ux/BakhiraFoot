@@ -5029,9 +5029,14 @@ function manOfTheMatch(
       if (coordinates.every(Boolean)) {
         const xs = coordinates.map(point => point.x);
         const ys = coordinates.map(point => point.y);
-        const validSpread = Math.max(...xs)-Math.min(...xs) > 10 &&
-          Math.max(...ys)-Math.min(...ys) > 10;
-        if (validSpread) return true;
+        const spreadX = Math.max(...xs)-Math.min(...xs);
+        const spreadY = Math.max(...ys)-Math.min(...ys);
+        const normalized = Math.max(...xs) <= 1 && Math.max(...ys) <= 1 &&
+          spreadX >= 0.2 && spreadY >= 0.2;
+        const integerGrid = xs.every(value => Number.isInteger(value) && value >= 1 && value <= 11) &&
+          ys.every(value => Number.isInteger(value) && value >= 1 && value <= 11) &&
+          spreadX >= 3 && spreadY >= 3;
+        if (normalized || integerGrid || (spreadX >= 10 && spreadY >= 10)) return true;
       }
       const grids = starters.map(player => readPlayerGridForCheck(player));
       if (grids.some(value => !value)) return false;
