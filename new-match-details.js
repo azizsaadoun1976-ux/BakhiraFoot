@@ -1601,7 +1601,8 @@
   function renderPitch(
     lineup,
     team,
-    side
+    side,
+    details
   ) {
 
     if (!getPitchPlayers(lineup, side).length) {
@@ -1717,7 +1718,10 @@
                     }
 
                     <span class="bf-new-safe-shirt">${esc(playerNumber(player))}</span>
-                    <span class="bf-new-safe-role" style="display:block;margin:2px 0;padding:1px 4px;border-radius:4px;background:rgba(8,15,28,.88);color:#fff;font-size:9px;font-weight:950;line-height:1.15;">${esc(playerPosition(player) || "")}</span>
+                    <span class="bf-new-safe-role" style="display:block;margin:2px 0;padding:1px 4px;border-radius:4px;background:rgba(8,15,28,.88);color:#fff;font-size:9px;font-weight:950;line-height:1.15;">${esc(playerPosition(player) || "—")}</span>
+                    <div class="bf-new-safe-pitch-events" style="display:flex;justify-content:center;flex-wrap:wrap;gap:2px;margin:2px auto;max-width:100px;font-size:10px;font-weight:950;color:#fff;text-shadow:0 1px 3px #000;">${esc(playerEventBadges(player, details))}</div>
+                    ${playerIsOfficialMvp(player) ? '<span class="bf-new-safe-mvp-chip" title="MVP officiel" style="display:inline-block;padding:1px 4px;border-radius:5px;background:#facc15;color:#111827;font-size:9px;font-weight:950;">👑 MVP</span>' : ""}
+                    ${rating !== null ? '<span style="display:block;margin-top:2px;font-size:9px;font-weight:900;color:#fff;text-shadow:0 1px 3px #000;">⭐ ' + esc(Number(rating).toFixed(1)) + '</span>' : ""}
                     <div
                       class="bf-new-safe-player-name"
                     >
@@ -2085,11 +2089,45 @@
     return [...new Set(badges)].join(" ");
   }
 
+  function playerIsOfficialMvp(player) {
+    const p = getPlayerObject(player);
+    const sources = [player, p, player?.raw, player?.raw?.player].filter(value => value && typeof value === "object");
+    return sources.some(source => [
+      source.mvp, source.is_mvp, source.isMvp, source.isMVP,
+      source.man_of_the_match, source.manOfTheMatch,
+      source.player_of_match, source.playerOfMatch,
+      source.player_of_the_match, source.playerOfTheMatch,
+      source.award, source.awards
+    ].some(value => value === true || (
+      typeof value === "string" &&
+      /^(mvp|man of the match|player of the match|player of the game)$/i.test(value.trim())
+    )));
+  }
+
   function renderMvp(homeLineup, awayLineup) {
-    const best=[...homeLineup.players,...awayLineup.players].map(player=>({player,rating:playerRating(player)})).filter(x=>x.rating!==null&&x.rating>=0&&x.rating<=10).sort((a,b)=>b.rating-a.rating)[0];
-    if(!best) return '<div class="bf-new-safe-empty">Le MVP et les notes officielles ne sont pas fournis par la source pour ce match.</div>';
-    const photo=playerPhoto(best.player);
-    return '<div class="bf-new-safe-mvp">' + (photo ? '<img src="' + esc(photo) + '" alt="' + esc(playerName(best.player)) + '" loading="lazy" referrerpolicy="no-referrer">' : '<span>⭐</span>') + '<div><div class="bf-new-safe-mvp-name">🏆 MVP · ' + esc(playerName(best.player)) + '</div><div class="bf-new-safe-mvp-note">Meilleure note disponibile : ' + esc(Number(best.rating).toFixed(1)) + '/10</div></div></div>';
+    const all = [...homeLineup.players, ...awayLineup.players];
+    const official = all.find(player => playerIsOfficialMvp(player));
+    if (official) {
+      const photo = playerPhoto(official);
+      const rating = playerRating(official);
+      return '<div class="bf-new-safe-mvp">' +
+        (photo ? '<img src="' + esc(photo) + '" alt="' + esc(playerName(official)) + '" loading="lazy" referrerpolicy="no-referrer">' : '<span>👑</span>') +
+        '<div><div class="bf-new-safe-mvp-name">🏆 MVP officiel · ' + esc(playerName(official)) +
+        '</div><div class="bf-new-safe-mvp-note">' +
+        (rating !== null ? 'Note : ' + esc(Number(rating).toFixed(1)) + '/10' : 'Désigné par la source') +
+        '</div></div></div>';
+    }
+
+    const best = all.map(player => ({player, rating:playerRating(player)}))
+      .filter(item => item.rating !== null && item.rating >= 0 && item.rating <= 10)
+      .sort((a,b) => b.rating-a.rating)[0];
+    if (!best) return '<div class="bf-new-safe-empty">La source ne fournit ni MVP officiel ni note de joueur pour ce match.</div>';
+    const photo = playerPhoto(best.player);
+    return '<div class="bf-new-safe-mvp">' +
+      (photo ? '<img src="' + esc(photo) + '" alt="' + esc(playerName(best.player)) + '" loading="lazy" referrerpolicy="no-referrer">' : '<span>⭐</span>') +
+      '<div><div class="bf-new-safe-mvp-name">⭐ Meilleure note · ' + esc(playerName(best.player)) +
+      '</div><div class="bf-new-safe-mvp-note">Meilleure note disponible : ' + esc(Number(best.rating).toFixed(1)) +
+      '/10 — ce n’est pas une désignation officielle du MVP.</div></div></div>';
   }
 
   /* =========================================================
@@ -2397,13 +2435,15 @@
           ${renderPitch(
             homeLineup,
             home,
-            "home"
+            "home",
+            details
           )}
 
           ${renderPitch(
             awayLineup,
             away,
-            "away"
+            "away",
+            details
           )}
 
         </div>
