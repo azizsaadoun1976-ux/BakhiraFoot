@@ -2521,6 +2521,22 @@ return `
       .bf-stat-teams { grid-template-columns:minmax(0,1fr) 28px minmax(0,1fr); font-size:10px; }
     }
 
+
+    .bf-stat-teams { display:grid; grid-template-columns:minmax(0,1fr) 36px minmax(0,1fr); align-items:center; gap:8px; margin:0 0 12px; font-size:12px; font-weight:900; }
+    .bf-stat-teams div:first-child { text-align:right; }
+    .bf-stat-teams div:last-child { text-align:left; }
+    .bf-stat-teams span { text-align:center; opacity:.5; }
+    .bf-stat-table { display:flex; flex-direction:column; gap:5px; }
+    .bf-stat-row { display:grid; grid-template-columns:46px minmax(0,1fr) 46px; align-items:center; gap:7px; padding:8px 0; border-bottom:1px solid rgba(127,127,127,.12); }
+    .bf-stat-value-home,.bf-stat-value-away { font-size:11px; font-weight:950; font-variant-numeric:tabular-nums; }
+    .bf-stat-value-home { text-align:left; } .bf-stat-value-away { text-align:right; }
+    .bf-stat-name { text-align:center; font-size:10px; font-weight:750; opacity:.8; }
+    .bf-stat-track { grid-column:1/-1; width:100%; display:flex; gap:3px; height:5px; margin-top:2px; }
+    .bf-stat-home,.bf-stat-away { display:block; height:5px; min-width:2px; border-radius:99px; }
+    .bf-stat-home { background:linear-gradient(90deg,#1d4ed8,#60a5fa); }
+    .bf-stat-away { background:linear-gradient(90deg,#fb7185,#e11d48); }
+    @media(max-width:600px) { .bf-stat-row { grid-template-columns:32px minmax(0,1fr) 32px; gap:4px; } .bf-stat-name { font-size:9px; } .bf-stat-teams { grid-template-columns:minmax(0,1fr) 28px minmax(0,1fr); font-size:10px; } }
+
     `;
 
 
@@ -7183,9 +7199,9 @@ function formatStatValue(value) {
 function renderStatistics(statistics) {
   const groups=normalizeStatistics(statistics);
   if(!groups.length)return '<div class="bf-detail-item">Aucune statistique disponible.</div>';
-  const homeBlock=groups[0]||{}, awayBlock=groups[1]||{};
-  const homeName=homeBlock?.team?.name||"Domicile", awayName=awayBlock?.team?.name||"Extérieur";
-  const homeStats=flattenStatsForTeam(homeBlock), awayStats=flattenStatsForTeam(awayBlock);
+  const homeBlock=groups[0]||{},awayBlock=groups[1]||{};
+  const homeName=homeBlock?.team?.name||"Domicile",awayName=awayBlock?.team?.name||"Extérieur";
+  const homeStats=flattenStatsForTeam(homeBlock),awayStats=flattenStatsForTeam(awayBlock);
   const preferredStats=[
     {key:"ball possession",label:"Possession"},{key:"total shots",label:"Tirs"},
     {key:"shots on goal",label:"Tirs cadrés"},{key:"corner kicks",label:"Corners"},
@@ -7193,22 +7209,18 @@ function renderStatistics(statistics) {
     {key:"yellow cards",label:"Cartons jaunes"},{key:"red cards",label:"Cartons rouges"},
     {key:"goalkeeper saves",label:"Arrêts"}
   ];
-  const availableKeys=new Set([...Object.keys(homeStats),...Object.keys(awayStats)]);
-  const used=preferredStats.filter(stat=>availableKeys.has(stat.key));
-  availableKeys.forEach(key=>{if(!used.some(item=>item.key===key))used.push({key,label:key});});
-  const numeric=value=>{
-    if(value===null||value===undefined||value==="")return null;
-    const number=Number(String(value).replace("%","").replace(",",".").replace(/[^\d.\-]/g,""));
-    return Number.isFinite(number)?number:null;
-  };
+  const keys=new Set([...Object.keys(homeStats),...Object.keys(awayStats)]);
+  const used=preferredStats.filter(stat=>keys.has(stat.key));
+  keys.forEach(key=>{if(!used.some(item=>item.key===key))used.push({key,label:key});});
+  const numeric=value=>{if(value===null||value===undefined||value==="")return null;const n=Number(String(value).replace("%","").replace(",",".").replace(/[^\d.\-]/g,""));return Number.isFinite(n)?n:null;};
   const rows=used.slice(0,14).map(stat=>{
-    const homeValue=homeStats[stat.key]??"-",awayValue=awayStats[stat.key]??"-";
-    const h=numeric(homeValue),a=numeric(awayValue),total=Math.max(0,h||0)+Math.max(0,a||0);
+    const hv=homeStats[stat.key]??"-",av=awayStats[stat.key]??"-";
+    const h=numeric(hv),a=numeric(av),total=Math.max(0,h||0)+Math.max(0,a||0);
     const hw=total>0&&h!==null?Math.max(0,Math.min(100,h/total*100)):50;
     const aw=total>0&&a!==null?Math.max(0,Math.min(100,a/total*100)):50;
-    return '<div class="bf-stat-row"><div class="bf-stat-value-home">' + escapeHTML(formatStatValue(homeValue)) + '</div><div class="bf-stat-name">' + escapeHTML(stat.label) + '</div><div class="bf-stat-value-away">' + escapeHTML(formatStatValue(awayValue)) + '</div><div class="bf-stat-track"><span class="bf-stat-home" style="width:' + hw.toFixed(1) + '%"></span><span class="bf-stat-away" style="width:' + aw.toFixed(1) + '%"></span></div></div>';
+    return '<div class="bf-stat-row"><div class="bf-stat-value-home">'+escapeHTML(formatStatValue(hv))+'</div><div class="bf-stat-name">'+escapeHTML(stat.label)+'</div><div class="bf-stat-value-away">'+escapeHTML(formatStatValue(av))+'</div><div class="bf-stat-track"><span class="bf-stat-home" style="width:'+hw.toFixed(1)+'%"></span><span class="bf-stat-away" style="width:'+aw.toFixed(1)+'%"></span></div></div>';
   }).join("");
-  return '<div class="bf-stat-teams"><div>' + escapeHTML(homeName) + '</div><span>VS</span><div>' + escapeHTML(awayName) + '</div></div><div class="bf-stat-table">' + rows + '</div>';
+  return '<div class="bf-stat-teams"><div>'+escapeHTML(homeName)+'</div><span>VS</span><div>'+escapeHTML(awayName)+'</div></div><div class="bf-stat-table">'+rows+'</div>';
 }
 /* =========================================================
    MATCH INFORMATION
@@ -10062,6 +10074,7 @@ function initSearch() {
     .bf-player-action--injury { background:#e2e8f0; color:#334155; }
     .bf-player-action--mvp { background:#fef08a; color:#713f12; }
     .bf-player-action--keypass { background:#ede9fe; color:#5b21b6; }
+    .bf-event-icon { display:inline-flex; align-items:center; justify-content:center; min-width:38px; padding:4px; border-radius:5px; background:#172a41; color:#fff; font-size:8px; line-height:1; font-weight:950; letter-spacing:.03em; }
     @media (max-width:700px) {
       .bf-pitch-player { width:72px; gap:2px; }
       .bf-pitch-role { padding:2px 4px; font-size:8px; }
