@@ -2689,7 +2689,51 @@ function normalizeMatch(item) {
         null
       );
 
+      const positionName = first(
+        wrapper?.position_name,
+        wrapper?.positionName,
+        raw?.position_name,
+        raw?.positionName,
+        wrapper?.position_abbreviation,
+        wrapper?.positionAbbreviation,
+        raw?.position_abbreviation,
+        raw?.positionAbbreviation,
+        wrapper?.position_code,
+        wrapper?.positionCode,
+        raw?.position_code,
+        raw?.positionCode,
+        ""
+      );
+
+      const formationPositionValue = first(
+        wrapper?.formation_position,
+        wrapper?.formationPosition,
+        raw?.formation_position,
+        raw?.formationPosition,
+        null
+      );
+      const numericFormationPosition =
+        /^\\d+$/.test(String(formationPositionValue ?? "").trim())
+          ? Number(formationPositionValue)
+          : null;
+
+      const formationSlot = first(
+        wrapper?.formation_slot,
+        wrapper?.formationSlot,
+        raw?.formation_slot,
+        raw?.formationSlot,
+        numericFormationPosition >= 1 && numericFormationPosition <= 11
+          ? numericFormationPosition
+          : null,
+        null
+      );
+
       const position = first(
+        positionName,
+        typeof formationPositionValue === "string" &&
+          !/^\\d+$/.test(formationPositionValue.trim())
+          ? formationPositionValue
+          : null,
         wrapper?.position,
         wrapper?.pos,
         wrapper?.role,
@@ -2785,6 +2829,45 @@ function normalizeMatch(item) {
           pos: position,
 
           position,
+
+          position_name: first(
+            wrapper?.position_name,
+            raw?.position_name,
+            wrapper?.positionName,
+            raw?.positionName,
+            null
+          ),
+
+          position_abbreviation: first(
+            wrapper?.position_abbreviation,
+            raw?.position_abbreviation,
+            wrapper?.positionAbbreviation,
+            raw?.positionAbbreviation,
+            null
+          ),
+
+          position_code: first(
+            wrapper?.position_code,
+            raw?.position_code,
+            wrapper?.positionCode,
+            raw?.positionCode,
+            null
+          ),
+
+          formation_position:
+            numericFormationPosition === null
+              ? formationPositionValue
+              : null,
+
+          formation_slot: formationSlot,
+
+          lineup_position: first(
+            wrapper?.lineup_position,
+            raw?.lineup_position,
+            wrapper?.lineupPosition,
+            raw?.lineupPosition,
+            null
+          ),
 
           grid,
 
