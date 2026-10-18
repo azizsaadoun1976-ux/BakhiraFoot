@@ -2176,7 +2176,8 @@ function buildLineup(
       details?.lineups?.[side]?.formation,
       details?.lineup?.[side]?.formation,
       details?.compositions?.[side]?.formation,
-      details?.players?.[side]?.formation,      null
+      details?.players?.[side]?.formation,
+      null
     );
 
   for (
