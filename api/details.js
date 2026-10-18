@@ -1755,20 +1755,15 @@ async function sofaDetails(
     const rawHome=lineup?.homeTeam || lineup?.home || lineup?.host || null;
     const rawAway=lineup?.awayTeam || lineup?.away || lineup?.guest || null;
     const formationRows=value=>String(value||"").trim().replace(/\s+/g,"").split("-").map(Number);
-    const validLayout=player=>{
-      const vertical=player?.verticalLayout;
-      if (vertical && Number.isFinite(Number(vertical.x)) && Number.isFinite(Number(vertical.y))) {
-        return Number(vertical.x)>=0 && Number(vertical.x)<=1 && Number(vertical.y)>=0 && Number(vertical.y)<=1;
-      }
-      const horizontal=player?.horizontalLayout;
-      return !!(horizontal && Number.isFinite(Number(horizontal.x)) && Number.isFinite(Number(horizontal.y)) &&
-        Number(horizontal.x)>=0 && Number(horizontal.x)<=1 && Number(horizontal.y)>=0 && Number(horizontal.y)<=1);
-    };
+    const validPoint=layout=>!!(layout && Number.isFinite(Number(layout.x)) &&
+      Number.isFinite(Number(layout.y)) && Number(layout.x)>=0 && Number(layout.x)<=1 &&
+      Number(layout.y)>=0 && Number(layout.y)<=1);
+    const validLayout=player=>validPoint(player?.verticalLayout) || validPoint(player?.horizontalLayout);
     const point=player=>{
       const v=player?.verticalLayout;
-      if (validLayout(player) && v) return {x:Number(v.x)*100,y:Number(v.y)*100};
+      if (validPoint(v)) return {x:Number(v.x)*100,y:Number(v.y)*100};
       const h=player?.horizontalLayout;
-      if (validLayout(player) && h) return {x:Number(h.y)*100,y:Number(h.x)*100};
+      if (validPoint(h)) return {x:Number(h.y)*100,y:Number(h.x)*100};
       return null;
     };
     const sourceRole=player=>{
