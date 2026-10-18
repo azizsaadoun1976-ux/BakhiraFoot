@@ -341,3 +341,48 @@ body.dark .head,body.dark .leagueHead,body.dark .table,body.dark .table-wrap{col
 @media(prefers-reduced-motion:reduce){
   *,*::before,*::after{scroll-behavior:auto!important;animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}
 }
+
+
+/* Standalone informational pages: use the same polished surfaces */
+.about-page,.contact-page,.privacy-page,.terms-page{width:min(1080px,calc(100% - 36px));margin:0 auto;padding:clamp(24px,4vw,52px) 0}
+.about-main,.about-side,.contact-card,.contact-box,.privacy-card,.privacy-section,.terms-card{
+  border:1px solid var(--bf-border)!important;border-radius:18px!important;
+  background:var(--bf-surface)!important;color:var(--bf-ink)!important;
+  box-shadow:var(--bf-shadow)!important;
+}
+.about-main{padding:clamp(20px,3vw,34px)!important}
+.about-side{padding:20px!important}
+.about-side-title,.contact-side-title{color:var(--bf-green-deep)!important;font-weight:950;letter-spacing:.08em}
+.about-feature,.contact-feature{display:flex;gap:12px;align-items:flex-start;padding:13px 0;border-bottom:1px solid var(--bf-border)}
+.about-feature:last-child,.contact-feature:last-child{border-bottom:0}
+.about-feature-icon,.contact-feature-icon,.contact-box-icon{flex:0 0 42px;display:grid;place-items:center;width:42px;height:42px;border-radius:13px;background:rgba(19,201,137,.12);color:var(--bf-green-deep);font-size:20px}
+.about-feature-text,.contact-feature-text{color:var(--bf-muted)!important;line-height:1.7}
+.contact-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px;margin:23px 0}
+.contact-card{padding:22px!important;transition:transform .18s ease,border-color .18s ease}
+.contact-card:hover{transform:translateY(-2px);border-color:rgba(19,201,137,.45)!important}
+.contact-box{display:flex;align-items:flex-start;gap:14px;padding:20px!important}
+.contact-box-content{min-width:0;color:var(--bf-ink)}
+.contact-box-content p{color:var(--bf-muted)!important;line-height:1.8}
+.contact-email{overflow-wrap:anywhere;color:var(--bf-green-deep)!important;font-weight:900}
+.privacy-card,.terms-card{padding:clamp(20px,3vw,36px)!important;line-height:1.9}
+.privacy-section{margin:14px 0;padding:18px 20px!important;box-shadow:none!important}
+.privacy-section h2,.privacy-section h3{color:var(--bf-ink)!important}
+.privacy-section p,.privacy-section li{color:var(--bf-muted)!important;line-height:1.9}
+.privacy-email{overflow-wrap:anywhere;color:var(--bf-green-deep)!important;font-weight:850}
+.about-back,.contact-back,.privacy-back,.articles-back,.article-back,.back{
+  display:inline-flex;align-items:center;gap:8px;margin-top:20px;padding:10px 13px;
+  border:1px solid var(--bf-border);border-radius:11px;background:var(--bf-surface);
+  color:var(--bf-green-deep)!important;font-weight:900;text-decoration:none;
+}
+body.dark .about-main,body.dark .about-side,body.dark .contact-card,body.dark .contact-box,body.dark .privacy-card,body.dark .privacy-section,body.dark .terms-card{
+  background:var(--bf-surface)!important;border-color:var(--bf-border)!important;color:var(--bf-ink)!important;
+}
+body.dark .about-side-title,body.dark .contact-side-title,body.dark .privacy-section h2,body.dark .privacy-section h3{color:#72ecc0!important}
+body.dark .about-feature-text,body.dark .contact-feature-text,body.dark .contact-box-content p,body.dark .privacy-section p,body.dark .privacy-section li{color:var(--bf-muted)!important}
+body.dark .about-back,body.dark .contact-back,body.dark .privacy-back,body.dark .articles-back,body.dark .article-back,body.dark .back{background:#112237;border-color:#2a4055;color:#76ecc0!important}
+@media(max-width:650px){
+  .about-page,.contact-page,.privacy-page,.terms-page{width:calc(100% - 24px);padding:22px 0 34px}
+  .contact-grid{grid-template-columns:1fr}
+  .about-main,.about-side,.contact-card,.contact-box,.privacy-card,.privacy-section,.terms-card{border-radius:15px!important}
+  .contact-box{padding:15px!important}
+}
