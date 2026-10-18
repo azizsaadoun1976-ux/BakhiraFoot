@@ -1852,24 +1852,105 @@ async function sofaDetails(
     const homeLineup=rawHome?normalizeTeam(rawHome,"home",homeName):null;
     const awayLineup=rawAway?normalizeTeam(rawAway,"away",awayName):null;
     const complete=candidate=>candidate && candidate.startXI.length===11 && candidate.startXI.every(item=>validLayout(item.raw));
-    if (!complete(homeLineup) || !complete(awayLineup)) {
-      const error=new Error("FotMob ma kay3tich l'emplacement officiel de tous les joueurs f had lmatch.");
-      error.status=404;
-      throw error;
-    }
     const matchDate=selected.status?.utcTime||detail.general?.matchTimeUTCDate||null;
+
+    /* FotMob's match summary carries real match statistics in content.stats.Periods.All.stats. */
+    const statsRoot =
+      detail?.content?.stats ||
+      detail?.content?.statistics ||
+      detail?.stats ||
+      detail?.statistics ||
+      {};
+    const periods = statsRoot?.Periods || statsRoot?.periods || statsRoot;
+    const allPeriod = periods?.All || periods?.ALL || periods?.all ||
+      periods?.["Full Time"] || periods?.fullTime || periods?.full_time || periods;
+    const statGroups = Array.isArray(allPeriod)
+      ? allPeriod
+      : arr(allPeriod?.stats || allPeriod?.groups || allPeriod?.statisticsItems || allPeriod?.statistics);
+    const homeStats = [];
+    const awayStats = [];
+    const statValue = value => {
+      if (value === null || value === undefined || value === "") return null;
+      if (typeof value === "object") {
+        return first(value?.displayValue, value?.display, value?.value, value?.text, value?.label, null);
+      }
+      return value;
+    };
+    const addStat = (item, fallbackTitle) => {
+      if (!item || typeof item !== "object") return;
+      const title = first(item?.title, item?.name, item?.displayName, item?.label, item?.key, item?.type, fallbackTitle);
+      let pair = first(item?.stats, item?.values, item?.value, item?.data, null);
+      let homeValue = first(item?.home, item?.homeValue, item?.homeStat, null);
+      let awayValue = first(item?.away, item?.awayValue, item?.awayStat, null);
+      if (Array.isArray(pair)) {
+        if (homeValue === null) homeValue = pair[0];
+        if (awayValue === null) awayValue = pair[1];
+      } else if (pair && typeof pair === "object") {
+        if (homeValue === null) homeValue = first(pair?.home, pair?.homeValue, null);
+        if (awayValue === null) awayValue = first(pair?.away, pair?.awayValue, null);
+      }
+      homeValue = statValue(homeValue);
+      awayValue = statValue(awayValue);
+      if (!title || (homeValue === null && awayValue === null)) return;
+      const key = String(title).trim().toLowerCase();
+      if (!key) return;
+      if (!homeStats.some(stat => String(stat.type).trim().toLowerCase() === key)) {
+        homeStats.push({ type: String(title), value: homeValue ?? "-" });
+        awayStats.push({ type: String(title), value: awayValue ?? "-" });
+      }
+    };
+    for (const group of statGroups) {
+      const items = arr(group?.stats || group?.statisticsItems || group?.statistics);
+      if (items.length && items.some(item => item && typeof item === "object")) {
+        for (const item of items) addStat(item, group?.title || group?.name);
+      } else {
+        addStat(group, null);
+      }
+    }
+    /* Additional provider variants may put the pairs directly under stats. */
+    for (const key of ["topStats", "top_stats", "statistics", "items"]) {
+      for (const item of arr(statsRoot?.[key] || allPeriod?.[key])) addStat(item, null);
+    }
+
+    const statistics = homeStats.length
+      ? [
+          { team: homeLineup?.team || { id: rawHome?.id ?? null, name: homeName, logo: rawHome?.id ? "https://images.fotmob.com/image_resources/logo/teamlogo/" + rawHome.id + "_small.png" : "" }, statistics: homeStats },
+          { team: awayLineup?.team || { id: rawAway?.id ?? null, name: awayName, logo: rawAway?.id ? "https://images.fotmob.com/image_resources/logo/teamlogo/" + rawAway.id + "_small.png" : "" }, statistics: awayStats }
+        ]
+      : [];
+
+    const eventCandidates = [
+      detail?.content?.matchFacts?.events?.events,
+      detail?.content?.matchFacts?.events,
+      detail?.header?.events,
+      detail?.content?.events,
+      detail?.events
+    ];
+    const eventList = eventCandidates.find(Array.isArray) || [];
+    const events = eventList.filter(item => item && typeof item === "object").map(item => ({
+      ...item,
+      type: item?.type || item?.eventType || "Event",
+      detail: first(item?.goalDescription, item?.description, item?.text, item?.cardDescription, ""),
+      ownGoal: item?.ownGoal ?? item?.isOwnGoal ?? null,
+      isPenalty: item?.isPenalty ?? item?.penalty ?? /penalt/i.test(String(item?.goalDescription || item?.description || "")),
+      team: item?.team || (typeof item?.isHome === "boolean" ? (item.isHome ? { id: rawHome?.id ?? null, name: homeName } : { id: rawAway?.id ?? null, name: awayName }) : item?.team)
+    }));
+
     return {
       fixture:{id:String(selected.id),slug:"fotmob-"+String(selected.id),upstreamId:selected.id,date:matchDate,
         status:{short:selected.status?.reason?.short||(selected.status?.finished?"FT":selected.status?.started?"LIVE":"NS"),
           long:selected.status?.reason?.long||"",elapsed:null},venue:null,referee:null,timezone:"UTC"},
       league:{name:selected.league?.name||detail.general?.leagueName||"Football",logo:""},
       competition:{name:selected.league?.name||detail.general?.leagueName||"Football"},
-      teams:{home:{id:rawHome?.id??null,name:homeName,logo:homeLineup.team.logo},
-        away:{id:rawAway?.id??null,name:awayName,logo:awayLineup.team.logo}},
+      teams:{home:{id:rawHome?.id??null,name:homeName,logo:homeLineup?.team?.logo||""},
+        away:{id:rawAway?.id??null,name:awayName,logo:awayLineup?.team?.logo||""}},
       goals:{home:selected.home?.score??null,away:selected.away?.score??null},
-      lineups:[homeLineup,awayLineup],
-      players:[homeLineup,awayLineup].map(item=>({team:item.team,players:[...item.startXI,...item.substitutes]})),
-      events:[],statistics:[],provider:"FotMob"
+      lineups:[homeLineup,awayLineup].filter(Boolean),
+      players:[homeLineup,awayLineup].filter(Boolean).map(item=>({team:item.team,players:[...item.startXI,...item.substitutes]})),
+      events,
+      statistics,
+      provider:"FotMob",
+      player_of_match: detail?.content?.playerOfTheMatch || detail?.content?.playerStats?.playerOfTheMatch || null
     };
   }
 
