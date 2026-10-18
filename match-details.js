@@ -2187,11 +2187,37 @@ function buildLineup(
     const block =
       teamBlock(root);
 
+    /*
+     * The SportScore adapter returns lineups as an ARRAY:
+     * [{ team, formation, startXI, substitutes }, ...].
+     * The previous code only looked at root.home/root.away and therefore
+     * found the players but missed the official formation stored beside them.
+     */
+    const arrayLineupBlock = Array.isArray(root)
+      ? root.find(item =>
+          teamMatches(item, team) &&
+          (
+            item?.formation ||
+            item?.tactics?.formation ||
+            item?.formationUsed ||
+            item?.tacticalFormation ||
+            item?.formationName ||
+            item?.formation_name
+          )
+        )
+      : null;
+
     formation =
       first(
         formation,
         block?.formation,
         block?.tactics?.formation,
+        arrayLineupBlock?.formation,
+        arrayLineupBlock?.tactics?.formation,
+        arrayLineupBlock?.formationUsed,
+        arrayLineupBlock?.tacticalFormation,
+        arrayLineupBlock?.formationName,
+        arrayLineupBlock?.formation_name,
         root?.[`${side}_formation`],
         root?.formation?.[side],
         root?.formation?.[`${side}_formation`],
