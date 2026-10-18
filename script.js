@@ -5673,7 +5673,7 @@ function makePitchCoordinates(pitchPlayers, side) {
   }));
   const xyValuesValid = players.length === 11 && xyEntries.every(entry =>
     Number.isFinite(entry.x) && Number.isFinite(entry.y) &&
-    entry.x >= 0 && entry.y >= 0 && entry.x <= 100 && entry.y <= 100
+    entry.x >= 0 && entry.y >= 0 && entry.x <= 120 && entry.y <= 100
   );
 
   if (xyValuesValid) {
@@ -5686,10 +5686,11 @@ function makePitchCoordinates(pitchPlayers, side) {
     const integerGrid = xs.every(value => Number.isInteger(value) && value >= 1 && value <= 11) &&
       ys.every(value => Number.isInteger(value) && value >= 1 && value <= 11) &&
       maxX - minX >= 3 && maxY - minY >= 3;
-    const percentages = maxX > 11 && maxY > 11 &&
+    const pitchUnits = maxX > 100;
+    const percentages = !pitchUnits && maxX > 11 && maxY > 11 &&
       maxX - minX >= 15 && maxY - minY >= 15;
 
-    if (normalized || integerGrid || percentages) {
+    if (normalized || integerGrid || pitchUnits || percentages) {
       return xyEntries.map(entry => {
         let x = entry.x, y = entry.y;
         if (normalized) {
@@ -5698,6 +5699,11 @@ function makePitchCoordinates(pitchPlayers, side) {
         } else if (integerGrid) {
           x = 8 + ((x - 1) / 10) * 84;
           y = 8 + ((y - 1) / 10) * 84;
+        } else if (pitchUnits) {
+          const pitchLength = maxX > 105 ? 120 : 105;
+          const pitchWidth = maxY > 68 ? 80 : 68;
+          x = 8 + (x / pitchLength) * 84;
+          y = 8 + (y / pitchWidth) * 84;
         }
         if (side === "away") y = 100 - y;
         return {
