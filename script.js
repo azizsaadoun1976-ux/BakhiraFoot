@@ -5637,6 +5637,218 @@ function getPositionRow(position) {
   return 4;
 }
 
+function bfNormalizeTacticalRole(value) {
+  if (value && typeof value === "object") {
+    const fields = [
+      "position_name","positionName","position_abbreviation","positionAbbreviation",
+      "position_code","positionCode","displayName","display_name","shortName","short_name",
+      "abbreviation","name","label","code","slug","value"
+    ];
+    for (const key of fields) {
+      if (value[key] !== null && value[key] !== undefined && String(value[key]).trim()) {
+        const parsed = bfNormalizeTacticalRole(value[key]);
+        if (parsed && !["DEF","MID","FWD"].includes(parsed)) return parsed;
+      }
+    }
+    for (const key of fields) {
+      if (value[key] !== null && value[key] !== undefined && String(value[key]).trim()) {
+        const parsed = bfNormalizeTacticalRole(value[key]);
+        if (parsed) return parsed;
+      }
+    }
+    return "";
+  }
+  const text = String(value ?? "").normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .trim().toLowerCase();
+  const key = text.replace(/[^a-z0-9]/g, "");
+  const aliases = {
+    g:"GK",gk:"GK",goalkeeper:"GK",goalie:"GK",keeper:"GK","1":"GK",
+    lb:"LB",leftback:"LB",leftfullback:"LB",dl:"LB",dfl:"LB",
+    lwb:"LWB",leftwingback:"LWB",
+    lcb:"LCB",leftcentreback:"LCB",leftcenterback:"LCB",dlc:"LCB",dflc:"LCB",
+    cb:"CB",centreback:"CB",centerback:"CB",centraldefender:"CB",dc:"CB",dfc:"CB",
+    rcb:"RCB",rightcentreback:"RCB",rightcenterback:"RCB",drc:"RCB",dfrc:"RCB",
+    rb:"RB",rightback:"RB",rightfullback:"RB",dr:"RB",dfr:"RB",
+    rwb:"RWB",rightwingback:"RWB",
+    dm:"CDM",cdm:"CDM",defensivemidfielder:"CDM",centraldefensivemidfielder:"CDM",
+    holdingmidfielder:"CDM",deeplyingmidfielder:"CDM",deeplyingplaymaker:"CDM",
+    ldm:"LDM",leftdefensivemidfielder:"LDM",
+    rdm:"RDM",rightdefensivemidfielder:"RDM",
+    cm:"CM",mc:"CM",centralmidfielder:"CM",centralmidfield:"CM",mfc:"CM",
+    lcm:"LCM",leftcentralmidfielder:"LCM",mcl:"LCM",mflc:"LCM",
+    rcm:"RCM",rightcentralmidfielder:"RCM",mcr:"RCM",mfrc:"RCM",
+    lm:"LM",leftmidfielder:"LM",ml:"LM",mfl:"LM",
+    rm:"RM",rightmidfielder:"RM",mr:"RM",mfr:"RM",
+    am:"CAM",cam:"CAM",attackingmidfielder:"CAM",centralattackingmidfielder:"CAM",
+    lam:"LAM",leftattackingmidfielder:"LAM",
+    ram:"RAM",rightattackingmidfielder:"RAM",
+    lw:"LW",leftwing:"LW",leftwinger:"LW",fl:"LW",fwl:"LW",
+    rw:"RW",rightwing:"RW",rightwinger:"RW",fr:"RW",fwr:"RW",
+    lf:"LF",leftforward:"LF",rf:"RF",rightforward:"RF",
+    st:"ST",striker:"ST",fc:"ST",fwc:"ST",cf:"CF",centreforward:"CF",centerforward:"CF",
+    ss:"SS",secondstriker:"SS"
+  };
+  if (aliases[key]) return aliases[key];
+  if (["d","df","def","defender","defence","defense","back"].includes(key) || key.includes("defender")) return "DEF";
+  if (["m","mf","mid","midfielder","midfield"].includes(key) || key.includes("midfielder")) return "MID";
+  if (["f","fw","fwd","att","attacker","forward"].includes(key) || key.includes("forward")) return "FWD";
+  const splitAliases = {
+    "d l":"LB","df l":"LB","d lc":"LCB","df lc":"LCB","d c":"CB","df c":"CB",
+    "d rc":"RCB","df rc":"RCB","d r":"RB","df r":"RB",
+    "m l":"LM","mf l":"LM","m lc":"LCM","mf lc":"LCM","m c":"CM","mf c":"CM",
+    "m rc":"RCM","mf rc":"RCM","m r":"RM","mf r":"RM",
+    "f l":"LW","fw l":"LW","f c":"ST","fw c":"ST","f r":"RW","fw r":"RW"
+  };
+  return splitAliases[text] || "";
+}
+
+function bfRoleGroup(role) {
+  const value = bfNormalizeTacticalRole(role);
+  if (value === "GK") return "gk";
+  if (["DEF","LB","LCB","CB","RCB","RB","LWB","RWB"].includes(value)) return "def";
+  if (["MID","CDM","LDM","RDM","CM","LCM","RCM","CAM","LAM","RAM","LM","RM"].includes(value)) return "mid";
+  if (["FWD","LW","RW","LF","RF","ST","CF","SS"].includes(value)) return "fwd";
+  return "";
+}
+
+function bfFormationRoleRows(formation) {
+  let text = String(formation || "").trim().normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[‐‑‒–—−]/g, "-").replace(/\s+/g, "");
+  if (/^\d{3,4}$/.test(text)) text = text.split("").join("-");
+  const counts = text.split("-").map(Number);
+  if (counts.length < 2 || counts.length > 5 ||
+      counts.some(n => !Number.isInteger(n) || n < 1 || n > 5) ||
+      counts.reduce((sum,n)=>sum+n,0) !== 10) return null;
+
+  const templates = {
+    "4-3-3":[["LB","CB","CB","RB"],["CDM","CM","CM"],["LW","ST","RW"]],
+    "4-2-3-1":[["LB","CB","CB","RB"],["CDM","CDM"],["LW","CAM","RW"],["ST"]],
+    "4-4-2":[["LB","CB","CB","RB"],["LM","CM","CM","RM"],["ST","ST"]],
+    "4-1-4-1":[["LB","CB","CB","RB"],["CDM"],["LW","CM","CM","RW"],["ST"]],
+    "4-5-1":[["LB","CB","CB","RB"],["LM","CM","CDM","CM","RM"],["ST"]],
+    "4-2-2-2":[["LB","CB","CB","RB"],["CDM","CDM"],["CAM","CAM"],["ST","ST"]],
+    "4-3-1-2":[["LB","CB","CB","RB"],["CDM","CM","CM"],["CAM"],["ST","ST"]],
+    "4-3-2-1":[["LB","CB","CB","RB"],["CDM","CM","CM"],["LAM","RAM"],["ST"]],
+    "4-4-1-1":[["LB","CB","CB","RB"],["LM","CM","CM","RM"],["CAM"],["ST"]],
+    "3-4-3":[["LCB","CB","RCB"],["LWB","CM","CM","RWB"],["LW","ST","RW"]],
+    "3-5-2":[["LCB","CB","RCB"],["LWB","CM","CDM","CM","RWB"],["ST","ST"]],
+    "5-3-2":[["LWB","LCB","CB","RCB","RWB"],["CDM","CM","CM"],["ST","ST"]],
+    "5-4-1":[["LWB","LCB","CB","RCB","RWB"],["LM","CM","CM","RM"],["ST"]],
+    "5-2-3":[["LWB","LCB","CB","RCB","RWB"],["CDM","CM"],["LW","ST","RW"]],
+    "3-4-2-1":[["LCB","CB","RCB"],["LWB","CM","CM","RWB"],["LAM","RAM"],["ST"]],
+    "4-1-2-1-2":[["LB","CB","CB","RB"],["CDM"],["LCM","RCM"],["CAM"],["ST","ST"]]
+  };
+  if (templates[text] && templates[text].length===counts.length &&
+      templates[text].every((row,i)=>row.length===counts[i])) return templates[text].map(row=>row.slice());
+
+  const backs = counts[0] === 5 ? ["LWB","LCB","CB","RCB","RWB"]
+    : counts[0] === 4 ? ["LB","CB","CB","RB"]
+    : counts[0] === 3 ? ["LCB","CB","RCB"]
+    : counts[0] === 2 ? ["CB","CB"] : ["CB"];
+  const nFront = counts[counts.length-1];
+  const forwards = nFront === 3 ? ["LW","ST","RW"] : nFront===2 ? ["ST","ST"] : Array.from({length:nFront},()=> "ST");
+  const rows = [backs];
+  for(let i=1;i<counts.length-1;i++){
+    const n=counts[i];
+    if(n===5) rows.push(["LM","CM","CDM","CM","RM"]);
+    else if(n===4) rows.push(counts.length===3?["LM","CM","CM","RM"]:["LWB","CM","CM","RWB"]);
+    else if(n===3) rows.push(["CDM","CM","CM"]);
+    else if(n===2) rows.push(i===counts.length-2 && counts.length>=4?["CAM","CAM"]:["CDM","CDM"]);
+    else rows.push(["CDM"]);
+  }
+  rows.push(forwards);
+  return rows.every((row,i)=>row.length===counts[i]) ? rows : null;
+}
+
+function bfAssignFormationRoles(players, formation, readPosition) {
+  if (!Array.isArray(players) || !players.length) return [];
+  const shape = bfFormationRoleRows(formation);
+  const parsed = players.map((player,index)=>{
+    const role = bfNormalizeTacticalRole(readPosition(player));
+    return {player,index,role,group:bfRoleGroup(role),generic:["DEF","MID","FWD"].includes(role)||!role,slot:null,assigned:false};
+  });
+  if (!shape) {
+    return parsed.map(item=>({...item.player,tacticalPosition:item.role||item.player?.tacticalPosition||""}));
+  }
+
+  const slots=[];
+  shape.forEach((row,rowIndex)=>row.forEach((role,col)=>slots.push({role,row:rowIndex+1,col,rowSize:row.length,used:false})));
+  const slotFamily=role=>{
+    if(["LB","LCB","CB","RCB","RB","LWB","RWB"].includes(role))return "def";
+    if(["CDM","LDM","RDM","CM","LCM","RCM","CAM","LAM","RAM","LM","RM"].includes(role))return "mid";
+    if(["LW","RW","LF","RF","ST","CF","SS"].includes(role))return "fwd";
+    return "";
+  };
+  const occupy=(entry,slot,label)=>{
+    if(!slot)return;
+    slot.used=true;entry.slot=slot;entry.assigned=true;entry.finalRole=label||slot.role;
+  };
+
+  parsed.filter(item=>item.group==="gk").forEach(item=>{
+    item.slot={role:"GK",row:0,col:0,rowSize:1,used:true};
+    item.assigned=true;item.finalRole="GK";
+  });
+
+  parsed.filter(item=>item.group && !item.generic && item.group!=="gk").forEach(entry=>{
+    let options=slots.filter(slot=>!slot.used&&slot.role===entry.role);
+    if(!options.length) options=slots.filter(slot=>!slot.used&&slotFamily(slot.role)===entry.group).sort((a,b)=>a.row-b.row||a.col-b.col);
+    if(!options.length) options=slots.filter(slot=>!slot.used);
+    if(options.length){
+      const slot=options[0];
+      const label=slot.role===entry.role ? entry.role :
+        (entry.role==="CB"&&["LCB","RCB"].includes(slot.role)) ||
+        (entry.role==="CM"&&["LCM","RCM"].includes(slot.role)) ||
+        (entry.role==="CDM"&&["LDM","RDM"].includes(slot.role)) ||
+        (entry.role==="CAM"&&["LAM","RAM"].includes(slot.role)) ? slot.role : entry.role;
+      occupy(entry,slot,label);
+    }
+  });
+
+  const lastRow=shape.length;
+  let defPool=slots.filter(slot=>slot.row===1&&!slot.used);
+  let midPool=slots.filter(slot=>slot.row>1&&slot.row<lastRow&&!slot.used);
+  let frontPool=slots.filter(slot=>slot.row===lastRow&&!slot.used);
+  const genericIn=group=>parsed.filter(item=>!item.assigned&&item.group===group);
+  const genericDef=genericIn("def"),genericMid=genericIn("mid"),genericFwd=genericIn("fwd");
+  const moveFlexible=(from,to,amount,priority)=>{
+    for(const role of priority){
+      for(let i=from.length-1;i>=0&&amount>0;i--){
+        if(from[i].role===role){const slot=from.splice(i,1)[0];to.push(slot);amount--;}
+      }
+    }
+  };
+  if(genericFwd.length>frontPool.length) moveFlexible(midPool,frontPool,genericFwd.length-frontPool.length,["LW","RW","LAM","RAM","CAM","SS","CF"]);
+  if(genericFwd.length<frontPool.length) moveFlexible(frontPool,midPool,frontPool.length-genericFwd.length,["LW","RW","CF","SS","LAM","RAM","CAM"]);
+  const assign=(entries,pool,group)=>{
+    entries.forEach(entry=>{
+      let slot=pool.shift();
+      if(!slot) slot=slots.find(s=>!s.used&&(!group||slotFamily(s.role)===group))||slots.find(s=>!s.used);
+      if(slot)occupy(entry,slot,slot.role);
+    });
+  };
+  assign(genericDef,defPool,"def");
+  assign(genericMid,midPool,"mid");
+  assign(genericFwd,frontPool,"fwd");
+
+  const unknown=parsed.filter(item=>!item.assigned);
+  if(players.length===11&&!parsed.some(item=>item.group==="gk")&&unknown.length===1&&slots.filter(slot=>slot.used).length===10){
+    const item=unknown[0];item.slot={role:"GK",row:0,col:0,rowSize:1,used:true};item.assigned=true;item.finalRole="GK";
+  }
+  const remaining=slots.filter(slot=>!slot.used).sort((a,b)=>a.row-b.row||a.col-b.col);
+  parsed.filter(item=>!item.assigned).forEach(item=>{const slot=remaining.shift();if(slot)occupy(item,slot,slot.role);});
+
+  return parsed.map(item=>({
+    ...item.player,
+    tacticalPosition:item.finalRole||item.role||"",
+    _tacticRow:item.slot?item.slot.row:null,
+    _tacticCol:item.slot?item.slot.col:null,
+    _tacticRowSize:item.slot?item.slot.rowSize:0,
+    _tacticRowCount:shape.length+1
+  }));
+}
+
 function getPitchPlayers(lineup) {
   if (!lineup) return [];
 
@@ -5694,7 +5906,7 @@ function getPitchPlayers(lineup) {
     _formation: formation || "",
     _providerGrid: validGrid
   }));
-  return withPitchMetadata;
+  return bfAssignFormationRoles(withPitchMetadata, formation, getPlayerPosition);
 }
 
 function makePitchCoordinates(pitchPlayers, side) {
@@ -5789,7 +6001,26 @@ function makePitchCoordinates(pitchPlayers, side) {
     });
   }
 
-  /* 3) If there is a genuine formation string, use its row counts. */
+  /* 3) Use the declared formation when official player coordinates/grid are absent. */
+  const tacticalEntries = players.map(item => ({
+    item, row:Number(item?._tacticRow), col:Number(item?._tacticCol),
+    rowSize:Number(item?._tacticRowSize), rowCount:Number(item?._tacticRowCount)
+  }));
+  const tacticalUsable = players.length===11 &&
+    tacticalEntries.every(entry=>Number.isInteger(entry.row)&&entry.row>=0&&
+      Number.isInteger(entry.col)&&entry.col>=0&&Number.isInteger(entry.rowSize)&&
+      entry.rowSize>=1&&entry.col<entry.rowSize&&entry.rowCount>=3) &&
+    new Set(tacticalEntries.map(entry=>entry.row+":"+entry.col)).size===11;
+  if(tacticalUsable){
+    return tacticalEntries.map(entry=>{
+      const x=entry.rowSize<=1?50:10+80*entry.col/(entry.rowSize-1);
+      let y=8+84*entry.row/entry.rowCount;
+      if(side==="away")y=100-y;
+      return {...entry.item,_x:Math.max(5,Math.min(95,x)),_y:Math.max(5,Math.min(95,y))};
+    });
+  }
+
+  /* 3b) If there is a genuine formation string, use its row counts. */
   const declaredRows = players.find(item => Array.isArray(item?._formationRows))?._formationRows;
   let formationRows = Array.isArray(declaredRows) ? declaredRows.map(Number).filter(n => n > 0) : null;
   if (!formationRows || !formationRows.length || formationRows.reduce((sum, n) => sum + n, 0) !== 10) {
