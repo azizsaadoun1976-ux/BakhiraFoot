@@ -5552,10 +5552,20 @@ function getPitchPlayers(lineup) {
     : [];
   if (!starters.length) return [];
 
-  const formation = String(lineup?.formation || "4-3-3").trim().replace(/\s+/g, "");
+  /*
+   * Never invent 4-3-3 when the provider omitted its formation.
+   * We keep the actual formation if one was sent, and validate provider
+   * grid independently so 4-4-2, 3-5-2, 4-2-3-1, etc. remain valid.
+   */
+  const formation = String(
+    typeof lineup?.formation === "object"
+      ? (lineup?.formation?.name || lineup?.formation?.label || lineup?.formation?.value || "")
+      : (lineup?.formation || lineup?.tacticalFormation || lineup?.formationName || lineup?.formation_name || "")
+  ).trim().replace(/\s+/g, "");
+
   let formationRows = formation.split("-").map(Number).filter(n => Number.isFinite(n) && n > 0);
   if (!formationRows.length || formationRows.reduce((sum, n) => sum + n, 0) !== 10) {
-    formationRows = [4, 3, 3];
+    formationRows = null;
   }
 
   const players = starters.map((entry, index) => {
@@ -5563,7 +5573,7 @@ function getPitchPlayers(lineup) {
     const parsed = parsePitchGrid(getPlayerGrid(entry));
     const coords = getPlayerCoordinates(entry);
     return {
-      entry,
+      ...entry,
       player,
       index,
       row: parsed?.row ?? null,
@@ -5573,29 +5583,26 @@ function getPitchPlayers(lineup) {
     };
   });
 
-  const gridOK = players.every(item =>
-    Number.isInteger(item.row) && item.row >= 0 &&
-    Number.isInteger(item.col) && item.col >= 0
-  );
-  let validGrid = gridOK;
+  const gridCells = players.map(item => `${item.row}:${item.col}`);
+  const gridRows = [...new Set(players
+    .filter(item => Number.isInteger(item.row) && Number.isInteger(item.col))
+    .map(item => item.row))].sort((a, b) => a - b);
 
-  if (validGrid) {
-    const cells = players.map(item => `${item.row}:${item.col}`);
-    const rows = [...new Set(players.map(item => item.row))];
-    const rowCounts = rows.map(row => players.filter(item => item.row === row).length);
-    validGrid =
-      new Set(cells).size === cells.length &&
-      rows.length >= 3 && rows.length <= 5 &&
-      rowCounts.every(count => count >= 1 && count <= 5);
-  }
+  const validGrid =
+    players.length === 11 &&
+    players.every(item =>
+      Number.isInteger(item.row) && item.row >= 0 &&
+      Number.isInteger(item.col) && item.col >= 0 && item.col <= 10
+    ) &&
+    new Set(gridCells).size === gridCells.length &&
+    gridRows.length >= 3 && gridRows.length <= 5 &&
+    gridRows.every(row => players.filter(item => item.row === row).length <= 5);
 
   return players.map(item => ({
-    ...item.entry,
-    player: item.player,
-    sourceX: item.sourceX,
-    sourceY: item.sourceY,
+    ...item,
     _grid: validGrid ? `${item.row}:${item.col}` : "",
     _formationRows: formationRows,
+    _formation: formation || "",
     _providerGrid: validGrid
   }));
 }
@@ -5605,17 +5612,13 @@ function makePitchCoordinates(pitchPlayers, side) {
 
   const players = pitchPlayers.slice(0, 11);
 
-  /*
-   * FIRST: use actual X/Y coordinates returned by the detail API.
-   * api/index.js already extracts these from the provider; ignoring them here
-   * caused the old renderer to guess positions even when real coordinates existed.
-   */
+  /* 1) Use actual provider coordinates before any inferred layout. */
   const xyEntries = players.map(item => ({
     item,
     x: Number(item?.sourceX),
     y: Number(item?.sourceY)
   }));
-  const xyValuesValid = xyEntries.length >= 10 && xyEntries.every(entry =>
+  const xyValuesValid = players.length === 11 && xyEntries.every(entry =>
     Number.isFinite(entry.x) && Number.isFinite(entry.y) &&
     entry.x >= 0 && entry.y >= 0 && entry.x <= 100 && entry.y <= 100
   );
@@ -5647,13 +5650,13 @@ function makePitchCoordinates(pitchPlayers, side) {
         return {
           ...entry.item,
           _x: Math.max(5, Math.min(95, x)),
-          _y: Math.max(7, Math.min(93, y))
+          _y: Math.max(5, Math.min(95, y))
         };
       });
     }
   }
 
-  /* SECOND: use the provider lineup grid, even if labels are only MID/DEF/FWD. */
+  /* 2) Use the official lineup grid without assuming any specific formation. */
   const gridEntries = players.map(item => {
     const parsed = parsePitchGrid(item?._grid) || parsePitchGrid(getPlayerGrid(item));
     return { item, row: parsed?.row ?? null, col: parsed?.col ?? null };
@@ -5663,10 +5666,10 @@ function makePitchCoordinates(pitchPlayers, side) {
   ).map(item => item.row))].sort((a, b) => a - b);
   const gridCells = gridEntries.map(item => `${item.row}:${item.col}`);
   const gridUsable =
-    players.length >= 10 &&
+    players.length === 11 &&
     gridEntries.every(item =>
       Number.isInteger(item.row) && item.row >= 0 &&
-      Number.isInteger(item.col) && item.col >= 0
+      Number.isInteger(item.col) && item.col >= 0 && item.col <= 10
     ) &&
     new Set(gridCells).size === gridCells.length &&
     gridRows.length >= 3 && gridRows.length <= 5 &&
@@ -5684,23 +5687,25 @@ function makePitchCoordinates(pitchPlayers, side) {
       return {
         ...entry.item,
         _x: Math.max(5, Math.min(95, x)),
-        _y: Math.max(7, Math.min(93, y))
+        _y: Math.max(5, Math.min(95, y))
       };
     });
   }
 
-  /*
-   * No trustworthy provider grid: create the lines from the advertised formation.
-   * This is the crucial fallback for feeds that provide only generic D / MID / FWD.
-   */
+  /* 3) If there is a genuine formation string, use its row counts. */
   const declaredRows = players.find(item => Array.isArray(item?._formationRows))?._formationRows;
-  let formationRows = Array.isArray(declaredRows) ? declaredRows.map(Number).filter(n => n > 0) : [4, 3, 3];
-  if (!formationRows.length || formationRows.reduce((sum, n) => sum + n, 0) !== 10) {
-    formationRows = [4, 3, 3];
+  let formationRows = Array.isArray(declaredRows) ? declaredRows.map(Number).filter(n => n > 0) : null;
+  if (!formationRows || !formationRows.length || formationRows.reduce((sum, n) => sum + n, 0) !== 10) {
+    formationRows = null;
   }
 
-  const positionText = item => normalizeText(getPlayerPosition(item))
-    .replace(/[_-]+/g, " ").replace(/\s+/g, " ").trim();
+  const positionText = item => {
+    const value = getPlayerPosition(item);
+    if (value && typeof value === "object") {
+      return normalizeText(value.displayName || value.name || value.label || value.abbreviation || "");
+    }
+    return normalizeText(value).replace(/[_-]+/g, " ").replace(/\s+/g, " ").trim();
+  };
   const positionKey = item => positionText(item).replace(/[^a-z0-9]/g, "");
 
   function positionBucket(item) {
@@ -5736,16 +5741,10 @@ function makePitchCoordinates(pitchPlayers, side) {
     return 2;
   }
 
-  const locatedKeeper = players.find(item => positionBucket(item) === "gk");
-  const keeper = locatedKeeper || players[0];
-  const used = new Set([keeper]);
-  const outfield = players.filter(item => item !== keeper);
-  const lines = formationRows.map(() => []);
-
-  function midfieldSpecialityScore(item, lineIndex) {
-    const p = positionText(item);
+  function midpointScore(item, lineIndex) {
     const k = positionKey(item);
-    if (formationRows.length < 4) return 0;
+    const p = positionText(item);
+    if (!formationRows || formationRows.length < 4) return 0;
     if (lineIndex === 1) {
       if (["dm", "cdm", "ldm", "rdm"].includes(k) || p.includes("defensive midfielder")) return 35;
       if (["am", "cam", "lam", "ram"].includes(k) || p.includes("attacking midfielder")) return -15;
@@ -5759,6 +5758,93 @@ function makePitchCoordinates(pitchPlayers, side) {
     return 0;
   }
 
+  /* No official formation/grid: position a pitch only when every player has a specific tactical role. */
+  if (!formationRows) {
+    const roleLayouts = {
+      gk: { x: 50, y: 8, key: "gk" },
+      lb: { x: 12, y: 28, key: "def" }, lwb: { x: 8, y: 40, key: "wingback" },
+      lcb: { x: 32, y: 28, key: "def" }, cb: { x: 50, y: 28, key: "def" },
+      rcb: { x: 68, y: 28, key: "def" }, rb: { x: 88, y: 28, key: "def" },
+      rwb: { x: 92, y: 40, key: "wingback" },
+      ldm: { x: 34, y: 43, key: "dm" }, dm: { x: 50, y: 43, key: "dm" },
+      cdm: { x: 50, y: 43, key: "dm" }, rdm: { x: 66, y: 43, key: "dm" },
+      lm: { x: 12, y: 53, key: "mid" }, lcm: { x: 34, y: 53, key: "mid" },
+      cm: { x: 50, y: 53, key: "mid" }, mc: { x: 50, y: 53, key: "mid" },
+      rcm: { x: 66, y: 53, key: "mid" }, rm: { x: 88, y: 53, key: "mid" },
+      lam: { x: 32, y: 64, key: "am" }, am: { x: 50, y: 64, key: "am" },
+      cam: { x: 50, y: 64, key: "am" }, ram: { x: 68, y: 64, key: "am" },
+      lw: { x: 12, y: 76, key: "wing" }, lf: { x: 28, y: 78, key: "wing" },
+      st: { x: 50, y: 84, key: "striker" }, cf: { x: 50, y: 84, key: "striker" },
+      ss: { x: 50, y: 76, key: "striker" }, rf: { x: 72, y: 78, key: "wing" },
+      rw: { x: 88, y: 76, key: "wing" }
+    };
+    const exact = players.map(item => {
+      const key = positionKey(item);
+      let role = roleLayouts[key] || null;
+      if (!role) {
+        const p = positionText(item);
+        const synonyms = [
+          [/goalkeeper|goalie|keeper/, "gk"],
+          [/left wing back/, "lwb"], [/right wing back/, "rwb"],
+          [/left back|left full back|left fullback/, "lb"],
+          [/right back|right full back|right fullback/, "rb"],
+          [/left centre back|left center back/, "lcb"],
+          [/right centre back|right center back/, "rcb"],
+          [/centre back|center back|central defender/, "cb"],
+          [/left defensive midfield|left defensive midfielder/, "ldm"],
+          [/right defensive midfield|right defensive midfielder/, "rdm"],
+          [/defensive midfield|defensive midfielder/, "cdm"],
+          [/left central midfield|left central midfielder/, "lcm"],
+          [/right central midfield|right central midfielder/, "rcm"],
+          [/central midfield|central midfielder/, "cm"],
+          [/left midfield|left midfielder/, "lm"],
+          [/right midfield|right midfielder/, "rm"],
+          [/left attacking midfield|left attacking midfielder/, "lam"],
+          [/right attacking midfield|right attacking midfielder/, "ram"],
+          [/attacking midfield|attacking midfielder/, "cam"],
+          [/left winger|left wing/, "lw"], [/right winger|right wing/, "rw"],
+          [/striker/, "st"], [/centre forward|center forward/, "cf"]
+        ];
+        const found = synonyms.find(([regex]) => regex.test(p));
+        if (found) role = roleLayouts[found[1]];
+      }
+      return { item, role, key };
+    });
+    if (exact.every(entry => entry.role)) {
+      const grouped = new Map();
+      exact.forEach(entry => {
+        const groupKey = entry.role.key;
+        if (!grouped.has(groupKey)) grouped.set(groupKey, []);
+        grouped.get(groupKey).push(entry);
+      });
+      const result = [];
+      for (const [groupKey, group] of grouped.entries()) {
+        group.sort((a,b) => laneRank(a.item) - laneRank(b.item));
+        group.forEach((entry,index) => {
+          const base = entry.role;
+          const offset = group.length > 1 ? (index - (group.length - 1) / 2) * 7 : 0;
+          let y = base.y;
+          if (side === "away") y = 100 - y;
+          result.push({
+            ...entry.item,
+            _x: Math.max(5, Math.min(95, base.x + offset)),
+            _y: Math.max(5, Math.min(95, y))
+          });
+        });
+      }
+      return result;
+    }
+
+    /* Honest fallback: do not draw a made-up 4-3-3 for generic D/MID/FWD data. */
+    return [];
+  }
+
+  const lines = formationRows.map(() => []);
+  const locatedKeeper = players.find(item => positionBucket(item) === "gk");
+  const keeper = locatedKeeper || players[0];
+  const used = new Set([keeper]);
+  const outfield = players.filter(item => item !== keeper);
+
   function scoreForLine(item, lineIndex) {
     const bucket = positionBucket(item);
     const last = formationRows.length - 1;
@@ -5769,7 +5855,7 @@ function makePitchCoordinates(pitchPlayers, side) {
       score = bucket === "att" ? 100 : bucket === "unknown" ? 35 : bucket === "mid" ? 15 : -10;
     } else {
       score = bucket === "mid" ? 100 : bucket === "unknown" ? 35 : bucket === "att" ? 25 : 10;
-      score += midfieldSpecialityScore(item, lineIndex);
+      score += midpointScore(item, lineIndex);
     }
     return score;
   }
@@ -5777,60 +5863,38 @@ function makePitchCoordinates(pitchPlayers, side) {
   for (let lineIndex = 0; lineIndex < formationRows.length; lineIndex++) {
     const count = formationRows[lineIndex];
     for (let slot = 0; slot < count; slot++) {
-      let best = null;
-      let bestScore = -Infinity;
-      outfield.forEach((item, index) => {
+      let best = null, bestScore = -Infinity, bestIndex = Infinity;
+      outfield.forEach((item,index) => {
         if (used.has(item)) return;
-        const score = scoreForLine(item, lineIndex);
-        if (score > bestScore || (score === bestScore && (!best || index < outfield.indexOf(best)))) {
-          best = item;
-          bestScore = score;
+        const score = scoreForLine(item,lineIndex);
+        if (score > bestScore || (score === bestScore && index < bestIndex)) {
+          best=item;bestScore=score;bestIndex=index;
         }
       });
-      if (best) {
-        lines[lineIndex].push(best);
-        used.add(best);
-      }
+      if (best) { lines[lineIndex].push(best); used.add(best); }
     }
   }
 
-  /* If a malformed feed supplied extra rows/players, keep every remaining player visible. */
   const remaining = outfield.filter(item => !used.has(item));
-  if (remaining.length) lines[lines.length - 1].push(...remaining);
+  if (remaining.length) lines[lines.length-1].push(...remaining);
 
-  const yByLineCount = {
-    1: [84],
-    2: [35, 84],
-    3: [27, 52, 84],
-    4: [25, 43, 65, 84],
-    5: [24, 39, 54, 69, 84]
+  const yByCount = {
+    1:[84], 2:[36,84], 3:[27,52,84], 4:[25,43,65,84], 5:[23,38,53,68,84]
   };
-  const lineYs = yByLineCount[lines.length] || lines.map((_, index) =>
-    27 + 57 * index / Math.max(1, lines.length - 1)
-  );
-
+  const lineYs = yByCount[lines.length] || lines.map((_,index) => 27+57*index/Math.max(1,lines.length-1));
   const result = [];
   let keeperY = side === "away" ? 92 : 8;
-  result.push({
-    ...keeper,
-    _x: 50,
-    _y: keeperY
-  });
+  result.push({ ...keeper, _x:50, _y:keeperY });
 
-  lines.forEach((line, lineIndex) => {
-    line.sort((a, b) => laneRank(a) - laneRank(b));
-    line.forEach((item, playerIndex) => {
-      const x = line.length <= 1 ? 50 : 10 + 80 * playerIndex / (line.length - 1);
-      let y = lineYs[lineIndex];
-      if (side === "away") y = 100 - y;
-      result.push({
-        ...item,
-        _x: Math.max(5, Math.min(95, x)),
-        _y: Math.max(7, Math.min(93, y))
-      });
+  lines.forEach((line,lineIndex) => {
+    line.sort((a,b) => laneRank(a)-laneRank(b));
+    line.forEach((item,index) => {
+      const x = line.length <= 1 ? 50 : 10+80*index/(line.length-1);
+      let y=lineYs[lineIndex];
+      if(side==="away") y=100-y;
+      result.push({...item,_x:Math.max(5,Math.min(95,x)),_y:Math.max(5,Math.min(95,y))});
     });
   });
-
   return result;
 }
 
@@ -6211,6 +6275,20 @@ function renderPitch(
         )
       )
       .join("");
+
+  if (!positioned.length) {
+    return `
+      <div class="bf-pitch-box">
+        <div class="bf-pitch-title">
+          <span>${escapeHTML(teamName)}</span>
+          <span class="bf-pitch-formation">Formation non disponible</span>
+        </div>
+        <div class="bf-detail-item" style="min-height:140px;display:flex;align-items:center;justify-content:center;text-align:center;padding:18px;">
+          La source ne fournit pas la formation tactique ou les positions exactes pour cette rencontre. Aucun 4-3-3 fictif n’est affiché.
+        </div>
+      </div>
+    `;
+  }
 
   const coach =
     lineup?.coach?.name ||
