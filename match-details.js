@@ -5515,10 +5515,12 @@ function manOfTheMatch(
       }
       if (source?.home || source?.away) {
         const home = source.home, away = source.away;
-        if (Array.isArray(home) || Array.isArray(away)) {
+        const homeStats = arr(Array.isArray(home) ? home : home?.statistics || home?.stats || home?.items);
+        const awayStats = arr(Array.isArray(away) ? away : away?.statistics || away?.stats || away?.items);
+        if (homeStats.length || awayStats.length) {
           processTeamBlocks([
-            { team: { side: "home" }, statistics: arr(Array.isArray(home) ? home : home?.statistics || home?.stats) },
-            { team: { side: "away" }, statistics: arr(Array.isArray(away) ? away : away?.statistics || away?.stats) }
+            { team: { side: "home" }, statistics: homeStats },
+            { team: { side: "away" }, statistics: awayStats }
           ]);
         } else if (typeof home === "object" && typeof away === "object") {
           for (const [key, value] of Object.entries(source)) {
