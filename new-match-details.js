@@ -1555,6 +1555,70 @@
       }
     }
 
+    /* Use an explicit lineup slot only when all 11 starters have unique
+       source slots and the source formation validates to ten outfield players. */
+    const formationTextForSlots = String(lineup.formation || "")
+      .trim().replace(/[‐‑‒–—−]/g, "-").replace(/\\s+/g, "");
+    const formationRowsForSlots = formationTextForSlots.split("-").map(Number);
+    const validFormationForSlots =
+      formationRowsForSlots.length >= 2 &&
+      formationRowsForSlots.length <= 4 &&
+      formationRowsForSlots.every(value => Number.isInteger(value) && value >= 1 && value <= 5) &&
+      formationRowsForSlots.reduce((sum, value) => sum + value, 0) === 10;
+
+    const readSourceSlot = player => {
+      const p = getPlayerObject(player);
+      const values = [
+        player?.formation_slot, player?.formationSlot,
+        player?.lineup_position, player?.lineupPosition,
+        player?.formation_position, player?.formationPosition,
+        p?.formation_slot, p?.formationSlot,
+        p?.lineup_position, p?.lineupPosition,
+        p?.formation_position, p?.formationPosition
+      ];
+      for (const value of values) {
+        const unwrapped = value && typeof value === "object"
+          ? first(value?.slot, value?.number, value?.position, value?.value)
+          : value;
+        if (unwrapped === null || unwrapped === undefined || String(unwrapped).trim() === "") continue;
+        const slot = Number(unwrapped);
+        if (Number.isInteger(slot) && slot >= 1 && slot <= 11) return slot;
+      }
+      return null;
+    };
+
+    const sourceSlots = players.map(player => ({ player, slot: readSourceSlot(player) }));
+    if (
+      players.length === 11 &&
+      validFormationForSlots &&
+      sourceSlots.every(item => item.slot !== null) &&
+      new Set(sourceSlots.map(item => item.slot)).size === 11
+    ) {
+      const counts = [1, ...formationRowsForSlots];
+      return sourceSlots.map(item => {
+        let remaining = item.slot - 1;
+        let rowIndex = 0;
+        let column = 1;
+        for (let i = 0; i < counts.length; i++) {
+          if (remaining < counts[i]) {
+            rowIndex = i;
+            column = counts[i] - remaining;
+            break;
+          }
+          remaining -= counts[i];
+        }
+        const lineColumns = counts[rowIndex];
+        const x = lineColumns <= 1 ? 50 : 10 + 80 * (lineColumns - column) / (lineColumns - 1);
+        let y = 8 + 84 * rowIndex / Math.max(1, counts.length - 1);
+        if (side === "away") y = 100 - y;
+        return {
+          player: item.player,
+          x: Math.max(6, Math.min(94, x)),
+          y: Math.max(6, Math.min(94, y))
+        };
+      });
+    }
+
     const groups = {
       gk: [],
       def: [],
