@@ -6835,66 +6835,16 @@ function renderBenchSection(
 ========================================================= */
 
 function getEventIcon(event) {
-
-  const type =
-    normalizeText(
-      event?.type
-    );
-
-  const detail =
-    normalizeText(
-      event?.detail
-    );
-
-  if (
-    type.includes("goal")
-  ) {
-
-    if (
-      detail.includes("own")
-    ) {
-      return "🥅";
-    }
-
-    if (
-      detail.includes("penalty")
-    ) {
-      return "⚽";
-    }
-
-    return "⚽";
-  }
-
-  if (
-    type.includes("card")
-  ) {
-
-    if (
-      detail.includes("red") ||
-      detail.includes("yellow-red") ||
-      detail.includes("second yellow")
-    ) {
-      return "🟥";
-    }
-
-    return "🟨";
-  }
-
-  if (
-    type.includes("subst")
-  ) {
-    return "🔄";
-  }
-
-  if (
-    type.includes("var")
-  ) {
-    return "🎥";
-  }
-
-  return "📌";
+  const type=normalizeText(typeof event==="string" ? event : (event?.type || event?.detail || ""));
+  const detail=normalizeText(typeof event==="object" ? event?.detail || "" : "");
+  if(type.includes("goal")||type.includes("but")||type.includes("score"))return detail.includes("own")?"OWN GOAL":"BUT";
+  if(type.includes("card") && (detail.includes("red")||detail.includes("second yellow")||detail.includes("yellow-red")))return "RC";
+  if(type.includes("card")||type.includes("yellow"))return "YC";
+  if(type.includes("subst"))return "SUB";
+  if(type.includes("var"))return "VAR";
+  if(type.includes("injur")||type.includes("hurt"))return "INJ";
+  return "EVENT";
 }
-
 /* =========================================================
    EVENT MINUTE
 ========================================================= */
