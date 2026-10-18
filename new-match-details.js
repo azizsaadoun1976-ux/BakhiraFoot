@@ -978,45 +978,15 @@ function bfAssignFormationRoles(players, formation, readPosition) {
     return norm(values.filter(v => v !== null && v !== undefined && v !== "").join(" "));
   }
 
-  function eventIcon(
-    event
-  ) {
-    const type =
-      eventType(
-        event
-      );
-
-    if (
-      type.includes(
-        "goal"
-      ) ||
-      type.includes(
-        "score"
-      )
-    ) {
-      return "⚽";
-    }
-
-    if (
-      type.includes(
-        "yellow"
-      )
-    ) {
-      return "🟨";
-    }
-
-    if (
-      type.includes(
-        "red"
-      )
-    ) {
-      return "🟥";
-    }
-
-    if (type.includes("sub")) return "🔄";
-    if (type.includes("injur") || type.includes("hurt")) return "🤕";
-    if (type.includes("assist")) return "🅰️";
-    return "•";
+  function eventIcon(event) {
+    const type=eventType(event);
+    if(type.includes("goal")||type.includes("score"))return "GOAL";
+    if(type.includes("yellow"))return "YC";
+    if(type.includes("red"))return "RC";
+    if(type.includes("sub"))return "SUB";
+    if(type.includes("injur")||type.includes("hurt"))return "INJ";
+    if(type.includes("assist"))return "AST";
+    return "EVENT";
   }
 
   function eventPlayer(
@@ -1637,6 +1607,55 @@ function bfAssignFormationRoles(players, formation, readPosition) {
 
       }
 
+
+      /* Match Centre premium lineups and stat comparisons */
+      .bf-new-safe-box { width:min(1240px,100%); padding:24px; border:1px solid rgba(126,145,167,.2); }
+      .bf-new-safe-league { text-transform:uppercase; font-size:10px; letter-spacing:.15em; }
+      .bf-new-safe-head { padding:18px 14px; border:1px solid rgba(126,145,167,.16); border-radius:16px; background:rgba(100,116,139,.04); }
+      .bf-new-safe-score { letter-spacing:.04em; font-variant-numeric:tabular-nums; }
+      .bf-new-safe-section { margin-top:24px; padding-top:20px; }
+      .bf-new-safe-title { font-size:15px; letter-spacing:.01em; }
+      .bf-new-safe-pitches { gap:12px; }
+      .bf-new-safe-pitch-wrap { padding:10px; min-width:0; border:1px solid rgba(126,145,167,.2); border-radius:14px; background:rgba(100,116,139,.025); }
+      .bf-new-safe-pitch-head { font-size:12px; padding:4px 3px 10px; border-bottom:1px solid rgba(126,145,167,.15); }
+      .bf-new-safe-pitch { border-radius:11px; margin-top:8px; background:repeating-linear-gradient(90deg,#17633d 0,#17633d 12.5%,#1d7046 12.5%,#1d7046 25%); }
+      .bf-new-safe-player { width:88px; display:flex; flex-direction:column; align-items:center; gap:2px; transform:translate(-50%,-50%); z-index:3; }
+      .bf-new-safe-player img,.bf-new-safe-avatar { width:33px; height:33px; border-radius:50%; border:2px solid rgba(255,255,255,.96); box-shadow:0 3px 8px rgba(0,0,0,.25); }
+      .bf-new-safe-avatar { display:flex; align-items:center; justify-content:center; color:#172033; font-size:9px; font-weight:950; background:#edf2f7; }
+      .bf-new-safe-shirt { position:relative; min-width:20px; height:19px; margin-top:-6px; z-index:1; box-shadow:none; border:0; }
+      .bf-new-safe-role { padding:2px 5px; border-radius:5px; color:#fff; background:#11243a; border:1px solid rgba(255,255,255,.35); font-size:8px; line-height:1.05; font-weight:950; letter-spacing:.04em; }
+      .bf-new-safe-player-name { max-width:86px; padding:3px 5px; border-radius:5px; border:1px solid rgba(255,255,255,.14); background:rgba(5,16,28,.92); color:#fff; text-align:center; font-size:8px; line-height:1.1; }
+      .bf-new-safe-pitch-events { display:flex; justify-content:center; flex-wrap:wrap; gap:2px; max-width:86px; }
+      .bf-new-safe-event-badge { display:inline-flex; align-items:center; justify-content:center; padding:2px 4px; border-radius:4px; background:#334155; color:#fff; font-size:7px; line-height:1; font-weight:950; }
+      .bf-new-safe-event-badge--goal { background:#087f5b; } .bf-new-safe-event-badge--assist { background:#1d4ed8; }
+      .bf-new-safe-event-badge--injury { background:#475569; } .bf-new-safe-event-badge--yellow { background:#a16207; }
+      .bf-new-safe-event-badge--red { background:#b91c1c; } .bf-new-safe-event-badge--sub { background:#475569; }
+      .bf-new-safe-player-rate { display:inline-flex; align-items:center; justify-content:center; padding:2px 5px; border-radius:4px; background:#f8fafc; color:#122033; font-size:8px; line-height:1; font-weight:950; }
+      .bf-new-safe-mvp-chip { display:inline-flex; align-items:center; padding:2px 5px; border-radius:4px; background:#facc15; color:#422006; font-size:7px; font-weight:950; }
+      .bf-new-safe-mvp { border:1px solid rgba(202,138,4,.2); background:linear-gradient(120deg,rgba(250,204,21,.12),rgba(245,158,11,.03)); }
+      .bf-new-safe-mvp-initials { display:flex; align-items:center; justify-content:center; width:42px; height:42px; border-radius:10px; background:#facc15; color:#422006; font-size:10px; font-weight:950; }
+      .bf-new-safe-player-events { display:flex; flex-wrap:wrap; gap:3px; }
+      .bf-new-safe-stat-grid { grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; }
+      .bf-new-safe-stat { border:1px solid rgba(126,145,167,.15); }
+      .bf-new-safe-stat-track { display:grid; grid-template-columns:1fr 1fr; gap:3px; height:5px; margin-top:8px; }
+      .bf-new-safe-stat-home,.bf-new-safe-stat-away { height:5px; min-width:3px; border-radius:99px; display:block; }
+      .bf-new-safe-stat-home { justify-self:end; background:linear-gradient(90deg,#1d4ed8,#60a5fa); }
+      .bf-new-safe-stat-away { justify-self:start; background:linear-gradient(90deg,#fb7185,#e11d48); }
+      .bf-new-safe-icon { min-width:38px; text-align:center; padding:4px; border-radius:5px; background:#172a41; color:#fff; font-size:8px; font-weight:950; letter-spacing:.05em; }
+      .bf-new-safe-assist { font-size:10px; font-weight:800; color:#2563eb; }
+      @media(max-width:700px) {
+        .bf-new-safe-box { padding:15px 9px; }
+        .bf-new-safe-player { width:62px; gap:1px; }
+        .bf-new-safe-player img,.bf-new-safe-avatar { width:25px; height:25px; }
+        .bf-new-safe-shirt { min-width:17px; height:16px; font-size:8px; }
+        .bf-new-safe-role { font-size:6px; padding:2px 3px; }
+        .bf-new-safe-player-name { max-width:61px; font-size:6px; padding:2px; }
+        .bf-new-safe-pitch-events { max-width:61px; gap:1px; }
+        .bf-new-safe-event-badge { font-size:5px; padding:2px; }
+        .bf-new-safe-player-rate,.bf-new-safe-mvp-chip { font-size:6px; }
+        .bf-new-safe-stat-grid { grid-template-columns:1fr; }
+      }
+
     `;
 
     document.head.appendChild(
@@ -1961,40 +1980,11 @@ function bfAssignFormationRoles(players, formation, readPosition) {
                     }
 
                     <span class="bf-new-safe-shirt">${esc(playerNumber(player))}</span>
-                    <span class="bf-new-safe-role" style="display:block;margin:2px 0;padding:1px 4px;border-radius:4px;background:rgba(8,15,28,.88);color:#fff;font-size:9px;font-weight:950;line-height:1.15;">${esc(playerPosition(player) || "—")}</span>
-                    <div class="bf-new-safe-pitch-events" style="display:flex;justify-content:center;flex-wrap:wrap;gap:2px;margin:2px auto;max-width:100px;font-size:10px;font-weight:950;color:#fff;text-shadow:0 1px 3px #000;">${esc(playerEventBadges(player, details))}</div>
-                    ${playerIsOfficialMvp(player) ? '<span class="bf-new-safe-mvp-chip" title="MVP officiel" style="display:inline-block;padding:1px 4px;border-radius:5px;background:#facc15;color:#111827;font-size:9px;font-weight:950;">👑 MVP</span>' : ""}
-                    ${rating !== null ? '<span style="display:block;margin-top:2px;font-size:9px;font-weight:900;color:#fff;text-shadow:0 1px 3px #000;">⭐ ' + esc(Number(rating).toFixed(1)) + '</span>' : ""}
-                    <div
-                      class="bf-new-safe-player-name"
-                    >
-                      ${esc(
-                        playerName(
-                          player
-                        )
-                      )}
-                    </div>
-                    <div class="bf-new-safe-player-role">${esc(playerPosition(player) || "Position inconnue")}</div>
-
-                    ${
-                      rating !== null
-
-                        ? `
-
-                          <div
-                            class="bf-new-safe-player-rate"
-                          >
-                            ⭐ ${esc(
-                              Number(
-                                rating
-                              ).toFixed(1)
-                            )}
-                          </div>
-
-                        `
-
-                        : ""
-                    }
+                    <span class="bf-new-safe-role">${esc(playerPosition(player) || "—")}</span>
+                    <div class="bf-new-safe-player-name">${esc(playerName(player))}</div>
+                    <div class="bf-new-safe-pitch-events">${playerEventBadges(player, details)}</div>
+                    ${playerIsOfficialMvp(player) ? '<span class="bf-new-safe-mvp-chip" title="MVP officiel">MVP</span>' : ""}
+                    ${rating !== null ? '<span class="bf-new-safe-player-rate">' + esc(Number(rating).toFixed(1)) + '</span>' : ""}
 
                   </div>
 
@@ -2076,10 +2066,8 @@ function bfAssignFormationRoles(players, formation, readPosition) {
 
                   : `
 
-                    <div
-                      class="bf-new-safe-list-avatar"
-                    >
-                      ⚽
+                    <div class="bf-new-safe-list-avatar">
+                      ${esc(String(playerName(player) || "P").split(/\s+/).map(part => part[0] || "").join("").slice(0,2).toUpperCase())}
                     </div>
 
                   `
@@ -2112,7 +2100,7 @@ function bfAssignFormationRoles(players, formation, readPosition) {
                 >
                   ${esc(playerPosition(player) || "Position indisponible")}
                 </div>
-                <div class="bf-new-safe-player-events">${esc(playerEventBadges(player, details))}</div>
+                <div class="bf-new-safe-player-events">${playerEventBadges(player, details)}</div>
 
               </div>
 
@@ -2251,7 +2239,7 @@ function bfAssignFormationRoles(players, formation, readPosition) {
                       <div
                         class="bf-new-safe-assist"
                       >
-                        🅰️ ${esc(
+                        Assist · ${esc(
                           assist
                         )}
                       </div>
@@ -2309,20 +2297,28 @@ function bfAssignFormationRoles(players, formation, readPosition) {
     const priority = ["ball possession","possession","total shots","shots on target","shots off target","corner kicks","corners","fouls","yellow cards","red cards","offsides","passes","accurate passes","expected goals","xg"];
     rows.sort((a,b)=>{const rank=x=>{const i=priority.findIndex(p=>norm(x).includes(p));return i<0?999:i;};return rank(a.label)-rank(b.label);});
     if (!rows.length) return '<div class="bf-new-safe-empty">Statistiques détaillées indisponibles pour cette rencontre.</div>';
-    return '<div class="bf-new-safe-stat-grid">' + rows.map(row=>'<div class="bf-new-safe-stat"><div class="bf-new-safe-stat-label">' + esc(row.label) + '</div><div class="bf-new-safe-stat-values"><span>' + esc(row.home ?? "—") + '</span><span>' + esc(row.away ?? "—") + '</span></div></div>').join("") + '</div>';
+    const numeric=value=>{
+      if(value===null||value===undefined)return null;
+      const parsed=Number(String(value).replace("%","").replace(",",".").replace(/[^\d.\-]/g,""));
+      return Number.isFinite(parsed)?parsed:null;
+    };
+    return '<div class="bf-new-safe-stat-grid">' + rows.map(row=>{
+      const h=numeric(row.home),a=numeric(row.away);
+      const total=Math.max(0,h||0)+Math.max(0,a||0);
+      const hw=total>0&&h!==null?Math.max(0,Math.min(100,h/total*100)):50;
+      const aw=total>0&&a!==null?Math.max(0,Math.min(100,a/total*100)):50;
+      return '<div class="bf-new-safe-stat"><div class="bf-new-safe-stat-label">' + esc(row.label) + '</div><div class="bf-new-safe-stat-values"><span>' + esc(row.home ?? "—") + '</span><span>' + esc(row.away ?? "—") + '</span></div><div class="bf-new-safe-stat-track"><span class="bf-new-safe-stat-home" style="width:' + hw.toFixed(1) + '%"></span><span class="bf-new-safe-stat-away" style="width:' + aw.toFixed(1) + '%"></span></div></div>';
+    }).join("") + '</div>';
   }
 
   function playerEventBadges(player, details) {
     const name = norm(playerName(player));
     if (!name) return "";
-    const counts = { goals: 0, assists: 0, yellow: 0, red: 0, injury: 0, subs: 0 };
+    const counts = { goals:0, assists:0, yellow:0, red:0, injury:0, subs:0 };
     getEvents(details).forEach(event => {
       const scorer = norm(first(
-        event?.player?.name,
-        event?.player_name,
-        event?.athlete?.displayName,
-        event?.participants?.[0]?.athlete?.displayName,
-        eventPlayer(event)
+        event?.player?.name, event?.player_name, event?.athlete?.displayName,
+        event?.participants?.[0]?.athlete?.displayName, eventPlayer(event)
       ));
       const assist = norm(eventAssist(event));
       const type = eventType(event);
@@ -2336,13 +2332,16 @@ function bfAssignFormationRoles(players, formation, readPosition) {
       if (assist && assist === name && (type.includes("goal") || type.includes("score"))) counts.assists += 1;
     });
     const badges = [];
-    if (counts.goals) badges.push("⚽ " + counts.goals);
-    if (counts.assists) badges.push("🅰️ " + counts.assists);
-    if (counts.injury) badges.push("🤕 " + counts.injury);
-    if (counts.yellow) badges.push("🟨 " + counts.yellow);
-    if (counts.red) badges.push("🟥 " + counts.red);
-    if (counts.subs) badges.push("🔄 " + counts.subs);
-    return badges.join(" · ");
+    const add = (label,value,kind) => {
+      if (value > 0) badges.push('<span class="bf-new-safe-event-badge bf-new-safe-event-badge--' + kind + '">' + label + (value > 1 ? " " + value : "") + '</span>');
+    };
+    add("G",counts.goals,"goal");
+    add("A",counts.assists,"assist");
+    add("INJ",counts.injury,"injury");
+    add("YC",counts.yellow,"yellow");
+    add("RC",counts.red,"red");
+    add("SUB",counts.subs,"sub");
+    return badges.join("");
   }
 
   function playerIsOfficialMvp(player) {
@@ -2361,31 +2360,26 @@ function bfAssignFormationRoles(players, formation, readPosition) {
   }
 
   function renderMvp(homeLineup, awayLineup) {
-    const all = [...homeLineup.players, ...awayLineup.players];
-    const official = all.find(player => playerIsOfficialMvp(player));
-    if (official) {
-      const photo = playerPhoto(official);
-      const rating = playerRating(official);
+    const all=[...homeLineup.players,...awayLineup.players];
+    const official=all.find(player=>playerIsOfficialMvp(player));
+    if(official){
+      const photo=playerPhoto(official), rating=playerRating(official);
       return '<div class="bf-new-safe-mvp">' +
-        (photo ? '<img src="' + esc(photo) + '" alt="' + esc(playerName(official)) + '" loading="lazy" referrerpolicy="no-referrer">' : '<span>👑</span>') +
-        '<div><div class="bf-new-safe-mvp-name">🏆 MVP officiel · ' + esc(playerName(official)) +
+        (photo ? '<img src="' + esc(photo) + '" alt="' + esc(playerName(official)) + '" loading="lazy" referrerpolicy="no-referrer">' : '<div class="bf-new-safe-mvp-initials">MVP</div>') +
+        '<div><div class="bf-new-safe-mvp-name">MVP officiel · ' + esc(playerName(official)) +
         '</div><div class="bf-new-safe-mvp-note">' +
-        (rating !== null ? 'Note : ' + esc(Number(rating).toFixed(1)) + '/10' : 'Désigné par la source') +
+        (rating!==null ? "Note : "+esc(Number(rating).toFixed(1))+"/10" : "Désignation de la source de données") +
         '</div></div></div>';
     }
-
-    const best = all.map(player => ({player, rating:playerRating(player)}))
-      .filter(item => item.rating !== null && item.rating >= 0 && item.rating <= 10)
-      .sort((a,b) => b.rating-a.rating)[0];
-    if (!best) return '<div class="bf-new-safe-empty">La source ne fournit ni MVP officiel ni note de joueur pour ce match.</div>';
-    const photo = playerPhoto(best.player);
+    const best=all.map(player=>({player,rating:playerRating(player)})).filter(item=>item.rating!==null&&item.rating>=0&&item.rating<=10).sort((a,b)=>b.rating-a.rating)[0];
+    if(!best)return '<div class="bf-new-safe-empty">Aucun MVP officiel ni note de joueur fournis par la source.</div>';
+    const photo=playerPhoto(best.player);
     return '<div class="bf-new-safe-mvp">' +
-      (photo ? '<img src="' + esc(photo) + '" alt="' + esc(playerName(best.player)) + '" loading="lazy" referrerpolicy="no-referrer">' : '<span>⭐</span>') +
-      '<div><div class="bf-new-safe-mvp-name">⭐ Meilleure note · ' + esc(playerName(best.player)) +
-      '</div><div class="bf-new-safe-mvp-note">Meilleure note disponible : ' + esc(Number(best.rating).toFixed(1)) +
-      '/10 — ce n’est pas une désignation officielle du MVP.</div></div></div>';
+      (photo ? '<img src="' + esc(photo) + '" alt="' + esc(playerName(best.player)) + '" loading="lazy" referrerpolicy="no-referrer">' : '<div class="bf-new-safe-mvp-initials">NOTE</div>') +
+      '<div><div class="bf-new-safe-mvp-name">Meilleure note disponible · ' + esc(playerName(best.player)) +
+      '</div><div class="bf-new-safe-mvp-note">Note : ' + esc(Number(best.rating).toFixed(1)) +
+      '/10 — note calculée, pas une désignation officielle du MVP.</div></div></div>';
   }
-
   /* =========================================================
      RENDER DETAILS
      =========================================================
@@ -2495,7 +2489,7 @@ function bfAssignFormationRoles(players, formation, readPosition) {
       <div
         class="bf-new-safe-league"
       >
-        🏆 ${esc(
+        ${esc(
           competition
         )}
       </div>
@@ -2610,7 +2604,7 @@ function bfAssignFormationRoles(players, formation, readPosition) {
             ? `
 
               <span>
-                📅 ${esc(
+                ${esc(
                   new Date(
                     date
                   ).toLocaleString(
@@ -2632,7 +2626,7 @@ function bfAssignFormationRoles(players, formation, readPosition) {
             ? `
 
               <span>
-                🏟️ ${esc(
+                ${esc(
 
                   typeof
                     details
@@ -2668,7 +2662,7 @@ function bfAssignFormationRoles(players, formation, readPosition) {
 
 
         <span>
-          🔗 ${providerText}
+          ${providerText}
         </span>
 
       </div>
@@ -2681,7 +2675,7 @@ function bfAssignFormationRoles(players, formation, readPosition) {
         <div
           class="bf-new-safe-title"
         >
-          🧩 Formations & Compositions
+          Formations et compositions
         </div>
 
         <div
@@ -2708,12 +2702,12 @@ function bfAssignFormationRoles(players, formation, readPosition) {
 
 
       <div class="bf-new-safe-section">
-        <div class="bf-new-safe-title">🏆 MVP / Meilleure note</div>
+        <div class="bf-new-safe-title">MVP et meilleure note</div>
         ${renderMvp(homeLineup, awayLineup)}
       </div>
 
       <div class="bf-new-safe-section">
-        <div class="bf-new-safe-title">📊 Statistiques du match</div>
+        <div class="bf-new-safe-title">Statistiques du match</div>
         ${renderStatistics(details)}
       </div>
 
@@ -2724,7 +2718,7 @@ function bfAssignFormationRoles(players, formation, readPosition) {
         <div
           class="bf-new-safe-title"
         >
-          👥 Joueurs
+          Joueurs
         </div>
 
         <div
@@ -2778,7 +2772,7 @@ function bfAssignFormationRoles(players, formation, readPosition) {
         <div
           class="bf-new-safe-title"
         >
-          ⏱️ Événements
+          Événements
         </div>
 
         ${renderEvents(
