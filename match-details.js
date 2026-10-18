@@ -1204,6 +1204,70 @@
         #bfMatchDetailsModal .bfmd-performance-list { grid-template-columns:minmax(0,1fr); }
       }
 
+
+      /* Performance now appears below each player, not in the flanking panels. */
+      #bfMatchDetailsModal .bfmd-tactics-layout,#bfMatchDetailsModal .bfmd-performance-panel { display:none !important; }
+      #bfMatchDetailsModal .bfmd-pitches--performance { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:14px; align-items:start; }
+      #bfMatchDetailsModal .bfmd-pitch-card { min-width:0; overflow:hidden; }
+      #bfMatchDetailsModal .bfmd-pitch { aspect-ratio:.68; overflow:hidden; }
+      #bfMatchDetailsModal .bfmd-player { width:clamp(78px,8.5vw,112px); gap:1px; z-index:6; }
+      #bfMatchDetailsModal .bfmd-photo-wrap,#bfMatchDetailsModal .bfmd-number-only { width:clamp(25px,2.4vw,36px); height:clamp(25px,2.4vw,36px); }
+      #bfMatchDetailsModal .bfmd-name { max-width:108px; width:100%; margin-top:3px; padding:2px 4px; font-size:clamp(6px,.62vw,8px); line-height:1.1; }
+      #bfMatchDetailsModal .bfmd-role { margin-top:1px; padding:1px 3px; font-size:6px; line-height:1.15; }
+      #bfMatchDetailsModal .bfmd-event-mini { position:static !important; left:auto !important; top:auto !important; transform:none !important; z-index:auto; display:flex; flex-wrap:wrap; justify-content:center; align-items:center; gap:2px; width:100%; max-width:112px; min-height:0; margin:2px 0 0; padding:0; background:transparent; border-radius:0; box-shadow:none; overflow:visible; white-space:normal; }
+      #bfMatchDetailsModal .bfmd-chip { min-height:13px; padding:2px 3px; border-radius:4px; font-size:6px; line-height:1; letter-spacing:-.01em; text-shadow:none; box-shadow:0 1px 3px rgba(0,0,0,.22); }
+      #bfMatchDetailsModal .bfmd-chip--goal { background:#087f5b; color:#ecfff7; }
+      #bfMatchDetailsModal .bfmd-chip--assist { background:#1d4ed8; color:#eff6ff; }
+      #bfMatchDetailsModal .bfmd-chip--penalty { background:#a16207; color:#fff7d6; }
+      #bfMatchDetailsModal .bfmd-chip--own { background:#9d174d; color:#fff1f2; }
+      #bfMatchDetailsModal .bfmd-chip--yellow { background:#a16207; color:#fff7d6; }
+      #bfMatchDetailsModal .bfmd-chip--red { background:#b91c1c; color:#fff1f2; }
+      #bfMatchDetailsModal .bfmd-chip--injury { background:#334155; color:#f1f5f9; }
+      #bfMatchDetailsModal .bfmd-chip--mvp { background:#facc15; color:#422006; border-color:#fde68a; }
+      #bfMatchDetailsModal .bfmd-chip--sub-in { background:#047857; color:#ecfdf5; }
+      #bfMatchDetailsModal .bfmd-chip--sub-out { background:#b91c1c; color:#fff1f2; }
+      #bfMatchDetailsModal .bfmd-chip--rating { display:inline-flex; background:#f8fafc; color:#0f172a; border:1px solid #a7f3d0; }
+      #bfMatchDetailsModal .bfmd-pitch-bench { padding:0 10px 10px; background:#0b1928; }
+      #bfMatchDetailsModal .bfmd-bench-inner { border-top:1px solid rgba(138,169,200,.18); padding-top:8px; }
+      #bfMatchDetailsModal .bfmd-bench-heading { margin-bottom:6px; color:#8da9c5; font-size:8px; font-weight:950; letter-spacing:.1em; }
+      #bfMatchDetailsModal .bfmd-bench-list { display:flex; flex-wrap:wrap; gap:5px; }
+      #bfMatchDetailsModal .bfmd-bench-player { display:flex; align-items:center; flex-wrap:wrap; gap:4px; max-width:100%; padding:4px 6px; border:1px solid rgba(137,168,200,.16); border-radius:7px; background:rgba(29,49,70,.64); color:#e7f0fa; }
+      #bfMatchDetailsModal .bfmd-bench-number { display:inline-grid; place-items:center; min-width:18px; height:18px; border-radius:5px; background:#213a53; color:#d9e9f9; font-size:8px; font-weight:950; }
+      #bfMatchDetailsModal .bfmd-bench-name { font-size:8px; font-weight:850; }
+      #bfMatchDetailsModal .bfmd-bench-role { color:#8ea7c1; font-size:7px; }
+      #bfMatchDetailsModal .bfmd-bench-actions .bfmd-event-mini { display:flex !important; width:auto; max-width:none; justify-content:flex-start; margin:0; gap:2px; }
+      #bfMatchDetailsModal .bfmd-bench-actions .bfmd-chip { font-size:7px; }
+      #bfMatchDetailsModal .bfmd-statistics-section { padding:clamp(14px,1.7vw,22px); }
+      #bfMatchDetailsModal .bfmd-stat-highlights { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:9px; margin:3px 0 16px; }
+      #bfMatchDetailsModal .bfmd-stat-highlight { min-width:0; padding:12px; border:1px solid rgba(139,169,201,.17); border-radius:12px; background:linear-gradient(145deg,#13263a,#0c1a2a); }
+      #bfMatchDetailsModal .bfmd-stat-highlight-label { color:#a5bdd5; font-size:10px; font-weight:850; text-align:center; }
+      #bfMatchDetailsModal .bfmd-stat-highlight-values { display:grid; grid-template-columns:1fr auto 1fr; align-items:center; gap:7px; margin:9px 0; }
+      #bfMatchDetailsModal .bfmd-stat-highlight-values strong { color:#f4f8ff; font-size:20px; text-align:center; font-weight:950; font-variant-numeric:tabular-nums; }
+      #bfMatchDetailsModal .bfmd-stat-highlight-values span { color:#6c849e; font-size:7px; font-weight:950; }
+      #bfMatchDetailsModal .bfmd-stat-highlight-track { display:flex; gap:3px; width:100%; height:5px; }
+      #bfMatchDetailsModal .bfmd-stat-highlight-track span { display:block; height:5px; min-width:2px; border-radius:99px; }
+      #bfMatchDetailsModal .bfmd-stat-highlight-track span:first-child { background:linear-gradient(90deg,#14b8a6,#5eead4); }
+      #bfMatchDetailsModal .bfmd-stat-highlight-track span:last-child { background:linear-gradient(90deg,#fb7185,#e11d48); }
+      #bfMatchDetailsModal .bfmd-statistics-detail-heading { margin:15px 0 7px; color:#7edecb; font-size:9px; font-weight:950; letter-spacing:.1em; }
+      #bfMatchDetailsModal .bfmd-statistics-note { margin-top:12px; color:#7189a3; font-size:8px; text-align:right; }
+      #bfMatchDetailsModal .bfmd-statistics { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); column-gap:22px; }
+      #bfMatchDetailsModal .bfmd-statistics .bfmd-stat-row { min-width:0; }
+      @media(max-width:1120px) {
+        #bfMatchDetailsModal .bfmd-pitches--performance { gap:9px; }
+        #bfMatchDetailsModal .bfmd-player { width:80px; }
+        #bfMatchDetailsModal .bfmd-event-mini { max-width:82px; }
+        #bfMatchDetailsModal .bfmd-chip { font-size:6px; padding:2px; }
+      }
+      @media(max-width:760px) {
+        #bfMatchDetailsModal .bfmd-pitches--performance { grid-template-columns:minmax(0,1fr); }
+        #bfMatchDetailsModal .bfmd-pitch { aspect-ratio:.78; }
+        #bfMatchDetailsModal .bfmd-player { width:clamp(78px,15vw,112px); }
+        #bfMatchDetailsModal .bfmd-event-mini { max-width:112px; }
+        #bfMatchDetailsModal .bfmd-chip { font-size:7px; padding:2px 3px; }
+        #bfMatchDetailsModal .bfmd-stat-highlights { grid-template-columns:repeat(2,minmax(0,1fr)); }
+        #bfMatchDetailsModal .bfmd-statistics { grid-template-columns:minmax(0,1fr); }
+      }
+
     `;
 
     document.head.appendChild(style);
@@ -4140,65 +4204,74 @@ function normalizeEvent(event, index) {
  }
 
  function playerBadges(player, statsMap) {
-  const stats = statsMap.get(playerKey(player)) || { goals:0, assists:0, yellow:0, red:0, injury:0, in:0, out:0 };
+  const stats = statsMap.get(playerKey(player)) || { goals:0, penalties:0, ownGoals:0, assists:0, yellow:0, red:0, injury:0, in:0, out:0 };
   const badges = [];
-  const add = (label,value,kind) => {
-    if (Number(value)>0) badges.push('<span class="bfmd-chip bfmd-chip--' + kind + '">' + label + '</span>');
-  };
-  add("G "+Number(stats.goals),stats.goals,"goal");
-  add("A "+Number(stats.assists),stats.assists,"assist");
-  add("YC",stats.yellow,"yellow");
-  add("RC",stats.red,"red");
-  add("INJ",stats.injury,"injury");
-  if (playerIsOfficialMvp(player)) badges.push('<span class="bfmd-chip bfmd-chip--mvp">MVP</span>');
-  add("IN",stats.in,"sub-in");
-  add("OUT",stats.out,"sub-out");
+  const add = (label, value, kind) => { if (Number(value) > 0) badges.push('<span class="bfmd-chip bfmd-chip--' + kind + '" title="' + esc(label) + '">' + label + '</span>'); };
+  add("G " + Number(stats.goals || 0), stats.goals, "goal");
+  add("PEN " + Number(stats.penalties || 0), stats.penalties, "penalty");
+  add("CSC " + Number(stats.ownGoals || 0), stats.ownGoals, "own");
+  add("A " + Number(stats.assists || 0), stats.assists, "assist");
+  add("🟨 " + Number(stats.yellow || 0), stats.yellow, "yellow");
+  add("🟥 " + Number(stats.red || 0), stats.red, "red");
+  add("INJ", stats.injury, "injury");
+  if (stats.in) badges.push('<span class="bfmd-chip bfmd-chip--sub-in" title="Entrée en jeu">IN</span>');
+  if (stats.out) badges.push('<span class="bfmd-chip bfmd-chip--sub-out" title="Sortie">OUT</span>');
+  const rating = getPlayerRating(player);
+  if (rating !== null && rating !== undefined && rating !== "" && Number.isFinite(Number(rating))) badges.push('<span class="bfmd-chip bfmd-chip--rating" title="Note">★ ' + Number(rating).toFixed(1) + '</span>');
+  if (playerIsOfficialMvp(player) || (statsMap.mvpKey && statsMap.mvpKey === playerKey(player))) badges.push('<span class="bfmd-chip bfmd-chip--mvp" title="Joueur du match">MVP</span>');
   if (!badges.length) return "";
-  return '<div class="bfmd-event-mini" title="' + esc(badges.map(item=>item.replace(/<[^>]*>/g,"")).join(" · ")) + '">' + badges.join("") + '</div>';
+  return '<div class="bfmd-event-mini" title="' + esc(badges.map(item => item.replace(/<[^>]*>/g, "")).join(" · ")) + '">' + badges.join("") + '</div>';
 }
   /* =========================================================
+     RENDER PITCH  /* =========================================================
      RENDER PITCH
   ========================================================= */
 
   function renderPitch(lineup, side, statsMap) {
     const team = lineup?.team || {};
-    const teamHeader =
-      '<div class="bfmd-pitch-head"><div class="bfmd-pitch-team">' +
-        (team.logo ? '<img src="' + esc(team.logo) + '" alt="" loading="lazy">' : '<span class="bfmd-pitch-team-mark">⚽</span>') +
-        '<span>' + esc(team.name || "Équipe") + '</span>' +
-      '</div><span class="bfmd-formation">' + esc(lineup?.formation || "—") + '</span></div>';
-    const markings =
-      '<div class="bfmd-border"></div><div class="bfmd-half"></div>' +
-      '<div class="bfmd-circle"></div><div class="bfmd-center-dot"></div>' +
-      '<div class="bfmd-box-line top"></div><div class="bfmd-box-line bottom"></div>' +
-      '<div class="bfmd-goal-box top"></div><div class="bfmd-goal-box bottom"></div>' +
+    const teamHeader = '<div class="bfmd-pitch-head"><div class="bfmd-pitch-team">' +
+      (team.logo ? '<img src="' + esc(team.logo) + '" alt="" loading="lazy">' : '<span class="bfmd-pitch-team-mark">⚽</span>') +
+      '<span>' + esc(team.name || "Équipe") + '</span></div><span class="bfmd-formation">' + esc(lineup?.formation || "—") + '</span></div>';
+    const markings = '<div class="bfmd-border"></div><div class="bfmd-half"></div><div class="bfmd-circle"></div><div class="bfmd-center-dot"></div>' +
+      '<div class="bfmd-box-line top"></div><div class="bfmd-box-line bottom"></div><div class="bfmd-goal-box top"></div><div class="bfmd-goal-box bottom"></div>' +
       '<div class="bfmd-penalty-spot top"></div><div class="bfmd-penalty-spot bottom"></div>';
-
     if (!arr(lineup?.xi).length) {
-      return '<div class="bfmd-pitch-card" data-side="' + side + '">' + teamHeader +
-        '<div class="bfmd-pitch">' + markings + '<div class="bfmd-pitch-empty">Composition indisponible</div></div>' +
-        '<div class="bfmd-pitch-foot">Onze de départ non communiqué</div></div>';
+      return '<div class="bfmd-pitch-card" data-side="' + side + '">' + teamHeader + '<div class="bfmd-pitch">' + markings +
+        '<div class="bfmd-pitch-empty">Composition indisponible</div></div><div class="bfmd-pitch-foot">Onze de départ non communiqué</div></div>';
     }
     const positions = pitchPositions(lineup, side);
     if (!positions.length) {
-      return '<div class="bfmd-pitch-card" data-side="' + side + '">' + teamHeader +
-        '<div class="bfmd-pitch">' + markings + '<div class="bfmd-pitch-empty">Les positions tactiques ne sont pas fournies pour ce match.</div></div>' +
-        '<div class="bfmd-pitch-foot">' + arr(lineup.xi).length + ' titulaires</div></div>';
+      return '<div class="bfmd-pitch-card" data-side="' + side + '">' + teamHeader + '<div class="bfmd-pitch">' + markings +
+        '<div class="bfmd-pitch-empty">Positions tactiques non fournies pour ce match.</div></div><div class="bfmd-pitch-foot">' +
+        arr(lineup.xi).length + ' titulaires</div><div class="bfmd-pitch-bench">' + renderBenchPerformance(lineup, statsMap) + '</div></div>';
     }
     const playersHTML = positions.map(item => {
-      const player = item.player;
-      const name = getPlayerName(player);
-      const position = getPlayerPosition(player);
+      const player = item.player, name = getPlayerName(player), position = getPlayerPosition(player);
       return '<div class="bfmd-player" style="left:' + item.x + '%;top:' + item.y + '%;" title="' + esc(name) + '">' +
         playerAvatar(player) + '<div class="bfmd-name">' + esc(name) + '</div>' +
-        (position ? '<div class="bfmd-role">' + esc(position) + '</div>' : '') + '</div>';
+        (position ? '<div class="bfmd-role">' + esc(position) + '</div>' : '') + playerBadges(player, statsMap) + '</div>';
     }).join("");
     return '<div class="bfmd-pitch-card" data-side="' + side + '">' + teamHeader +
       '<div class="bfmd-pitch bfmd-pitch--' + side + '">' + markings + playersHTML + '</div>' +
-      '<div class="bfmd-pitch-foot"><span>' + esc(team.name || "Équipe") + '</span><span>' + arr(lineup.xi).length + ' titulaires</span></div></div>';
+      '<div class="bfmd-pitch-foot"><span>' + esc(team.name || "Équipe") + '</span><span>' + arr(lineup.xi).length + ' titulaires</span></div>' +
+      '<div class="bfmd-pitch-bench">' + renderBenchPerformance(lineup, statsMap) + '</div></div>';
+  }
+
+  function renderBenchPerformance(lineup, statsMap) {
+    const substitutes = arr(lineup?.subs);
+    if (!substitutes.length) return "";
+    return '<div class="bfmd-bench-inner"><div class="bfmd-bench-heading">BANC & REMPLACEMENTS</div><div class="bfmd-bench-list">' +
+      substitutes.map(player => {
+        const name = getPlayerName(player) || "Remplaçant", pos = getPlayerPosition(player);
+        return '<div class="bfmd-bench-player"><span class="bfmd-bench-number">' + esc(getPlayerNumber(player)) + '</span>' +
+          '<span class="bfmd-bench-name" title="' + esc(name) + '">' + esc(name) + '</span>' +
+          (pos ? '<span class="bfmd-bench-role">' + esc(pos) + '</span>' : '') +
+          '<span class="bfmd-bench-actions">' + playerBadges(player, statsMap) + '</span></div>';
+      }).join("") + '</div></div>';
   }
 
   /* =========================================================
+     PLAYER ROW  /* =========================================================
      PLAYER ROW
   ========================================================= */
 
@@ -5290,25 +5363,69 @@ function manOfTheMatch(
       }
       rows.push(...byName.values());
     }
-    return rows.slice(0, 24);
+    return rows.slice(0, 40);
   }
 
   function renderMatchStatistics(details) {
-    const rows=getMatchStatistics(details);
-    const numeric=value=>{
-      if(value===null||value===undefined)return null;
-      const parsed=Number(String(value).replace("%","").replace(",",".").replace(/[^\d.\-]/g,""));
-      return Number.isFinite(parsed)?parsed:null;
+    const rows = getMatchStatistics(details);
+    if (!rows.length) return '<div class="bfmd-section bfmd-statistics-section"><div class="bfmd-title">Statistiques du match</div><div class="bfmd-empty">Les statistiques ne sont pas disponibles pour cette rencontre.</div></div>';
+
+    const numeric = value => {
+      if (value === null || value === undefined) return null;
+      const parsed = Number(String(value).replace("%", "").replace(",", ".").replace(/[^\d.\-]/g, ""));
+      return Number.isFinite(parsed) ? parsed : null;
     };
-    const content=rows.length?rows.map(row=>{
-      const h=numeric(row.home),a=numeric(row.away);
-      const total=Math.max(0,h||0)+Math.max(0,a||0);
-      const hw=total>0&&h!==null?Math.max(0,Math.min(100,h/total*100)):50;
-      const aw=total>0&&a!==null?Math.max(0,Math.min(100,a/total*100)):50;
-      return '<div class="bfmd-stat-row"><div class="bfmd-stat-values"><strong>'+esc(row.home)+'</strong><span>'+esc(row.label)+'</span><strong>'+esc(row.away)+'</strong></div><div class="bfmd-stat-track"><span class="bfmd-stat-home" style="width:'+hw.toFixed(1)+'%"></span><span class="bfmd-stat-away" style="width:'+aw.toFixed(1)+'%"></span></div></div>';
-    }).join(""):'<div class="bfmd-empty">Les statistiques détaillées ne sont pas disponibles pour cette rencontre.</div>';
-    return '<div class="bfmd-section bfmd-statistics-section"><div class="bfmd-title">Statistiques du match</div><div class="bfmd-statistics">'+content+'</div></div>';
+    const keyFor = label => {
+      const key = norm(label);
+      if (/possession|ball poss/.test(key)) return "possession";
+      if (/shots on target|shots on goal|on target|tirs cadres|tirs cadr/.test(key)) return "shotsTarget";
+      if (/total shots|shots total|tirs totaux|total des tirs/.test(key)) return "shots";
+      if (/corner/.test(key)) return "corners";
+      if (/pass accuracy|accurate passes|passes completed|passes accurate|passes precision|precision des passes/.test(key)) return "passes";
+      if (/expected goals|(^|\s)xg(\s|$)|buts attendus/.test(key)) return "xg";
+      if (/fouls|fautes/.test(key)) return "fouls";
+      if (/goalkeeper saves|saves|arrets/.test(key)) return "saves";
+      return "";
+    };
+    const featuredLabels = {
+      possession:"Possession",
+      shotsTarget:"Tirs cadrés",
+      shots:"Tirs totaux",
+      corners:"Corners",
+      passes:"Précision des passes",
+      xg:"Buts attendus (xG)",
+      fouls:"Fautes",
+      saves:"Arrêts"
+    };
+    const featured = [], usedLabels = new Set();
+    for (const key of Object.keys(featuredLabels)) {
+      const row = rows.find(item => keyFor(item.label) === key);
+      if (!row) continue;
+      featured.push({key,label:featuredLabels[key],home:row.home,away:row.away});
+      usedLabels.add(row.label);
+    }
+    const featuredHTML = featured.length
+      ? '<div class="bfmd-stat-highlights">' + featured.map(item => {
+          const h=numeric(item.home), a=numeric(item.away), total=Math.max(0,h||0)+Math.max(0,a||0);
+          const hw=total>0&&h!==null?Math.max(0,Math.min(100,h/total*100)):50;
+          const aw=total>0&&a!==null?Math.max(0,Math.min(100,a/total*100)):50;
+          return '<div class="bfmd-stat-highlight"><div class="bfmd-stat-highlight-label">'+esc(item.label)+'</div>' +
+            '<div class="bfmd-stat-highlight-values"><strong>'+esc(item.home)+'</strong><span>VS</span><strong>'+esc(item.away)+'</strong></div>' +
+            '<div class="bfmd-stat-highlight-track"><span style="width:'+hw.toFixed(1)+'%"></span><span style="width:'+aw.toFixed(1)+'%"></span></div></div>';
+        }).join("") + '</div>' : "";
+    const detailRows=rows.filter(row=>!usedLabels.has(row.label));
+    const detailHTML=detailRows.length
+      ? '<div class="bfmd-statistics-detail-heading">TOUTES LES STATISTIQUES DISPONIBLES</div><div class="bfmd-statistics">' + detailRows.map(row=>{
+          const h=numeric(row.home),a=numeric(row.away),total=Math.max(0,h||0)+Math.max(0,a||0);
+          const hw=total>0&&h!==null?Math.max(0,Math.min(100,h/total*100)):50;
+          const aw=total>0&&a!==null?Math.max(0,Math.min(100,a/total*100)):50;
+          return '<div class="bfmd-stat-row"><div class="bfmd-stat-values"><strong>'+esc(row.home)+'</strong><span>'+esc(row.label)+'</span><strong>'+esc(row.away)+'</strong></div>' +
+            '<div class="bfmd-stat-track"><span class="bfmd-stat-home" style="width:'+hw.toFixed(1)+'%"></span><span class="bfmd-stat-away" style="width:'+aw.toFixed(1)+'%"></span></div></div>';
+        }).join("") + '</div>' : "";
+    return '<div class="bfmd-section bfmd-statistics-section"><div class="bfmd-title">Statistiques du match</div>' +
+      featuredHTML + detailHTML + '<div class="bfmd-statistics-note">Valeurs issues des données disponibles pour cette rencontre.</div></div>';
   }
+
   function hasOfficialLineupCoordinates(details) {
     const groups = arr(details?.lineups);
     if (groups.length < 2) return false;
@@ -5655,6 +5772,11 @@ const response =
         eventStatsMap(
           events
         );
+      const explicitMvp = first(details?.player_of_match, details?.playerOfMatch, details?.man_of_the_match, details?.manOfTheMatch, details?.mvp, details?.best_player);
+      const explicitMvpName = typeof explicitMvp === "string"
+        ? explicitMvp
+        : first(explicitMvp?.name, explicitMvp?.player?.name, explicitMvp?.player_name, "");
+      if (explicitMvpName) statsMap.mvpKey = playerKey(explicitMvpName);
 
       console.log(
         "BAKHIRAFOOT HOME LINEUP:",
@@ -5819,22 +5941,26 @@ const response =
         ${renderMatchStatistics(details)}
 
         <div class="bfmd-section bfmd-match-analysis">
-          <div class="bfmd-title">PLAN TACTIQUE & PERFORMANCES</div>
-          <div class="bfmd-tactics-layout">
-            ${renderTeamPerformancePanel(homeLineup, statsMap, "home")}
-
-            <div class="bfmd-tactics-center">
-              <div class="bfmd-tactics-caption">
-                <span>FORMATIONS OFFICIELLES</span>
-                <span>ÉVÉNEMENTS DÉTAILLÉS CI-DESSOUS</span>
-              </div>
-              <div class="bfmd-pitches">
-                ${renderPitch(homeLineup, "home", statsMap)}
-                ${renderPitch(awayLineup, "away", statsMap)}
-              </div>
-            </div>
-
-            ${renderTeamPerformancePanel(awayLineup, statsMap, "away")}
+          <div class="bfmd-title">COMPOSITIONS & PERFORMANCES SUR LE TERRAIN</div>
+          <div class="bfmd-tactics-caption">
+            <span>NOTES · BUTS · PASSES · CARTONS · BLESSURES · MVP · REMPLACEMENTS</span>
+            <span>DONNÉES DISPONIBLES POUR CHAQUE JOUEUR</span>
+          </div>
+          <div class="bfmd-pitches bfmd-pitches--performance">
+            ${renderPitch(homeLineup, "home", statsMap)}
+            ${renderPitch(awayLineup, "away", statsMap)}
+          </div>
+          <div class="bfmd-pitch-legend">
+            <span class="bfmd-chip bfmd-chip--goal">G = But</span>
+            <span class="bfmd-chip bfmd-chip--assist">A = Passe décisive</span>
+            <span class="bfmd-chip bfmd-chip--penalty">PEN = Penalty</span>
+            <span class="bfmd-chip bfmd-chip--own">CSC = But contre son camp</span>
+            <span class="bfmd-chip bfmd-chip--yellow">🟨 Jaune</span>
+            <span class="bfmd-chip bfmd-chip--red">🟥 Rouge</span>
+            <span class="bfmd-chip bfmd-chip--injury">INJ = Blessure</span>
+            <span class="bfmd-chip bfmd-chip--mvp">MVP</span>
+            <span class="bfmd-chip bfmd-chip--sub-in">IN / OUT</span>
+            <span class="bfmd-chip bfmd-chip--rating">★ Note</span>
           </div>
         </div>
 
