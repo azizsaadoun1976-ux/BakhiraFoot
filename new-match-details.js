@@ -1634,13 +1634,15 @@ function bfAssignFormationRoles(players, formation, readPosition) {
       .bf-new-safe-mvp-chip { display:inline-flex; align-items:center; padding:2px 5px; border-radius:4px; background:#facc15; color:#422006; font-size:7px; font-weight:950; }
       .bf-new-safe-mvp { border:1px solid rgba(202,138,4,.2); background:linear-gradient(120deg,rgba(250,204,21,.12),rgba(245,158,11,.03)); }
       .bf-new-safe-mvp-initials { display:flex; align-items:center; justify-content:center; width:42px; height:42px; border-radius:10px; background:#facc15; color:#422006; font-size:10px; font-weight:950; }
+      .bf-new-safe-event { grid-template-columns:48px 44px minmax(0,1fr); }
+      .bf-new-safe-icon { display:flex; align-items:center; justify-content:center; min-height:23px; font-size:8px; line-height:1; font-weight:950; background:#172a41; color:#fff; border-radius:5px; }
       .bf-new-safe-player-events { display:flex; flex-wrap:wrap; gap:3px; }
       .bf-new-safe-stat-grid { grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; }
       .bf-new-safe-stat { border:1px solid rgba(126,145,167,.15); }
-      .bf-new-safe-stat-track { display:grid; grid-template-columns:1fr 1fr; gap:3px; height:5px; margin-top:8px; }
+      .bf-new-safe-stat-track { display:flex; gap:3px; height:5px; margin-top:8px; }
       .bf-new-safe-stat-home,.bf-new-safe-stat-away { height:5px; min-width:3px; border-radius:99px; display:block; }
-      .bf-new-safe-stat-home { justify-self:end; background:linear-gradient(90deg,#1d4ed8,#60a5fa); }
-      .bf-new-safe-stat-away { justify-self:start; background:linear-gradient(90deg,#fb7185,#e11d48); }
+      .bf-new-safe-stat-home { background:linear-gradient(90deg,#1d4ed8,#60a5fa); }
+      .bf-new-safe-stat-away { background:linear-gradient(90deg,#fb7185,#e11d48); }
       .bf-new-safe-icon { min-width:38px; text-align:center; padding:4px; border-radius:5px; background:#172a41; color:#fff; font-size:8px; font-weight:950; letter-spacing:.05em; }
       .bf-new-safe-assist { font-size:10px; font-weight:800; color:#2563eb; }
       @media(max-width:700px) {
@@ -2518,7 +2520,7 @@ ${esc(String(playerName(player) || "P").split(/\s+/).map(part => part[0] || "").
 
               `
 
-              : "TEAM"
+              : esc(String(home.name || "FC").trim().split(/\s+/).map(part => part[0] || "").join("").slice(0,3).toUpperCase())
           }
 
           <div>
@@ -2579,7 +2581,7 @@ ${esc(String(playerName(player) || "P").split(/\s+/).map(part => part[0] || "").
 
               `
 
-              : "TEAM"
+              : esc(String(away.name || "FC").trim().split(/\s+/).map(part => part[0] || "").join("").slice(0,3).toUpperCase())
           }
 
           <div>
