@@ -6163,7 +6163,7 @@ function renderPitchPlayer(
   ) {
     badges += `
       <span class="bf-pitch-marker goal">
-        ⚽
+        ⚽ ${numberOrZero(playerData?.goals)}
       </span>
     `;
   }
@@ -6176,7 +6176,7 @@ function renderPitchPlayer(
   ) {
     badges += `
       <span class="bf-pitch-marker assist">
-        🅰️
+        🅰️ ${numberOrZero(playerData?.assists)}
       </span>
     `;
   }
@@ -6209,7 +6209,7 @@ function renderPitchPlayer(
 
   if (numberOrZero(playerData?.injury) > 0) {
     badges += `
-      <span class="bf-pitch-marker injury" title="Blessure signalée">🤕</span>
+      <span class="bf-pitch-marker injury" title="Blessure signalée">🤕 ${numberOrZero(playerData?.injury)}</span>
     `;
   }
 
