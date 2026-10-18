@@ -4796,6 +4796,42 @@ function parsePitchGrid(value) {
     ? { row, col } : null;
 }
 
+function getPlayerCoordinates(player) {
+  const objects = [
+    player?.player,
+    player,
+    player?.raw?.player,
+    player?.raw,
+    player?.player?.raw?.player,
+    player?.player?.raw,
+    player?.position,
+    player?.player?.position,
+    player?.raw?.position,
+    player?.raw?.player?.position,
+    player?.coordinates,
+    player?.player?.coordinates,
+    player?.raw?.coordinates
+  ].filter(value => value && typeof value === "object");
+
+  const xKeys = ["x", "coord_x", "coordinate_x", "pitch_x", "pitchX"];
+  const yKeys = ["y", "coord_y", "coordinate_y", "pitch_y", "pitchY"];
+
+  for (const source of objects) {
+    const xValue = xKeys.map(key => source[key]).find(value =>
+      value !== null && value !== undefined && value !== ""
+    );
+    const yValue = yKeys.map(key => source[key]).find(value =>
+      value !== null && value !== undefined && value !== ""
+    );
+    if (xValue !== undefined && yValue !== undefined) {
+      const x = Number(xValue), y = Number(yValue);
+      if (Number.isFinite(x) && Number.isFinite(y)) return { x, y };
+    }
+  }
+
+  return null;
+}
+
 function getPlayerPhoto(player) {
   return (
     player?.player?.photo ||
@@ -5525,7 +5561,16 @@ function getPitchPlayers(lineup) {
   const players = starters.map((entry, index) => {
     const player = entry?.player || entry || {};
     const parsed = parsePitchGrid(getPlayerGrid(entry));
-    return { entry, player, index, row: parsed?.row ?? null, col: parsed?.col ?? null };
+    const coords = getPlayerCoordinates(entry);
+    return {
+      entry,
+      player,
+      index,
+      row: parsed?.row ?? null,
+      col: parsed?.col ?? null,
+      sourceX: coords?.x ?? null,
+      sourceY: coords?.y ?? null
+    };
   });
 
   const gridOK = players.every(item =>
@@ -5558,7 +5603,55 @@ function makePitchCoordinates(pitchPlayers, side) {
 
   const players = pitchPlayers.slice(0, 11);
 
-  /* First choice: real provider grid coordinates, even if position labels are only MID/DEF/FWD. */
+  /*
+   * FIRST: use actual X/Y coordinates returned by the detail API.
+   * api/index.js already extracts these from the provider; ignoring them here
+   * caused the old renderer to guess positions even when real coordinates existed.
+   */
+  const xyEntries = players.map(item => ({
+    item,
+    x: Number(item?.sourceX),
+    y: Number(item?.sourceY)
+  }));
+  const xyValuesValid = xyEntries.length >= 10 && xyEntries.every(entry =>
+    Number.isFinite(entry.x) && Number.isFinite(entry.y) &&
+    entry.x >= 0 && entry.y >= 0 && entry.x <= 100 && entry.y <= 100
+  );
+
+  if (xyValuesValid) {
+    const xs = xyEntries.map(entry => entry.x);
+    const ys = xyEntries.map(entry => entry.y);
+    const minX = Math.min(...xs), maxX = Math.max(...xs);
+    const minY = Math.min(...ys), maxY = Math.max(...ys);
+    const normalized = maxX <= 1 && maxY <= 1 &&
+      maxX - minX >= 0.2 && maxY - minY >= 0.2;
+    const integerGrid = xs.every(value => Number.isInteger(value) && value >= 1 && value <= 11) &&
+      ys.every(value => Number.isInteger(value) && value >= 1 && value <= 11) &&
+      maxX - minX >= 3 && maxY - minY >= 3;
+    const percentages = maxX > 11 && maxY > 11 &&
+      maxX - minX >= 15 && maxY - minY >= 15;
+
+    if (normalized || integerGrid || percentages) {
+      return xyEntries.map(entry => {
+        let x = entry.x, y = entry.y;
+        if (normalized) {
+          x = 8 + x * 84;
+          y = 8 + y * 84;
+        } else if (integerGrid) {
+          x = 8 + ((x - 1) / 10) * 84;
+          y = 8 + ((y - 1) / 10) * 84;
+        }
+        if (side === "away") y = 100 - y;
+        return {
+          ...entry.item,
+          _x: Math.max(5, Math.min(95, x)),
+          _y: Math.max(7, Math.min(93, y))
+        };
+      });
+    }
+  }
+
+  /* SECOND: use the provider lineup grid, even if labels are only MID/DEF/FWD. */
   const gridEntries = players.map(item => {
     const parsed = parsePitchGrid(item?._grid) || parsePitchGrid(getPlayerGrid(item));
     return { item, row: parsed?.row ?? null, col: parsed?.col ?? null };
