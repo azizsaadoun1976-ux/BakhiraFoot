@@ -6206,99 +6206,24 @@ function shortPlayerName(name) {
 ========================================================= */
 
 function renderPlayerActions(playerData) {
-
-  let html = "";
-
-  const rating =
-    playerData?.rating;
-
-  if (
-    rating !== null &&
-    rating !== undefined &&
-    rating !== ""
-  ) {
-    html += `
-      <span class="bf-player-action bf-rating">
-        ⭐ ${escapeHTML(
-          Number(rating).toFixed(1)
-        )}
-      </span>
-    `;
-  }
-
-  if (
-    numberOrZero(
-      playerData?.goals
-    ) > 0
-  ) {
-    html += `
-      <span class="bf-player-action bf-goal">
-        ⚽ ${playerData.goals}
-      </span>
-    `;
-  }
-
-  if (
-    numberOrZero(
-      playerData?.assists
-    ) > 0
-  ) {
-    html += `
-      <span class="bf-player-action bf-assist">
-        🅰️ ${playerData.assists}
-      </span>
-    `;
-  }
-
-  if (
-    numberOrZero(
-      playerData?.yellow
-    ) > 0
-  ) {
-    html += `
-      <span class="bf-player-action bf-yellow">
-        🟨
-      </span>
-    `;
-  }
-
-  if (
-    numberOrZero(
-      playerData?.red
-    ) > 0
-  ) {
-    html += `
-      <span class="bf-player-action bf-red">
-        🟥
-      </span>
-    `;
-  }
-
-  if (
-    numberOrZero(
-      playerData?.keyPasses
-    ) > 0
-  ) {
-    html += `
-      <span class="bf-player-action bf-keypass">
-        🎯 ${playerData.keyPasses}
-      </span>
-    `;
-  }
-
-  if (
-    playerData?.captain
-  ) {
-    html += `
-      <span class="bf-player-action">
-        ©
-      </span>
-    `;
-  }
-
-  return html;
+  const badges = [];
+  const add = (label, value, kind) => {
+    if (!value) return;
+    badges.push('<span class="bf-player-action bf-player-action--' + kind + '">' + label + '</span>');
+  };
+  const rating = Number(playerData?.rating);
+  if (playerData?.rating !== null && playerData?.rating !== undefined && playerData?.rating !== "" && Number.isFinite(rating)) add(rating.toFixed(1), true, "rating");
+  const goals = numberOrZero(playerData?.goals), assists = numberOrZero(playerData?.assists);
+  add("G " + goals, goals > 0, "goal");
+  add("A " + assists, assists > 0, "assist");
+  add("YC", numberOrZero(playerData?.yellow) > 0, "yellow");
+  add("RC", numberOrZero(playerData?.red) > 0, "red");
+  add("INJ", numberOrZero(playerData?.injury) > 0, "injury");
+  add("MVP", playerData?.mvp === true, "mvp");
+  add("KP " + numberOrZero(playerData?.keyPasses), numberOrZero(playerData?.keyPasses) > 0, "keypass");
+  add("C", playerData?.captain === true, "captain");
+  return badges.join("");
 }
-
 /* =========================================================
    PLAYER ROW
 ========================================================= */
@@ -6371,141 +6296,26 @@ function renderPlayerRow(
    PITCH PLAYER
 ========================================================= */
 
-function renderPitchPlayer(
-  playerData,
-  x,
-  y
-) {
-
-  const number =
-    playerData?.number ??
-    "?";
-
-  const rating =
-    playerData?.rating;
-
-  let badges = "";
-
-  /* ⚽ Goals */
-  if (
-    numberOrZero(
-      playerData?.goals
-    ) > 0
-  ) {
-    badges += `
-      <span class="bf-pitch-marker goal">
-        ⚽ ${numberOrZero(playerData?.goals)}
-      </span>
-    `;
-  }
-
-  /* 🅰️ Assists */
-  if (
-    numberOrZero(
-      playerData?.assists
-    ) > 0
-  ) {
-    badges += `
-      <span class="bf-pitch-marker assist">
-        🅰️ ${numberOrZero(playerData?.assists)}
-      </span>
-    `;
-  }
-
-  /* 🟨 Yellow */
-  if (
-    numberOrZero(
-      playerData?.yellow
-    ) > 0
-  ) {
-    badges += `
-      <span class="bf-pitch-marker yellow">
-        🟨
-      </span>
-    `;
-  }
-
-  /* 🟥 Red */
-  if (
-    numberOrZero(
-      playerData?.red
-    ) > 0
-  ) {
-    badges += `
-      <span class="bf-pitch-marker red">
-        🟥
-      </span>
-    `;
-  }
-
-  if (numberOrZero(playerData?.injury) > 0) {
-    badges += `
-      <span class="bf-pitch-marker injury" title="Blessure signalée">🤕 ${numberOrZero(playerData?.injury)}</span>
-    `;
-  }
-
-  if (playerData?.mvp === true) {
-    badges += `
-      <span class="bf-pitch-marker mvp" title="MVP officiel">👑 MVP</span>
-    `;
-  }
-
-  const ratingHTML =
-    rating !== null &&
-    rating !== undefined &&
-    rating !== ""
-      ? `
-        <span class="bf-pitch-rating">
-          ⭐ ${escapeHTML(
-            Number(rating).toFixed(1)
-          )}
-        </span>
-      `
-      : "";
-
-  return `
-    <div
-      class="bf-pitch-player"
-      style="
-        left:${x}%;
-        top:${y}%;
-      "
-      title="${escapeHTML(
-        playerData?.name || ""
-      )}"
-    >
-
-      ${
-        badges
-          ? `
-            <span class="bf-pitch-markers">
-              ${badges}
-            </span>
-          `
-          : ""
-      }
-
-      <span class="bf-pitch-role" style="display:block;margin:0 0 2px;padding:1px 4px;border-radius:4px;background:rgba(8,15,28,.88);color:#fff;font-size:9px;font-weight:950;line-height:1.15;letter-spacing:.2px;">
-        ${escapeHTML(playerData?.position || "")}
-      </span>
-      <span class="bf-shirt">
-        ${escapeHTML(number)}
-      </span>
-
-      <span class="bf-pitch-name">
-        ${escapeHTML(
-          shortPlayerName(
-            playerData?.name
-          )
-        )}
-      </span>
-
-      ${ratingHTML}
-
-    </div>
-  `;
+function renderPitchPlayer(playerData, x, y) {
+  const rating = Number(playerData?.rating);
+  const hasRating = playerData?.rating !== null && playerData?.rating !== undefined && playerData?.rating !== "" && Number.isFinite(rating);
+  const badges = [];
+  const add = (label, value, kind) => {
+    if (value) badges.push('<span class="bf-pitch-chip bf-pitch-chip--' + kind + '">' + label + '</span>');
+  };
+  add("G " + numberOrZero(playerData?.goals), numberOrZero(playerData?.goals) > 0, "goal");
+  add("A " + numberOrZero(playerData?.assists), numberOrZero(playerData?.assists) > 0, "assist");
+  add("YC", numberOrZero(playerData?.yellow) > 0, "yellow");
+  add("RC", numberOrZero(playerData?.red) > 0, "red");
+  add("INJ", numberOrZero(playerData?.injury) > 0, "injury");
+  add("MVP", playerData?.mvp === true, "mvp");
+  return '<div class="bf-pitch-player" style="left:' + x + '%;top:' + y + '%;" title="' + escapeHTML(playerData?.name || "") + '">' +
+    '<div class="bf-pitch-role">' + escapeHTML(playerData?.position || "—") + '</div>' +
+    '<div class="bf-pitch-identity"><span class="bf-shirt">' + escapeHTML(playerData?.number ?? "?") + '</span><span class="bf-pitch-name">' + escapeHTML(shortPlayerName(playerData?.name)) + '</span></div>' +
+    (badges.length ? '<div class="bf-pitch-markers">' + badges.join("") + '</div>' : "") +
+    (hasRating ? '<span class="bf-pitch-rating">' + rating.toFixed(1) + '</span>' : "") +
+    '</div>';
 }
-
 /* =========================================================
    PITCH
 ========================================================= */
@@ -10423,6 +10233,45 @@ function initSearch() {
         opacity: .65;
         text-align: center;
       }
+
+    /* Match Centre: clean number/name/role tiles and textual stat badges */
+    .bf-modal .bf-detail-section { margin-top:26px; padding-top:20px; }
+    .bf-modal .bf-detail-section h3 { font-size:16px; letter-spacing:.01em; }
+    .bf-pitch-box { border-radius:18px; border:1px solid rgba(128,145,166,.22); background:rgba(12,22,34,.025); }
+    .bf-pitch-title { font-size:13px; gap:10px; }
+    .bf-pitch-formation { background:#101c2b; color:#f8fafc; padding:5px 10px; }
+    .bf-pitch-player { width:104px; gap:3px; z-index:3; }
+    .bf-pitch-role { display:inline-flex; align-items:center; justify-content:center; min-width:30px; max-width:92px; padding:3px 7px; border:1px solid rgba(255,255,255,.6); border-radius:6px; color:#fff; background:#11243a; box-shadow:0 3px 10px rgba(0,0,0,.25); font-size:9px; font-weight:950; letter-spacing:.04em; line-height:1.1; }
+    .bf-pitch-identity { display:flex; flex-direction:column; align-items:center; gap:3px; max-width:100%; }
+    .bf-shirt { width:31px; height:31px; border:2px solid rgba(255,255,255,.95); background:#f8fafc; color:#111827; font-size:11px; box-shadow:0 3px 8px rgba(0,0,0,.3); }
+    .bf-pitch-name { margin-top:0; max-width:100px; padding:3px 5px; border:1px solid rgba(255,255,255,.12); border-radius:5px; font-size:9px; font-weight:850; background:rgba(7,17,29,.9); color:#fff; }
+    .bf-pitch-markers { display:flex; justify-content:center; align-items:center; flex-wrap:wrap; gap:2px; max-width:110px; }
+    .bf-pitch-chip { display:inline-flex; align-items:center; justify-content:center; min-height:15px; padding:2px 4px; border-radius:4px; color:#fff; font-size:8px; line-height:1; font-weight:950; background:#26394e; border:1px solid rgba(255,255,255,.17); }
+    .bf-pitch-chip--goal { background:#087f5b; } .bf-pitch-chip--assist { background:#1d4ed8; }
+    .bf-pitch-chip--yellow { background:#a16207; color:#fff7cc; } .bf-pitch-chip--red { background:#b91c1c; }
+    .bf-pitch-chip--injury { background:#475569; } .bf-pitch-chip--mvp { background:#facc15; color:#172033; }
+    .bf-pitch-rating { margin-top:0; padding:2px 5px; background:#e7edf5; color:#142033; border-radius:4px; font-size:9px; font-weight:950; }
+    .bf-player-row { border:1px solid rgba(128,145,166,.13); background:rgba(128,145,166,.055); }
+    .bf-player-actions { gap:4px; }
+    .bf-player-action { min-width:26px; padding:4px 6px; border:1px solid rgba(128,145,166,.12); font-size:9px; letter-spacing:.01em; }
+    .bf-player-action--rating { background:#e7edf5; color:#142033; }
+    .bf-player-action--goal { background:#d9fbe9; color:#075c3a; }
+    .bf-player-action--assist { background:#dbeafe; color:#1e40af; }
+    .bf-player-action--yellow { background:#fef3c7; color:#92400e; }
+    .bf-player-action--red { background:#fee2e2; color:#991b1b; }
+    .bf-player-action--injury { background:#e2e8f0; color:#334155; }
+    .bf-player-action--mvp { background:#fef08a; color:#713f12; }
+    .bf-player-action--keypass { background:#ede9fe; color:#5b21b6; }
+    @media (max-width:700px) {
+      .bf-pitch-player { width:72px; gap:2px; }
+      .bf-pitch-role { padding:2px 4px; font-size:8px; }
+      .bf-shirt { width:27px; height:27px; font-size:10px; }
+      .bf-pitch-name { max-width:72px; font-size:7px; padding:2px 3px; }
+      .bf-pitch-markers { max-width:78px; gap:1px; }
+      .bf-pitch-chip { padding:2px 3px; font-size:7px; min-height:13px; }
+      .bf-pitch-rating { font-size:8px; }
+    }
+
     `;
 
     document.head.appendChild(style);
