@@ -1268,6 +1268,56 @@
         #bfMatchDetailsModal .bfmd-statistics { grid-template-columns:minmax(0,1fr); }
       }
 
+
+      /* MATCH CENTRE VECTOR PERFORMANCE ICONS */
+      #bfMatchDetailsModal .bfmd-vector-icon { display:inline-block; flex:0 0 auto; width:16px; height:16px; overflow:visible; }
+      #bfMatchDetailsModal .bfmd-event-icon .bfmd-vector-icon { width:21px; height:21px; }
+      #bfMatchDetailsModal .bfmd-chip { display:inline-flex; align-items:center; justify-content:center; gap:2px; min-width:15px; min-height:16px; padding:2px 3px; border-radius:5px; }
+      #bfMatchDetailsModal .bfmd-chip-count { color:inherit; font-size:8px; line-height:1; font-weight:950; font-variant-numeric:tabular-nums; }
+      #bfMatchDetailsModal .bfmd-chip--goal { color:#93f4d3; background:rgba(16,185,129,.16); }
+      #bfMatchDetailsModal .bfmd-chip--penalty { color:#fcd98a; background:rgba(217,119,6,.22); }
+      #bfMatchDetailsModal .bfmd-chip--own { color:#f9a8d4; background:rgba(190,24,93,.23); }
+      #bfMatchDetailsModal .bfmd-chip--assist { color:#8bd5ff; background:rgba(29,78,216,.24); }
+      #bfMatchDetailsModal .bfmd-chip--yellow { color:#facc15; background:rgba(161,98,7,.24); }
+      #bfMatchDetailsModal .bfmd-chip--red { color:#fda4af; background:rgba(185,28,28,.24); }
+      #bfMatchDetailsModal .bfmd-chip--injury { color:#d5e7f7; background:rgba(71,85,105,.4); }
+      #bfMatchDetailsModal .bfmd-chip--subIn { color:#86efac; background:rgba(4,120,87,.28); }
+      #bfMatchDetailsModal .bfmd-chip--subOut { color:#fda4af; background:rgba(185,28,28,.24); }
+      #bfMatchDetailsModal .bfmd-chip--rating { color:#facc15; background:rgba(250,204,21,.12); border:1px solid rgba(250,204,21,.22); }
+      #bfMatchDetailsModal .bfmd-chip-rating-number { color:#fff4c7; font-size:8px; font-weight:950; }
+      #bfMatchDetailsModal .bfmd-chip--mvp { color:#facc15; background:rgba(250,204,21,.15); border:1px solid rgba(250,204,21,.3); }
+      #bfMatchDetailsModal .bfmd-event-mini { max-width:112px; display:flex; flex-wrap:wrap; align-items:center; justify-content:center; gap:2px; }
+      #bfMatchDetailsModal .bfmd-pitch-legend { display:flex; align-items:center; justify-content:center; gap:7px; flex-wrap:wrap; padding:12px 4px 0; }
+      #bfMatchDetailsModal .bfmd-pitch-legend .bfmd-chip { min-height:22px; padding:4px 6px; gap:5px; border:1px solid rgba(144,174,204,.15); }
+      #bfMatchDetailsModal .bfmd-event-type { width:23px; height:23px; display:inline-flex; align-items:center; justify-content:center; padding:2px; margin-left:4px; border-radius:6px; }
+      #bfMatchDetailsModal .bfmd-event-type .bfmd-vector-icon { width:16px; height:16px; }
+      #bfMatchDetailsModal .bfmd-event-type--goal { color:#93f4d3; background:rgba(16,185,129,.16); }
+      #bfMatchDetailsModal .bfmd-event-type--penalty { color:#fcd98a; background:rgba(217,119,6,.22); }
+      #bfMatchDetailsModal .bfmd-event-type--own { color:#f9a8d4; background:rgba(190,24,93,.23); }
+      #bfMatchDetailsModal .bfmd-event-type--missed { color:#fda4af; background:rgba(185,28,28,.24); }
+      #bfMatchDetailsModal .bfmd-statistics-section { padding:clamp(14px,1.7vw,22px); }
+      #bfMatchDetailsModal .bfmd-stat-highlights { display:grid; grid-template-columns:repeat(3,minmax(0,1fr)); gap:9px; margin:3px 0 16px; }
+      #bfMatchDetailsModal .bfmd-stat-highlight { min-width:0; padding:12px; border:1px solid rgba(139,169,201,.17); border-radius:12px; background:linear-gradient(145deg,#13263a,#0c1a2a); }
+      #bfMatchDetailsModal .bfmd-stat-highlight-label { color:#a5bdd5; font-size:10px; font-weight:850; text-align:center; }
+      #bfMatchDetailsModal .bfmd-stat-highlight-values { display:grid; grid-template-columns:1fr auto 1fr; align-items:center; gap:7px; margin:9px 0; }
+      #bfMatchDetailsModal .bfmd-stat-highlight-values strong { color:#f4f8ff; font-size:20px; text-align:center; font-weight:950; font-variant-numeric:tabular-nums; }
+      #bfMatchDetailsModal .bfmd-stat-highlight-values span { color:#6c849e; font-size:7px; font-weight:950; }
+      #bfMatchDetailsModal .bfmd-stat-highlight-track { display:flex; gap:3px; width:100%; height:5px; }
+      #bfMatchDetailsModal .bfmd-stat-highlight-track span { display:block; height:5px; min-width:2px; border-radius:99px; }
+      #bfMatchDetailsModal .bfmd-stat-highlight-track span:first-child { background:linear-gradient(90deg,#14b8a6,#5eead4); }
+      #bfMatchDetailsModal .bfmd-stat-highlight-track span:last-child { background:linear-gradient(90deg,#fb7185,#e11d48); }
+      #bfMatchDetailsModal .bfmd-statistics-detail-heading { margin:15px 0 7px; color:#7edecb; font-size:9px; font-weight:950; letter-spacing:.1em; }
+      #bfMatchDetailsModal .bfmd-statistics-note { margin-top:12px; color:#8ca3bc; font-size:9px; text-align:right; }
+      #bfMatchDetailsModal .bfmd-statistics { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); column-gap:22px; }
+      #bfMatchDetailsModal .bfmd-statistics .bfmd-stat-row { min-width:0; }
+      #bfMatchDetailsModal .bfmd-stat-values { color:#edf6ff; }
+      #bfMatchDetailsModal .bfmd-stat-values strong { font-variant-numeric:tabular-nums; }
+      @media(max-width:760px) {
+        #bfMatchDetailsModal .bfmd-stat-highlights { grid-template-columns:repeat(2,minmax(0,1fr)); }
+        #bfMatchDetailsModal .bfmd-statistics { grid-template-columns:minmax(0,1fr); }
+        #bfMatchDetailsModal .bfmd-event-mini { max-width:112px; }
+      }
+
     `;
 
     document.head.appendChild(style);
@@ -3880,6 +3930,8 @@ function normalizeEvent(event, index) {
     first(
       event?.detail,
       event?.description,
+      event?.goalDescription,
+      event?.cardDescription,
       event?.incidentClass,
       event?.reason,
       ""
@@ -4000,7 +4052,9 @@ function normalizeEvent(event, index) {
     const penaltyFlag = [
       event?.is_penalty, event?.isPenalty, event?.penalty_goal,
       event?.penaltyGoal, event?.goal?.penalty, event?.goal?.is_penalty,
-      event?.goal?.isPenalty
+      event?.goal?.isPenalty,
+      event?.penalty,
+      event?.isPenalty
     ].some(value => value === true || value === 1 || value === "true");
     if (
       ownGoalFlag ||
@@ -4204,25 +4258,41 @@ function normalizeEvent(event, index) {
  }
 
  function playerBadges(player, statsMap) {
-  const stats = statsMap.get(playerKey(player)) || { goals:0, penalties:0, ownGoals:0, assists:0, yellow:0, red:0, injury:0, in:0, out:0 };
+  const stats = statsMap.get(playerKey(player)) || {
+    goals:0, penalties:0, ownGoals:0, assists:0, yellow:0, red:0, injury:0, in:0, out:0
+  };
   const badges = [];
-  const add = (label, value, kind) => { if (Number(value) > 0) badges.push('<span class="bfmd-chip bfmd-chip--' + kind + '" title="' + esc(label) + '">' + label + '</span>'); };
-  add("G " + Number(stats.goals || 0), stats.goals, "goal");
-  add("PEN " + Number(stats.penalties || 0), stats.penalties, "penalty");
-  add("CSC " + Number(stats.ownGoals || 0), stats.ownGoals, "own");
-  add("A " + Number(stats.assists || 0), stats.assists, "assist");
-  add("🟨 " + Number(stats.yellow || 0), stats.yellow, "yellow");
-  add("🟥 " + Number(stats.red || 0), stats.red, "red");
-  add("INJ", stats.injury, "injury");
-  if (stats.in) badges.push('<span class="bfmd-chip bfmd-chip--sub-in" title="Entrée en jeu">IN</span>');
-  if (stats.out) badges.push('<span class="bfmd-chip bfmd-chip--sub-out" title="Sortie">OUT</span>');
+  const add = (kind, value, title) => {
+    const count = Number(value || 0);
+    if (!(count > 0)) return;
+    badges.push('<span class="bfmd-chip bfmd-chip--' + kind + '" title="' + esc(title) + '">' +
+      performanceIcon(kind) + (count > 1 ? '<span class="bfmd-chip-count">' + count + '</span>' : '') + '</span>');
+  };
+
+  const regularGoals = Math.max(0, Number(stats.goals || 0) - Number(stats.penalties || 0));
+  add("goal", regularGoals, "But");
+  add("penalty", stats.penalties, "But sur penalty");
+  add("own", stats.ownGoals, "But contre son camp");
+  add("assist", stats.assists, "Passe décisive");
+  add("yellow", stats.yellow, "Carton jaune");
+  add("red", stats.red, "Carton rouge");
+  add("injury", stats.injury, "Blessure signalée");
+  add("subIn", stats.in, "Entrée en jeu");
+  add("subOut", stats.out, "Sortie du terrain");
+
   const rating = getPlayerRating(player);
-  if (rating !== null && rating !== undefined && rating !== "" && Number.isFinite(Number(rating))) badges.push('<span class="bfmd-chip bfmd-chip--rating" title="Note">★ ' + Number(rating).toFixed(1) + '</span>');
-  if (playerIsOfficialMvp(player) || (statsMap.mvpKey && statsMap.mvpKey === playerKey(player))) badges.push('<span class="bfmd-chip bfmd-chip--mvp" title="Joueur du match">MVP</span>');
+  if (rating !== null && rating !== undefined && rating !== "" && Number.isFinite(Number(rating))) {
+    badges.push('<span class="bfmd-chip bfmd-chip--rating" title="Note du joueur">' +
+      performanceIcon("rating") + '<span class="bfmd-chip-rating-number">' + Number(rating).toFixed(1) + '</span></span>');
+  }
+  if (playerIsOfficialMvp(player) || (statsMap.mvpKey && statsMap.mvpKey === playerKey(player))) {
+    badges.push('<span class="bfmd-chip bfmd-chip--mvp" title="Joueur du match">' + performanceIcon("mvp") + '</span>');
+  }
   if (!badges.length) return "";
-  return '<div class="bfmd-event-mini" title="' + esc(badges.map(item => item.replace(/<[^>]*>/g, "")).join(" · ")) + '">' + badges.join("") + '</div>';
+  return '<div class="bfmd-event-mini" aria-label="Performance de ' + esc(getPlayerName(player)) + '">' + badges.join("") + '</div>';
 }
   /* =========================================================
+     RENDER PITCH  /* =========================================================
      RENDER PITCH  /* =========================================================
      RENDER PITCH
   ========================================================= */
@@ -4569,20 +4639,37 @@ function normalizeEvent(event, index) {
      EVENTS
   ========================================================= */
 
+  function performanceIcon(kind) {
+    const icons = {
+      goal: '<circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="m12 7-3 2 1 4h4l1-4-3-2ZM9 9 6.8 8.2M16 9l2.2-.8M10 13l-1.7 3.1M14 13l1.7 3.1M9 16.1l3 2 3-2" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/>',
+      penalty: '<circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.6"/><circle cx="12" cy="12" r="5.2" fill="none" stroke="currentColor" stroke-width="1.4"/><circle cx="12" cy="12" r="1.8" fill="currentColor"/><path d="M17 5.5 20 3m-3.2.2h3v3" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>',
+      own: '<circle cx="10.5" cy="13" r="7.4" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="m10.5 9-2.4 1.7.9 3h3l.9-3-2.4-1.7ZM8 10.7l-1.8-.6m6.3.6 1.8-.6M9 13.7l-1.3 2.2m3.8-2.2 1.3 2.2" fill="none" stroke="currentColor" stroke-width="1.2"/><path d="M13.8 5.5h6v6m0-6-6.5 6.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>',
+      assist: '<path d="M5 3h5l1.3 6 3 2.2 4.9 2.5-.6 4.4H4v-3.2l3-2.6L5 3Z" fill="currentColor" opacity=".95"/><path d="M4.7 18.1h14M7.5 21v-2.8m4 2.8v-2.8m4 2.8v-2.8" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>',
+      yellow: '<rect x="6" y="2.5" width="12" height="19" rx="1.8" fill="currentColor" stroke="currentColor" stroke-width="1.2"/><path d="M8.5 5h7" stroke="#1f2937" stroke-width="1" opacity=".45"/>',
+      red: '<rect x="6" y="2.5" width="12" height="19" rx="1.8" fill="currentColor" stroke="currentColor" stroke-width="1.2"/><path d="M8.5 5h7" stroke="#1f2937" stroke-width="1" opacity=".45"/>',
+      injury: '<rect x="3" y="5" width="18" height="14" rx="2.5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M9 5V3.5h6V5m-3 3.5v7m-3.5-3.5h7" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>',
+      subIn: '<path d="M12 20V5m-5 5 5-5 5 5" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"/><path d="M4 20h16" fill="none" stroke="currentColor" stroke-width="1.4" opacity=".7"/>',
+      subOut: '<path d="M12 4v15m-5-5 5 5 5-5" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"/><path d="M4 4h16" fill="none" stroke="currentColor" stroke-width="1.4" opacity=".7"/>',
+      substitution: '<path d="M4 8h15m-4-4 4 4-4 4M20 16H5m4-4-4 4 4 4" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/>',
+      mvp: '<path d="M7 4H4v2a5 5 0 0 0 5 5m8-7h3v2a5 5 0 0 1-5 5M7 3h10v5a5 5 0 0 1-10 0V3Zm5 10v4m-4 3h8m-6-3h4" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/><path d="m12 5 .9 1.8 2 .3-1.45 1.4.35 2-1.8-1-1.8 1 .35-2L9.1 7.1l2-.3L12 5Z" fill="currentColor"/>',
+      rating: '<path d="m12 2.7 2.8 5.8 6.4.9-4.6 4.5 1.1 6.4-5.7-3-5.7 3 1.1-6.4-4.6-4.5 6.4-.9L12 2.7Z" fill="currentColor" stroke="currentColor" stroke-width="1" stroke-linejoin="round"/>',
+      var: '<circle cx="10.5" cy="10.5" r="6.5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="m15.2 15.2 5.3 5.3M7.5 10.5l2 2 4-4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>',
+      missed: '<circle cx="10.5" cy="13" r="7.4" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="m10.5 9-2.4 1.7.9 3h3l.9-3-2.4-1.7ZM8 10.7l-1.8-.6m6.3.6 1.8-.6" fill="none" stroke="currentColor" stroke-width="1.2"/><path d="m15.2 3 6 6m0-6-6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>'
+    };
+    return '<svg class="bfmd-vector-icon bfmd-vector-icon--' + esc(kind) + '" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" focusable="false">' +
+      (icons[kind] || icons.goal) + '</svg>';
+  }
+
   function eventIcon(event) {
-    if (event.kind === "goal") {
-      if (event.goalType === "own") return "CSC";
-      if (event.goalType === "penalty") return "PEN";
-      return "⚽";
-    }
+    if (event.kind === "goal") return performanceIcon(event.goalType === "own" ? "own" : event.goalType === "penalty" ? "penalty" : "goal");
     switch (event.kind) {
-      case "penalty_missed": return "PEN";
-      case "yellow": return "🟨";
-      case "red": return "🟥";
-      case "substitution": return "↕";
-      case "injury": return "✚";
-      case "var": return "VAR";
-      default: return "•";
+      case "penalty_missed": return performanceIcon("missed");
+      case "yellow": return performanceIcon("yellow");
+      case "red": return performanceIcon("red");
+      case "substitution": return performanceIcon("substitution");
+      case "injury": return performanceIcon("injury");
+      case "var": return performanceIcon("var");
+      default: return performanceIcon("goal");
     }
   }
 
@@ -5025,29 +5112,27 @@ function normalizeEvent(event, index) {
     const penalties = events.filter(event => event.kind === "goal" && event.goalType === "penalty").length;
     const ownGoals = events.filter(event => event.kind === "goal" && event.goalType === "own").length;
     const assists = events.filter(event => event.kind === "goal" && event.assist && event.goalType !== "own" && event.goalType !== "penalty").length;
-    const yellow = count("yellow");
-    const red = count("red");
-    const substitutions = count("substitution");
-    const injuries = count("injury");
+    const yellow = count("yellow"), red = count("red"), substitutions = count("substitution"), injuries = count("injury");
     const metrics = [
-      ["⚽", "Buts", goals, "goals"],
-      ["P", "Buts sur penalty", penalties, "penalties"],
-      ["CSC", "Buts contre son camp", ownGoals, "own-goals"],
-      ["A", "Passes décisives", assists, "assists"],
-      ["🟨", "Cartons jaunes", yellow, "yellow"],
-      ["🟥", "Cartons rouges", red, "red"],
-      ["↕", "Remplacements", substitutions, "subs"],
-      ["✚", "Blessures signalées", injuries, "injuries"]
+      ["goal", "Buts", goals, "goals"],
+      ["penalty", "Buts sur penalty", penalties, "penalties"],
+      ["own", "Buts contre son camp", ownGoals, "own-goals"],
+      ["assist", "Passes décisives", assists, "assists"],
+      ["yellow", "Cartons jaunes", yellow, "yellow"],
+      ["red", "Cartons rouges", red, "red"],
+      ["substitution", "Remplacements", substitutions, "subs"],
+      ["injury", "Blessures signalées", injuries, "injuries"]
     ];
     return '<div class="bfmd-section bfmd-summary-section"><div class="bfmd-title">Résumé de la rencontre</div><div class="bfmd-summary">' +
       metrics.map(([icon, label, value, kind]) =>
         '<div class="bfmd-summary-box bfmd-summary-box--' + kind + '">' +
-          '<div class="bfmd-summary-icon">' + icon + '</div><div class="bfmd-summary-value">' + value + '</div>' +
+          '<div class="bfmd-summary-icon">' + performanceIcon(icon) + '</div><div class="bfmd-summary-value">' + value + '</div>' +
           '<div class="bfmd-summary-label">' + esc(label) + '</div></div>'
       ).join("") + '</div></div>';
   }
 
   /* =========================================================
+     MAN OF THE MATCH  /* =========================================================
      MAN OF THE MATCH
   ========================================================= */
 
@@ -5308,62 +5393,154 @@ function manOfTheMatch(
   ========================================================= */
 
   function getMatchStatistics(details) {
-    const source = first(details?.statistics, details?.stats, null);
-    const rows = [];
-    const clean = value => value === undefined || value === null || value === "" ? "—" : String(value);
-    const add = (label, home, away) => {
-      if (!label || (home == null && away == null)) return;
-      rows.push({ label: String(label), home: clean(home), away: clean(away) });
+    const rowsByName = new Map();
+    const invalid = value => value === null || value === undefined || String(value).trim() === "" ||
+      /^[-—–]+$/.test(String(value).trim()) || /^(n\/a|na|not available|undefined|null)$/i.test(String(value).trim());
+    const rawValue = value => {
+      if (value === null || value === undefined || value === "") return null;
+      if (Array.isArray(value)) return value;
+      if (typeof value === "object") return first(value?.displayValue, value?.display, value?.value, value?.text, value?.label, null);
+      return value;
     };
+    const clean = value => invalid(rawValue(value)) ? "—" : String(rawValue(value));
+    const add = (labelValue, homeValue, awayValue) => {
+      const label = String(labelValue ?? "").trim();
+      const h = rawValue(homeValue), a = rawValue(awayValue);
+      if (!label || (invalid(h) && invalid(a))) return;
+      const key = norm(label);
+      if (!key) return;
+      const current = rowsByName.get(key) || { label, home: "—", away: "—" };
+      if (!invalid(h)) current.home = clean(h);
+      if (!invalid(a)) current.away = clean(a);
+      rowsByName.set(key, current);
+    };
+    const labelOf = item => first(item?.name, item?.title, item?.displayName, item?.label, item?.type, item?.key, item?.statName, "");
+    const addItem = item => {
+      if (!item || typeof item !== "object") return false;
+      const label = labelOf(item);
+      if (!label) return false;
+      let pair = first(item?.values, item?.stats, item?.value, item?.data, null);
+      let home = first(item?.home, item?.homeValue, item?.home_value, item?.homeStat, item?.home_value_display, null);
+      let away = first(item?.away, item?.awayValue, item?.away_value, item?.awayStat, item?.away_value_display, null);
 
-    if (Array.isArray(source)) {
-      const allBlock = source.find(block => String(block?.period || "").toUpperCase() === "ALL") || source[0];
-      if (Array.isArray(allBlock?.groups)) {
-        for (const group of allBlock.groups) {
-          for (const item of Array.isArray(group?.statisticsItems) ? group.statisticsItems : []) {
-            add(item?.name || item?.key || item?.label, item?.home ?? item?.homeValue, item?.away ?? item?.awayValue);
+      const nestedGroup = Array.isArray(pair) && pair.some(value =>
+        value && typeof value === "object" && (Array.isArray(value?.stats) || Array.isArray(value?.statisticsItems))
+      );
+      if (nestedGroup) pair = null;
+
+      if (Array.isArray(pair)) {
+        if (home === null) home = pair[0];
+        if (away === null) away = pair[1];
+      } else if (pair && typeof pair === "object") {
+        if (home === null) home = first(pair?.home, pair?.homeValue, pair?.home?.value, null);
+        if (away === null) away = first(pair?.away, pair?.awayValue, pair?.away?.value, null);
+      }
+      if (home !== null || away !== null) {
+        add(label, home, away);
+        return true;
+      }
+      return false;
+    };
+    const processGroups = groups => {
+      for (const group of arr(groups)) {
+        if (!group || typeof group !== "object") continue;
+        const items = group?.statisticsItems || group?.statistics || group?.items || group?.stats;
+        if (Array.isArray(items) && items.length) {
+          for (const item of items) addItem(item);
+        } else {
+          addItem(group);
+        }
+      }
+    };
+    const processTeamBlocks = blocks => {
+      if (!Array.isArray(blocks) || blocks.length < 2) return;
+      const homeBlock = blocks.find(block => /home|domicile|host/i.test(String(block?.side || block?.team?.side || ""))) || blocks[0];
+      const awayBlock = blocks.find(block => /away|extérieur|exterieur|guest/i.test(String(block?.side || block?.team?.side || ""))) || blocks[1];
+      const homeStats = arr(homeBlock?.statistics || homeBlock?.stats || homeBlock?.items);
+      const awayStats = arr(awayBlock?.statistics || awayBlock?.stats || awayBlock?.items);
+      const byName = new Map();
+      for (const item of homeStats) {
+        const label = labelOf(item);
+        if (!label) continue;
+        const key = norm(label);
+        const row = byName.get(key) || { label: String(label), home: "—", away: "—" };
+        row.home = clean(first(item?.value, item?.displayValue, item?.display, item?.total, item?.statValue, null));
+        byName.set(key, row);
+      }
+      for (const item of awayStats) {
+        const label = labelOf(item);
+        if (!label) continue;
+        const key = norm(label);
+        const row = byName.get(key) || { label: String(label), home: "—", away: "—" };
+        row.away = clean(first(item?.value, item?.displayValue, item?.display, item?.total, item?.statValue, null));
+        byName.set(key, row);
+      }
+      for (const row of byName.values()) {
+        if (!invalid(row.home) || !invalid(row.away)) add(row.label, row.home, row.away);
+      }
+    };
+    const seen = new Set();
+    const visit = (source, depth = 0) => {
+      if (!source || depth > 5 || typeof source !== "object" || seen.has(source)) return;
+      seen.add(source);
+
+      if (Array.isArray(source)) {
+        if (source.some(block => block?.team && (Array.isArray(block?.statistics) || Array.isArray(block?.stats)))) processTeamBlocks(source);
+        const allBlock = source.find(block => /^(all|full time|fulltime|match)$/i.test(String(block?.period || block?.title || block?.name || ""))) || source[0];
+        if (allBlock && allBlock !== source) visit(allBlock, depth + 1);
+        for (const item of source) {
+          if (!item || typeof item !== "object") continue;
+          if (item?.groups || item?.statisticsItems) processGroups(item.groups || item.statisticsItems);
+          if (addItem(item)) continue;
+          if (Array.isArray(item?.stats) && item.stats.some(value => value && typeof value === "object")) visit(item.stats, depth + 1);
+          else if (Array.isArray(item?.statistics) && item.statistics.length && !item?.team) visit(item.statistics, depth + 1);
+        }
+        return;
+      }
+
+      const periods = source?.Periods || source?.periods || source?.periodStats;
+      if (periods && typeof periods === "object") {
+        const all = periods?.All || periods?.ALL || periods?.all || periods?.["Full Time"] || periods?.fullTime || periods?.full_time || Object.values(periods)[0];
+        visit(all, depth + 1);
+      }
+      if (source?.groups || source?.statisticsItems || source?.items) processGroups(source.groups || source.statisticsItems || source.items);
+      if (Array.isArray(source?.stats)) {
+        const pairStats = source.stats.some(value => typeof value !== "object" || value === null);
+        if (labelOf(source) && pairStats) addItem(source);
+        else visit(source.stats, depth + 1);
+      }
+      if (Array.isArray(source?.statistics)) {
+        if (source?.team) processTeamBlocks([source]);
+        else visit(source.statistics, depth + 1);
+      }
+      if (source?.home || source?.away) {
+        const home = source.home, away = source.away;
+        if (Array.isArray(home) || Array.isArray(away)) {
+          processTeamBlocks([
+            { team: { side: "home" }, statistics: arr(Array.isArray(home) ? home : home?.statistics || home?.stats) },
+            { team: { side: "away" }, statistics: arr(Array.isArray(away) ? away : away?.statistics || away?.stats) }
+          ]);
+        } else if (typeof home === "object" && typeof away === "object") {
+          for (const [key, value] of Object.entries(source)) {
+            if (value && typeof value === "object" && !Array.isArray(value)) {
+              const pairHome = first(value?.home, value?.homeValue, null);
+              const pairAway = first(value?.away, value?.awayValue, null);
+              if (pairHome !== null || pairAway !== null) add(value?.name || value?.title || key, pairHome, pairAway);
+            }
           }
         }
       }
-      if (!rows.length && source.length >= 2) {
-        const homeBlock = source.find(block => /home|domicile/i.test(String(block?.team?.name || block?.team?.side || ""))) || source[0];
-        const awayBlock = source.find(block => /away|extérieur|exterieur/i.test(String(block?.team?.name || block?.team?.side || ""))) || source[1];
-        const homeStats = Array.isArray(homeBlock?.statistics) ? homeBlock.statistics : Array.isArray(homeBlock?.stats) ? homeBlock.stats : [];
-        const awayStats = Array.isArray(awayBlock?.statistics) ? awayBlock.statistics : Array.isArray(awayBlock?.stats) ? awayBlock.stats : [];
-        const byName = new Map();
-        for (const item of homeStats) {
-          const label = item?.type || item?.name || item?.key;
-          if (label) byName.set(String(label), { label: String(label), home: clean(item?.value ?? item?.displayValue ?? item?.total), away: "—" });
-        }
-        for (const item of awayStats) {
-          const label = item?.type || item?.name || item?.key;
-          if (!label) continue;
-          const key = String(label);
-          const current = byName.get(key) || { label: key, home: "—", away: "—" };
-          current.away = clean(item?.value ?? item?.displayValue ?? item?.total);
-          byName.set(key, current);
-        }
-        rows.push(...byName.values());
-      }
-    } else if (source && typeof source === "object") {
-      const homeStats = Array.isArray(source.home) ? source.home : Array.isArray(source.home?.statistics) ? source.home.statistics : [];
-      const awayStats = Array.isArray(source.away) ? source.away : Array.isArray(source.away?.statistics) ? source.away.statistics : [];
-      const byName = new Map();
-      for (const item of homeStats) {
-        const label = item?.type || item?.name || item?.key;
-        if (label) byName.set(String(label), { label: String(label), home: clean(item?.value ?? item?.total), away: "—" });
-      }
-      for (const item of awayStats) {
-        const label = item?.type || item?.name || item?.key;
-        if (label) {
-          const current = byName.get(String(label)) || { label: String(label), home: "—", away: "—" };
-          current.away = clean(item?.value ?? item?.total);
-          byName.set(String(label), current);
-        }
-      }
-      rows.push(...byName.values());
-    }
-    return rows.slice(0, 40);
+      if (source?.name || source?.title || source?.key || source?.label) addItem(source);
+    };
+
+    const candidates = [
+      details?.statistics, details?.stats, details?.match_statistics, details?.matchStatistics,
+      details?.match?.statistics, details?.match?.stats, details?.data?.statistics,
+      details?.content?.stats, details?.content?.statistics, details?.fixture?.statistics,
+      details?.score?.statistics
+    ];
+    for (const candidate of candidates) visit(candidate);
+    return [...rowsByName.values()].slice(0, 48);
   }
 
   function renderMatchStatistics(details) {
@@ -5648,8 +5825,8 @@ const response =
         );
       }
 
-      /* Load this exact fixture's official player layout if this API only returns broad roles. */
-      if (!hasOfficialLineupCoordinates(details)) {
+      /* Fill missing official positions and/or missing match statistics from FotMob. */
+      if (!hasOfficialLineupCoordinates(details) || !getMatchStatistics(details).length) {
         try {
           const baseTeams = getTeams(details);
           const lookupDate = details?.fixture?.date || details?.date ||
@@ -5668,16 +5845,29 @@ const response =
             });
             const payload = await response.json();
             const official = payload?.data || payload?.match || payload;
-            if (response.ok && hasOfficialLineupCoordinates(official)) {
-              details = { ...details, lineups: official.lineups };
-              console.info("BAKHIRAFOOT: loaded exact official lineup coordinates", {
+            if (response.ok && official && typeof official === "object") {
+              const merged = { ...details };
+              const hasOfficialCoordinates = hasOfficialLineupCoordinates(official);
+              const hasCurrentStats = getMatchStatistics(details).length > 0;
+              const hasOfficialStats = getMatchStatistics(official).length > 0;
+              if (hasOfficialCoordinates) merged.lineups = official.lineups;
+              if (!hasCurrentStats && hasOfficialStats) merged.statistics = official.statistics;
+              if ((!Array.isArray(merged.events) || !merged.events.length) && Array.isArray(official.events) && official.events.length) {
+                merged.events = official.events;
+              }
+              if (!merged.player_of_match && official.player_of_match) merged.player_of_match = official.player_of_match;
+              details = merged;
+              console.info("BAKHIRAFOOT: match enrichment", {
                 provider: official?.provider || "FotMob",
+                officialCoordinates: hasOfficialCoordinates,
+                statisticsAdded: !hasCurrentStats && hasOfficialStats,
+                statisticsRows: getMatchStatistics(details).length,
                 home: baseTeams?.home?.name,
                 away: baseTeams?.away?.name
               });
             } else {
-              console.warn("BAKHIRAFOOT: no exact external lineup coordinates",
-                payload?.details || payload?.error || "No complete lineups");
+              console.warn("BAKHIRAFOOT: exact match enrichment unavailable",
+                payload?.details || payload?.error || "No usable match data");
             }
           }
         } catch (layoutError) {
