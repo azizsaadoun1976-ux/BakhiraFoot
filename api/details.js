@@ -1670,6 +1670,215 @@ async function sofaDetails(
   }
 
 
+
+  async function fotmobLineupLookup(query) {
+    const homeName = String(query && query.home || "").trim();
+    const awayName = String(query && query.away || "").trim();
+    const dateValue = String(query && query.date || "").trim();
+    const dateMatch = dateValue.match(/^(\d{4})[-/]?(\d{2})[-/]?(\d{2})/);
+    let dateKey = dateMatch ? dateMatch[1] + dateMatch[2] + dateMatch[3] : "";
+    if (!dateKey && dateValue) {
+      const parsed = new Date(dateValue);
+      if (Number.isFinite(parsed.getTime())) dateKey = parsed.toISOString().slice(0,10).replace(/-/g,"");
+    }
+    if (!homeName || !awayName || !dateKey) {
+      const error = new Error("Home, away et date sont nécessaires.");
+      error.status = 400;
+      throw error;
+    }
+
+    const nameKey = value => {
+      let s = String(value || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+      s = s.replace(/\bman utd\b/g,"manchester united").replace(/\bman united\b/g,"manchester united")
+        .replace(/\bman city\b/g,"manchester city").replace(/\bspurs\b/g,"tottenham hotspur")
+        .replace(/\bwolves\b/g,"wolverhampton wanderers").replace(/\bpsg\b/g,"paris saint germain")
+        .replace(/\bbarca\b/g,"barcelona").replace(/\binter\b/g,"inter milan");
+      return s.replace(/\bfc\b|\bcf\b|\bsc\b|\bafc\b|\bfk\b|\bclub\b/g," ")
+        .replace(/[^a-z0-9]+/g," ").trim().replace(/\s+/g," ");
+    };
+    const similarity = (a,b) => {
+      const x=nameKey(a), y=nameKey(b);
+      if (!x || !y) return 0;
+      if (x===y) return 1;
+      if (x.length>4 && y.length>4 && (x.includes(y) || y.includes(x))) return 0.9;
+      const xs=new Set(x.split(" ")), ys=new Set(y.split(" "));
+      let same=0; for (const part of xs) if (ys.has(part)) same++;
+      return 2*same/Math.max(1,xs.size+ys.size);
+    };
+    const dateOffset = (key,offset) => {
+      const d=new Date(key.slice(0,4)+"-"+key.slice(4,6)+"-"+key.slice(6,8)+"T12:00:00Z");
+      d.setUTCDate(d.getUTCDate()+offset);
+      return d.toISOString().slice(0,10).replace(/-/g,"");
+    };
+    const fotmobJSON = async url => {
+      const cached=FOTMOB_CACHE.get(url);
+      if (cached && cached.exp>Date.now()) return cached.value;
+      const value=await getJSON(url);
+      if (!value || typeof value!=="object" || value.raw) throw new Error("FotMob returned non-JSON data");
+      FOTMOB_CACHE.set(url,{value,exp:Date.now()+180000});
+      if (FOTMOB_CACHE.size>80) {
+        for (const [key,item] of FOTMOB_CACHE) if (item.exp<=Date.now()) FOTMOB_CACHE.delete(key);
+        while (FOTMOB_CACHE.size>80) FOTMOB_CACHE.delete(FOTMOB_CACHE.keys().next().value);
+      }
+      return value;
+    };
+    const matchesFor = data => [
+      ...arr(data && data.matches),
+      ...arr(data && data.leagues).flatMap(league=>arr(league && league.matches))
+    ];
+    let selected=null;
+    for (const day of [dateKey,dateOffset(dateKey,-1),dateOffset(dateKey,1)]) {
+      let body;
+      try {
+        body=await fotmobJSON("https://www.fotmob.com/api/data/matches?date="+day);
+      } catch (error) {
+        if (day===dateKey) throw error;
+        continue;
+      }
+      const ranked=matchesFor(body).map(match=>{
+        const homeChoices=[match?.home?.name,match?.home?.longName,match?.home?.shortName].filter(Boolean);
+        const awayChoices=[match?.away?.name,match?.away?.longName,match?.away?.shortName].filter(Boolean);
+        const hs=Math.max(0,...homeChoices.map(name=>similarity(homeName,name)));
+        const as=Math.max(0,...awayChoices.map(name=>similarity(awayName,name)));
+        return {match,hs,as,score:hs+as};
+      }).filter(item=>item.hs>=0.66 && item.as>=0.66).sort((a,b)=>b.score-a.score);
+      if (ranked.length) { selected=ranked[0].match; break; }
+    }
+    if (!selected || selected.id==null) {
+      const error=new Error("Ma l9inach nafs lmatch f masdar dyal التشكيلة.");
+      error.status=404;
+      throw error;
+    }
+
+    const detail=await fotmobJSON("https://www.fotmob.com/api/data/matchDetails?matchId="+encodeURIComponent(String(selected.id)));
+    const lineup=detail?.content?.lineup || detail?.content?.lineups || detail?.lineup || null;
+    const rawHome=lineup?.homeTeam || lineup?.home || lineup?.host || null;
+    const rawAway=lineup?.awayTeam || lineup?.away || lineup?.guest || null;
+    const formationRows=value=>String(value||"").trim().replace(/\s+/g,"").split("-").map(Number);
+    const validLayout=player=>{
+      const vertical=player?.verticalLayout;
+      if (vertical && Number.isFinite(Number(vertical.x)) && Number.isFinite(Number(vertical.y))) {
+        return Number(vertical.x)>=0 && Number(vertical.x)<=1 && Number(vertical.y)>=0 && Number(vertical.y)<=1;
+      }
+      const horizontal=player?.horizontalLayout;
+      return !!(horizontal && Number.isFinite(Number(horizontal.x)) && Number.isFinite(Number(horizontal.y)) &&
+        Number(horizontal.x)>=0 && Number(horizontal.x)<=1 && Number(horizontal.y)>=0 && Number(horizontal.y)<=1);
+    };
+    const point=player=>{
+      const v=player?.verticalLayout;
+      if (validLayout(player) && v) return {x:Number(v.x)*100,y:Number(v.y)*100};
+      const h=player?.horizontalLayout;
+      if (validLayout(player) && h) return {x:Number(h.y)*100,y:Number(h.x)*100};
+      return null;
+    };
+    const sourceRole=player=>{
+      const values=[
+        player?.positionStringShort,player?.localizedPosition?.label,player?.localizedPosition?.fallback,
+        player?.position?.label,player?.position?.abbreviation,player?.position?.name,
+        player?.role?.label,player?.role?.name
+      ];
+      const broad=new Set(["g","gk","d","df","def","m","mf","mid","f","fw","fwd","att","forward"]);
+      for (const value of values) {
+        if (typeof value!=="string" || !value.trim()) continue;
+        const label=value.trim().toUpperCase().replace(/[^A-Z0-9]/g,"");
+        if (!broad.has(label.toLowerCase())) return value.trim().toUpperCase();
+      }
+      return "";
+    };
+    const roleTemplates={
+      "4-2-3-1":[["LB","CB","CB","RB"],["CDM","CDM"],["LW","CAM","RW"],["ST"]],
+      "4-3-3":[["LB","CB","CB","RB"],["CDM","CM","CM"],["LW","ST","RW"]],
+      "4-4-2":[["LB","CB","CB","RB"],["LM","CM","CM","RM"],["ST","ST"]],
+      "4-1-4-1":[["LB","CB","CB","RB"],["CDM"],["LM","CM","CM","RM"],["ST"]],
+      "4-2-2-2":[["LB","CB","CB","RB"],["CDM","CDM"],["CAM","CAM"],["ST","ST"]],
+      "4-3-1-2":[["LB","CB","CB","RB"],["CDM","CM","CM"],["CAM"],["ST","ST"]],
+      "4-3-2-1":[["LB","CB","CB","RB"],["CDM","CM","CM"],["LAM","RAM"],["ST"]],
+      "4-5-1":[["LB","CB","CB","RB"],["LM","CM","CDM","CM","RM"],["ST"]],
+      "4-1-2-1-2":[["LB","CB","CB","RB"],["CDM"],["LCM","RCM"],["CAM"],["ST","ST"]],
+      "3-4-3":[["LCB","CB","RCB"],["LWB","CM","CM","RWB"],["LW","ST","RW"]],
+      "3-5-2":[["LCB","CB","RCB"],["LWB","CM","CDM","CM","RWB"],["ST","ST"]],
+      "3-4-2-1":[["LCB","CB","RCB"],["LWB","CM","CM","RWB"],["LAM","RAM"],["ST"]],
+      "5-3-2":[["LWB","LCB","CB","RCB","RWB"],["CDM","CM","CM"],["ST","ST"]],
+      "5-4-1":[["LWB","LCB","CB","RCB","RWB"],["LM","CM","CM","RM"],["ST"]]
+    };
+    const getSlotRoles=(rawTeam,side)=>{
+      const starters=arr(rawTeam?.starters);
+      const form=String(rawTeam?.formation||"").replace(/\s+/g,"");
+      const rows=formationRows(form), templates=roleTemplates[form];
+      if (starters.length!==11 || !templates || rows.length!==templates.length ||
+          rows.some(n=>!Number.isInteger(n)||n<1) || rows.reduce((s,n)=>s+n,0)!==10) return new Map();
+      const entries=starters.map((player,index)=>({player,index,point:point(player)}));
+      if (entries.some(item=>!item.point)) return new Map();
+      const sorted=[...entries].sort((a,b)=>a.point.y-b.point.y);
+      const clusters=[];
+      for (const entry of sorted) {
+        let cluster=clusters.find(group=>Math.abs(group.y-entry.point.y)<=5.5);
+        if (!cluster) {cluster={y:entry.point.y,entries:[]};clusters.push(cluster);}
+        cluster.entries.push(entry);
+        cluster.y=cluster.entries.reduce((sum,item)=>sum+item.point.y,0)/cluster.entries.length;
+      }
+      let defensive=clusters;
+      if (side==="away") defensive=[...clusters].reverse();
+      const expected=[1,...rows];
+      if (defensive.length!==expected.length || defensive.some((group,i)=>group.entries.length!==expected[i])) return new Map();
+      const result=new Map();
+      result.set(defensive[0].entries[0].index,"GK");
+      for (let row=1;row<defensive.length;row++) {
+        const roles=templates[row-1], group=defensive[row].entries;
+        if (!Array.isArray(roles) || roles.length!==group.length) return new Map();
+        const ordered=[...group].sort((a,b)=>side==="away"?b.point.x-a.point.x:a.point.x-b.point.x);
+        ordered.forEach((entry,i)=>result.set(entry.index,roles[i]));
+      }
+      return result;
+    };
+    const normalizeTeam=(rawTeam,side,requestedName)=>{
+      const starters=arr(rawTeam?.starters), subs=arr(rawTeam?.subs);
+      const roles=getSlotRoles(rawTeam,side);
+      const team={id:null,name:requestedName||String(rawTeam?.name||"Équipe"),
+        logo:rawTeam?.id?"https://images.fotmob.com/image_resources/logo/teamlogo/"+rawTeam.id+"_small.png":""};
+      const normalizePlayer=(player,index,isSub)=>{
+        const location=point(player);
+        const role=sourceRole(player)||(!isSub?roles.get(index)||"":"");
+        const id=player?.id==null?"":String(player.id);
+        const photo=player?.imageUrl||player?.photo||(id?"https://images.fotmob.com/image_resources/playerimages/"+id+".png":"");
+        const normalized={id:player?.id??null,name:String(player?.name||"Joueur"),
+          number:player?.shirtNumber||player?.number||"-",position:role,position_name:role,
+          position_abbreviation:role,position_code:role,tacticalPosition:role,photo,
+          x:location?location.x:null,y:location?location.y:null,
+          coordinatesOriented:!!location,team};
+        const rating=player?.performance?.rating??player?.rating?.num??null;
+        return {player:normalized,rating,games:{rating,position:role,
+          minutes:player?.minutesPlayed??null,substitute:!!isSub,captain:!!player?.isCaptain},raw:player};
+      };
+      return {team,formation:String(rawTeam?.formation||"—"),
+        coach:rawTeam?.coach?.name?{name:rawTeam.coach.name}:null,
+        startXI:starters.slice(0,11).map((p,i)=>normalizePlayer(p,i,false)),
+        substitutes:subs.map((p,i)=>normalizePlayer(p,i,true))};
+    };
+    const homeLineup=rawHome?normalizeTeam(rawHome,"home",homeName):null;
+    const awayLineup=rawAway?normalizeTeam(rawAway,"away",awayName):null;
+    const complete=candidate=>candidate && candidate.startXI.length===11 && candidate.startXI.every(item=>validLayout(item.raw));
+    if (!complete(homeLineup) || !complete(awayLineup)) {
+      const error=new Error("FotMob ma kay3tich l'emplacement officiel de tous les joueurs f had lmatch.");
+      error.status=404;
+      throw error;
+    }
+    const matchDate=selected.status?.utcTime||detail.general?.matchTimeUTCDate||null;
+    return {
+      fixture:{id:String(selected.id),slug:"fotmob-"+String(selected.id),upstreamId:selected.id,date:matchDate,
+        status:{short:selected.status?.reason?.short||(selected.status?.finished?"FT":selected.status?.started?"LIVE":"NS"),
+          long:selected.status?.reason?.long||"",elapsed:null},venue:null,referee:null,timezone:"UTC"},
+      league:{name:selected.league?.name||detail.general?.leagueName||"Football",logo:""},
+      competition:{name:selected.league?.name||detail.general?.leagueName||"Football"},
+      teams:{home:{id:rawHome?.id??null,name:homeName,logo:homeLineup.team.logo},
+        away:{id:rawAway?.id??null,name:awayName,logo:awayLineup.team.logo}},
+      goals:{home:selected.home?.score??null,away:selected.away?.score??null},
+      lineups:[homeLineup,awayLineup],
+      players:[homeLineup,awayLineup].map(item=>({team:item.team,players:[...item.startXI,...item.substitutes]})),
+      events:[],statistics:[],provider:"FotMob"
+    };
+  }
+
   /* =====================================================
      MAIN ROUTE
   ===================================================== */
@@ -1696,6 +1905,15 @@ async function sofaDetails(
 
   }
 
+
+  if (fixture.toLowerCase() === "sofa-fotmob-lookup") {
+    try {
+      const details = await fotmobLineupLookup(req && req.query || {});
+      return send(200, { data: details, provider: "FotMob" });
+    } catch (error) {
+      return send(error && error.status || 502, { error: "fotmob_lineup_unavailable", details: String(error && error.message || error), data: [] });
+    }
+  }
 
   const source =
     sourceOf();
