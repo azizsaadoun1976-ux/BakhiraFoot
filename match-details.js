@@ -980,35 +980,29 @@
      FORMATION
   ========================================================= */
 
-  function normalizeFormation(
-    formation
-  ) {
-    const value =
-      text(formation)
-        .trim();
-
-    if (!value) {
-      return "—";
+  function normalizeFormation(formation) {
+    let value = formation;
+    if (value && typeof value === "object") {
+      value =
+        value?.name ??
+        value?.displayName ??
+        value?.display_name ??
+        value?.label ??
+        value?.value ??
+        value?.formation ??
+        "";
     }
 
+    value = text(value).trim().replace(/[‐‑‒–—−]/g, "-").replace(/\s+/g, "");
+    if (/^\d{3,4}$/.test(value)) value = value.split("").join("-");
+    const parts = value.split("-").map(Number);
     if (
-      value.includes("-")
-    ) {
-      return value;
-    }
-
-    if (
-      /^\d{3,4}$/.test(value)
-    ) {
-      const parts =
-        value
-          .split("")
-          .map(Number);
-
-      return parts.join("-");
-    }
-
-    return value;
+      parts.length >= 2 &&
+      parts.length <= 4 &&
+      parts.every(n => Number.isInteger(n) && n >= 1 && n <= 5) &&
+      parts.reduce((sum, n) => sum + n, 0) === 10
+    ) return value;
+    return "—";
   }
 
   /* =========================================================
@@ -2182,8 +2176,7 @@ function buildLineup(
       details?.lineups?.[side]?.formation,
       details?.lineup?.[side]?.formation,
       details?.compositions?.[side]?.formation,
-      details?.players?.[side]?.formation,
-      "4-3-3"
+      details?.players?.[side]?.formation,      null
     );
 
   for (
@@ -2990,9 +2983,9 @@ function pitchPositions(lineup, side) {
     }
   }
 
-  const formation = normalizeFormation(
-    lineup?.formation || "4-3-3"
-  );
+  const formation = normalizeFormation(lineup?.formation);
+  const formationRows = formation.split("-").map(Number);
+  if (formation === "—" || formationRows.length < 2 || formationRows.length > 4 || formationRows.some(n => !Number.isInteger(n) || n < 1) || formationRows.reduce((sum,n) => sum+n,0) !== 10) return [];
 
   const FORMATIONS = {
     "4-3-3": [
@@ -3102,9 +3095,53 @@ function pitchPositions(lineup, side) {
     ]
   };
 
-  const slots =
-    FORMATIONS[formation] ||
-    FORMATIONS["4-3-3"];
+  function generatedFormationSlots(rows) {
+    const rowY = {
+      2: [37, 83],
+      3: [27, 52, 83],
+      4: [25, 44, 65, 84],
+      5: [23, 38, 54, 69, 84]
+    }[rows.length] || rows.map((_,i) => 25 + 59 * i / Math.max(1, rows.length - 1));
+
+    return rows.flatMap((count, rowIndex) => {
+      let roles;
+      const last = rows.length - 1;
+      if (rowIndex === 0) {
+        roles = count === 3 ? [["LCB"],["CB"],["RCB"]]
+          : count === 4 ? [["LB"],["LCB"],["RCB"],["RB"]]
+          : count === 5 ? [["LWB"],["LCB"],["CB"],["RCB"],["RWB"]]
+          : Array.from({length:count}, () => ["CB"]);
+      } else if (rowIndex === last) {
+        roles = count === 1 ? [["ST"]]
+          : count === 2 ? [["LST"],["RST"]]
+          : count === 3 ? [["LW"],["ST"],["RW"]]
+          : count === 4 ? [["LW"],["LF"],["RF"],["RW"]]
+          : Array.from({length:count}, () => ["FWD"]);
+      } else if (rows.length === 4 && rowIndex === 1 && count === 2) {
+        roles = [["LDM","DM","CDM"],["RDM","DM","CDM"]];
+      } else if (rows.length === 4 && rowIndex === 2 && count === 3) {
+        roles = [["LW","LM"],["CAM","AM","CM"],["RW","RM"]];
+      } else if (count === 2) {
+        roles = [["LDM","LCM","CM"],["RDM","RCM","CM"]];
+      } else if (count === 3) {
+        roles = [["LCM","LDM","LM"],["CM","DM","CDM"],["RCM","RDM","RM"]];
+      } else if (count === 4) {
+        roles = [["LM","LWB"],["LCM","CM"],["RCM","CM"],["RM","RWB"]];
+      } else if (count === 5) {
+        roles = [["LM","LWB"],["LCM","LDM"],["CM","DM","CDM"],["RCM","RDM"],["RM","RWB"]];
+      } else {
+        roles = Array.from({length:count}, () => ["CM","DM","AM"]);
+      }
+
+      return roles.map((role, index) => ({
+        role,
+        x: count === 1 ? 50 : 10 + 80 * index / (count - 1),
+        y: rowY[rowIndex]
+      }));
+    });
+  }
+
+  const slots = FORMATIONS[formation] || generatedFormationSlots(formationRows);
 
   function roleOf(player) {
     return norm(
@@ -4146,6 +4183,20 @@ function normalizeEvent(event, index) {
         lineup,
         side
       );
+
+    if (!positions.length) {
+      return `
+        <div class="bfmd-pitch-card">
+          <div class="bfmd-pitch-head">
+            <span>${esc(team.name)}</span>
+            <span class="bfmd-formation">${esc(lineup.formation || "—")}</span>
+          </div>
+          <div class="bfmd-pitch" style="display:flex;align-items:center;justify-content:center;text-align:center;padding:20px;color:#fff;font-weight:850;">
+            Formation ou positions tactiques non fournies par la source pour ce match.
+          </div>
+        </div>
+      `;
+    }
 
     const playersHTML =
       positions
