@@ -431,6 +431,7 @@
   function playerPosition(
     player
   ) {
+    if (player?.tacticalPosition) return String(player.tacticalPosition);
     const p =
       getPlayerObject(
         player
@@ -575,6 +576,108 @@
      LINEUP
      ========================================================= */
 
+function assignFormationRoleLabels(players, formation, readPosition) {
+  if (!Array.isArray(players) || players.length !== 11) return players || [];
+  const form = String(formation || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "")
+    .trim().replace(/[‐‑‒–—−]/g, "-").replace(/\s+/g, "");
+  const rows = form.split("-").map(Number);
+  if (rows.length < 2 || rows.length > 4 ||
+      rows.some(n => !Number.isInteger(n) || n < 1 || n > 5) ||
+      rows.reduce((sum, n) => sum + n, 0) !== 10) return players;
+
+  const aliases = {
+    g:"GK",gk:"GK",goalkeeper:"GK",goalie:"GK",keeper:"GK","1":"GK",
+    lb:"LB",leftback:"LB",leftfullback:"LB",dl:"LB",dfl:"LB",
+    lcb:"LCB",leftcentreback:"LCB",leftcenterback:"LCB",dlc:"LCB",dflc:"LCB",
+    cb:"CB",centreback:"CB",centerback:"CB",centraldefender:"CB",dc:"CB",dfc:"CB",
+    rcb:"RCB",rightcentreback:"RCB",rightcenterback:"RCB",drc:"RCB",dfrc:"RCB",
+    rb:"RB",rightback:"RB",rightfullback:"RB",dr:"RB",dfr:"RB",
+    lwb:"LWB",leftwingback:"LWB",rwb:"RWB",rightwingback:"RWB",
+    cdm:"CDM",dm:"CDM",defensivemidfielder:"CDM",ldm:"LDM",rdm:"RDM",
+    cm:"CM",mc:"CM",centralmidfielder:"CM",centralmidfield:"CM",mfc:"CM",
+    lcm:"LCM",leftcentralmidfielder:"LCM",mcl:"LCM",
+    rcm:"RCM",rightcentralmidfielder:"RCM",mcr:"RCM",
+    cam:"CAM",am:"CAM",attackingmidfielder:"CAM",lam:"LAM",ram:"RAM",
+    lm:"LM",leftmidfielder:"LM",ml:"LM",mfl:"LM",
+    rm:"RM",rightmidfielder:"RM",mr:"RM",mfr:"RM",
+    lw:"LW",leftwing:"LW",leftwinger:"LW",fl:"LW",fwl:"LW",
+    rw:"RW",rightwing:"RW",rightwinger:"RW",fr:"RW",fwr:"RW",
+    st:"ST",striker:"ST",cf:"CF",centreforward:"CF",centerforward:"CF",fc:"ST",fwc:"ST",
+    ss:"SS",secondstriker:"SS"
+  };
+  const detailed = new Set(["GK","LB","LCB","CB","RCB","RB","LWB","RWB","CDM","LDM","RDM",
+    "CM","LCM","RCM","CAM","LAM","RAM","LM","RM","LW","RW","ST","CF","SS"]);
+  const generic = {d:"DEF",df:"DEF",def:"DEF",defender:"DEF",defence:"DEF",defense:"DEF",back:"DEF","2":"DEF",
+    m:"MID",mf:"MID",mid:"MID",midfielder:"MID",midfield:"MID","3":"MID",
+    f:"FWD",fw:"FWD",fwd:"FWD",att:"FWD",attacker:"FWD",forward:"FWD","4":"FWD"};
+  const norm = value => {
+    if (value && typeof value === "object") value = value.displayName || value.display_name ||
+      value.position_name || value.positionName || value.abbreviation || value.shortName ||
+      value.name || value.label || value.code || value.value || "";
+    return String(value ?? "").normalize("NFD").replace(/[\u0300-\u036f]/g,"")
+      .toLowerCase().replace(/[^a-z0-9]+/g,"");
+  };
+  const role = value => aliases[norm(value)] || "";
+  const bucket = value => {
+    const k = norm(value), r = role(value);
+    if (r === "GK") return "gk";
+    if (r && ["LB","LCB","CB","RCB","RB","LWB","RWB"].includes(r)) return "def";
+    if (r && ["CDM","LDM","RDM","CM","LCM","RCM","CAM","LAM","RAM","LM","RM"].includes(r)) return "mid";
+    if (r && ["LW","RW","ST","CF","SS"].includes(r)) return "fwd";
+    if (["g","gk","goalkeeper","goalie","keeper","1"].includes(k)) return "gk";
+    return generic[k] === "DEF" ? "def" : generic[k] === "MID" ? "mid" : generic[k] === "FWD" ? "fwd" : "";
+  };
+  const defTargets = n => n===5?["LWB","LCB","CB","RCB","RWB"]:n===4?["LB","CB","CB","RB"]:
+    n===3?["LCB","CB","RCB"]:n===2?["LCB","RCB"]:n===1?["CB"]:Array.from({length:n},(_,i)=>i===0?"LB":i===n-1?"RB":"CB");
+  const fwdTargets = n => n===4?["LW","ST","ST","RW"]:n===3?["LW","ST","RW"]:n===2?["ST","ST"]:
+    n===1?["ST"]:Array.from({length:n},(_,i)=>i===0?"LW":i===n-1?"RW":"ST");
+  const midTargets = (n,f) => {
+    if (f==="4-2-3-1") {
+      if(n===5)return ["CDM","CDM","LW","CAM","RW"];
+      if(n===4)return ["CDM","CDM","CAM","CM"];
+      if(n===3)return ["CDM","CDM","CAM"];
+      if(n===2)return ["CDM","CDM"];
+    }
+    if (["4-3-3","5-3-2","4-3-2-1"].includes(f) && n===3) return ["CDM","CM","CM"];
+    if (f==="4-4-2" && n===4) return ["LM","CM","CM","RM"];
+    if (f==="4-1-4-1" && n===5) return ["CDM","LW","CM","CM","RW"];
+    if (f==="4-5-1" && n===5) return ["LM","CM","CDM","CM","RM"];
+    if (f==="3-4-3" && n===4) return ["LWB","CM","CM","RWB"];
+    if (f==="3-5-2" && n===5) return ["LWB","CM","CDM","CM","RWB"];
+    if (f==="4-2-2-2" && n===4) return ["CDM","CDM","CAM","CAM"];
+    if (f==="4-3-1-2" && n===4) return ["CM","CDM","CM","CAM"];
+    if(n===5)return ["LM","CM","CDM","CM","RM"];
+    if(n===4)return ["LM","CM","CM","RM"];
+    if(n===3)return ["CDM","CM","CM"];
+    if(n===2)return f.startsWith("4-2-")?["CDM","CDM"]:["CM","CM"];
+    if(n===1)return ["CDM"];
+    return Array.from({length:n},()=>"CM");
+  };
+
+  const rowsData = players.map(player => {
+    const value = readPosition(player), canonical = role(value);
+    return {player, bucket:bucket(value), exact:detailed.has(canonical)?canonical:""};
+  });
+  const assigned = rowsData.map(item=>item.exact);
+  for (const groupName of ["gk","def","mid","fwd"]) {
+    const group = rowsData.map((item,index)=>({...item,index})).filter(item=>item.bucket===groupName);
+    if (!group.length) continue;
+    const targets = groupName==="gk"?["GK"]:groupName==="def"?defTargets(group.length):
+      groupName==="mid"?midTargets(group.length,form):fwdTargets(group.length);
+    const available = [...targets];
+    for (const item of group) {
+      if (!assigned[item.index]) continue;
+      const idx = available.indexOf(assigned[item.index]);
+      if (idx>=0) available.splice(idx,1);
+    }
+    group.filter(item=>!assigned[item.index]).forEach((item,i)=>{
+      assigned[item.index] = available[i] || targets[i] ||
+        (groupName==="def"?"CB":groupName==="mid"?"CM":groupName==="fwd"?"ST":"GK");
+    });
+  }
+  return rowsData.map((item,index)=>({...item.player,tacticalPosition:assigned[index] || item.player?.tacticalPosition || ""}));
+}
+
   function getLineup(
     details,
     side,
@@ -706,12 +809,31 @@
       formationParts.every(value => Number.isInteger(value) && value >= 1 && value <= 5) &&
       formationParts.reduce((sum, value) => sum + value, 0) === 10;
 
+    const finalFormation = isValidFormation ? formationText : "—";
+    const labelledStarters = assignFormationRoleLabels(starters, finalFormation, playerPosition);
+    const roleByKey = new Map();
+    const playerKeyForRoles = player => {
+      const p = getPlayerObject(player);
+      const id = first(player?.id, player?.player_id, player?.playerId, p?.id, p?.player_id, p?.playerId);
+      return id !== null && id !== undefined && String(id).trim()
+        ? `id:${String(id).trim()}`
+        : `name:${norm(playerName(player))}`;
+    };
+    labelledStarters.forEach(player => {
+      if (player?.tacticalPosition) roleByKey.set(playerKeyForRoles(player), player.tacticalPosition);
+    });
+    const labelledPlayers = (allPlayers.length ? allPlayers : [...starters, ...substitutes])
+      .map(player => {
+        const assignedRole = roleByKey.get(playerKeyForRoles(player));
+        return assignedRole ? { ...player, tacticalPosition: assignedRole } : player;
+      });
+
     return {
-      formation: isValidFormation ? formationText : "—",
-      players: allPlayers.length ? allPlayers : [...starters, ...substitutes],
-      starters,
+      formation: finalFormation,
+      players: labelledPlayers,
+      starters: labelledStarters,
       substitutes,
-      pitchAvailable: starters.length > 0
+      pitchAvailable: labelledStarters.length > 0
     };
   }
 
@@ -2027,6 +2149,7 @@
                     }
 
                     <span class="bf-new-safe-shirt">${esc(playerNumber(player))}</span>
+                    <span class="bf-new-safe-role" style="display:block;margin:2px 0;padding:1px 4px;border-radius:4px;background:rgba(8,15,28,.88);color:#fff;font-size:9px;font-weight:950;line-height:1.15;">${esc(playerPosition(player) || "")}</span>
                     <div
                       class="bf-new-safe-player-name"
                     >
