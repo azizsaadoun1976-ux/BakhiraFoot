@@ -1848,7 +1848,7 @@ function bfAssignFormationRoles(players, formation, readPosition) {
     if(shapeUsable){
       return shapeEntries.map(item=>{
         const x=item.rowSize<=1?50:10+80*item.col/(item.rowSize-1);
-        let y=8+84*item.row/item.rowCount;
+        let y=8+84*item.row/Math.max(1,item.rowCount-1);
         if(side==="away")y=100-y;
         return {player:item.player,x:Math.max(6,Math.min(94,x)),y:Math.max(6,Math.min(94,y))};
       });
@@ -1973,7 +1973,7 @@ function bfAssignFormationRoles(players, formation, readPosition) {
                           <div
                             class="bf-new-safe-avatar"
                           >
-                            ⚽
+${esc(String(playerName(player) || "P").split(/\s+/).map(part => part[0] || "").join("").slice(0,2).toUpperCase())}
                           </div>
 
                         `
@@ -2110,7 +2110,7 @@ function bfAssignFormationRoles(players, formation, readPosition) {
 
                 ${
                   rating !== null
-                    ? `⭐ ${esc(
+                    ? `Note ${esc(
                         Number(
                           rating
                         ).toFixed(1)
@@ -2519,7 +2519,7 @@ function bfAssignFormationRoles(players, formation, readPosition) {
 
               `
 
-              : "⚽"
+              : "TEAM"
           }
 
           <div>
@@ -2580,7 +2580,7 @@ function bfAssignFormationRoles(players, formation, readPosition) {
 
               `
 
-              : "⚽"
+              : "TEAM"
           }
 
           <div>
