@@ -304,10 +304,14 @@ async function flattenLeaderCategories(input, depth = 0, visited = new Set()) {
 
 async function getCategoryRows(category) {
   const resolved = await resolveEntity(category);
-  for (const key of ["leaders", "items", "entries", "results", "athletes"]) {
+  for (const key of ["leaders", "items", "entries", "results", "athletes", "scorers", "statistics", "stats"]) {
     if (resolved?.[key] === undefined) continue;
-    const rows = await collectionItems(resolved[key]);
-    if (rows.length) return rows;
+    try {
+      const rows = await collectionItems(resolved[key]);
+      if (rows.length) return rows;
+    } catch {
+      // One category envelope can fail while another ESPN endpoint still works.
+    }
   }
   return [];
 }
@@ -422,42 +426,78 @@ async function normalizeLeaderRows(rows, stat) {
 
 async function fetchSeasonLeaders(league, season) {
   const code = encodeURIComponent(league);
-  const siteV2 = ESPN_SITE.replace('/apis/site/v2', '/apis/v2');
+  const siteV2 = ESPN_SITE.replace("/apis/site/v2", "/apis/v2");
   const urls = [
-    siteV2 + '/' + code + '/leaders?season=' + season + '&limit=100&lang=en&region=us',
-    ESPN_SITE + '/' + code + '/leaders?season=' + season + '&limit=100&lang=en&region=us',
-    ESPN_CORE + '/' + code + '/seasons/' + season + '/types/2/leaders?limit=100&lang=en&region=us',
-    ESPN_CORE + '/' + code + '/seasons/' + season + '/leaders?limit=100&lang=en&region=us'
+    // ESPN Core seasonal endpoints first. Site endpoints are fallbacks.
+    ESPN_CORE + "/" + code + "/seasons/" + season + "/types/2/leaders?limit=100&lang=en&region=us",
+    ESPN_CORE + "/" + code + "/seasons/" + season + "/leaders?limit=100&lang=en&region=us",
+    siteV2 + "/" + code + "/leaders?season=" + season + "&limit=100&lang=en&region=us",
+    ESPN_SITE + "/" + code + "/leaders?season=" + season + "&limit=100&lang=en&region=us"
   ];
 
+  let goals = [];
+  let assists = [];
   let lastError = null;
-  const collected = [];
-  const seen = new Set();
+  const diagnostics = [];
+
   for (const url of urls) {
     try {
-      const payload = await getJSON(url, 5000);
-      const foundCategories = await findCategories(payload);
-      const categories = await flattenLeaderCategories(foundCategories);
+      const payload = await getJSON(url, 8000);
+      const rawCategories = await findCategories(payload);
+      const categories = await flattenLeaderCategories(rawCategories);
+
+      // A first category named "Goals" may be an empty parent/container.
+      // Continue until a matching category actually contains normalizable player rows.
       for (const category of categories) {
-        const isGoals = categoryMatches(category, 'goals');
-        const isAssists = categoryMatches(category, 'assists');
-        if (!isGoals && !isAssists) continue;
-        const label = normalize(category?.name || category?.displayName || category?.abbreviation || '');
-        const key = label + ':' + (isGoals ? 'goals' : 'assists');
-        if (seen.has(key)) continue;
-        seen.add(key);
-        collected.push(category);
+        const wantsGoals = !goals.length && categoryMatches(category, "goals");
+        const wantsAssists = !assists.length && categoryMatches(category, "assists");
+        if (!wantsGoals && !wantsAssists) continue;
+
+        try {
+          const rows = await getCategoryRows(category);
+          if (!rows.length) {
+            diagnostics.push((category.displayName || category.name || category.abbreviation || "category") + ": empty");
+            continue;
+          }
+
+          if (wantsGoals) {
+            const normalized = await normalizeLeaderRows(rows, "goals");
+            if (normalized.length) goals = normalized;
+            else diagnostics.push((category.displayName || category.name || "goals") + ": no usable player rows");
+          }
+          if (wantsAssists) {
+            const normalized = await normalizeLeaderRows(rows, "assists");
+            if (normalized.length) assists = normalized;
+            else diagnostics.push((category.displayName || category.name || "assists") + ": no usable player rows");
+          }
+        } catch (categoryError) {
+          diagnostics.push((category.displayName || category.name || "category") + ": " + (categoryError.message || "failed"));
+        }
+
+        if (goals.length && assists.length) break;
       }
-      const hasGoals = collected.some(category => categoryMatches(category, 'goals'));
-      const hasAssists = collected.some(category => categoryMatches(category, 'assists'));
-      if (hasGoals && hasAssists) break;
-      lastError = new Error('No complete goals/assists categories in ESPN response: ' + url);
+
+      if (goals.length && assists.length) {
+        return { goals, assists, source: url };
+      }
+      lastError = new Error("Endpoint returned no usable rows for both stats: " + url);
     } catch (error) {
       lastError = error;
+      diagnostics.push(url + ": " + (error.message || "failed"));
     }
   }
-  if (collected.length) return { categories: collected, source: 'ESPN seasonal leaders' };
-  throw lastError || new Error('ESPN returned no leader categories for ' + league + ', season ' + season + '.');
+
+  // Return whichever real list exists rather than dropping it because the other category is missing.
+  if (goals.length || assists.length) {
+    return { goals, assists, source: "ESPN seasonal leaders (partial)" };
+  }
+
+  throw new Error(
+    "ESPN returned no usable historical scorers or assists for " + league +
+    ", season " + season +
+    (diagnostics.length ? ". " + diagnostics.slice(0, 6).join(" | ") : "") +
+    (lastError?.message ? ". " + lastError.message : "")
+  );
 }
 
 module.exports = async (req, res) => {
@@ -485,27 +525,11 @@ module.exports = async (req, res) => {
   }
 
   try {
-    const { categories, source } = await fetchSeasonLeaders(league, season);
-
-    const goalsCategory = categories.find(category => categoryMatches(category, "goals"));
-    const assistsCategory = categories.find(category => categoryMatches(category, "assists"));
-
-    const [goalRows, assistRows] = await Promise.all([
-      goalsCategory ? getCategoryRows(goalsCategory) : Promise.resolve([]),
-      assistsCategory ? getCategoryRows(assistsCategory) : Promise.resolve([])
-    ]);
-
-    const [goals, assists] = await Promise.all([
-      normalizeLeaderRows(goalRows, "goals"),
-      normalizeLeaderRows(assistRows, "assists")
-    ]);
+    const { goals, assists, source } = await fetchSeasonLeaders(league, season);
 
     if (!goals.length && !assists.length) {
-      const available = categories.map(category =>
-        category?.displayName || category?.name || category?.abbreviation || "?"
-      ).join(", ");
       throw new Error(
-        `ESPN seasonal leaders contain no usable goals/assists for ${league}, season ${season}. Categories: ${available || "none"}.`
+        `ESPN seasonal leaders contain no usable goals/assists for ${league}, season ${season}.`
       );
     }
 

@@ -433,3 +433,199 @@ body.dark #scoreList .bf-score-pro-details { color:#a3b4c0 !important; }
   #scoreList .bf-score-pro-score { gap:5px; padding:6px; font-size:15px !important; }
   #scoreList .bf-score-pro-details { grid-column:2; justify-content:flex-end; margin-top:-4px; }
 }
+
+
+/* BAKHIRAFOOT PRO — LARGE MATCH CARDS */
+#scoreList .bf-score-professional-matches,
+#scoreList .bf-score-pro-matches {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) !important;
+  gap: 13px !important;
+  padding: 16px !important;
+  background: #f4f8fa !important;
+}
+#scoreList .bf-score-professional-match,
+#scoreList .bf-score-pro-card {
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) !important;
+  grid-template-rows: auto minmax(60px, auto) auto !important;
+  align-items: center;
+  gap: 11px !important;
+  width: 100%;
+  min-width: 0;
+  min-height: 158px !important;
+  padding: 16px 19px !important;
+  border: 1px solid #d7e1e8 !important;
+  border-radius: 16px !important;
+  background: linear-gradient(115deg, #ffffff, #fafdff) !important;
+  color: #152a39 !important;
+  box-shadow: 0 5px 18px rgba(15, 38, 55, .055) !important;
+  cursor: pointer;
+  transition: border-color .18s ease, box-shadow .18s ease, transform .18s ease;
+}
+#scoreList .bf-score-professional-match:hover,
+#scoreList .bf-score-pro-card:hover {
+  transform: translateY(-2px);
+  border-color: #a9d8c0 !important;
+  box-shadow: 0 12px 28px rgba(15, 38, 55, .09) !important;
+}
+#scoreList .bf-score-pro-status {
+  grid-column: 1 / -1 !important;
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: center !important;
+  justify-content: space-between !important;
+  gap: 10px !important;
+  width: 100%;
+  min-width: 0;
+  min-height: 22px;
+  margin: 0 !important;
+  padding: 0 0 9px !important;
+  border-bottom: 1px solid #e9eff3;
+  color: #526a7a !important;
+}
+#scoreList .bf-score-pro-status strong {
+  color: #526a7a !important;
+  font-size: 11px !important;
+  line-height: 1.4 !important;
+  font-weight: 900 !important;
+  letter-spacing: .025em;
+}
+#scoreList .bf-score-pro-status.live strong,
+#scoreList .bf-score-pro-status.halftime strong { color: #d12c43 !important; }
+#scoreList .bf-score-pro-status.finished strong { color: #087a4d !important; }
+#scoreList .bf-score-pro-status small {
+  flex: 0 0 auto;
+  color: #6b8291 !important;
+  font-size: 11px !important;
+  font-weight: 850 !important;
+}
+#scoreList .bf-score-pro-teams {
+  grid-column: 1 / -1 !important;
+  display: grid !important;
+  grid-template-columns: minmax(0, 1fr) minmax(112px, auto) minmax(0, 1fr) !important;
+  align-items: center !important;
+  gap: clamp(10px, 2vw, 26px) !important;
+  width: 100%;
+  min-width: 0;
+  margin: 0 !important;
+}
+#scoreList .bf-score-pro-team {
+  display: flex !important;
+  flex-direction: row !important;
+  align-items: center !important;
+  justify-content: flex-end !important;
+  gap: 13px !important;
+  min-width: 0;
+  color: #142a39 !important;
+  text-align: right !important;
+}
+#scoreList .bf-score-pro-team.home { flex-direction: row !important; justify-content: flex-end !important; }
+#scoreList .bf-score-pro-team.away { flex-direction: row !important; justify-content: flex-start !important; text-align:left !important; }
+#scoreList .bf-score-pro-team img,
+#scoreList .bf-score-pro-team .bf-score-team-placeholder {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  width: 43px !important;
+  height: 43px !important;
+  flex: 0 0 43px !important;
+  object-fit: contain !important;
+  border-radius: 9px;
+  background: #f3f7f9;
+  padding: 2px;
+}
+#scoreList .bf-score-pro-team .bf-score-team-placeholder { font-size: 22px; color: #8ca0ad; }
+#scoreList .bf-score-pro-team strong {
+  display: -webkit-box !important;
+  min-width: 0;
+  max-width: 100%;
+  overflow: hidden;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  color: #152a39 !important;
+  font-size: clamp(12px, 1.15vw, 15px) !important;
+  line-height: 1.35 !important;
+  font-weight: 900 !important;
+  text-align: inherit !important;
+  overflow-wrap: anywhere;
+}
+#scoreList .bf-score-pro-score {
+  display: flex !important;
+  align-items: center !important;
+  justify-content: center !important;
+  gap: 12px !important;
+  min-width: 112px !important;
+  min-height: 54px;
+  padding: 8px 12px !important;
+  border: 1px solid #e4ebef;
+  border-radius: 13px;
+  background: #f0f5f8 !important;
+  color: #172c3a !important;
+  font-size: clamp(23px, 2vw, 30px) !important;
+  line-height: 1 !important;
+  font-weight: 950 !important;
+  font-variant-numeric: tabular-nums;
+  letter-spacing: -.045em;
+}
+#scoreList .bf-score-pro-score b { color: #8194a0 !important; font-size: .75em; }
+#scoreList .bf-score-pro-score.live { border-color: #c0efd7; background: #e5f8ef !important; color: #067548 !important; }
+#scoreList .bf-score-pro-details {
+  grid-column: 1 / -1 !important;
+  display: flex !important;
+  align-items: center;
+  justify-content: flex-end;
+  gap: 6px;
+  min-height: 19px;
+  padding-top: 8px;
+  border-top: 1px solid #edf2f5;
+  color: #617988 !important;
+  font-size: 10px;
+  font-weight: 850;
+}
+body.dark #scoreList .bf-score-professional-matches,
+body.dark #scoreList .bf-score-pro-matches { background: #0b1620 !important; }
+body.dark #scoreList .bf-score-professional-match,
+body.dark #scoreList .bf-score-pro-card {
+  border-color: #2a4050 !important;
+  background: linear-gradient(115deg, #142634, #10202c) !important;
+  color: #edf5fa !important;
+  box-shadow: 0 6px 20px rgba(0, 0, 0, .17) !important;
+}
+body.dark #scoreList .bf-score-professional-match:hover,
+body.dark #scoreList .bf-score-pro-card:hover { border-color: #327b59 !important; }
+body.dark #scoreList .bf-score-pro-status { border-bottom-color: #2a3e4d; color: #aabdc9 !important; }
+body.dark #scoreList .bf-score-pro-status strong { color: #aabdc9 !important; }
+body.dark #scoreList .bf-score-pro-status.live strong,
+body.dark #scoreList .bf-score-pro-status.halftime strong { color: #ff8292 !important; }
+body.dark #scoreList .bf-score-pro-status.finished strong { color: #8cf0bf !important; }
+body.dark #scoreList .bf-score-pro-status small { color: #9fb4c2 !important; }
+body.dark #scoreList .bf-score-pro-team,
+body.dark #scoreList .bf-score-pro-team strong { color: #eff6fb !important; }
+body.dark #scoreList .bf-score-pro-team img,
+body.dark #scoreList .bf-score-pro-team .bf-score-team-placeholder { background: #1d3140; }
+body.dark #scoreList .bf-score-pro-score { border-color: #344958; background: #203441 !important; color: #f2f7fb !important; }
+body.dark #scoreList .bf-score-pro-score.live { border-color: #246444; background: #123d2e !important; color: #9cf1c9 !important; }
+body.dark #scoreList .bf-score-pro-details { border-top-color: #2a3e4d; color: #9fb4c2 !important; }
+@media (max-width: 760px) {
+  #scoreList .bf-score-professional-matches,
+  #scoreList .bf-score-pro-matches { gap: 10px !important; padding: 9px !important; }
+  #scoreList .bf-score-professional-match,
+  #scoreList .bf-score-pro-card { min-height: 140px !important; padding: 13px 12px !important; gap: 9px !important; }
+  #scoreList .bf-score-pro-teams { grid-template-columns: minmax(0, 1fr) 76px minmax(0, 1fr) !important; gap: 7px !important; }
+  #scoreList .bf-score-pro-team { gap: 7px !important; }
+  #scoreList .bf-score-pro-team img,
+  #scoreList .bf-score-pro-team .bf-score-team-placeholder { width: 29px !important; height: 29px !important; flex-basis: 29px !important; }
+  #scoreList .bf-score-pro-team strong { font-size: 11px !important; }
+  #scoreList .bf-score-pro-score { min-width: 76px !important; min-height: 44px; gap: 7px !important; padding: 7px 5px !important; font-size: 22px !important; }
+}
+@media (max-width: 420px) {
+  #scoreList .bf-score-professional-match,
+  #scoreList .bf-score-pro-card { padding: 11px 9px !important; }
+  #scoreList .bf-score-pro-teams { grid-template-columns: minmax(0, 1fr) 62px minmax(0, 1fr) !important; gap: 4px !important; }
+  #scoreList .bf-score-pro-team { gap: 5px !important; }
+  #scoreList .bf-score-pro-team img,
+  #scoreList .bf-score-pro-team .bf-score-team-placeholder { width: 23px !important; height: 23px !important; flex-basis: 23px !important; }
+  #scoreList .bf-score-pro-team strong { font-size: 10px !important; }
+  #scoreList .bf-score-pro-score { min-width: 62px !important; min-height: 40px; gap: 4px !important; padding: 6px 3px !important; font-size: 18px !important; }
+}
