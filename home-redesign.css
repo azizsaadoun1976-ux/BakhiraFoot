@@ -52,7 +52,7 @@ main{min-width:0;width:100%;max-width:1180px;margin:0 auto}
 .page{min-width:0;animation:bfHomeIn .25s ease}
 @keyframes bfHomeIn{from{opacity:.5;transform:translateY(4px)}to{opacity:1;transform:none}}
 /* Homepage feature */
-#home{display:block}
+#home.active{display:block}
 #home .hero{
   position:relative;isolation:isolate;overflow:hidden;min-height:360px;
   display:grid;grid-template-columns:minmax(0,1.12fr) minmax(280px,.88fr);align-items:center;gap:26px;
