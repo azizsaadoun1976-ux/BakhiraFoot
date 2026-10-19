@@ -85,14 +85,14 @@
 
   function render(articles, updatedAt, sources = []) {
     if (!articles.length) return renderError();
-    const homeCards = articles.slice(0, 6).map(articleCard).join("");
+    const homeCards = articles.slice(0, 3).map(articleCard).join("");
     const fullCards = articles.map(articleCard).join("");
     const note = '<div class="bf-news-update">Actualités récentes récupérées depuis des médias et flux RSS · Mise à jour : ' + esc(prettyDate(updatedAt) || "à l’instant") + '</div>';
     const sourceHtml = sources.length
       ? '<div class="bf-news-sources"><span>Sources consultées</span>' + sources.map(source => '<a href="' + esc(source.url) + '" target="_blank" rel="noopener noreferrer">' + esc(source.name) + ' ↗</a>').join("") + '</div>'
       : sourceCards();
     const home = document.getElementById("homeNews");
-    if (home) { home.innerHTML = note + homeCards + sourceHtml; home.dataset.newsLoaded = "true"; }
+    if (home) { home.innerHTML = note + homeCards; home.dataset.newsLoaded = "true"; }
     const news = document.getElementById("newsGrid");
     if (news) { news.innerHTML = note + categoryControls(articles) + fullCards + sourceHtml; news.dataset.newsLoaded = "true"; }
   }
