@@ -69,6 +69,10 @@ function parseHtml(html, source) {
     if (!hrefMatch) continue;
     const title = clean(anchor);
     if (title.length < 24 || title.length > 190) continue;
+    // Les sites officiels mettent souvent la miniature dans le lien de l'article.
+    const imageAttr = anchor.match(/<(?:img|source)\\b[^>]*(?:src|data-src|data-lazy-src)=["']([^"']+)["']/i)
+      || anchor.match(/<(?:img|source)\\b[^>]*srcset=["']([^"', ]+)/i);
+    const image = imageAttr ? absoluteUrl(imageAttr[1], source.url) : "";
     if (/^(accueil|actualités|actualites|en savoir plus|lire plus|voir plus|news|contact|facebook|instagram)$/i.test(title)) continue;
     const url = absoluteUrl(hrefMatch[1], source.url);
     if (!url) continue;
@@ -79,7 +83,7 @@ function parseHtml(html, source) {
     if (url.replace(/\/$/, "") === source.url.replace(/\/$/, "")) continue;
     if (/\/(categorie|category|tag|author|page)\//i.test(new URL(url).pathname)) continue;
     found.push({
-      title, url, description: title, image: "", date: "",
+      title, url, description: title, image, date: "",
       source: source.name, category: source.category, priority: source.priority
     });
   }
