@@ -194,9 +194,9 @@ const competitions = [
     const style = document.createElement("style");
     style.id = "bf-scores-sidebar-styles";
     style.textContent = `
-      #scores .bf-scores-workspace { display:grid; grid-template-columns:minmax(0,1fr) 278px; gap:16px; align-items:start; width:100%; min-width:0; margin-top:16px; }
-      #scores #scoreList { grid-column:1; grid-row:1; min-width:0; width:100%; }
-      #scores .bf-scores-competition-sidebar { grid-column:2; grid-row:1; position:sticky; top:92px; min-width:0; max-height:calc(100vh - 112px); overflow:auto; padding:14px; border:1px solid #dbe5ec; border-radius:15px; background:linear-gradient(160deg,#fff,#f5f9fc); color:#142b3b; box-shadow:0 8px 26px rgba(15,35,50,.06); }
+      #scores .bf-scores-workspace { display:grid; grid-template-columns:278px minmax(0,1fr); gap:16px; align-items:start; width:100%; min-width:0; margin-top:16px; }
+      #scores #scoreList { grid-column:2; grid-row:1; min-width:0; width:100%; }
+      #scores .bf-scores-competition-sidebar { grid-column:1; grid-row:1; position:sticky; top:92px; min-width:0; max-height:calc(100vh - 112px); overflow:auto; padding:14px; border:1px solid #dbe5ec; border-radius:15px; background:linear-gradient(160deg,#fff,#f5f9fc); color:#142b3b; box-shadow:0 8px 26px rgba(15,35,50,.06); }
       #scores .bf-scores-sidebar-head>span { color:#13815d; font-size:9px; font-weight:950; letter-spacing:.15em; }
       #scores .bf-scores-sidebar-head h2 { margin:4px 0 5px; font-size:20px; line-height:1.2; font-weight:950; letter-spacing:-.03em; }
       #scores .bf-scores-sidebar-head p { margin:0 0 13px; color:#64788a; font-size:10px; line-height:1.55; }
@@ -205,7 +205,8 @@ const competitions = [
       #scores #bfScoresCompetitionSearch:focus { border-color:#1c9b6a; box-shadow:0 0 0 3px rgba(28,155,106,.12); }
       #scores .bf-scores-competition-items { display:flex; flex-direction:column; gap:5px; }
       #scores .bf-scores-league-link { display:grid; grid-template-columns:35px minmax(0,1fr) 16px; align-items:center; gap:9px; width:100%; min-height:51px; padding:7px; border:1px solid transparent; border-radius:10px; background:transparent; color:#193044; text-align:left; cursor:pointer; transition:background .15s,border-color .15s,transform .15s; }
-      #scores .bf-scores-league-link:hover,#scores .bf-scores-league-link:focus-visible { background:#e8f7ef; border-color:#b8e5cd; transform:translateX(-2px); outline:none; }
+      #scores .bf-scores-league-link:hover,#scores .bf-scores-league-link:focus-visible { background:#e8f7ef; border-color:#b8e5cd; transform:translateX(2px); outline:none; }
+      #scores .bf-scores-league-link.is-active { background:#e4f7ec; border-color:#74cea2; box-shadow:inset 3px 0 #139a66; }
       #scores .bf-scores-league-logo-wrap { display:flex; align-items:center; justify-content:center; width:35px; height:35px; border:1px solid #e0e7ed; border-radius:9px; background:#fff; overflow:hidden; }
       #scores .bf-scores-league-logo { display:block; width:27px; height:27px; object-fit:contain; }
       #scores .bf-scores-league-logo-fallback { display:none; align-items:center; justify-content:center; font-size:18px; }
@@ -220,6 +221,7 @@ const competitions = [
       body.dark #scores #bfScoresCompetitionSearch { border-color:#304858; background:#0d1b27; color:#eef5f9; }
       body.dark #scores .bf-scores-league-link { color:#e4edf4; }
       body.dark #scores .bf-scores-league-link:hover,body.dark #scores .bf-scores-league-link:focus-visible { background:#17382f; border-color:#286248; }
+      body.dark #scores .bf-scores-league-link.is-active { background:#17382f; border-color:#2f815d; box-shadow:inset 3px 0 #39e6a5; }
       body.dark #scores .bf-scores-league-logo-wrap { border-color:#344958; background:#f8fafc; }
       body.dark #scores .bf-scores-league-copy small { color:#9dafbb; }
       body.dark #scores .bf-scores-sidebar-foot { border-top-color:#2a4050; color:#9dafbb; }
@@ -251,81 +253,59 @@ const competitions = [
       "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#039;"
     })[character]);
     const labelKey = value => {
-      const text = String(value ?? "");
       const canonical = typeof canonicalCompetitionName === "function"
-        ? canonicalCompetitionName(text)
-        : text;
-      return String(canonical).normalize("NFD")
-        .replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]/g, "");
+        ? canonicalCompetitionName(String(value ?? ""))
+        : String(value ?? "");
+      return String(canonical).normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]/g, "");
     };
+    const selectedKey = typeof window.getBakhiraSelectedCompetitionKey === "function"
+      ? window.getBakhiraSelectedCompetitionKey()
+      : "";
 
-    // Start with the full known competition catalogue; then append any additional
-    // competitions which actually appear in the currently loaded Scores fixtures.
     const items = new Map();
     competitions.forEach(competition => {
       items.set(labelKey(competition.name), {
-        name: competition.name,
-        country: competition.country || "International",
-        logo: competition.logo || "",
-        slug: competition.slug,
-        matchCount: 0,
-        scoreIndex: null
+        name: competition.name, country: competition.country || "International",
+        logo: competition.logo || "", slug: competition.slug || "", matchCount: 0
       });
     });
 
-    (Array.isArray(dynamicGroups) ? dynamicGroups : []).forEach((group, index) => {
+    (Array.isArray(dynamicGroups) ? dynamicGroups : []).forEach(group => {
       if (!group?.name) return;
       const key = labelKey(group.name);
       const fixture = group.matches?.[0]?.match || {};
       const countryValue =
         fixture?.league?.country?.name || fixture?.league?.country ||
         fixture?.competition?.country?.name || fixture?.competition?.country || "";
-      const country = typeof countryValue === "string"
-        ? countryValue
-        : (countryValue?.name || "");
+      const country = typeof countryValue === "string" ? countryValue : countryValue?.name || "";
       const existing = items.get(key);
       if (existing) {
         existing.matchCount = group.matches?.length || 0;
         if (!existing.logo && group.logo) existing.logo = group.logo;
-        existing.scoreIndex = index;
       } else {
         items.set(key, {
-          name: group.name,
-          country: country || "International",
-          logo: group.logo || "",
-          slug: "",
-          matchCount: group.matches?.length || 0,
-          scoreIndex: index
+          name: group.name, country: country || "International",
+          logo: group.logo || "", slug: "", matchCount: group.matches?.length || 0
         });
       }
     });
 
     target.innerHTML = Array.from(items.values()).map(item => {
+      const active = !!selectedKey && labelKey(item.name) === labelKey(selectedKey);
       const meta = item.matchCount
         ? item.matchCount + " match(s)" + (item.country ? " · " + item.country : "")
-        : item.country;
-      const actionAttrs = item.slug
-        ? 'data-score-competition="' + safe(item.slug) + '"'
-        : (item.scoreIndex !== null ? 'data-score-index="' + safe(item.scoreIndex) + '"' : "");
-      const actionTitle = item.slug
-        ? "Ouvrir le classement : " + item.name
-        : (item.scoreIndex !== null ? "Afficher les matchs de " + item.name : item.name);
-      return `
-        <button type="button" class="bf-scores-league-link"
-          ${actionAttrs}
-          data-search-text="${safe(item.name + " " + item.country)}"
-          title="${safe(actionTitle)}">
-          <span class="bf-scores-league-logo-wrap">
-            ${item.logo ? `<img class="bf-scores-league-logo" src="${safe(item.logo)}" alt="" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">` : ""}
-            <span class="bf-scores-league-logo-fallback">🏆</span>
-          </span>
-          <span class="bf-scores-league-copy">
-            <strong>${safe(item.name)}</strong>
-            <small>${safe(meta)}</small>
-          </span>
-          <span class="bf-scores-league-arrow" aria-hidden="true">↗</span>
-        </button>
-      `;
+        : item.country + " · Aucun match ce jour";
+      const logo = item.logo
+        ? '<img class="bf-scores-league-logo" src="' + safe(item.logo) + '" alt="" loading="lazy">'
+        : "";
+      return '<button type="button" class="bf-scores-league-link' + (active ? " is-active" : "") + '"' +
+        ' data-score-name="' + safe(item.name) + '" data-score-slug="' + safe(item.slug) + '"' +
+        ' data-score-logo="' + safe(item.logo) + '" data-search-text="' + safe(item.name + " " + item.country) + '"' +
+        ' title="Afficher les matchs : ' + safe(item.name) + '">' +
+        '<span class="bf-scores-league-logo-wrap">' + logo +
+        '<span class="bf-scores-league-logo-fallback" style="' + (item.logo ? "" : "display:flex") + '">🏆</span></span>' +
+        '<span class="bf-scores-league-copy"><strong>' + safe(item.name) + '</strong><small>' + safe(meta) + '</small></span>' +
+        '<span class="bf-scores-league-arrow" aria-hidden="true">›</span></button>';
     }).join("");
 
     if (search && search.dataset.bfBound !== "1") {
@@ -338,23 +318,11 @@ const competitions = [
         });
       });
     }
-
     target.querySelectorAll(".bf-scores-league-link").forEach(button => {
       button.addEventListener("click", () => {
-        const slug = button.dataset.scoreCompetition;
-        if (slug && typeof window.openBakhiraCompetitionStandings === "function") {
-          window.openBakhiraCompetitionStandings(slug);
-          return;
+        if (typeof window.selectScoreCompetitionByName === "function") {
+          window.selectScoreCompetitionByName(button.dataset.scoreName || "", button.dataset.scoreSlug || "", button.dataset.scoreLogo || "");
         }
-
-        const index = Number(button.dataset.scoreIndex);
-        if (Number.isInteger(index) && index >= 0 && typeof window.selectScoreCompetition === "function") {
-          if (typeof window.go === "function") window.go("scores");
-          window.selectScoreCompetition(index);
-          return;
-        }
-
-        if (typeof window.go === "function") window.go("leagues");
       });
     });
   }
