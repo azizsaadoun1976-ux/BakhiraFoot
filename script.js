@@ -695,18 +695,20 @@ function getMatchPriority(match) {
     getCompetitionPriority(match) +
     getTeamPriority(match);
 
+  // La qualité de l'affiche passe avant le statut : les grands matchs à venir
+  // restent visibles même lorsqu'aucune rencontre n'est en direct.
   if (
     ["1H", "2H", "LIVE", "ET", "P", "BT"].includes(status) ||
     status.includes("LIVE")
   ) {
-    priority += 1000;
+    priority += 12;
   }
 
   if (
     status === "HT" ||
     status.includes("HALF")
   ) {
-    priority += 900;
+    priority += 10;
   }
 
   return priority;
@@ -9574,8 +9576,10 @@ async function renderHomeMatches() {
        نخلي currentMatches متوافق
        مع cards اللي باينين فالـHome.
     */
+    // Huit affiches maximum : grandes compétitions et grands clubs d'abord,
+    // sans réserver les premières places aux seuls matchs en direct.
     currentMatches =
-      matches.slice(0, 6);
+      matches.slice(0, 8);
 
     container.innerHTML =
       currentMatches
