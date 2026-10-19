@@ -16,6 +16,9 @@ let currentDate = null;
 let currentFilter = "all";
 let currentOpenedFixture = null;
 let selectedCompetitionIndex = 0;
+let selectedCompetitionFilterKey = "";
+let selectedCompetitionFilterName = "";
+let selectedCompetitionFilterLogo = "";
 let scoreCompetitionGroups = [];
 let scoreStatusFilter = "all";
 
@@ -453,6 +456,7 @@ function getCompetitionPriority(match) {
   )
     .replace(/[’']/g, "")
     .replace(/[_–—-]+/g, " ")
+    .replace(/\b(league phase|group stage|regular season|fall season|spring season|first round|second round|third round|qualifying round|round of 32|round of 16)\b/g, " ")
     .replace(/\s+/g, " ")
     .trim();
 
@@ -1452,89 +1456,53 @@ function getScoreState(match) {
 ========================================================= */
 
 function canonicalCompetitionName(value) {
-  let name =
-    normalizeText(value);
-
-  name = name
-    .replace(
-      /\b(?:19|20)\d{2}(?:[-/](?:\d{2}|(?:19|20)\d{2}))?\b/g,
-      ""
-    )
-    .replace(
-      /\s+/g,
-      " "
-    )
+  let name = normalizeText(value)
+    .replace(/\b(?:19|20)\d{2}(?:[-/](?:\d{2}|(?:19|20)\d{2}))?\b/g, " ")
+    .replace(/[_–—-]+/g, " ")
+    .replace(/\s+/g, " ")
     .trim();
-
   const aliases = {
-    "english premier league":
-      "premier league",
-
-    "premier league england":
-      "premier league",
-
-    "international friendly":
-      "international friendlies",
-
-    "international friendlies":
-      "international friendlies",
-
-    "friendly international":
-      "international friendlies",
-
-    "friendly internationals":
-      "international friendlies",
-
-    "uefa nations league":
-      "nations league",
-
-    "nations league":
-      "nations league",
-
-    "uefa champions league":
-      "champions league",
-
-    "champions league":
-      "champions league",
-
-    "uefa europa league":
-      "europa league",
-
-    "europa league":
-      "europa league",
-
-    "uefa conference league":
-      "conference league",
-
-    "conference league":
-      "conference league",
-
-    "german bundesliga":
-      "bundesliga",
-
-    "bundesliga":
-      "bundesliga",
-
-    "italian serie a":
-      "serie a",
-
-    "serie a":
-      "serie a",
-
-    "french ligue 1":
-      "ligue 1",
-
-    "ligue 1":
-      "ligue 1"
+    "english premier league":"premier league",
+    "premier league england":"premier league",
+    "international friendly":"international friendlies",
+    "international friendlies":"international friendlies",
+    "friendly international":"international friendlies",
+    "friendly internationals":"international friendlies",
+    "uefa nations league":"nations league",
+    "nations league":"nations league",
+    "uefa champions league":"champions league",
+    "champions league":"champions league",
+    "uefa europa league":"europa league",
+    "europa league":"europa league",
+    "uefa conference league":"conference league",
+    "uefa europa conference league":"conference league",
+    "europa conference league":"conference league",
+    "conference league":"conference league",
+    "german bundesliga":"bundesliga",
+    "bundesliga":"bundesliga",
+    "italian serie a":"serie a",
+    "serie a":"serie a",
+    "french ligue 1":"ligue 1",
+    "ligue 1":"ligue 1",
+    "the botola pro":"botola pro",
+    "botola pro inwi":"botola pro",
+    "moroccan botola pro":"botola pro",
+    "brasileirao serie a":"campeonato brasileiro serie a",
+    "brazilian serie a":"campeonato brasileiro serie a",
+    "uefa european championship":"uefa euro",
+    "european championship":"uefa euro",
+    "uefa euro":"uefa euro",
+    "caf africa cup of nations":"africa cup of nations",
+    "african cup of nations":"africa cup of nations",
+    "afcon":"africa cup of nations",
+    "portuguese primera liga":"primeira liga",
+    "portuguese primeira":"primeira liga",
+    "primeira liga":"primeira liga",
+    "saudi professional league":"saudi pro league",
+    "roshan saudi league":"saudi pro league"
   };
-
-  return (
-    aliases[name] ||
-    name ||
-    "football"
-  );
+  return aliases[name] || name || "football";
 }
-
 
 function getCompetitionGroupKey(match) {
   return canonicalCompetitionName(
@@ -1714,49 +1682,27 @@ function buildCompetitionGroups(matches) {
    RENDER SCORES
 ========================================================= */
 
-function renderScoreCompetitions(
-  matches
-) {
-
-  const list =
-    $("scoreList");
-
-  if (!list) {
-    return;
-  }
-
-
-  if (
-    !Array.isArray(matches) ||
-    !matches.length
-  ) {
-
-    list.innerHTML =
-      emptyCard(
-        "Aucun match trouvé."
-      );
-
-    return;
-  }
-
-
-  scoreCompetitionGroups =
-    buildCompetitionGroups(
-      matches
-    );
+function renderScoreCompetitions(matches) {
+  const list = $("scoreList");
+  if (!list) return;
+  scoreCompetitionGroups = buildCompetitionGroups(Array.isArray(matches) ? matches : []);
 
   if (typeof window.refreshBakhiraScoresCompetitionSidebar === "function") {
     window.refreshBakhiraScoresCompetitionSidebar(scoreCompetitionGroups);
   }
 
-  if (
-    selectedCompetitionIndex >=
-    scoreCompetitionGroups.length
-  ) {
-    selectedCompetitionIndex = 0;
+  if (selectedCompetitionFilterKey) {
+    selectedCompetitionIndex = scoreCompetitionGroups.findIndex(group =>
+      canonicalCompetitionName(group.name) === selectedCompetitionFilterKey
+    );
+  } else if (selectedCompetitionIndex < 0 || selectedCompetitionIndex >= scoreCompetitionGroups.length) {
+    selectedCompetitionIndex = scoreCompetitionGroups.length ? 0 : -1;
   }
 
-
+  if (!scoreCompetitionGroups.length && !selectedCompetitionFilterKey) {
+    list.innerHTML = emptyCard("Aucun match trouvé.");
+    return;
+  }
   renderSelectedCompetition();
 }
 
@@ -1768,7 +1714,9 @@ function renderScoreCompetitions(
 function selectScoreCompetition(
   index
 ) {
-
+  selectedCompetitionFilterKey = "";
+  selectedCompetitionFilterName = "";
+  selectedCompetitionFilterLogo = "";
   selectedCompetitionIndex =
     Number(index);
 
@@ -1797,10 +1745,39 @@ function selectScoreCompetition(
   }
 
 
+  if (typeof window.refreshBakhiraScoresCompetitionSidebar === "function") {
+    window.refreshBakhiraScoresCompetitionSidebar(scoreCompetitionGroups);
+  }
   renderSelectedCompetition();
 }
 
-/* Ouvre directement le classement de la compétition sélectionnée. */
+function selectScoreCompetitionByName(name, slug = "", logo = "") {
+  const requestedName = String(name || "").trim();
+  if (!requestedName) return;
+  selectedCompetitionFilterName = requestedName;
+  selectedCompetitionFilterLogo = String(logo || "");
+  selectedCompetitionFilterKey = canonicalCompetitionName(requestedName);
+  selectedCompetitionIndex = scoreCompetitionGroups.findIndex(group =>
+    canonicalCompetitionName(group.name) === selectedCompetitionFilterKey
+  );
+  if (selectedCompetitionIndex >= 0) {
+    selectedCompetitionFilterName = scoreCompetitionGroups[selectedCompetitionIndex].name;
+    selectedCompetitionFilterKey = canonicalCompetitionName(scoreCompetitionGroups[selectedCompetitionIndex].name);
+  }
+  if (typeof window.go === "function" && !$("scores")?.classList.contains("active")) {
+    window.go("scores");
+  }
+  if (typeof window.refreshBakhiraScoresCompetitionSidebar === "function") {
+    window.refreshBakhiraScoresCompetitionSidebar(scoreCompetitionGroups);
+  }
+  renderSelectedCompetition();
+}
+window.selectScoreCompetitionByName = selectScoreCompetitionByName;
+window.getBakhiraSelectedCompetitionKey = () =>
+  selectedCompetitionFilterKey ||
+  canonicalCompetitionName(scoreCompetitionGroups[selectedCompetitionIndex]?.name || "");
+
+/* This explicit action remains available to other pages, but is not used by the Scores rail. */
 function openSelectedCompetitionStandings() {
   const group = scoreCompetitionGroups[selectedCompetitionIndex];
   if (!group) return;
@@ -1967,6 +1944,34 @@ function renderSelectedCompetition() {
     ];
 
   if (!group) {
+    if (!selectedCompetitionFilterKey) {
+      list.innerHTML = emptyCard("Aucun match trouvé.");
+      return;
+    }
+    const chosenName = selectedCompetitionFilterName || "Cette compétition";
+    const chosenLogo = selectedCompetitionFilterLogo
+      ? `<img src="${escapeHTML(selectedCompetitionFilterLogo)}" alt="" loading="lazy" onerror="this.style.display='none'">`
+      : `<span aria-hidden="true">🏆</span>`;
+    list.innerHTML = `
+      <section class="bf-score-details-panel bf-score-pro-panel">
+        <div class="bf-score-details-head bf-score-pro-head" style="display:flex;align-items:center;gap:12px;padding:16px">
+          <div class="bf-score-pro-selected" style="cursor:default">
+            ${chosenLogo}
+            <div class="bf-score-pro-title">
+              <small>COMPÉTITION SÉLECTIONNÉE</small>
+              <h2>${escapeHTML(chosenName)}</h2>
+              <div class="bf-score-pro-stats">${escapeHTML(currentDate || "")}</div>
+            </div>
+          </div>
+        </div>
+        <div class="bf-score-professional-matches bf-score-pro-matches">
+          <div class="bf-score-pro-no-matches"><div>⚽</div>
+            <strong>Aucun match disponible</strong>
+            <span>Aucun match de cette compétition pour cette date. Choisissez une autre date pour consulter ses rencontres.</span>
+          </div>
+        </div>
+      </section>
+    `;
     return;
   }
 
@@ -2405,24 +2410,13 @@ return `
             </select>
           </label>
 
-          <button
-            type="button"
-            onclick="openSelectedCompetitionStandings()"
-            aria-label="Ouvrir le classement de cette compétition"
-            style="flex:0 0 auto;padding:9px 12px;border:1px solid #2a7258;border-radius:8px;background:#14392f;color:#90f0c7;font-size:11px;font-weight:900;cursor:pointer"
-          >Classement ↗</button>
-
           <div
             class="
               bf-score-selected-competition
               bf-score-pro-selected
             "
-            role="button"
-            tabindex="0"
-            title="Ouvrir le classement de cette compétition"
-            onclick="openSelectedCompetitionStandings()"
-            onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openSelectedCompetitionStandings()}"
-            style="cursor:pointer"
+            title="Matchs de cette compétition"
+            style="cursor:default"
           >
 
             ${
@@ -3206,15 +3200,8 @@ if (
       matches;
 
 
-    if (
-      !matches.length
-    ) {
-
-      list.innerHTML =
-        emptyCard(
-          "Aucun match trouvé pour cette date."
-        );
-
+    if (!matches.length) {
+      renderScoreCompetitions([]);
       return;
     }
 

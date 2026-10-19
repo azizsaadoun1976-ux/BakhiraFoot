@@ -433,6 +433,9 @@ const ESPN_SEASON_EDITIONS = {
 
   "uefa-nations-league": [
     2024, 2022, 2020, 2018
+  ],
+  "uefa-europa-conference-league": [
+    2025, 2024, 2023, 2022, 2021
   ]
 };
 
@@ -454,7 +457,9 @@ function getSeasonOptions(competition) {
   if (Array.isArray(editions)) {
     return editions.map(year => ({
       year,
-      label: String(year)
+      label: slug === "uefa-europa-conference-league"
+        ? `${year}/${String(year + 1).slice(-2)}`
+        : String(year)
     }));
   }
 
@@ -1641,73 +1646,83 @@ function getProviderQualificationZone(row) {
 
 function getQualificationZone(row, competition, position) {
   const slug = competition?.slug;
+  const year = Number(competition?.historicalSeason ?? competition?.seasonYear ?? new Date().getUTCFullYear());
 
-  // UEFA Conference League : phase de ligue à 36 équipes
-  if (slug === "uefa-europa-conference-league") {
-    if (position >= 1 && position <= 8) {
-      return {
-        key: "stage-direct",
-        label: "Zone de qualification directe — positions 1 à 8"
-      };
+  if (slug === "fifa-world-cup") {
+    if (year >= 2026) {
+      if (position <= 2) return { key:"stage-direct", label:"Qualifié au tour des 32 équipes" };
+      if (position === 3) return { key:"stage-playoff", label:"3e du groupe — dépend du classement des meilleurs troisièmes" };
+      if (position >= 4) return { key:"eliminated", label:"Éliminé de la phase de groupes" };
+    } else {
+      if (position <= 2) return { key:"stage-direct", label:"Qualifié en huitièmes de finale" };
+      if (position >= 3) return { key:"eliminated", label:"Éliminé de la phase de groupes" };
     }
-
-    if (position >= 9 && position <= 24) {
-      return {
-        key: "stage-playoff",
-        label: "Zone de barrages — positions 9 à 24"
-      };
-    }
-
-    if (position >= 25 && position <= 36) {
-      return {
-        key: "eliminated",
-        label: "Hors des places de qualification — positions 25 à 36"
-      };
-    }
-
     return null;
   }
 
-  // Les autres compétitions gardent leurs règles actuelles.
-  const providerZone = getProviderQualificationZone(row);
-
-  if (providerZone) return providerZone;
-
-  // Format de la phase de ligue européenne.
-  if (
-    slug === "uefa-champions-league" ||
-    slug === "uefa-europa-league"
-  ) {
-    if (position >= 1 && position <= 8) {
-      return {
-        key: "stage-direct",
-        label: "Qualifié directement en huitièmes"
-      };
+  if (slug === "uefa-champions-league") {
+    if (year >= 2024) {
+      if (position <= 8) return { key:"stage-direct", label:"Qualifié directement en huitièmes" };
+      if (position <= 24) return { key:"stage-playoff", label:"Barrages d'accès aux huitièmes" };
+      if (position <= 36) return { key:"eliminated", label:"Éliminé de la compétition" };
+    } else {
+      if (position <= 2) return { key:"stage-direct", label:"Qualifié pour la phase à élimination directe" };
+      if (position === 3) return { key:"uel", label:"Reversé en Europa League" };
+      return { key:"eliminated", label:"Éliminé de la compétition" };
     }
-
-    if (position >= 9 && position <= 24) {
-      return {
-        key: "stage-playoff",
-        label: "Barrages d'accès aux huitièmes"
-      };
-    }
-
-    if (position >= 25 && position <= 36) {
-      return {
-        key: "eliminated",
-        label: "Éliminé de la compétition"
-      };
-    }
-
     return null;
+  }
+
+  if (slug === "uefa-europa-league") {
+    if (year >= 2024) {
+      if (position <= 8) return { key:"stage-direct", label:"Qualifié directement en huitièmes" };
+      if (position <= 24) return { key:"stage-playoff", label:"Barrages d'accès aux huitièmes" };
+      if (position <= 36) return { key:"eliminated", label:"Éliminé de la compétition" };
+    } else if (year >= 2021) {
+      if (position === 1) return { key:"stage-direct", label:"Qualifié directement en huitièmes" };
+      if (position === 2) return { key:"stage-playoff", label:"Barrages d'accès aux huitièmes" };
+      if (position === 3) return { key:"uecl", label:"Reversé en Conference League" };
+      return { key:"eliminated", label:"Éliminé de la compétition" };
+    } else {
+      if (position <= 2) return { key:"stage-direct", label:"Qualifié pour la phase à élimination directe" };
+      return { key:"eliminated", label:"Éliminé de la compétition" };
+    }
+    return null;
+  }
+
+  if (slug === "uefa-europa-conference-league") {
+    if (year < 2021) return null;
+    if (year >= 2024) {
+      if (position <= 8) return { key:"stage-direct", label:"Qualifié directement en huitièmes — positions 1 à 8" };
+      if (position <= 24) return { key:"stage-playoff", label:"Barrages d'accès aux huitièmes — positions 9 à 24" };
+      if (position <= 36) return { key:"eliminated", label:"Éliminé — positions 25 à 36" };
+    } else {
+      if (position === 1) return { key:"stage-direct", label:"Vainqueur du groupe — qualifié en huitièmes" };
+      if (position === 2) return { key:"stage-playoff", label:"Deuxième du groupe — barrages" };
+      return { key:"eliminated", label:"Éliminé de la compétition" };
+    }
+    return null;
+  }
+
+  const leaguesWithConferencePlaces = new Set([
+    "english-premier-league", "spanish-la-liga", "italian-serie-a",
+    "bundesliga", "french-ligue-1", "netherlands-eredivisie",
+    "portuguese-primera-liga", "turkish-super-league"
+  ]);
+  const providerZone = getProviderQualificationZone(row);
+  if (providerZone) {
+    if (year < 2021 && leaguesWithConferencePlaces.has(slug) && providerZone.key === "uecl") return null;
+    return providerZone;
   }
 
   const rules = QUALIFICATION_RULES[slug] || [];
-
-  return rules.find(
-    rule => position >= rule.from && position <= rule.to
-  ) || null;
+  const applicableRules = rules.filter(rule => {
+    if (year < 2021 && leaguesWithConferencePlaces.has(slug) && rule.key === "uecl") return false;
+    return true;
+  });
+  return applicableRules.find(rule => position >= rule.from && position <= rule.to) || null;
 }
+
 function renderQualificationLegend(groupsOrRows, competition) {
   const zones = new Map();
 
@@ -3695,137 +3710,102 @@ function knockoutEventStage(event) {
   ].filter(Boolean).join(" "));
 }
 
-async function fetchKnockoutEvents(competitionName) {
-  if (knockoutEventsCache.has(competitionName)) {
-    return knockoutEventsCache.get(competitionName);
-  }
-
+async function fetchKnockoutEvents(competitionName, seasonYear = null) {
+  const selectedYear = seasonYear == null ? null : Number(seasonYear);
+  const cacheKey = competitionName + ":" + (Number.isInteger(selectedYear) ? selectedYear : "current");
+  if (knockoutEventsCache.has(cacheKey)) return knockoutEventsCache.get(cacheKey);
   const code = ESPN_KNOCKOUT_CODES[competitionName];
-
   if (!code) return [];
 
   const request = (async () => {
-    const endpoint =
-      `https://site.api.espn.com/apis/site/v2/sports/soccer/${code}/scoreboard`;
+    const endpoint = "https://site.api.espn.com/apis/site/v2/sports/soccer/" + code + "/scoreboard";
+    let allEvents = [];
 
-    const seasonData = await fetchJSON(endpoint);
-    const league = seasonData?.leagues?.[0];
-
-    if (!league) return [];
-
-   const rawCalendar = league.calendar || [];
-
-const calendarEntries = Array.isArray(rawCalendar)
-  ? rawCalendar.flatMap(item => {
-      if (!item || typeof item !== "object") return [];
-
-      const nestedEntries = Array.isArray(item.entries)
-        ? item.entries
-        : [];
-
-      const directEntry =
-        item.label && (item.startDate || item.endDate)
-          ? [item]
-          : [];
-
-      return [...directEntry, ...nestedEntries];
-    })
-  : Array.isArray(rawCalendar.entries)
-    ? rawCalendar.entries
-    : [];
-
-const knockoutEntries = calendarEntries.filter(entry =>
-  knockoutStageFromText(entry.label)
-);
-
-console.log(
-  "[BakhiraFoot] Calendrier ESPN:",
-  calendarEntries.length,
-  "phases éliminatoires:",
-  knockoutEntries.map(entry => entry.label)
-);
-    const dateRanges = knockoutEntries.length
-      ? knockoutEntries
-      : [{
-          startDate: league.calendarStartDate,
-          endDate: league.calendarEndDate
-        }];
-
-    const months = new Set();
-
-    dateRanges.forEach(entry => {
-      const start = new Date(entry.startDate || "");
-      const end = new Date(entry.endDate || "");
-
-      if (
-        Number.isNaN(start.getTime()) ||
-        Number.isNaN(end.getTime())
-      ) {
-        return;
+    if (Number.isInteger(selectedYear)) {
+      const months = new Set();
+      const addMonths = (year, values) => values.forEach(month =>
+        months.add(String(year) + String(month).padStart(2, "0"))
+      );
+      const clubs = new Set(["UEFA Champions League", "UEFA Europa League", "UEFA Conference League"]);
+      if (clubs.has(competitionName)) {
+        addMonths(selectedYear + 1, [1,2,3,4,5,6]);
+      } else if (competitionName === "FIFA World Cup") {
+        addMonths(selectedYear, [5,6,7,11,12]);
+      } else if (competitionName === "UEFA Euro") {
+        addMonths(selectedYear, [5,6,7]);
+        if (selectedYear === 2020) addMonths(2021, [5,6,7]);
+      } else if (competitionName === "CAF Africa Cup of Nations") {
+        addMonths(selectedYear, [1,2,6,7,12]);
+        addMonths(selectedYear + 1, [1,2]);
+      } else if (competitionName === "AFC Asian Cup") {
+        addMonths(selectedYear, [1,2]);
+        addMonths(selectedYear + 1, [1,2]);
+      } else if (competitionName === "Copa América") {
+        addMonths(selectedYear, [5,6,7]);
+      } else if (competitionName === "UEFA Nations League") {
+        addMonths(selectedYear + 1, [3,6]);
       }
 
-      const cursor = new Date(Date.UTC(
-        start.getUTCFullYear(),
-        start.getUTCMonth(),
-        1
-      ));
-
-      const lastMonth = new Date(Date.UTC(
-        end.getUTCFullYear(),
-        end.getUTCMonth(),
-        1
-      ));
-
-      while (cursor <= lastMonth) {
-        const month =
-          String(cursor.getUTCFullYear()) +
-          String(cursor.getUTCMonth() + 1).padStart(2, "0");
-
-        months.add(month);
-        cursor.setUTCMonth(cursor.getUTCMonth() + 1);
-      }
-    });
-
-    const responses = await Promise.all(
-      [...months].map(async month => {
-        try {
-          return await fetchJSON(`${endpoint}?dates=${month}`);
-        } catch (error) {
-          console.warn(
-            "BakhiraFoot knockout month:",
-            competitionName,
-            month,
-            error
-          );
+      const responses = await Promise.all(Array.from(months).map(async month => {
+        try { return await fetchJSON(endpoint + "?dates=" + month); }
+        catch (error) {
+          console.warn("BakhiraFoot historical knockout month:", competitionName, month, error);
           return null;
         }
-      })
-    );
-
-    const allEvents = responses.flatMap(data =>
-      Array.isArray(data?.events) ? data.events : []
-    );
+      }));
+      allEvents = responses.flatMap(payload => Array.isArray(payload?.events) ? payload.events : []);
+    } else {
+      const seasonData = await fetchJSON(endpoint);
+      const league = seasonData?.leagues?.[0];
+      if (!league) return [];
+      const rawCalendar = league.calendar || [];
+      const calendarEntries = Array.isArray(rawCalendar)
+        ? rawCalendar.flatMap(item => {
+            if (!item || typeof item !== "object") return [];
+            const nested = Array.isArray(item.entries) ? item.entries : [];
+            const direct = item.label && (item.startDate || item.endDate) ? [item] : [];
+            return [...direct, ...nested];
+          })
+        : Array.isArray(rawCalendar.entries) ? rawCalendar.entries : [];
+      const knockoutEntries = calendarEntries.filter(entry => knockoutStageFromText(entry.label));
+      const ranges = knockoutEntries.length ? knockoutEntries : [
+        { startDate: league.calendarStartDate, endDate: league.calendarEndDate }
+      ];
+      const months = new Set();
+      ranges.forEach(entry => {
+        const start = new Date(entry.startDate || "");
+        const end = new Date(entry.endDate || "");
+        if (Number.isNaN(start.getTime()) || Number.isNaN(end.getTime())) return;
+        const cursor = new Date(Date.UTC(start.getUTCFullYear(), start.getUTCMonth(), 1));
+        const last = new Date(Date.UTC(end.getUTCFullYear(), end.getUTCMonth(), 1));
+        while (cursor <= last) {
+          months.add(String(cursor.getUTCFullYear()) + String(cursor.getUTCMonth() + 1).padStart(2, "0"));
+          cursor.setUTCMonth(cursor.getUTCMonth() + 1);
+        }
+      });
+      const responses = await Promise.all([...months].map(async month => {
+        try { return await fetchJSON(endpoint + "?dates=" + month); }
+        catch (error) {
+          console.warn("BakhiraFoot knockout month:", competitionName, month, error);
+          return null;
+        }
+      }));
+      allEvents = responses.flatMap(payload => Array.isArray(payload?.events) ? payload.events : []);
+    }
 
     const seen = new Set();
-
     return allEvents.filter(event => {
       const stage = knockoutEventStage(event);
-
-      if (!stage || !event.id || seen.has(event.id)) {
-        return false;
-      }
-
+      if (!stage || !event.id || seen.has(event.id)) return false;
       seen.add(event.id);
       return true;
     });
   })();
 
-  knockoutEventsCache.set(competitionName, request);
-
-  try {
-    return await request;
-  } catch (error) {
-    knockoutEventsCache.delete(competitionName);
+  knockoutEventsCache.set(cacheKey, request);
+  try { return await request; }
+  catch (error) {
+    knockoutEventsCache.delete(cacheKey);
     throw error;
   }
 }
@@ -4373,8 +4353,9 @@ style.textContent += `
   document.head.appendChild(style);
 }
 
-function renderKnockoutBracket(events, competitionName) {
+function renderKnockoutBracket(events, competitionName, seasonYear = null) {
 const isWorldCup = competitionName === "FIFA World Cup";
+const worldCupHasRound32 = isWorldCup && Number(seasonYear ?? new Date().getUTCFullYear()) >= 2026;
 const showThirdPlaceMatch = new Set([
   "FIFA World Cup",
   "CAF Africa Cup of Nations",
@@ -4385,7 +4366,7 @@ let stages = ESPN_KNOCKOUT_ROUND_ORDER.filter(
   stage => stage.key !== "final"
 );
 
-if (!isWorldCup) {
+if (!worldCupHasRound32) {
   stages = stages.filter(stage => stage.key !== "round32");
 }
 
@@ -4397,7 +4378,7 @@ if (noRound16) {
   stages = stages.filter(stage => stage.key !== "round16");
 }
 
-const layoutClass = isWorldCup
+const layoutClass = worldCupHasRound32
   ? "bf-ko-layout-world-cup"
   : noRound16
     ? "bf-ko-layout-short"
@@ -5046,59 +5027,33 @@ const thirdPlaceMatches = showThirdPlaceMatch
   `;
 }
 
-async function loadKnockoutBracket(competitionName, container) {
+async function loadKnockoutBracket(competitionName, container, seasonYear = null) {
   ensureKnockoutStyles();
-
-  container.innerHTML =
-    `<p class="bf-ko-loading">Chargement des matchs éliminatoires...</p>`;
-
+  if (!container) return;
+  const requestKey = seasonYear == null ? "current" : String(seasonYear);
+  container.dataset.bfKnockoutRequest = requestKey;
+  container.innerHTML = '<p class="bf-ko-loading">Chargement du tableau des éliminatoires' +
+    (seasonYear == null ? "" : " — " + escapeHTML(seasonYear)) + '...</p>';
   try {
-    const events = await fetchKnockoutEvents(competitionName);
-
+    const events = await fetchKnockoutEvents(competitionName, seasonYear);
+    if (container.dataset.bfKnockoutRequest !== requestKey) return;
     if (!events.length) {
-      container.innerHTML = `
-        <p class="bf-ko-empty">
-          Les matchs éliminatoires ne sont pas encore disponibles
-          pour cette saison.
-        </p>
-      `;
+      container.innerHTML = '<p class="bf-ko-empty">Les matchs éliminatoires ne sont pas disponibles pour cette édition ou pas encore publiés par la source.</p>';
       return;
     }
-
-    container.innerHTML = renderKnockoutBracket(
-  events,
-  competitionName
-);
-
-const bracketScroll = container.querySelector(
-  ".bf-ko-bracket-scroll"
-);
-
-const finalColumn = container.querySelector(
-  ".bf-ko-final-column"
-);
-
-if (bracketScroll && finalColumn) {
-  bracketScroll.scrollLeft =
-    finalColumn.offsetLeft +
-    finalColumn.offsetWidth / 2 -
-    bracketScroll.clientWidth / 2;
-}
-     
+    container.innerHTML = renderKnockoutBracket(events, competitionName, seasonYear);
+    const bracketScroll = container.querySelector(".bf-ko-bracket-scroll");
+    const finalColumn = container.querySelector(".bf-ko-final-column");
+    if (bracketScroll && finalColumn) {
+      bracketScroll.scrollLeft = finalColumn.offsetLeft + finalColumn.offsetWidth / 2 - bracketScroll.clientWidth / 2;
+    }
   } catch (error) {
-    console.error(
-      "BakhiraFoot — knockout bracket:",
-      competitionName,
-      error
-    );
-
-   container.innerHTML = `
-  <p class="bf-ko-empty">
-    Erreur : ${escapeHTML(error?.message || String(error))}
-  </p>
-`;
+    if (container.dataset.bfKnockoutRequest !== requestKey) return;
+    console.error("BakhiraFoot — knockout bracket:", competitionName, error);
+    container.innerHTML = '<p class="bf-ko-empty">Erreur : ' + escapeHTML(error?.message || String(error)) + '</p>';
   }
 }
+
    /* =========================================================
    BAKHIRAFOOT — AFCON MAROC 2025
    GROUPES DES PHASES FINALES
@@ -6561,15 +6516,13 @@ const originalPlayersHTML = playersBox
         const currentRequest = ++requestNumber;
 
         if (selectedValue === "current") {
-          // originalHTML contient déjà le classement et les deux blocs joueurs.
-          // Après innerHTML, l'ancien playersBox est détaché du DOM :
-          // ne pas le modifier, sinon les statistiques visibles restent vides.
           standingsBox.innerHTML = originalHTML;
           if (playersBox) playersBox.innerHTML = originalPlayersHTML;
-
-          status.textContent =
-            "Données de la saison actuelle.";
-
+          status.textContent = "Données de la saison actuelle.";
+          const currentBracket = standingsBox.querySelector("[data-bf-knockout]");
+          if (currentBracket && competition && ESPN_KNOCKOUT_CODES[competition.name]) {
+            loadKnockoutBracket(competition.name, currentBracket);
+          }
           return;
         }
 
@@ -6623,6 +6576,7 @@ const originalPlayersHTML = playersBox
             group => group.rows
           );
 
+          const historicalCompetition = { ...competition, historicalSeason: year };
           const tablesHTML = usefulGroups
             .map((group, index) => {
               const title =
@@ -6632,28 +6586,42 @@ const originalPlayersHTML = playersBox
                     ? `Groupe ${String.fromCharCode(65 + index)}`
                     : ""
                 );
-
-              return renderStandingTable(
-                group.rows,
-                title,
-                competition
-              );
+              return renderStandingTable(group.rows, title, historicalCompetition);
             })
             .join("");
 
+          const historicalKnockoutHTML =
+            competition && ESPN_KNOCKOUT_CODES[competition.name] &&
+            (competition.slug !== "uefa-europa-conference-league" || year >= 2021)
+              ? '<section class="bf-ko-section" data-bf-knockout data-bf-knockout-year="' + year + '">' +
+                '<div class="bf-ko-section-head"><h3>Tableau des éliminatoires — ' + year + '/' + String(year + 1).slice(-2) + '</h3>' +
+                '<p>Parcours historique de la compétition, selon la saison sélectionnée.</p></div>' +
+                '<p>' + (competition.name === "FIFA World Cup"
+                  ? (year >= 2026 ? "Du tour des 32 équipes jusqu'à la finale" : "Des huitièmes de finale jusqu'à la finale")
+                  : "Des premiers tours à élimination directe jusqu'à la finale") + '</p></section>'
+              : "";
+
           
           // Do not let a missing old table block the scorer/assist request.
-          standingsBox.innerHTML = tablesHTML
-            ? `
-                ${renderQualificationLegend(usefulGroups, competition)}
-                ${tablesHTML}
-              `
-            : `
-                <div class="ss-no-data">
-                  Le classement historique ${year} n'est pas fourni par la source.
-                  Les statistiques des joueurs sont chargées indépendamment ci-dessous.
-                </div>
-              `;
+          standingsBox.innerHTML = `
+            ${tablesHTML
+              ? `
+                  ${renderQualificationLegend(usefulGroups, historicalCompetition)}
+                  ${tablesHTML}
+                  ${renderThirdPlaceRanking(usefulGroups, historicalCompetition)}
+                `
+              : `
+                  <div class="ss-no-data">
+                    Le classement historique ${year} n'est pas fourni par la source.
+                    Les statistiques des joueurs sont chargées indépendamment ci-dessous.
+                  </div>
+                `}
+            ${historicalKnockoutHTML}
+          `;
+          const historicalBracket = standingsBox.querySelector("[data-bf-knockout]");
+          if (historicalBracket && competition && ESPN_KNOCKOUT_CODES[competition.name]) {
+            loadKnockoutBracket(competition.name, historicalBracket, year);
+          }
 
           if (playersBox) {
             playersBox.innerHTML = `
@@ -6944,9 +6912,9 @@ async function loadCompetition(competition) {
 
 
 function renderThirdPlaceRanking(groups, competition) {
-  if (competition?.slug !== "fifa-world-cup") {
-    return "";
-  }
+  if (competition?.slug !== "fifa-world-cup") return "";
+  const editionYear = Number(competition?.historicalSeason ?? competition?.seasonYear ?? new Date().getUTCFullYear());
+  if (editionYear < 2026) return "";
 
   
   const sourceGroups = (
@@ -7485,6 +7453,9 @@ function renderSeasonSelector(competition) {
     ],
     "uefa-nations-league": [
       2024, 2022, 2020, 2018
+    ],
+    "uefa-europa-conference-league": [
+      2025, 2024, 2023, 2022, 2021
     ]
   };
 
@@ -7505,13 +7476,10 @@ function renderSeasonSelector(competition) {
   );
 
   function seasonLabel(year) {
-    if (
-      editions[slug] ||
-      calendarYearCompetitions.has(slug)
-    ) {
-      return String(year);
+    if (slug === "uefa-europa-conference-league") {
+      return `${year}/${String(year + 1).slice(-2)}`;
     }
-
+    if (editions[slug] || calendarYearCompetitions.has(slug)) return String(year);
     return `${year}/${String(year + 1).slice(-2)}`;
   }
 

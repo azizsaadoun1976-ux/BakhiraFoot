@@ -430,7 +430,6 @@ function historicalStatAliases(stat) {
     ? ["goal", "goals", "totalgoal", "totalgoals", "goalscored", "goalsscored", "g", "gls"]
     : ["assist", "assists", "goalassist", "goalassists", "totalassist", "totalassists", "a", "ast"];
 }
-
 function historicalNestedStat(node, stat, depth = 0, visited = new Set()) {
   if (!node || typeof node !== "object" || depth > 9 || visited.has(node)) return null;
   visited.add(node);
@@ -442,12 +441,13 @@ function historicalNestedStat(node, stat, depth = 0, visited = new Set()) {
     }
     return null;
   }
-  const label = normalize(node.name || node.displayName || node.shortDisplayName || node.abbreviation || node.label || node.statName || node.key || "");
+  const label = normalize(node.name || node.displayName || node.shortDisplayName ||
+    node.abbreviation || node.label || node.statName || node.key || "");
   if (aliases.includes(label)) {
-    const n = numberValue(node.value ?? node.total ?? node.displayValue ?? node.displayValueText ?? node.count ?? node.stat);
-    if (n !== null) return n;
+    const value = numberValue(node.value ?? node.total ?? node.displayValue ?? node.displayValueText ?? node.count ?? node.stat);
+    if (value !== null) return value;
   }
-  for (const labelsKey of ["names", "labels", "abbreviations"]) {
+  for (const labelsKey of ["names", "displayNames", "labels", "abbreviations", "shortDisplayNames"]) {
     const labels = node[labelsKey];
     if (!Array.isArray(labels)) continue;
     const index = labels.findIndex(item => aliases.includes(normalize(item)));
@@ -455,15 +455,15 @@ function historicalNestedStat(node, stat, depth = 0, visited = new Set()) {
     for (const valuesKey of ["totals", "values", "stats", "statistics"]) {
       const values = node[valuesKey];
       if (Array.isArray(values) && values[index] !== undefined) {
-        const n = numberValue(values[index]);
-        if (n !== null) return n;
+        const value = numberValue(values[index]);
+        if (value !== null) return value;
       }
     }
   }
   for (const [key, value] of Object.entries(node)) {
     if (aliases.includes(normalize(key))) {
-      const n = numberValue(value);
-      if (n !== null) return n;
+      const parsed = numberValue(value);
+      if (parsed !== null) return parsed;
     }
   }
   for (const [key, value] of Object.entries(node)) {
@@ -475,7 +475,60 @@ function historicalNestedStat(node, stat, depth = 0, visited = new Set()) {
   }
   return null;
 }
-
+function historicalStatIndex(metadataCategory, stat) {
+  if (!metadataCategory || typeof metadataCategory !== "object") return -1;
+  const aliases = historicalStatAliases(stat);
+  for (const field of [
+    metadataCategory.names, metadataCategory.displayNames, metadataCategory.labels,
+    metadataCategory.abbreviations, metadataCategory.shortDisplayNames
+  ]) {
+    if (!Array.isArray(field)) continue;
+    const index = field.findIndex(value => aliases.includes(normalize(value)));
+    if (index >= 0) return index;
+  }
+  return -1;
+}
+function historicalCategoryTotal(rowCategory, metaCategories, rowCategoryIndex, stat) {
+  if (!rowCategory || typeof rowCategory !== "object") return null;
+  const direct = historicalNestedStat(rowCategory, stat);
+  if (direct !== null) return direct;
+  const totals = rowCategory.totals || rowCategory.values || rowCategory.stats || [];
+  if (!Array.isArray(totals)) return null;
+  const rowName = normalize(rowCategory.name || rowCategory.displayName ||
+    rowCategory.shortDisplayName || rowCategory.abbreviation || rowCategory.label || "");
+  const metas = Array.isArray(metaCategories) ? metaCategories : [];
+  let matches = metas.filter(meta => {
+    const metaName = normalize(meta?.name || meta?.displayName ||
+      meta?.shortDisplayName || meta?.abbreviation || meta?.label || "");
+    return metaName && rowName && metaName === rowName;
+  });
+  if (!matches.length && metas[rowCategoryIndex]) matches = [metas[rowCategoryIndex]];
+  if (!matches.length && metas.length === 1) matches = [metas[0]];
+  for (const meta of matches) {
+    const index = historicalStatIndex(meta, stat);
+    if (index >= 0 && totals[index] !== undefined) {
+      const value = numberValue(totals[index]);
+      if (value !== null) return value;
+    }
+  }
+  return null;
+}
+function historicalStatFromRow(payload, row, stat) {
+  const direct = historicalNestedStat(row, stat);
+  if (direct !== null) return direct;
+  const meta = Array.isArray(payload?.categories) ? payload.categories : [];
+  const rowCategories = Array.isArray(row?.categories) ? row.categories : [];
+  for (let index = 0; index < rowCategories.length; index++) {
+    const value = historicalCategoryTotal(rowCategories[index], meta, index, stat);
+    if (value !== null) return value;
+  }
+  const rowStats = Array.isArray(row?.statistics) ? row.statistics : Array.isArray(row?.stats) ? row.stats : [];
+  for (let index = 0; index < rowStats.length; index++) {
+    const value = historicalCategoryTotal(rowStats[index], meta, index, stat);
+    if (value !== null) return value;
+  }
+  return null;
+}
 function historicalAthleteRows(payload) {
   const candidates = [
     payload?.athletes?.items, payload?.athletes, payload?.items, payload?.results,
@@ -490,20 +543,21 @@ function historicalAthleteRows(payload) {
   }
   return [];
 }
-
 function normalizeHistoricalAthletes(payload, stat) {
   const results = [];
   for (const row of historicalAthleteRows(payload)) {
     if (!row || typeof row !== "object") continue;
     const athlete = row.athlete || row.player || row;
-    const name = athlete?.displayName || athlete?.fullName || athlete?.shortName || athlete?.name || row?.displayName || row?.name || "";
+    const name = athlete?.displayName || athlete?.fullName || athlete?.shortName ||
+      athlete?.name || row?.displayName || row?.name || "";
     if (!name) continue;
-    let total = historicalNestedStat(row, stat);
+    let total = historicalStatFromRow(payload, row, stat);
     if (total === null) total = numberValue(row?.value ?? row?.displayValue ?? row?.total);
     if (total === null || total <= 0) continue;
     const rawTeam = row.team || athlete.team || {};
     const team = {
-      name: rawTeam.displayName || rawTeam.name || rawTeam.shortDisplayName || "Équipe non renseignée",
+      name: rawTeam.displayName || rawTeam.name || rawTeam.shortDisplayName ||
+        athlete.teamName || athlete.teamShortName || "Équipe non renseignée",
       logo: rawTeam?.logos?.find(item => item?.href)?.href || rawTeam.logo || rawTeam.logoUrl || ""
     };
     const id = String(athlete.id || row.athleteId || row.playerId || "");
@@ -512,12 +566,15 @@ function normalizeHistoricalAthletes(payload, stat) {
       athlete?.photo || athlete?.image ||
       (id ? "https://a.espncdn.com/i/headshots/soccer/players/full/" + id + ".png" : "");
     results.push({
-      name, player_name:name, value:total, [stat]:total,
-      player:{id,name,full_name:athlete.fullName || name,photo,photo_url:photo,image:photo,logo:photo,team,[stat]:total},
-      team
+      name: name, player_name: name, value: total, [stat]: total,
+      player: {
+        id: id, name: name, full_name: athlete.fullName || name,
+        photo: photo, photo_url: photo, image: photo, logo: photo, team: team, [stat]: total
+      },
+      team: team
     });
   }
-  return results.sort((a,b)=>b.value-a.value).slice(0,5);
+  return results.sort((a, b) => b.value - a.value).slice(0, 5);
 }
 
 async function fetchHistoricalByAthlete(league, season) {
@@ -526,9 +583,9 @@ async function fetchHistoricalByAthlete(league, season) {
   for (const host of ["https://site.web.api.espn.com", "https://site.api.espn.com"]) {
     for (const [stat, sortKey] of [["goals","offensive.goals"],["assists","offensive.assists"]]) {
       const url = host + "/apis/common/v3/sports/soccer/" + code +
-        "/statistics/byathlete?category=offensive&season=" + season +
-        "&seasontype=2&limit=50&page=1&sort=" + encodeURIComponent(sortKey + ":desc") +
-        "&region=us&lang=en";
+        "/statistics/byathlete?region=us&lang=en&contentorigin=espn&isqualified=false" +
+        "&limit=50&sort=" + encodeURIComponent(sortKey + ":desc") +
+        "&category=offensive&season=" + season + "&seasontype=2&page=1";
       requests.push({stat,url});
     }
   }
