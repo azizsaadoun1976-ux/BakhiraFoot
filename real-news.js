@@ -4,9 +4,14 @@
 
   const NEWS_API = "/api/news";
   const sourceFallbacks = [
+    { name: "BBC Europe", url: "https://www.bbc.com/news/world/europe" },
+    { name: "BBC World", url: "https://www.bbc.com/news/world" },
+    { name: "BBC Entertainment", url: "https://www.bbc.com/news/entertainment_and_arts" },
+    { name: "The Guardian", url: "https://www.theguardian.com/world" },
+    { name: "Variety", url: "https://variety.com/" },
+    { name: "Google News — tendances", url: "https://news.google.com/" },
     { name: "FRMF", url: "https://frmf.ma/fr/categorie/actualites" },
-    { name: "CAF", url: "https://www.cafonline.com/fr/ligue-des-champions/news/" },
-    { name: "BBC Sport", url: "https://www.bbc.com/sport/football" }
+    { name: "CAF", url: "https://www.cafonline.com/fr/ligue-des-champions/news/" }
   ];
 
   function esc(value) {
@@ -32,7 +37,7 @@
       ? article.description
       : "Consultez l’article original pour lire les informations complètes et les détails.";
     return `
-      <article class="bf-real-news-card">
+      <article class="bf-real-news-card" data-category="${esc(category)}">
         <div class="bf-real-news-top">
           <span class="bf-real-news-category">${esc(category)}</span>
           ${date ? `<time>${esc(date)}</time>` : ""}
@@ -68,18 +73,36 @@
     });
   }
 
-  function render(articles, updatedAt) {
-    if (!articles.length) return renderError();
-    const cards = articles.map(articleCard).join("");
-    const note = `<div class="bf-news-update">Articles récupérés depuis les sites des médias · Mise à jour : ${esc(prettyDate(updatedAt))}</div>`;
-    ["homeNews", "newsGrid"].forEach(id => {
-      const node = document.getElementById(id);
-      if (node) {
-        node.innerHTML = note + cards + sourceCards();
-        node.dataset.newsLoaded = "true";
-      }
-    });
+  function categoryControls(articles) {
+    const categories = ["Toutes", ...new Set(articles.map(item => item.category || "Monde"))];
+    return '<div class="bf-news-filters" role="group" aria-label="Filtrer les actualités">' +
+      categories.map((category, index) => '<button type="button" class="bf-news-filter ' + (index === 0 ? "active" : "") + '" data-news-filter="' + esc(category) + '">' + esc(category) + '</button>').join("") +
+      '</div>';
   }
+
+  function render(articles, updatedAt, sources = []) {
+    if (!articles.length) return renderError();
+    const homeCards = articles.slice(0, 6).map(articleCard).join("");
+    const fullCards = articles.map(articleCard).join("");
+    const note = '<div class="bf-news-update">Actualités récentes récupérées depuis des médias et flux RSS · Mise à jour : ' + esc(prettyDate(updatedAt) || "à l’instant") + '</div>';
+    const sourceHtml = sources.length
+      ? '<div class="bf-news-sources"><span>Sources consultées</span>' + sources.map(source => '<a href="' + esc(source.url) + '" target="_blank" rel="noopener noreferrer">' + esc(source.name) + ' ↗</a>').join("") + '</div>'
+      : sourceCards();
+    const home = document.getElementById("homeNews");
+    if (home) { home.innerHTML = note + homeCards + sourceHtml; home.dataset.newsLoaded = "true"; }
+    const news = document.getElementById("newsGrid");
+    if (news) { news.innerHTML = note + categoryControls(articles) + fullCards + sourceHtml; news.dataset.newsLoaded = "true"; }
+  }
+
+  document.addEventListener("click", event => {
+    const button = event.target.closest("[data-news-filter]");
+    if (!button) return;
+    const container = document.getElementById("newsGrid");
+    if (!container) return;
+    container.querySelectorAll("[data-news-filter]").forEach(item => item.classList.toggle("active", item === button));
+    const category = button.dataset.newsFilter;
+    container.querySelectorAll(".bf-real-news-card").forEach(card => { card.hidden = category !== "Toutes" && card.dataset.category !== category; });
+  });
 
   async function load() {
     const targets = ["homeNews", "newsGrid"].map(id => document.getElementById(id)).filter(Boolean);
@@ -89,7 +112,7 @@
       if (!response.ok) throw new Error("News API HTTP " + response.status);
       const data = await response.json();
       if (!Array.isArray(data.articles) || !data.articles.length) throw new Error("No articles returned");
-      render(data.articles, data.updatedAt);
+      render(data.articles, data.updatedAt, Array.isArray(data.sources) ? data.sources : []);
     } catch (error) {
       console.warn("BAKHIRAFOOT REAL NEWS:", error);
       renderError();
@@ -99,6 +122,10 @@
   const style = document.createElement("style");
   style.textContent = `
     #homeNews.cards,#newsGrid.cards{grid-template-columns:repeat(3,minmax(0,1fr));align-items:stretch}
+    #newsGrid .bf-news-filters{grid-column:1/-1;display:flex;flex-wrap:wrap;gap:7px;margin:2px 0 10px}
+    #newsGrid .bf-news-filter{padding:8px 12px;border:1px solid #2a4053;border-radius:8px;background:#102234;color:#a7bac9;font-size:11px;font-weight:850;cursor:pointer}
+    #newsGrid .bf-news-filter.active{border-color:#2a805d;background:#15392e;color:#8af0c3}
+    .bf-real-news-card[hidden]{display:none!important}
     .bf-real-news-card{position:relative;display:flex;flex-direction:column;min-width:0;min-height:255px;padding:18px!important;overflow:hidden;border:1px solid #263e51!important;border-radius:12px!important;background:linear-gradient(155deg,#102336,#0b1926)!important;color:#eef5fb!important}
     .bf-real-news-card:before{content:"";position:absolute;left:0;top:0;bottom:0;width:3px;background:#39e6a5}
     .bf-real-news-top{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:16px}
