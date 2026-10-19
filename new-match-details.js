@@ -978,77 +978,206 @@ function bfAssignFormationRoles(players, formation, readPosition) {
     return norm(values.filter(v => v !== null && v !== undefined && v !== "").join(" "));
   }
 
-  function eventIcon(event) {
-    const type=eventType(event);
-    if(type.includes("goal")||type.includes("score"))return "GOAL";
-    if(type.includes("yellow"))return "YC";
-    if(type.includes("red"))return "RC";
-    if(type.includes("sub"))return "SUB";
-    if(type.includes("injur")||type.includes("hurt"))return "INJ";
-    if(type.includes("assist"))return "AST";
-    return "EVENT";
+  function eventPersonName(value) {
+    if (typeof value === "string") return value.trim();
+    if (!value || typeof value !== "object") return "";
+    return String(first(
+      value.name, value.displayName, value.display_name,
+      value.fullName, value.full_name, value.shortName, value.short_name,
+      value.player?.name, value.player?.displayName,
+      value.athlete?.displayName, value.athlete?.name,
+      value.person?.name, value.label, ""
+    ) || "").trim();
   }
 
-  function eventPlayer(
-    event
-  ) {
-    return String(
-      first(
+  function eventPlayerId(value) {
+    if (!value || typeof value !== "object") return "";
+    return String(first(
+      value.id, value.player_id, value.playerId,
+      value.athlete?.id, value.player?.id, value.person?.id, ""
+    ) || "");
+  }
 
-        event?.player
-          ?.name,
+  function samePerson(candidate, player) {
+    const directId = eventPlayerId(candidate);
+    const p = getPlayerObject(player);
+    const playerIds = [
+      player?.id, player?.player_id, player?.playerId,
+      p?.id, p?.player_id, p?.playerId,
+      player?.raw?.id, player?.raw?.player?.id
+    ].filter(value => value !== null && value !== undefined && String(value).trim()).map(String);
+    if (directId && playerIds.includes(directId)) return true;
+    const a = norm(eventPersonName(candidate)).replace(/[^a-z0-9 ]/g, "").trim();
+    const b = norm(playerName(player)).replace(/[^a-z0-9 ]/g, "").trim();
+    if (!a || !b) return false;
+    if (a === b) return true;
+    const aa = a.split(/\s+/), bb = b.split(/\s+/);
+    if (aa.length > 1 && bb.length > 1 && aa[aa.length - 1] === bb[bb.length - 1]) {
+      if (aa[0][0] === bb[0][0]) return true;
+      if (aa[0].length > 2 && bb[0].length > 2 &&
+          (aa[0].startsWith(bb[0]) || bb[0].startsWith(aa[0]))) return true;
+    }
+    return false;
+  }
 
-        event?.player_name,
+  function eventIsGoal(event) {
+    const type = eventType(event);
+    return /goal|score|scoring|but\b/.test(type);
+  }
 
-        event?.athlete
-          ?.displayName,
+  function eventIsSubstitution(event) {
+    const type = eventType(event);
+    return /substitut|subbing|subbed|replacement|replace|remplacement|changement|player change/.test(type);
+  }
 
-        event?.name,
+  function eventSubstitutionData(event) {
+    const nested = event?.substitution || event?.substitutions || event?.change || event?.swap || {};
+    let incoming = String(first(
+      eventPersonName(event?.playerIn), eventPersonName(event?.player_in),
+      eventPersonName(event?.incoming), eventPersonName(event?.incomingPlayer),
+      eventPersonName(event?.incoming_player), eventPersonName(event?.substituteIn),
+      eventPersonName(event?.substitute_in), eventPersonName(event?.playerOn),
+      eventPersonName(event?.player_on), eventPersonName(nested?.in),
+      eventPersonName(nested?.incoming), eventPersonName(nested?.playerIn),
+      event?.playerInName, event?.player_in_name, event?.incomingPlayerName,
+      ""
+    ) || "").trim();
+    let outgoing = String(first(
+      eventPersonName(event?.playerOut), eventPersonName(event?.player_out),
+      eventPersonName(event?.outgoing), eventPersonName(event?.outgoingPlayer),
+      eventPersonName(event?.outgoing_player), eventPersonName(event?.replaced),
+      eventPersonName(event?.substituteOut), eventPersonName(event?.substitute_out),
+      eventPersonName(event?.playerOff), eventPersonName(event?.player_off),
+      eventPersonName(nested?.out), eventPersonName(nested?.outgoing),
+      eventPersonName(nested?.playerOut), event?.playerOutName, event?.player_out_name, ""
+    ) || "").trim();
 
-        event
-          ?.participants?.[0]
-          ?.athlete
-          ?.displayName,
+    const textValue = String(first(
+      event?.detail, event?.description, event?.text,
+      event?.commentary, event?.shortText, event?.longText, event?.name, ""
+    ) || "").replace(/\s+/g, " ").trim();
+    const patterns = [
+      { regex: /(?:substitution|remplacement)?\s*[:,\-]?\s*(.+?)\s+(?:comes on|come on|came on|enters|entered|is brought on|replaces|replace|for)\s+(?:for\s+)?(.+?)(?:[.!;,]|$)/i, mode: "in-out" },
+      { regex: /(.+?)\s+(?:is substituted off|goes off|comes off|leaves the field|is taken off)\s*[,;:\-]?\s*(?:and\s+)?(.+?)\s+(?:comes on|enters|is brought on)/i, mode: "out-in" },
+      { regex: /(.+?)\s+(?:is replaced by|replaced by|subbed off for)\s+(.+?)(?:[.!;,]|$)/i, mode: "out-in" },
+      { regex: /(?:substitution|remplacement)[,:\-]?\s*(.+?)\s+for\s+(.+?)(?:[.!;,]|$)/i, mode: "in-out" },
+      { regex: /(.+?)\s*↔\s*(.+?)(?:[.!;,]|$)/i, mode: "pair" }
+    ];
+    for (const item of patterns) {
+      const match = textValue.match(item.regex);
+      if (!match) continue;
+      const firstName = match[1].replace(/^(substitution|remplacement)\s*[:,\-]?\s*/i, "").trim();
+      const secondName = match[2].trim();
+      if (firstName && secondName && firstName.length < 80 && secondName.length < 80) {
+        if (item.mode === "in-out") { incoming = incoming || firstName; outgoing = outgoing || secondName; }
+        else if (item.mode === "out-in") { outgoing = outgoing || firstName; incoming = incoming || secondName; }
+      }
+      if (incoming || outgoing) break;
+    }
 
-        event?.text,
+    const involved = [];
+    const addInvolved = value => {
+      const name = eventPersonName(value);
+      if (name && !involved.some(existing => norm(existing) === norm(name))) involved.push(name);
+    };
+    addInvolved(event?.playerIn); addInvolved(event?.player_in); addInvolved(event?.playerOut); addInvolved(event?.player_out);
+    addInvolved(event?.player); addInvolved(event?.assist);
+    arr(event?.participants).forEach(person => addInvolved(person?.athlete || person?.player || person));
+    arr(event?.players).forEach(addInvolved);
+    if (incoming) addInvolved(incoming);
+    if (outgoing) addInvolved(outgoing);
+    return { incoming, outgoing, involved, text: textValue };
+  }
 
-        event?.detail,
+  function eventType(event) {
+    const values = [
+      typeof event?.type === "object" ? event?.type?.name : event?.type,
+      typeof event?.type === "object" ? event?.type?.text : "",
+      event?.eventType, event?.event_type, event?.incidentType, event?.kind,
+      event?.detail, event?.text, event?.description, event?.commentary,
+      event?.injury?.type, event?.card?.type, event?.goalDescription, event?.cardDescription
+    ];
+    return norm(values.filter(v => v !== null && v !== undefined && v !== "").join(" "));
+  }
 
-        "Événement"
-      )
+  function eventIcon(event) {
+    const type = eventType(event);
+    if (/red card|second yellow|redcard|carton rouge/.test(type)) return '<span class="bf-new-event-glyph bf-new-event-glyph--red" title="Carton rouge"></span>';
+    if (/yellow card|yellowcard|carton jaune/.test(type)) return '<span class="bf-new-event-glyph bf-new-event-glyph--yellow" title="Carton jaune"></span>';
+    if (eventIsSubstitution(event)) return '<span class="bf-new-event-glyph bf-new-event-glyph--sub" title="Remplacement">⇄</span>';
+    if (/injur|hurt|medical|bless/.test(type)) return '<span class="bf-new-event-glyph bf-new-event-glyph--injury" title="Blessure">✚</span>';
+    if (/missed.*penalty|penalty.*missed|penalty.*saved/.test(type)) return '<span class="bf-new-event-glyph bf-new-event-glyph--missed" title="Penalty raté">×</span>';
+    if (/penalt/.test(type)) return '<span class="bf-new-event-glyph bf-new-event-glyph--penalty" title="Penalty">🎯</span>';
+    if (/goal|score|scoring|but\b/.test(type)) return '<span class="bf-new-event-glyph bf-new-event-glyph--goal" title="But">⚽</span>';
+    if (/assist|passe decisive/.test(type)) return '<span class="bf-new-event-glyph bf-new-event-glyph--assist" title="Passe décisive">👟</span>';
+    if (/var|video review/.test(type)) return '<span class="bf-new-event-glyph bf-new-event-glyph--var" title="VAR">VAR</span>';
+    return '<span class="bf-new-event-glyph bf-new-event-glyph--other" title="Événement">•</span>';
+  }
+
+  function eventPlayer(event) {
+    const primary = first(
+      eventPersonName(event?.player), eventPersonName(event?.scorer),
+      eventPersonName(event?.goalScorer), eventPersonName(event?.goal_scorer),
+      eventPersonName(event?.goal?.player), eventPersonName(event?.athlete),
+      eventPersonName(event?.actor), event?.player_name, event?.playerName,
+      event?.scorer_name, event?.scorerName, event?.participant?.name,
+      event?.participants?.[0]?.athlete?.displayName,
+      event?.participants?.[0]?.athlete?.name,
+      event?.participants?.[0]?.name, event?.participants?.[0]?.player?.name,
+      event?.players?.[0]?.name, event?.name, ""
     );
+    if (primary) return String(primary);
+    if (eventIsSubstitution(event)) {
+      const swap = eventSubstitutionData(event);
+      if (swap.incoming && swap.outgoing) return "Remplacement";
+      return swap.incoming || swap.outgoing || "Remplacement";
+    }
+    return String(first(event?.text, event?.detail, event?.description, "Événement"));
   }
 
   function eventAssist(event) {
-    return String(first(
+    const direct = first(
       typeof event?.assist === "string" ? event.assist : null,
-      event?.assist?.name,
-      event?.assist?.player?.name,
-      event?.assistPlayer?.name,
-      event?.assist_player?.name,
-      event?.assist_name,
-      event?.assistName,
-      event?.assists?.[0]?.name,
-      event?.participants?.[1]?.athlete?.displayName,
-      ""
-    ));
+      eventPersonName(event?.assist), eventPersonName(event?.assistPlayer),
+      eventPersonName(event?.assist_player), eventPersonName(event?.assistPerson),
+      eventPersonName(event?.assist_person), eventPersonName(event?.relatedPlayer),
+      eventPersonName(event?.related_player), eventPersonName(event?.secondPlayer),
+      eventPersonName(event?.second_player), event?.assist_name, event?.assistName,
+      event?.assist_player_name, event?.assistPlayerName,
+      eventPersonName(event?.goal?.assist), eventPersonName(event?.goal?.assistPlayer),
+      eventPersonName(event?.assists?.[0]), eventPersonName(event?.participants?.[1]?.athlete),
+      eventPersonName(event?.participants?.[1]?.player), eventPersonName(event?.participants?.[1]),
+      eventPersonName(event?.players?.[1]), ""
+    );
+    if (direct && String(direct).trim()) return String(direct).trim();
+    if (!eventIsGoal(event)) return "";
+    const textValue = String(first(
+      event?.goalDescription, event?.goal_description, event?.detail,
+      event?.description, event?.text, event?.commentary, event?.shortText, ""
+    ) || "");
+    const patterns = [
+      /assisted by\s+([^,.;()[\]]+)/i,
+      /assist(?:ed)?\s+(?:by|from)\s+([^,.;()[\]]+)/i,
+      /with an assist from\s+([^,.;()[\]]+)/i,
+      /passe d[ée]cisive\s+(?:de|par)\s+([^,.;()[\]]+)/i,
+      /assist[eé]?\s+par\s+([^,.;()[\]]+)/i
+    ];
+    for (const pattern of patterns) {
+      const match = textValue.match(pattern);
+      if (match && match[1]) return match[1].trim();
+    }
+    return "";
   }
 
-  function eventMinute(
-    event
-  ) {
+  function eventMinute(event) {
     return first(
-      event?.minute,
-      event?.elapsed,
-      event?.clock
-        ?.displayValue,
-      event?.time
-        ?.elapsed,
-      "-"
+      event?.minute, event?.elapsed, event?.clock?.displayValue,
+      event?.time?.elapsed, event?.time?.displayValue,
+      event?.time?.minute, "-"
     );
   }
 
-  /* =========================================================
+    /* =========================================================
      STYLES
      ========================================================= */
 
@@ -1710,6 +1839,73 @@ function bfAssignFormationRoles(players, formation, readPosition) {
       }
 
 
+      /* Professional flat performance marks — no hand-drawn SVGs */
+      .bf-new-safe-player { position:absolute; overflow:visible; }
+      .bf-new-safe-pitch-events { position:absolute!important; top:-8px!important; right:-13px!important; left:auto!important; z-index:15; display:flex!important; flex-direction:column!important; align-items:center; justify-content:flex-start; width:auto; max-width:none!important; min-height:0!important; margin:0!important; padding:0!important; gap:3px!important; overflow:visible; }
+      .bf-new-safe-event-badge { display:inline-flex; align-items:center; justify-content:center; gap:2px; min-width:22px; width:auto; height:22px; padding:2px 4px; border:1px solid rgba(255,255,255,.34); border-radius:7px; box-shadow:0 3px 8px rgba(0,0,0,.34); }
+      .bf-new-safe-icon-glyph { display:inline-flex; align-items:center; justify-content:center; min-width:14px; height:16px; font-size:13px; line-height:1; font-weight:1000; }
+      .bf-new-safe-icon-glyph--subIn,.bf-new-safe-icon-glyph--subOut,.bf-new-safe-icon-glyph--sub { font-size:16px; font-family:Arial,sans-serif; }
+      .bf-new-safe-icon-glyph--own { font-size:16px; }
+      .bf-new-safe-icon-glyph--assist { font-size:14px; }
+      .bf-new-safe-card-glyph { display:block; width:9px; height:14px; border-radius:2px; border:1px solid rgba(255,255,255,.95); box-shadow:0 1px 2px rgba(0,0,0,.25); }
+      .bf-new-safe-card-glyph--yellow { background:#ffd32a; }
+      .bf-new-safe-card-glyph--red { background:#ef3340; }
+      .bf-new-safe-event-count { display:inline-flex; align-items:center; justify-content:center; min-width:10px; height:13px; font-size:8px; line-height:1; font-weight:1000; }
+      .bf-new-safe-player-rate { position:absolute!important; top:-8px!important; left:-11px!important; z-index:14; display:inline-flex!important; align-items:center; gap:2px; min-width:39px; height:21px; padding:2px 5px; border-radius:7px; border:1px solid #f7d46a; background:#ffdd67; color:#2c2309; box-shadow:0 3px 9px rgba(0,0,0,.3); font-size:9px; line-height:1; font-weight:1000; }
+      .bf-new-safe-rating-star { color:#8a6300; font-size:12px; line-height:1; }
+      .bf-new-safe-mvp-chip { position:absolute!important; top:28px!important; left:-10px!important; z-index:14; display:inline-flex!important; align-items:center; justify-content:center; min-width:21px; height:21px; padding:2px 4px; border-radius:7px; border:1px solid #ffe28a; background:#ffda55; color:#493400; box-shadow:0 3px 8px rgba(0,0,0,.28); font-size:14px; line-height:1; }
+      .bf-new-safe-player-name { position:relative; z-index:4; }
+      .bf-new-safe-event-glyph { display:inline-flex; flex:0 0 27px; align-items:center; justify-content:center; width:27px; height:27px; border-radius:8px; background:#263b53; color:#eef6ff; font-family:Arial,sans-serif; font-size:14px; line-height:1; font-weight:1000; }
+      .bf-new-event-glyph--goal { background:#123e32; color:#a7f3d0; }
+      .bf-new-event-glyph--penalty { background:#4c3915; color:#ffe5a0; }
+      .bf-new-event-glyph--assist { background:#193d73; color:#b9d7ff; }
+      .bf-new-event-glyph--sub { background:#12463e; color:#8ff3dc; font-size:19px; }
+      .bf-new-event-glyph--injury { background:#25384c; color:#c4e2ff; }
+      .bf-new-event-glyph--missed { background:#4b2630; color:#ffb4c0; font-size:22px; }
+      .bf-new-event-glyph--var { font-size:9px; letter-spacing:-.04em; }
+      .bf-new-event-glyph--other { background:#25344a; color:#a9bbd2; }
+      .bf-new-event-glyph--yellow,.bf-new-event-glyph--red { width:13px; height:19px; min-height:19px; min-width:13px; flex-basis:13px; margin:auto; border:1px solid rgba(255,255,255,.7); border-radius:2px; }
+      .bf-new-event-glyph--yellow { background:#ffcc29; }
+      .bf-new-event-glyph--red { background:#ef3340; }
+      .bf-new-safe-substitution-line { display:flex; align-items:center; flex-wrap:wrap; gap:7px; margin:8px 0 3px; padding:9px 10px; border:1px solid rgba(20,184,166,.18); border-radius:10px; background:rgba(20,184,166,.07); }
+      .bf-new-safe-substitution-line strong { color:inherit; font-size:11px; font-weight:950; }
+      .bf-new-safe-sub-out,.bf-new-safe-sub-in,.bf-new-safe-sub-neutral { display:inline-flex; align-items:center; gap:3px; padding:4px 6px; border-radius:6px; font-size:8px; font-weight:1000; letter-spacing:.06em; white-space:nowrap; }
+      .bf-new-safe-sub-out { color:#fecdd3; background:rgba(190,24,45,.18); }
+      .bf-new-safe-sub-in { color:#a7f3d0; background:rgba(5,150,105,.18); }
+      .bf-new-safe-sub-neutral { color:#a9f3e6; background:rgba(13,148,136,.18); }
+      .bf-new-safe-sub-arrow { color:#8298b3; font-size:17px; font-weight:900; }
+      .bf-new-safe-assist { display:flex; align-items:center; gap:7px; width:max-content; max-width:100%; margin-top:7px; padding:6px 9px; border:1px solid rgba(59,130,246,.18); border-radius:8px; background:rgba(59,130,246,.08); color:#b4d1ff; font-size:10px; line-height:1.4; }
+      .bf-new-safe-assist-icon { font-size:14px; }
+      .bf-new-safe-assist strong { color:#d8e7ff; font-weight:950; }
+      .bf-new-safe-event-detail { margin-top:5px; color:#9fb2c9; font-size:10px; line-height:1.55; }
+      #bfMatchDetailsModal .bfmd-event-mini { position:absolute!important; top:-8px!important; right:-13px!important; left:auto!important; transform:none!important; z-index:15; display:flex!important; flex-direction:column!important; align-items:center!important; justify-content:flex-start!important; gap:3px!important; width:auto!important; max-width:none!important; min-height:0!important; margin:0!important; padding:0!important; overflow:visible; border:0!important; background:transparent!important; }
+      #bfMatchDetailsModal .bfmd-chip { display:inline-flex!important; align-items:center!important; justify-content:center!important; gap:2px!important; width:auto!important; min-width:22px!important; height:22px!important; min-height:22px!important; padding:2px 4px!important; border:1px solid rgba(255,255,255,.36)!important; border-radius:7px!important; box-shadow:0 3px 8px rgba(0,0,0,.32)!important; }
+      #bfMatchDetailsModal .bfmd-chip .bfmd-vector-icon { display:none!important; }
+      #bfMatchDetailsModal .bfmd-chip--goal:before { content:"⚽"; font-size:13px; line-height:1; }
+      #bfMatchDetailsModal .bfmd-chip--penalty:before { content:"🎯"; font-size:13px; line-height:1; }
+      #bfMatchDetailsModal .bfmd-chip--own:before { content:"↗"; font-size:15px; line-height:1; }
+      #bfMatchDetailsModal .bfmd-chip--assist:before { content:"👟"; font-size:13px; line-height:1; }
+      #bfMatchDetailsModal .bfmd-chip--yellow:before,#bfMatchDetailsModal .bfmd-chip--red:before { content:""; display:block; width:9px; height:14px; border:1px solid rgba(255,255,255,.92); border-radius:2px; }
+      #bfMatchDetailsModal .bfmd-chip--yellow:before { background:#ffd32a; }
+      #bfMatchDetailsModal .bfmd-chip--red:before { background:#ef3340; }
+      #bfMatchDetailsModal .bfmd-chip--injury:before { content:"✚"; font-size:13px; line-height:1; }
+      #bfMatchDetailsModal .bfmd-chip--subIn:before { content:"↗"; color:#b7f5d7; font:1000 15px/1 Arial,sans-serif; }
+      #bfMatchDetailsModal .bfmd-chip--subOut:before { content:"↙"; color:#ffccd2; font:1000 15px/1 Arial,sans-serif; }
+      #bfMatchDetailsModal .bfmd-chip--mvp:before { content:"🏆"; font-size:12px; line-height:1; }
+      #bfMatchDetailsModal .bfmd-chip--rating:before { content:"★"; font-size:13px; line-height:1; color:#806000; }
+      #bfMatchDetailsModal .bfmd-chip--yellow .bfmd-chip-count,#bfMatchDetailsModal .bfmd-chip--red .bfmd-chip-count { color:#fff; font-size:8px; font-weight:1000; }
+      @media(max-width:700px) {
+        .bf-new-safe-pitch-events { top:-5px!important; right:-9px!important; gap:2px!important; }
+        .bf-new-safe-event-badge { min-width:18px; height:18px; padding:1px 3px; border-radius:5px; }
+        .bf-new-safe-icon-glyph { min-width:11px; height:13px; font-size:11px; }
+        .bf-new-safe-card-glyph { width:7px; height:11px; }
+        .bf-new-safe-player-rate { top:-5px!important; left:-8px!important; min-width:33px; height:18px; padding:2px 4px; font-size:8px; }
+        .bf-new-safe-mvp-chip { top:23px!important; left:-8px!important; min-width:18px; height:18px; }
+        #bfMatchDetailsModal .bfmd-event-mini { top:-5px!important; right:-9px!important; gap:2px!important; }
+        #bfMatchDetailsModal .bfmd-chip { min-width:18px!important; height:18px!important; min-height:18px!important; padding:1px 3px!important; }
+      }
+
+
     `;
 
     document.head.appendChild(
@@ -2037,8 +2233,8 @@ ${esc(String(playerName(player) || "P").split(/\s+/).map(part => part[0] || "").
                     
                     <div class="bf-new-safe-player-name">${esc(playerName(player))}</div>
                     <div class="bf-new-safe-pitch-events">${playerEventBadges(player, details)}</div>
-                    ${playerIsOfficialMvp(player) ? '<span class="bf-new-safe-mvp-chip" title="Joueur du match" aria-label="Joueur du match">' + playerEventGlyph("mvp") + '</span>' : ""}
-                    ${rating !== null ? '<span class="bf-new-safe-player-rate" title="Note du joueur ' + esc(Number(rating).toFixed(1)) + '/10" aria-label="Note du joueur ' + esc(Number(rating).toFixed(1)) + ' sur 10"><svg class="bf-new-safe-rating-star" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.5l2.9 6 6.6 1-4.8 4.7 1.1 6.7-5.8-3.2-5.8 3.2 1.1-6.7-4.8-4.7 6.6-1z"/></svg><span>' + esc(Number(rating).toFixed(1)) + '</span></span>' : ""}
+                    ${playerIsOfficialMvp(player) ? '<span class="bf-new-safe-mvp-chip" title="Joueur du match" aria-label="Joueur du match">' + playerPerformanceIcon("mvp") + '</span>' : ""}
+                    ${rating !== null ? '<span class="bf-new-safe-player-rate" title="Note du joueur ' + esc(Number(rating).toFixed(1)) + '/10" aria-label="Note du joueur ' + esc(Number(rating).toFixed(1)) + ' sur 10"><span class="bf-new-safe-rating-star" aria-hidden="true">★</span><span>' + esc(Number(rating).toFixed(1)) + '</span></span>' : ""}
 
                   </div>
 
@@ -2181,133 +2377,47 @@ ${esc(String(playerName(player) || "P").split(/\s+/).map(part => part[0] || "").
      RENDER EVENTS
      ========================================================= */
 
-  function renderEvents(
-    details
-  ) {
-
-    const events =
-      getEvents(
-        details
-      );
-
-    if (
-      !events.length
-    ) {
-
-      return `
-
-        <div
-          class="bf-new-safe-empty"
-        >
-          Aucun événement détaillé disponible.
-        </div>
-
-      `;
-
+  function renderEvents(details) {
+    const events = getEvents(details);
+    if (!events.length) {
+      return '<div class="bf-new-safe-empty">Aucun événement détaillé disponible.</div>';
     }
-
-    return events
-      .map(
-        event => {
-
-          const team =
-            String(
-              first(
-                event?.team?.name,
-                event?.team_name,
-                event?.club?.name,
-                ""
-              )
-            );
-
-          const assist =
-            eventAssist(
-              event
-            );
-
-          return `
-
-            <div
-              class="bf-new-safe-event"
-            >
-
-              <div
-                class="bf-new-safe-minute"
-              >
-                ${esc(
-                  eventMinute(
-                    event
-                  )
-                )}'
-              </div>
-
-              <div
-                class="bf-new-safe-icon"
-              >
-                ${eventIcon(
-                  event
-                )}
-              </div>
-
-              <div>
-
-                <div
-                  class="bf-new-safe-event-player"
-                >
-                  ${esc(
-                    eventPlayer(
-                      event
-                    )
-                  )}
-                </div>
-
-                ${
-                  team
-
-                    ? `
-
-                      <div
-                        class="bf-new-safe-event-team"
-                      >
-                        ${esc(
-                          team
-                        )}
-                      </div>
-
-                    `
-
-                    : ""
-                }
-
-                ${
-                  assist
-
-                    ? `
-
-                      <div
-                        class="bf-new-safe-assist"
-                      >
-                        Assist · ${esc(
-                          assist
-                        )}
-                      </div>
-
-                    `
-
-                    : ""
-                }
-
-              </div>
-
-            </div>
-
-          `;
-        }
-      )
-      .join("");
+    return events.map(event => {
+      const type = eventType(event);
+      const team = String(first(event?.team?.name, event?.team_name, event?.club?.name, ""));
+      const isGoal = eventIsGoal(event);
+      const isSub = eventIsSubstitution(event);
+      const assist = isGoal ? eventAssist(event) : "";
+      const swap = isSub ? eventSubstitutionData(event) : null;
+      const minute = esc(eventMinute(event));
+      let description = "";
+      if (isSub && swap && (swap.incoming || swap.outgoing)) {
+        description = '<div class="bf-new-safe-substitution-line">' +
+          (swap.outgoing ? '<span class="bf-new-safe-sub-out">↘ SORTIE</span><strong>' + esc(swap.outgoing) + '</strong>' : '') +
+          (swap.outgoing && swap.incoming ? '<span class="bf-new-safe-sub-arrow">→</span>' : '') +
+          (swap.incoming ? '<span class="bf-new-safe-sub-in">↗ ENTRÉE</span><strong>' + esc(swap.incoming) + '</strong>' : '') +
+          '</div>';
+      } else if (isSub && swap && swap.involved.length) {
+        description = '<div class="bf-new-safe-substitution-line"><span class="bf-new-safe-sub-neutral">⇄ REMPLACEMENT</span><strong>' +
+          esc(swap.involved.slice(0,2).join(" ↔ ")) + '</strong></div>';
+      }
+      const playerLine = isSub
+        ? (swap && (swap.incoming || swap.outgoing) ? "Remplacement" : eventPlayer(event))
+        : eventPlayer(event);
+      return '<article class="bf-new-safe-event' + (isSub ? ' bf-new-safe-event--substitution' : '') + '">' +
+        '<div class="bf-new-safe-minute">' + minute + (String(minute).includes("'") ? "" : "'") + '</div>' +
+        '<div class="bf-new-safe-icon">' + eventIcon(event) + '</div>' +
+        '<div class="bf-new-safe-event-main">' +
+          '<div class="bf-new-safe-event-player">' + esc(playerLine) + '</div>' +
+          (description || '') +
+          (team ? '<div class="bf-new-safe-event-team">' + esc(team) + '</div>' : '') +
+          (assist ? '<div class="bf-new-safe-assist"><span class="bf-new-safe-assist-icon">👟</span><strong>Passe décisive</strong><span>' + esc(assist) + '</span></div>' : '') +
+          (!isSub && !assist && event?.detail && isGoal ? '<div class="bf-new-safe-event-detail">' + esc(event.detail) + '</div>' : '') +
+        '</div></article>';
+    }).join("");
   }
 
-  function statRows(details) {
+    function statRows(details) {
     const raw = first(details?.statistics, details?.stats, details?.matchStatistics, []);
     const label = item => String(first(item?.type?.name, typeof item?.type === "string" ? item.type : null,
       item?.name, item?.label, item?.key, item?.stat?.name, ""));
@@ -2359,97 +2469,148 @@ ${esc(String(playerName(player) || "P").split(/\s+/).map(part => part[0] || "").
     }).join("") + '</div>';
   }
 
-  function playerEventGlyph(kind) {
-    const graphic = {
-      goal: '<circle cx="12" cy="12" r="9" fill="#ffffff" stroke="#d1fae5" stroke-width="1.5"/><path d="M12 7l3 2-1 4h-4L9 9zM8 4l1.5 3M16 4l-1 3M4.5 10l4.5-1M19.5 10L15 9M6 17l3-4M18 17l-4-4M12 21v-8" fill="#111827" stroke="#111827" stroke-width=".7" stroke-linejoin="round"/>',
-      penalty: '<circle cx="12" cy="12" r="9" fill="none" stroke="#fde68a" stroke-width="2"/><circle cx="12" cy="12" r="4.5" fill="none" stroke="#fde68a" stroke-width="2"/><circle cx="12" cy="12" r="1.5" fill="#fde68a"/>',
-      own: '<circle cx="9" cy="14" r="5.5" fill="#ffffff" stroke="#f9a8d4" stroke-width="1.4"/><path d="M13 6h7m-3-3 3 3-3 3M12 14l-2-2 3-2 2 3-2 3z" fill="none" stroke="#f9a8d4" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>',
-      assist: '<path d="M3 15l4-2 2-6 4 2 2 4 4 1 2 3-1 3H5l-2-2z" fill="#eaf2ff" stroke="#ffffff" stroke-width="1.3" stroke-linejoin="round"/><path d="M9 9l3 2m-4 1l3 2m-4 1l3 2" stroke="#1d4ed8" stroke-width="1.4" stroke-linecap="round"/>',
-      injury: '<circle cx="12" cy="12" r="9" fill="#e2e8f0" stroke="#ffffff" stroke-width="1.3"/><path d="M10 5h4v5h5v4h-5v5h-4v-5H5v-4h5z" fill="#475569"/>',
-      yellow: '<rect x="6" y="3" width="12" height="18" rx="2" fill="#facc15" stroke="#ffffff" stroke-width="1.6"/>',
-      red: '<rect x="6" y="3" width="12" height="18" rx="2" fill="#ef4444" stroke="#ffffff" stroke-width="1.6"/>',
-      subIn: '<path d="M4 12h15m-5-5 5 5-5 5" fill="none" stroke="#bbf7d0" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/><path d="M5 5v4" stroke="#bbf7d0" stroke-width="2" stroke-linecap="round"/>',
-      subOut: '<path d="M20 12H5m5-5-5 5 5 5" fill="none" stroke="#fecdd3" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/><path d="M19 5v4" stroke="#fecdd3" stroke-width="2" stroke-linecap="round"/>',
-      sub: '<path d="M4 8h15m-5-4 5 4-5 4M20 16H5m5-4-5 4 5 4" fill="none" stroke="#d1fae5" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>',
-      mvp: '<path d="M12 2.5l2.9 6 6.6 1-4.8 4.7 1.1 6.7-5.8-3.2-5.8 3.2 1.1-6.7-4.8-4.7 6.6-1z" fill="#422006" stroke="#fff1a6" stroke-width="1"/>'
+  function playerPerformanceIcon(kind) {
+    const icons = {
+      goal: "⚽", penalty: "🎯", own: "↗", assist: "👟",
+      injury: "✚", yellow: "", red: "", subIn: "↗", subOut: "↙",
+      sub: "⇄", mvp: "🏆"
     };
-    return '<svg class="bf-new-safe-event-svg" viewBox="0 0 24 24" aria-hidden="true" focusable="false">' + (graphic[kind] || graphic.sub) + '</svg>';
+    if (kind === "yellow" || kind === "red") {
+      return '<span class="bf-new-safe-card-glyph bf-new-safe-card-glyph--' + kind + '" aria-hidden="true"></span>';
+    }
+    return '<span class="bf-new-safe-icon-glyph bf-new-safe-icon-glyph--' + kind + '" aria-hidden="true">' + (icons[kind] || "•") + '</span>';
+  }
+
+  function playerMetricCount(player, aliases) {
+    const aliasSet = new Set(aliases.map(value => norm(value).replace(/[^a-z0-9]/g, "")));
+    const seen = new Set();
+    const queue = [{ value: player, depth: 0 }, { value: getPlayerObject(player), depth: 0 }];
+    let maximum = 0;
+    const numericValue = value => {
+      if (value === null || value === undefined || value === "" || typeof value === "boolean") return null;
+      if (typeof value === "number" && Number.isFinite(value)) return value;
+      if (typeof value === "string") {
+        const match = value.replace(/,/g, ".").match(/-?\d+(?:\.\d+)?/);
+        return match ? Number(match[0]) : null;
+      }
+      if (typeof value === "object") {
+        for (const key of ["total", "value", "count", "number", "amount", "displayValue", "display", "statValue"]) {
+          if (value[key] !== undefined && value[key] !== value) {
+            const result = numericValue(value[key]);
+            if (result !== null) return result;
+          }
+        }
+      }
+      return null;
+    };
+    while (queue.length) {
+      const item = queue.shift();
+      const current = item?.value;
+      if (!current || typeof current !== "object" || seen.has(current) || item.depth > 4) continue;
+      seen.add(current);
+      if (Array.isArray(current)) {
+        for (const child of current) queue.push({ value: child, depth: item.depth + 1 });
+        continue;
+      }
+      const label = norm(first(current.name, current.label, current.type?.name, current.type, current.stat?.name, current.key, "")).replace(/[^a-z0-9]/g, "");
+      if (aliasSet.has(label)) {
+        const n = numericValue(first(current.value, current.total, current.count, current.displayValue, current.stat?.value, current.stat?.total, current));
+        if (n !== null && n >= 0) maximum = Math.max(maximum, n);
+      }
+      for (const [key, value] of Object.entries(current)) {
+        const normalKey = norm(key).replace(/[^a-z0-9]/g, "");
+        if (aliasSet.has(normalKey)) {
+          const n = numericValue(value);
+          if (n !== null && n >= 0) maximum = Math.max(maximum, n);
+        }
+        if (value && typeof value === "object" && item.depth < 4) queue.push({ value, depth: item.depth + 1 });
+      }
+    }
+    return maximum;
   }
 
   function playerEventBadges(player, details) {
-    const name = norm(playerName(player));
-    if (!name) return "";
     const counts = { goals:0, penalties:0, ownGoals:0, assists:0, yellow:0, red:0, injury:0, subIn:0, subOut:0, subs:0 };
-    getEvents(details).forEach(event => {
-      const scorer = norm(first(
-        event?.player?.name, event?.player_name, event?.athlete?.displayName,
-        event?.participants?.[0]?.athlete?.displayName, eventPlayer(event)
-      ));
-      const assist = norm(eventAssist(event));
+    const events = getEvents(details);
+    events.forEach(event => {
       const type = eventType(event);
-      if (scorer === name) {
-        if (type.includes("goal") || type.includes("score")) {
-          const detailsText = norm([
-            event?.goalType, event?.goal_type, event?.detail, event?.text,
-            event?.description, event?.commentary
-          ].filter(Boolean).join(" "));
-          const ownGoal = event?.ownGoal === true || event?.own_goal === true ||
-            event?.isOwnGoal === true || /own goal|but contre son camp|autogoal/.test(detailsText);
-          const penalty = event?.isPenalty === true || event?.penalty === true ||
-            event?.penaltyGoal === true || /penalty|penalty goal|penalty shoot/.test(detailsText);
-          if (ownGoal) counts.ownGoals += 1;
-          else if (penalty) counts.penalties += 1;
-          else counts.goals += 1;
-        } else if (type.includes("yellow")) counts.yellow += 1;
-        else if (type.includes("red")) counts.red += 1;
-        else if (type.includes("sub")) counts.subs += 1;
-        else if (type.includes("injur") || type.includes("hurt") || type.includes("medical")) counts.injury += 1;
+      const primary = [
+        event?.player, event?.scorer, event?.goalScorer, event?.goal_scorer,
+        event?.goal?.player, event?.athlete, event?.actor,
+        event?.player_name, event?.playerName, event?.scorer_name,
+        event?.participants?.[0]?.athlete, event?.participants?.[0]?.player,
+        event?.participants?.[0], event?.players?.[0]
+      ].find(value => eventPersonName(value));
+      const isGoal = eventIsGoal(event);
+      if (isGoal && primary && samePerson(primary, player)) {
+        const detailsText = norm([
+          event?.goalType, event?.goal_type, event?.detail, event?.text,
+          event?.description, event?.commentary, event?.goalDescription
+        ].filter(Boolean).join(" "));
+        const ownGoal = event?.ownGoal === true || event?.own_goal === true ||
+          event?.isOwnGoal === true || event?.is_own_goal === true ||
+          /own goal|but contre son camp|autogoal|csc/.test(detailsText);
+        const penalty = event?.isPenalty === true || event?.is_penalty === true ||
+          event?.penalty === true || event?.penaltyGoal === true ||
+          /penalt|tir au but/.test(detailsText);
+        if (ownGoal) counts.ownGoals += 1;
+        else if (penalty) counts.penalties += 1;
+        else counts.goals += 1;
+      } else if (!isGoal && primary && samePerson(primary, player)) {
+        if (/second yellow|red card|redcard|carton rouge/.test(type)) counts.red += 1;
+        else if (/yellow card|yellowcard|carton jaune/.test(type)) counts.yellow += 1;
+        else if (/injur|hurt|medical|bless/.test(type)) counts.injury += 1;
       }
-      if (assist && assist === name && (type.includes("goal") || type.includes("score"))) counts.assists += 1;
-      if (type.includes("sub")) {
-        const incoming = norm(first(
-          event?.playerIn?.name, typeof event?.playerIn === "string" ? event.playerIn : "",
-          event?.player_in?.name, typeof event?.player_in === "string" ? event.player_in : "",
-          event?.playerInName, event?.player_in_name,
-          event?.incomingPlayer?.name, event?.incoming_player?.name,
-          event?.substitution?.in?.name, event?.substitution?.in
-        ));
-        const outgoing = norm(first(
-          event?.playerOut?.name, typeof event?.playerOut === "string" ? event.playerOut : "",
-          event?.player_out?.name, typeof event?.player_out === "string" ? event.player_out : "",
-          event?.playerOutName, event?.player_out_name,
-          event?.outgoingPlayer?.name, event?.outgoing_player?.name,
-          event?.substitution?.out?.name, event?.substitution?.out
-        ));
-        if (incoming && incoming === name) counts.subIn += 1;
-        if (outgoing && outgoing === name) counts.subOut += 1;
+
+      const assist = eventIsGoal(event) ? eventAssist(event) : "";
+      if (assist && samePerson(assist, player)) counts.assists += 1;
+
+      if (eventIsSubstitution(event)) {
+        const swap = eventSubstitutionData(event);
+        if (swap.incoming && samePerson(swap.incoming, player)) counts.subIn += 1;
+        if (swap.outgoing && samePerson(swap.outgoing, player)) counts.subOut += 1;
+        if (!swap.incoming && !swap.outgoing && swap.involved.some(name => samePerson(name, player))) counts.subs += 1;
       }
     });
+
+    const goals = playerMetricCount(player, ["goals", "goal", "goalsScored", "scoredGoals"]);
+    const assists = playerMetricCount(player, ["assists", "assist", "goalAssists", "assistsMade"]);
+    const yellows = playerMetricCount(player, ["yellowCards", "yellowCard", "yellow", "yellowCardsTotal"]);
+    const reds = playerMetricCount(player, ["redCards", "redCard", "red", "redCardsTotal"]);
+    const penalties = playerMetricCount(player, ["penaltyGoals", "penaltiesScored", "goalsFromPenalty"]);
+    const ownGoals = playerMetricCount(player, ["ownGoals", "ownGoal"]);
+    counts.penalties = Math.max(counts.penalties, penalties);
+    counts.ownGoals = Math.max(counts.ownGoals, ownGoals);
+    counts.goals = Math.max(counts.goals, Math.max(0, goals - counts.penalties - counts.ownGoals));
+    counts.assists = Math.max(counts.assists, assists);
+    counts.yellow = Math.max(counts.yellow, yellows);
+    counts.red = Math.max(counts.red, reds);
+
     const badges = [];
     const add = (kind, value, title) => {
       if (!(value > 0)) return;
       badges.push(
         '<span class="bf-new-safe-event-badge bf-new-safe-event-badge--' + kind +
         '" title="' + esc(title) + '" aria-label="' + esc(title) + '">' +
-        playerEventGlyph(kind) +
+        playerPerformanceIcon(kind) +
         (value > 1 ? '<span class="bf-new-safe-event-count">' + value + '</span>' : '') +
         '</span>'
       );
     };
-    add("goal",counts.goals,"But");
-    add("penalty",counts.penalties,"But sur penalty");
+    add("goal",counts.goals,"Buts");
+    add("penalty",counts.penalties,"Buts sur penalty");
     add("own",counts.ownGoals,"But contre son camp");
-    add("assist",counts.assists,"Passe décisive");
-    add("injury",counts.injury,"Blessure");
-    add("yellow",counts.yellow,"Carton jaune");
-    add("red",counts.red,"Carton rouge");
+    add("assist",counts.assists,"Passes décisives");
+    add("injury",counts.injury,"Blessures");
+    add("yellow",counts.yellow,"Cartons jaunes");
+    add("red",counts.red,"Cartons rouges");
     add("subIn",counts.subIn,"Entrée en jeu");
     add("subOut",counts.subOut,"Sortie du terrain");
-    add("sub",counts.subs,"Remplacement");
+    if (!counts.subIn && !counts.subOut) add("sub",counts.subs,"Remplacements");
     return badges.join("");
   }
 
-  function playerIsOfficialMvp(player) {
+    function playerIsOfficialMvp(player) {
     const p = getPlayerObject(player);
     const sources = [player, p, player?.raw, player?.raw?.player].filter(value => value && typeof value === "object");
     return sources.some(source => [
