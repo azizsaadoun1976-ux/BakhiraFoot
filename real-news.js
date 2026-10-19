@@ -107,18 +107,61 @@
     container.querySelectorAll(".bf-real-news-card").forEach(card => { card.hidden = category !== "Toutes" && card.dataset.category !== category; });
   });
 
+  const NEWS_CACHE_KEY = "bakhirafoot-real-news-v1";
+
+  function readCachedNews() {
+    try {
+      const raw = localStorage.getItem(NEWS_CACHE_KEY);
+      if (!raw) return null;
+      const data = JSON.parse(raw);
+      return Array.isArray(data?.articles) && data.articles.length ? data : null;
+    } catch (_) {
+      return null;
+    }
+  }
+
+  function saveCachedNews(data) {
+    try {
+      localStorage.setItem(NEWS_CACHE_KEY, JSON.stringify({
+        articles: data.articles,
+        updatedAt: data.updatedAt || new Date().toISOString(),
+        sources: Array.isArray(data.sources) ? data.sources : []
+      }));
+    } catch (_) {
+      // Storage can be unavailable or full; live rendering still works.
+    }
+  }
+
   async function load() {
     const targets = ["homeNews", "newsGrid"].map(id => document.getElementById(id)).filter(Boolean);
-    targets.forEach(node => node.innerHTML = '<div class="bf-news-status">Chargement des actualités réelles…</div>');
+    const cached = readCachedNews();
+
+    // Show the last successful feed immediately while the live request runs.
+    if (cached) {
+      render(cached.articles, cached.updatedAt, cached.sources || []);
+    } else {
+      targets.forEach(node => node.innerHTML = '<div class="bf-news-status">Chargement des actualités réelles…</div>');
+    }
+
     try {
-      const response = await fetch(NEWS_API, { headers: { "Accept": "application/json" }, cache: "no-store" });
+      const response = await fetch(NEWS_API, {
+        headers: { "Accept": "application/json" },
+        cache: "no-store"
+      });
       if (!response.ok) throw new Error("News API HTTP " + response.status);
       const data = await response.json();
       if (!Array.isArray(data.articles) || !data.articles.length) throw new Error("No articles returned");
+
+      saveCachedNews(data);
       render(data.articles, data.updatedAt, Array.isArray(data.sources) ? data.sources : []);
     } catch (error) {
       console.warn("BAKHIRAFOOT REAL NEWS:", error);
-      renderError();
+      // Preserve cached/previously rendered articles on temporary API errors.
+      if (cached) {
+        render(cached.articles, cached.updatedAt, cached.sources || []);
+      } else if (!targets.some(node => node.querySelector(".bf-real-news-card"))) {
+        renderError();
+      }
     }
   }
 
