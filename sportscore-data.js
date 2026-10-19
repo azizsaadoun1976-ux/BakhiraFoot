@@ -6353,7 +6353,7 @@ function bindHistoricalSeasonSelectors(container) {
       const card = select.closest(".bf-competition");
 
       const standingsBox = card?.querySelector(
-        ".bf-season-standings-content"
+        ".bf-historical-table-region"
       );
 
       const status = card?.querySelector(
@@ -6389,7 +6389,7 @@ const originalPlayersHTML = playersBox
           // Après innerHTML, l'ancien playersBox est détaché du DOM :
           // ne pas le modifier, sinon les statistiques visibles restent vides.
           standingsBox.innerHTML = originalHTML;
-          setHistoricalSeasonSections(card, true);
+          if (playersBox) playersBox.innerHTML = originalPlayersHTML;
 
           status.textContent =
             "Données de la saison actuelle.";
@@ -6422,12 +6422,14 @@ const originalPlayersHTML = playersBox
           let groups = historicalStandingsCache.get(cacheKey);
 
           if (!groups) {
-            groups = await fetchHistoricalESPNStandings(
-              espnCode,
-              year
-            );
-
-            historicalStandingsCache.set(cacheKey, groups);
+            try {
+              groups = await fetchHistoricalESPNStandings(espnCode, year);
+              historicalStandingsCache.set(cacheKey, groups);
+            } catch (standingsError) {
+              // Continue loading historical player stats if ESPN has no old table for this league.
+              console.warn("Classement historique absent; on continue les statistiques:", standingsError);
+              groups = [];
+            }
           }
 
           if (currentRequest !== requestNumber) {
@@ -6464,24 +6466,18 @@ const originalPlayersHTML = playersBox
             .join("");
 
           
-          if (!tablesHTML) {
-            throw new Error(
-              `Aucun classement disponible pour ${year}.`
-            );
-          }
-
-          // نعرضو الترتيب مباشرة.
-                    standingsBox.innerHTML = `
-            ${renderQualificationLegend(usefulGroups, competition)}
-            ${tablesHTML}
-          `;
-
-          // نرجعو بلاصة الهدافين والأسيستات للصفحة
-          if (playersBox) {
-            standingsBox.appendChild(playersBox);
-          }
-
-          setHistoricalSeasonSections(card, false);
+          // Do not let a missing old table block the scorer/assist request.
+          standingsBox.innerHTML = tablesHTML
+            ? `
+                ${renderQualificationLegend(usefulGroups, competition)}
+                ${tablesHTML}
+              `
+            : `
+                <div class="ss-no-data">
+                  Le classement historique ${year} n'est pas fourni par la source.
+                  Les statistiques des joueurs sont chargées indépendamment ci-dessous.
+                </div>
+              `;
 
           if (playersBox) {
             playersBox.innerHTML = `
@@ -6513,8 +6509,9 @@ const originalPlayersHTML = playersBox
             `;
           }
 
-          status.textContent =
-            `Classement ${year} chargé. Chargement des statistiques historiques…`;
+          status.textContent = tablesHTML
+            ? `Classement ${year} chargé. Chargement des statistiques historiques…`
+            : `Classement ${year} indisponible. Chargement des statistiques historiques…`;
 
           // إحصائيات اللاعبين ما تبقاش تحبس الترتيب.
           const seasonRequest = currentRequest;
@@ -6581,8 +6578,12 @@ const originalPlayersHTML = playersBox
 
               status.textContent =
                 historicalGoals.length || historicalAssists.length
-                  ? `Classement et statistiques historiques de ${year} chargés.`
-                  : `Classement ${year} chargé. Statistiques historiques indisponibles.`;
+                  ? (tablesHTML
+                      ? `Classement et statistiques historiques de ${year} chargés.`
+                      : `Statistiques historiques de ${year} chargées; classement indisponible.`)
+                  : (tablesHTML
+                      ? `Classement ${year} chargé. Statistiques historiques indisponibles.`
+                      : `Classement et statistiques historiques de ${year} indisponibles.`);
             })
             .catch(playersError => {
               if (seasonRequest !== requestNumber) return;
@@ -6611,8 +6612,9 @@ const originalPlayersHTML = playersBox
                 `;
               }
 
-              status.textContent =
-                `Classement ${year} chargé. Les statistiques des joueurs ne sont pas disponibles.`;
+              status.textContent = tablesHTML
+                ? `Classement ${year} chargé. Les statistiques des joueurs ne sont pas disponibles.`
+                : `Le classement et les statistiques des joueurs de ${year} ne sont pas disponibles.`;
             })
             .finally(() => {
               clearTimeout(playerTimer);
@@ -6629,6 +6631,7 @@ const originalPlayersHTML = playersBox
           );
 
           standingsBox.innerHTML = originalHTML;
+          if (playersBox) playersBox.innerHTML = originalPlayersHTML;
 
           select.value = "current";
 
@@ -7423,6 +7426,7 @@ const usefulGroups = standingGroups.filter(group => {
     <details
   class="bf-competition"
   data-competition-name="${escapeHTML(competition.name)}"
+  data-competition-slug="${escapeHTML(competition.slug)}"
 >
       <summary class="bf-competition-summary">
         <div class="bf-competition-brand">
@@ -7446,6 +7450,8 @@ const usefulGroups = standingGroups.filter(group => {
       <div class="bf-competition-content">
       ${renderSeasonSelector(competition)}
        <div class="bf-season-standings-content">
+        <div class="bf-historical-table-region">
+
         ${renderQualificationLegend(usefulGroups, competition)}
         ${tablesHTML || `
           <div class="ss-no-data">
@@ -7471,6 +7477,7 @@ ${ESPN_KNOCKOUT_CODES[competition.name] ? `
 </p>
   </section>
 ` : ""}
+        </div>
         <div class="ss-players-grid">
           ${renderPlayers(goals, "goals", "Meilleurs buteurs", "⚽")}
 ${renderPlayers(assists, "assists", "Meilleurs passeurs", "🎯")}
@@ -7655,23 +7662,77 @@ container
       .normalize("NFD")
       .replace(/[\u0300-\u036f]/g, "")
       .toLowerCase()
+      .replace(/\b(?:19|20)\d{2}(?:\s*[-/]\s*\d{2,4})?\b/g, " ")
       .replace(/[^a-z0-9]/g, "");
   }
 
   function competitionNameAliases(value) {
     const normalized = normalizeCompetitionName(value);
     const aliases = {
-      "championsleague": "uefachampionsleague",
-      "ucl": "uefachampionsleague",
-      "europaleague": "uefaeuropaleague",
-      "uel": "uefaeuropaleague",
-      "conferenceleague": "uefaeuropaconferenceleague",
-      "uecl": "uefaeuropaconferenceleague",
-      "spanishlaliga": "laliga",
-      "botola": "botolapro",
-      "botolaproinwi": "botolapro",
-      "worldcup": "fifaworldcup",
-      "afcon": "cafafricacupofnations"
+      "epl": "english-premier-league",
+      "premierleague": "english-premier-league",
+      "englishpremierleague": "english-premier-league",
+      "englandpremierleague": "english-premier-league",
+      "premierleagueengland": "english-premier-league",
+      "laliga": "spanish-la-liga",
+      "spanishlaliga": "spanish-la-liga",
+      "laligasantander": "spanish-la-liga",
+      "seriea": "italian-serie-a",
+      "italianseriea": "italian-serie-a",
+      "serieaitaly": "italian-serie-a",
+      "bundesliga": "bundesliga",
+      "germanbundesliga": "bundesliga",
+      "ligue1": "french-ligue-1",
+      "frenchligue1": "french-ligue-1",
+      "eredivisie": "netherlands-eredivisie",
+      "dutcheredivisie": "netherlands-eredivisie",
+      "uefachampionsleague": "uefa-champions-league",
+      "championsleague": "uefa-champions-league",
+      "ucl": "uefa-champions-league",
+      "uefaeuropaleague": "uefa-europa-league",
+      "europaleague": "uefa-europa-league",
+      "uel": "uefa-europa-league",
+      "uefaeuropaconferenceleague": "uefa-europa-conference-league",
+      "conferenceleague": "uefa-europa-conference-league",
+      "uecl": "uefa-europa-conference-league",
+      "botola": "the-botola-pro",
+      "botolapro": "the-botola-pro",
+      "botolaproinwi": "the-botola-pro",
+      "botolaprod1": "the-botola-pro",
+      "moroccanbotolapro": "the-botola-pro",
+      "cafafricacupofnations": "caf-africa-cup-of-nations",
+      "africacupofnations": "caf-africa-cup-of-nations",
+      "afcon": "caf-africa-cup-of-nations",
+      "egyptianpremierleague": "egyptian-premier-league",
+      "egyptpremierleague": "egyptian-premier-league",
+      "worldcup": "fifa-world-cup",
+      "fifaworldcup": "fifa-world-cup",
+      "uefaeuro": "uefa-european-championship",
+      "euro": "uefa-european-championship",
+      "uefaeuropeanchampionship": "uefa-european-championship",
+      "uefanationsleague": "uefa-nations-league",
+      "nationsleague": "uefa-nations-league",
+      "afcasiancup": "afc-asian-cup",
+      "asiancup": "afc-asian-cup",
+      "copaamerica": "conmebol-copa-america",
+      "conmebolcopaamerica": "conmebol-copa-america",
+      "championship": "english-football-league-championship",
+      "eflchampionship": "english-football-league-championship",
+      "englishfootballleaguechampionship": "english-football-league-championship",
+      "serieb": "italian-serie-b",
+      "italianserieb": "italian-serie-b",
+      "brasileirao": "brazilian-serie-a",
+      "brasileiraoseriea": "brazilian-serie-a",
+      "brazilianseriea": "brazilian-serie-a",
+      "saudiproleague": "saudi-professional-league",
+      "saudiprofessionalleague": "saudi-professional-league",
+      "primeiraliga": "portuguese-primera-liga",
+      "portugueseprimera": "portuguese-primera-liga",
+      "superlig": "turkish-super-league",
+      "turkishsuperleague": "turkish-super-league",
+      "belgianproleague": "belgian-pro-league",
+      "scottishpremiership": "scottish-premiership",
+      "argentinadivision1": "argentine-division-1"
     };
     return aliases[normalized] || normalized;
   }
@@ -7679,24 +7740,23 @@ container
   window.openBakhiraCompetitionStandings = function (competitionName) {
     const requested = competitionNameAliases(competitionName);
     window.__bfPendingCompetitionName = String(competitionName || "");
-
     if (typeof window.go === "function") window.go("leagues");
 
     const container = document.getElementById("realStandings");
     const cards = container
       ? Array.from(container.querySelectorAll("details.bf-competition"))
       : [];
-
     if (!cards.length) return;
 
-    const target = cards.find(card =>
-      competitionNameAliases(card.dataset.competitionName) === requested
-    );
+    const target = cards.find(card => {
+      const slug = String(card.dataset.competitionSlug || "");
+      return slug === requested ||
+        normalizeCompetitionName(slug) === normalizeCompetitionName(requested) ||
+        competitionNameAliases(card.dataset.competitionName) === requested;
+    });
 
     if (!target) {
-      if (typeof window.toast === "function") {
-        window.toast("Classement non disponible pour cette compétition.");
-      }
+      if (typeof window.toast === "function") window.toast("Classement non disponible pour cette compétition.");
       window.__bfPendingCompetitionName = "";
       return;
     }
