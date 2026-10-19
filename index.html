@@ -60,7 +60,7 @@
     "logo": "https://bakhira-foot.vercel.app/logo.svg"
   }
   </script>
-  <link rel="stylesheet" href="/bakhira-design-2026.css?v=20261019-08">
+  <link rel="stylesheet" href="/bakhira-design-2026.css?v=20261019-09">
 </head>
 
 <body>
@@ -81,6 +81,7 @@
 
     <div class="tools">
       <input id="search" name="search" type="search" placeholder="Rechercher une équipe ou un joueur" aria-label="Rechercher une équipe ou un joueur" autocomplete="off">
+      <select id="bfLanguageSelect" class="bf-language-switcher" aria-label="Choisir la langue" title="Language"><option value="fr">FR</option><option value="en">EN</option><option value="ar">AR</option></select>
       <button id="theme" aria-label="Changer le thème">☾</button>
     </div>
   </header>
@@ -105,39 +106,37 @@
 
       <!-- ================= HOME ================= -->
       <section id="home" class="page active">
-        <div class="hero">
-          <div class="hero-content">
-            <div class="hero-badge"><span class="bf-hero-star" aria-hidden="true">✦</span> BAKHIRAFOOT · CLUB OFFICIEL</div>
-            <small>LE CLUB DES PASSIONNÉS · DEPUIS LE COUP D’ENVOI</small>
-            <h1>Vivez le match.<br><span>Écrivez l’histoire.</span></h1>
-            <p>Le rendez-vous des supporters : scores en direct, compositions, classements et statistiques du football marocain et des plus grandes scènes européennes.</p>
-            <div class="hero-feature-pills" aria-label="Fonctionnalités">
-              <span><i></i> L’INTENSITÉ DU LIVE</span>
-              <span>✦ LES CHIFFRES DU MATCH</span>
-              <span>🏆 LA COURSE AUX TITRES</span>
+        <section class="bf-club-hero" aria-labelledby="bf-club-hero-title">
+          <div class="bf-club-hero-noise" aria-hidden="true"></div>
+          <div class="bf-club-hero-copy">
+            <div class="bf-club-overline"><span class="bf-club-live-dot"></span> BAKHIRAFOOT <span class="bf-club-overline-separator">/</span> MATCHDAY</div>
+            <div class="bf-club-signature">
+              <span class="bf-club-crest" aria-hidden="true"><span>BF</span><i>✦</i></span>
+              <span class="bf-club-signature-text"><strong>BAKHIRAFOOT</strong><small>LE CLUB DES PASSIONNÉS</small></span>
             </div>
-            <div class="hero-actions">
-              <button class="green" type="button" onclick="go('scores')">⚽ Voir les matchs</button>
-              <button class="hero-more" type="button" onclick="go('leagues')">🏆 Compétitions</button>
+            <h1 id="bf-club-hero-title">Le football.<br><em>En grand.</em></h1>
+            <p>Les grands rendez-vous, les scores en direct et les détails qui font vibrer le jeu. Toute l’actualité du football marocain et international, au même endroit.</p>
+            <div class="bf-club-hero-features">
+              <span><i>01</i> Scores en direct</span>
+              <span><i>02</i> Classements & compétitions</span>
+              <span><i>03</i> Compositions & statistiques</span>
             </div>
+            <div class="bf-club-hero-actions">
+              <button type="button" class="bf-club-primary" onclick="go('scores')">Voir les matchs <span aria-hidden="true">↗</span></button>
+              <button type="button" class="bf-club-secondary" onclick="go('leagues')">Explorer les compétitions <span aria-hidden="true">→</span></button>
+            </div>
+            <div class="bf-club-footnote"><span class="bf-club-footnote-line"></span> POUR CEUX QUI VIVENT LE FOOTBALL</div>
           </div>
-          <div class="hero-live-panel" aria-label="Centre de football en direct">
-            <div class="live-panel-top">
-              <span class="live-panel-brand"><span class="live-dot"></span> MATCHDAY · BAKHIRAFOOT</span>
-              <span class="live-panel-ball" aria-hidden="true">✦</span>
-            </div>
-            <div class="pitch-visual" aria-hidden="true">
-              <div class="pitch-halfway"></div><div class="pitch-center-circle"></div>
-              <div class="pitch-box pitch-box-left"></div><div class="pitch-box pitch-box-right"></div>
-              <div class="pitch-goal pitch-goal-left"></div><div class="pitch-goal pitch-goal-right"></div>
-              <div class="pitch-ball"></div>
-            </div>
-            <div class="live-panel-bottom">
-              <div><strong>Le football. Rien d’autre.</strong><span>Scores · Classements · Passion</span></div>
-              <span class="live-panel-arrow" aria-hidden="true">↗</span>
-            </div>
+          <div class="bf-club-hero-art" aria-hidden="true">
+            <div class="bf-club-art-top"><span><i></i> LE MATCH CENTER</span><span>BF / 026</span></div>
+            <div class="bf-club-stadium-halo"></div><div class="bf-club-art-crest">BF</div>
+            <div class="bf-club-art-ring bf-club-art-ring-one"></div><div class="bf-club-art-ring bf-club-art-ring-two"></div>
+            <div class="bf-club-art-pitch"><div class="bf-club-art-halfway"></div><div class="bf-club-art-center"></div><div class="bf-club-art-box bf-club-art-box-left"></div><div class="bf-club-art-box bf-club-art-box-right"></div><div class="bf-club-art-ball">✦</div></div>
+            <div class="bf-club-art-minute"><small>CHAQUE MINUTE COMPTE</small><strong>90<span>’</span></strong><em>LE JEU NE S’ARRÊTE JAMAIS</em></div>
+            <div class="bf-club-art-footer"><span><i class="bf-club-art-live"></i> LIVE SCORES</span><span>DATA · PASSION · FOOTBALL</span></div>
           </div>
-        </div>
+          <div class="bf-club-hero-index" aria-hidden="true">01 <span>—</span> 90</div>
+        </section>
 
         <section class="home-shortcuts" aria-label="Accès rapide">
           <button type="button" class="home-shortcut home-shortcut--live" onclick="go('scores')">
@@ -268,6 +267,21 @@
   </div>
 
   <div id="toast"></div>
+
+  <div id="bf-language-welcome" class="bf-language-welcome" role="dialog" aria-modal="true" aria-labelledby="bf-language-welcome-title" hidden>
+    <div class="bf-language-welcome-panel">
+      <div class="bf-language-welcome-brand"><span class="bf-language-welcome-crest">BF</span><span>BAKHIRAFOOT <small>PRO FOOTBALL CENTER</small></span></div>
+      <div class="bf-language-welcome-kicker">WELCOME · BIENVENUE · مرحباً</div>
+      <h2 id="bf-language-welcome-title">Choisissez votre langue</h2>
+      <p>Choose your language to continue. يمكنك تغيير اللغة في أي وقت.</p>
+      <div class="bf-language-choice-grid">
+        <button type="button" data-bf-language="fr"><span class="bf-language-choice-code">FR</span><span class="bf-language-choice-copy"><strong>Français</strong><small>Continuer en français</small></span><span class="bf-language-choice-arrow">↗</span></button>
+        <button type="button" data-bf-language="en"><span class="bf-language-choice-code">EN</span><span class="bf-language-choice-copy"><strong>English</strong><small>Continue in English</small></span><span class="bf-language-choice-arrow">↗</span></button>
+        <button type="button" data-bf-language="ar"><span class="bf-language-choice-code">ع</span><span class="bf-language-choice-copy"><strong>العربية</strong><small>تابع باللغة العربية</small></span><span class="bf-language-choice-arrow">↗</span></button>
+      </div>
+      <div class="bf-language-welcome-footer"><span class="bf-club-live-dot"></span> LIVE SCORES · MATCH CENTER · FOOTBALL</div>
+    </div>
+  </div>
 
   <!-- ================= FOOTER ================= -->
   <footer>
