@@ -3266,12 +3266,13 @@ function bfSameFixtureMetadata(candidate,expected,requireDate=false) {
 }
 
   async function openNewMatch(
-    index
+    index,
+    matchOverride = null,
+    identifierOverride = ""
   ) {
 
     const requestId = ++activeNewDetailsRequest;
-    const match =
-      getMatch(index);
+    const match = matchOverride || getMatch(index);
 
     if (match) {
       window.__bfActiveExpectedMatch = match;

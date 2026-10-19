@@ -1234,11 +1234,12 @@ onclick="
               `
           }
 
-          <span>
-            ${escapeHTML(
-              league
-            )}
-          </span>
+          <button type="button" class="bf-score-league-inline"
+            data-bf-open-standings="${escapeHTML(league)}"
+            title="Ouvrir le classement de cette compétition"
+            aria-label="Ouvrir le classement de ${escapeHTML(league)}">
+            ${escapeHTML(league)} <span aria-hidden="true">↗</span>
+          </button>
 
         </div>
 
@@ -9716,12 +9717,21 @@ async function renderHomeMatches() {
       return;
     }
 
-    // Limit the homepage display without replacing the complete Scores match list.
+    // Homepage fixtures come from a separate request, so don't bind their clicks
+    // to numeric indexes in currentMatches (the Scores page may have a different order).
     const homeMatches = matches.slice(0, 8);
+    const registry = new Map();
+    const identifierKeys = match => [
+      match?.fixture?.upstreamId, match?.upstreamId, match?.fixture?.id,
+      match?.fixture?.slug, match?.slug, match?.id, match?.match_id, match?.fixture_id
+    ].filter(value => value !== null && value !== undefined && String(value).trim())
+      .map(value => String(value).trim().toLowerCase());
+    homeMatches.forEach(match => identifierKeys(match).forEach(key => registry.set(key, match)));
+    window.__bfHomeMatchRegistry = registry;
 
     container.innerHTML =
       homeMatches
-        .map((match, index) => createMatchHTML(match, index))
+        .map(match => createMatchHTML(match, -1))
         .join("");
 
     container.dataset.homeMatchesLoaded = "true";
@@ -10641,3 +10651,17 @@ document.addEventListener(
 
   }
 );
+
+/* Open standings when clicking the league label, not the entire match card. */
+document.addEventListener("click", function (event) {
+  const target = event.target instanceof Element ? event.target.closest("[data-bf-open-standings]") : null;
+  if (!target) return;
+  event.preventDefault();
+  event.stopImmediatePropagation();
+  const competitionName = target.getAttribute("data-bf-open-standings") || "";
+  if (typeof window.openBakhiraCompetitionStandings === "function") {
+    window.openBakhiraCompetitionStandings(competitionName);
+  } else if (typeof window.go === "function") {
+    window.go("leagues");
+  }
+}, true);
