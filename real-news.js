@@ -38,7 +38,7 @@
       : "Consultez l’article original pour lire les informations complètes et les détails.";
     return `
       <article class="bf-real-news-card" data-category="${esc(category)}">
-        <a class="bf-news-image-wrap ${article.image && /^https?:\\/\\//i.test(article.image) ? "" : "no-image"}" href="${esc(article.url)}" target="_blank" rel="noopener noreferrer" tabindex="-1" aria-hidden="true">${article.image && /^https?:\\/\\//i.test(article.image) ? `<img class="bf-news-image" src="${esc(article.image)}" alt="" loading="lazy" referrerpolicy="no-referrer">` : ""}<span class="bf-news-image-mark">BAKHIR<span>A</span>FOOT</span></a>
+        <a class="bf-news-image-wrap ${article.image && (article.image.startsWith("https://") || article.image.startsWith("http://")) ? "" : "no-image"}" href="${esc(article.url)}" target="_blank" rel="noopener noreferrer" tabindex="-1" aria-hidden="true">${article.image && (article.image.startsWith("https://") || article.image.startsWith("http://")) ? `<img class="bf-news-image" src="${esc(article.image)}" alt="" loading="lazy" referrerpolicy="no-referrer">` : ""}<span class="bf-news-image-mark">BAKHIR<span>A</span>FOOT</span></a>
         <div class="bf-news-card-content">
         <div class="bf-real-news-top">
           <span class="bf-real-news-category">${esc(category)}</span>
