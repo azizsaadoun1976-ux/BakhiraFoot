@@ -5706,6 +5706,69 @@ function normalizeEvent(event, index) {
      OPEN BY IDENTIFIER
   ========================================================= */
 
+function bfFixtureTextName(value) {
+ if(typeof value==="string")return value.trim();
+ if(!value||typeof value!=="object")return "";
+ return String(value.name||value.displayName||value.display_name||value.shortName||value.short_name||value.teamName||value.team_name||"").trim();
+}
+function bfFixtureRoot(source) {
+ let node=source;
+ for(let i=0;i<4&&node&&typeof node==="object";i++){
+  if(node.data&&typeof node.data==="object"&&(node.data.fixture||node.data.teams||node.data.lineups||node.data.events||node.data.match)){node=node.data;continue;}
+  if(node.match&&typeof node.match==="object"&&(node.match.fixture||node.match.teams||node.match.lineups)){node=node.match;continue;}
+  break;
+ }
+ return node||{};
+}
+function bfFixtureTeamName(source,side) {
+ const node=bfFixtureRoot(source),home=side==="home";
+ const values=home
+  ?[node.teams?.home,node.fixture?.teams?.home,node.fixture?.homeTeam,node.fixture?.home_team,node.home_team,node.homeTeam,node.home,node.host,node.localTeam,node.competitors?.[0],node.lineups?.[0]?.team]
+  :[node.teams?.away,node.fixture?.teams?.away,node.fixture?.awayTeam,node.fixture?.away_team,node.away_team,node.awayTeam,node.away,node.guest,node.visitorTeam,node.competitors?.[1],node.lineups?.[1]?.team];
+ for(const value of values){const name=bfFixtureTextName(value);if(name&&!/^(home|away|home team|away team|domicile|extérieur|exterieur|local|visitor)$/i.test(name))return name;}
+ return "";
+}
+function bfFixtureTime(source) {
+ const node=bfFixtureRoot(source);
+ const values=[node.fixture?.date,node.fixture?.utcDate,node.fixture?.dateTime,node.fixture?.kickoff,node.fixture?.timestamp,node.fixture?.startTimestamp,node.event?.date,node.event?.startTimestamp,node.utcDate,node.date,node.dateTime,node.kickoff,node.kickoff_time,node.startTime,node.start_time,node.timestamp,node.time,node.fixtureDate,node.fixture_date,node.gameDate];
+ for(const value of values){
+  if(value===null||value===undefined||value==="")continue;
+  let result;
+  if(typeof value==="number"||/^\d{10,13}$/.test(String(value).trim())){const n=Number(value);result=new Date(n<100000000000?n*1000:n).getTime();}
+  else result=Date.parse(String(value));
+  if(Number.isFinite(result))return result;
+ }
+ return null;
+}
+function bfFixtureNameKey(value) {
+ return String(value||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase()
+  .replace(/\b(football club|soccer club|fc|cf|sc|afc|f\.c\.|c\.f\.)\b/g," ")
+  .replace(/[^a-z0-9\u0600-\u06ff]+/g,"").trim();
+}
+function bfFixtureNamesCompatible(a,b){if(!a||!b)return false;if(a===b)return true;return a.length>=5&&b.length>=5&&(a.includes(b)||b.includes(a));}
+function bfSameFixtureMetadata(candidate,expected,requireDate=false) {
+ const ah=bfFixtureTeamName(candidate,"home"),aa=bfFixtureTeamName(candidate,"away"),eh=bfFixtureTeamName(expected,"home"),ea=bfFixtureTeamName(expected,"away");
+ if(eh&&ea){
+  if(!ah||!aa)return false;
+  const x=bfFixtureNameKey(ah),y=bfFixtureNameKey(aa),u=bfFixtureNameKey(eh),v=bfFixtureNameKey(ea);
+  if(!((bfFixtureNamesCompatible(x,u)&&bfFixtureNamesCompatible(y,v))||(bfFixtureNamesCompatible(x,v)&&bfFixtureNamesCompatible(y,u))))return false;
+ }
+ const et=bfFixtureTime(expected),at=bfFixtureTime(candidate);
+ if(et!==null&&requireDate&&at===null)return false;
+ if(et!==null&&at!==null&&Math.abs(et-at)>36*60*60*1000)return false;
+ return true;
+}
+
+  function bfFindExpectedMatch(identifier) {
+    const id=String(identifier||"").trim().toLowerCase();
+    if(window.__bfActiveExpectedMatch&&String(window.__bfActiveExpectedIdentifier||"").trim().toLowerCase()===id)return window.__bfActiveExpectedMatch;
+    try{
+      const matches=typeof currentMatches!=="undefined"&&Array.isArray(currentMatches)?currentMatches:[];
+      const keys=match=>[match?.fixture?.upstreamId,match?.upstreamId,match?.fixture?.id,match?.fixture?.slug,match?.slug,match?.id,match?.match_id].filter(v=>v!==null&&v!==undefined).map(v=>String(v).trim().toLowerCase());
+      return matches.find(match=>keys(match).includes(id))||null;
+    }catch(error){return null;}
+  }
+
   async function openDetails(
     identifier
   ) {
@@ -5713,6 +5776,7 @@ function normalizeEvent(event, index) {
       return;
     }
 
+    const expectedMatch = bfFindExpectedMatch(identifier);
     const requestId = ++activeDetailsRequest;
     const detailsController = new AbortController();
     const detailsTimeout = setTimeout(() => detailsController.abort(), 18000);
@@ -5850,6 +5914,10 @@ const response =
         );
       }
 
+      if (expectedMatch && !bfSameFixtureMetadata(details, expectedMatch, false)) {
+        throw new Error("Le fournisseur a renvoyé une ancienne rencontre ; ces données sont ignorées.");
+      }
+
       /* Fill missing official positions and/or missing match statistics from FotMob. */
       if (!hasOfficialLineupCoordinates(details) || !getMatchStatistics(details).length) {
         try {
@@ -5870,7 +5938,10 @@ const response =
             });
             const payload = await response.json();
             const official = payload?.data || payload?.match || payload;
-            if (response.ok && official && typeof official === "object") {
+            const exactCurrentFixture = response.ok && official && typeof official === "object" &&
+              bfSameFixtureMetadata(official, details, true) &&
+              (!expectedMatch || bfSameFixtureMetadata(official, expectedMatch, true));
+            if (exactCurrentFixture) {
               const merged = { ...details };
               const hasOfficialCoordinates = hasOfficialLineupCoordinates(official);
               const hasCurrentStats = getMatchStatistics(details).length > 0;

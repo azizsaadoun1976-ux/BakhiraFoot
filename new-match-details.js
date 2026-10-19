@@ -3212,6 +3212,59 @@ ${esc(String(playerName(player) || "P").split(/\s+/).map(part => part[0] || "").
      OPEN NEW MATCH
      ========================================================= */
 
+function bfFixtureTextName(value) {
+ if(typeof value==="string")return value.trim();
+ if(!value||typeof value!=="object")return "";
+ return String(value.name||value.displayName||value.display_name||value.shortName||value.short_name||value.teamName||value.team_name||"").trim();
+}
+function bfFixtureRoot(source) {
+ let node=source;
+ for(let i=0;i<4&&node&&typeof node==="object";i++){
+  if(node.data&&typeof node.data==="object"&&(node.data.fixture||node.data.teams||node.data.lineups||node.data.events||node.data.match)){node=node.data;continue;}
+  if(node.match&&typeof node.match==="object"&&(node.match.fixture||node.match.teams||node.match.lineups)){node=node.match;continue;}
+  break;
+ }
+ return node||{};
+}
+function bfFixtureTeamName(source,side) {
+ const node=bfFixtureRoot(source),home=side==="home";
+ const values=home
+  ?[node.teams?.home,node.fixture?.teams?.home,node.fixture?.homeTeam,node.fixture?.home_team,node.home_team,node.homeTeam,node.home,node.host,node.localTeam,node.competitors?.[0],node.lineups?.[0]?.team]
+  :[node.teams?.away,node.fixture?.teams?.away,node.fixture?.awayTeam,node.fixture?.away_team,node.away_team,node.awayTeam,node.away,node.guest,node.visitorTeam,node.competitors?.[1],node.lineups?.[1]?.team];
+ for(const value of values){const name=bfFixtureTextName(value);if(name&&!/^(home|away|home team|away team|domicile|extérieur|exterieur|local|visitor)$/i.test(name))return name;}
+ return "";
+}
+function bfFixtureTime(source) {
+ const node=bfFixtureRoot(source);
+ const values=[node.fixture?.date,node.fixture?.utcDate,node.fixture?.dateTime,node.fixture?.kickoff,node.fixture?.timestamp,node.fixture?.startTimestamp,node.event?.date,node.event?.startTimestamp,node.utcDate,node.date,node.dateTime,node.kickoff,node.kickoff_time,node.startTime,node.start_time,node.timestamp,node.time,node.fixtureDate,node.fixture_date,node.gameDate];
+ for(const value of values){
+  if(value===null||value===undefined||value==="")continue;
+  let result;
+  if(typeof value==="number"||/^\d{10,13}$/.test(String(value).trim())){const n=Number(value);result=new Date(n<100000000000?n*1000:n).getTime();}
+  else result=Date.parse(String(value));
+  if(Number.isFinite(result))return result;
+ }
+ return null;
+}
+function bfFixtureNameKey(value) {
+ return String(value||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase()
+  .replace(/\b(football club|soccer club|fc|cf|sc|afc|f\.c\.|c\.f\.)\b/g," ")
+  .replace(/[^a-z0-9\u0600-\u06ff]+/g,"").trim();
+}
+function bfFixtureNamesCompatible(a,b){if(!a||!b)return false;if(a===b)return true;return a.length>=5&&b.length>=5&&(a.includes(b)||b.includes(a));}
+function bfSameFixtureMetadata(candidate,expected,requireDate=false) {
+ const ah=bfFixtureTeamName(candidate,"home"),aa=bfFixtureTeamName(candidate,"away"),eh=bfFixtureTeamName(expected,"home"),ea=bfFixtureTeamName(expected,"away");
+ if(eh&&ea){
+  if(!ah||!aa)return false;
+  const x=bfFixtureNameKey(ah),y=bfFixtureNameKey(aa),u=bfFixtureNameKey(eh),v=bfFixtureNameKey(ea);
+  if(!((bfFixtureNamesCompatible(x,u)&&bfFixtureNamesCompatible(y,v))||(bfFixtureNamesCompatible(x,v)&&bfFixtureNamesCompatible(y,u))))return false;
+ }
+ const et=bfFixtureTime(expected),at=bfFixtureTime(candidate);
+ if(et!==null&&requireDate&&at===null)return false;
+ if(et!==null&&at!==null&&Math.abs(et-at)>36*60*60*1000)return false;
+ return true;
+}
+
   async function openNewMatch(
     index
   ) {
@@ -3219,6 +3272,11 @@ ${esc(String(playerName(player) || "P").split(/\s+/).map(part => part[0] || "").
     const requestId = ++activeNewDetailsRequest;
     const match =
       getMatch(index);
+
+    if (match) {
+      window.__bfActiveExpectedMatch = match;
+      window.__bfActiveExpectedIdentifier = String(match?.fixture?.id || match?.id || match?.fixture?.slug || match?.slug || "");
+    }
 
     if (!match) {
       return false;
@@ -3294,6 +3352,10 @@ ${esc(String(playerName(player) || "P").split(/\s+/).map(part => part[0] || "").
           return true;
         }
 
+        if (!bfSameFixtureMetadata(details, match, false)) {
+          throw new Error("Le fournisseur a renvoyé une ancienne rencontre ; ses détails sont ignorés.");
+        }
+
         if (!hasOfficialLineupCoordinates(details)) {
           try {
             const homeName = details?.teams?.home?.name || details?.home_team?.name ||
@@ -3315,7 +3377,9 @@ ${esc(String(playerName(player) || "P").split(/\s+/).map(part => part[0] || "").
               });
               const payload = await response.json();
               const official = payload?.data || payload?.match || payload;
-              if (response.ok && hasOfficialLineupCoordinates(official)) {
+              if (response.ok && bfSameFixtureMetadata(official, match, true) &&
+                  bfSameFixtureMetadata(official, details, true) &&
+                  hasOfficialLineupCoordinates(official)) {
                 details = { ...details, lineups: official.lineups };
                 console.info("BAKHIRAFOOT: exact official lineup coordinates loaded", {
                   provider: official?.provider || "FotMob",
@@ -3478,6 +3542,8 @@ ${esc(String(playerName(player) || "P").split(/\s+/).map(part => part[0] || "").
           if (resolvedSources.length) {
             openNewMatch(resolvedIndex);
           } else if (typeof window.bfOpenMatchDetails === "function") {
+            window.__bfActiveExpectedMatch = resolvedMatch;
+            window.__bfActiveExpectedIdentifier = cardIdentifier;
             window.bfOpenMatchDetails(cardIdentifier);
           }
           return;
@@ -3532,6 +3598,8 @@ ${esc(String(playerName(player) || "P").split(/\s+/).map(part => part[0] || "").
       event.preventDefault();
       event.stopImmediatePropagation();
 
+      window.__bfActiveExpectedMatch = match;
+      window.__bfActiveExpectedIdentifier = identifier;
       window.bfOpenMatchDetails(identifier);
 
     },

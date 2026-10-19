@@ -329,14 +329,8 @@ const competitions = [
     }
     target.querySelectorAll(".bf-scores-league-link").forEach(button => {
       button.addEventListener("click", () => {
-        const competition = button.dataset.scoreSlug || button.dataset.scoreName || "";
-        if (typeof window.openBakhiraCompetitionStandings === "function") {
-          window.openBakhiraCompetitionStandings(competition);
-        } else if (typeof window.go === "function") {
-          window.go("leagues");
-          if (typeof window.toast === "function") {
-            window.toast("Ouverture du classement de la compétition…");
-          }
+        if (typeof window.selectScoreCompetitionByName === "function") {
+          window.selectScoreCompetitionByName(button.dataset.scoreName || "", button.dataset.scoreSlug || "", button.dataset.scoreLogo || "");
         }
       });
     });
