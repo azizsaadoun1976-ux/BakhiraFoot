@@ -1989,201 +1989,14 @@ function renderSelectedCompetition() {
 
   const competitionsHTML =
     scoreCompetitionGroups
-      .map(
-        (item, index) => {
-
-          const itemLive =
-            item.matches.filter(
-              ({ match }) =>
-                getScoreState(match) ===
-                  "live" ||
-                getScoreState(match) ===
-                  "halftime"
-            ).length;
-
-
-          return `
-            <button
-              type="button"
-              class="
-                bf-score-competition
-                ${
-                  index ===
-                  selectedCompetitionIndex
-                    ? "active"
-                    : ""
-                }
-              "
-              onclick="
-                selectScoreCompetition(
-                  ${index}
-                )
-              "
-            >
-
-              <span
-                class="
-                  bf-score-comp-left
-                  bf-score-pro-comp-left
-                "
-              >
-
-                ${
-                  item.logo
-                    ? `
-                      <img
-                        class="bf-score-comp-logo"
-                        src="${escapeHTML(
-                          item.logo
-                        )}"
-                        alt="${escapeHTML(
-                          item.name
-                        )}"
-                        loading="lazy"
-                      >
-                    `
-                    : `
-                      <span
-                        class="
-                          bf-score-comp-icon
-                        "
-                      >
-                        🏆
-                      </span>
-                    `
-                }
-
-                <span
-                  class="bf-score-comp-name"
-                >
-                  ${escapeHTML(
-                    item.name
-                  )}
-                </span>
-
-              </span>
-
-
-              <span
-                class="
-                  bf-score-comp-meta
-                  bf-score-pro-comp-meta
-                "
-              >
-
-                ${
-                  itemLive
-                    ? `
-                      <span
-                        class="
-                          bf-score-live-count
-                        "
-                      >
-                        ${itemLive}
-                      </span>
-                    `
-                    : ""
-                }
-
-                <span
-                  class="bf-score-pro-match-count"
-                >
-                  ${item.matches.length}
-                </span>
-
-              </span>
-
-            </button>
-          `;
-        }
-      )
+      .map((item, index) => `
+        <option value="${index}" ${index === selectedCompetitionIndex ? "selected" : ""}>
+          ${escapeHTML(item.name)} (${item.matches.length})
+        </option>
+      `)
       .join("");
 
-
-  /* =====================================
-     STATUS FILTERS
-  ===================================== */
-
-  const filtersHTML = `
-    <div
-      class="
-        bf-score-pro-filters
-      "
-    >
-
-      <button
-        type="button"
-        class="${
-          scoreStatusFilter ===
-          "all"
-            ? "active"
-            : ""
-        }"
-        onclick="
-          setScoreStatusFilter(
-            'all'
-          )
-        "
-      >
-        Tous
-      </button>
-
-      <button
-        type="button"
-        class="${
-          scoreStatusFilter ===
-          "live"
-            ? "active"
-            : ""
-        }"
-        onclick="
-          setScoreStatusFilter(
-            'live'
-          )
-        "
-      >
-        <span class="bf-score-dot">
-          ●
-        </span>
-        Live
-      </button>
-
-      <button
-        type="button"
-        class="${
-          scoreStatusFilter ===
-          "upcoming"
-            ? "active"
-            : ""
-        }"
-        onclick="
-          setScoreStatusFilter(
-            'upcoming'
-          )
-        "
-      >
-        À venir
-      </button>
-
-      <button
-        type="button"
-        class="${
-          scoreStatusFilter ===
-          "finished"
-            ? "active"
-            : ""
-        }"
-        onclick="
-          setScoreStatusFilter(
-            'finished'
-          )
-        "
-      >
-        Terminés
-      </button>
-
-    </div>
-  `;
+  const filtersHTML = "";
 
 
   /* =====================================
@@ -2549,40 +2362,7 @@ return `
       class="bf-score-layout"
     >
 
-      <aside
-        class="
-          bf-score-competition-list
-          bf-score-pro-sidebar
-        "
-      >
 
-        <div
-          class="
-            bf-score-side-title
-            bf-score-pro-side-title
-          "
-        >
-
-          <span>
-            COMPÉTITIONS
-          </span>
-
-          <small>
-            ${scoreCompetitionGroups.length}
-          </small>
-
-        </div>
-
-
-        <div
-          class="
-            bf-score-competition-items
-          "
-        >
-          ${competitionsHTML}
-        </div>
-
-      </aside>
 
 
       <section
@@ -2593,11 +2373,20 @@ return `
       >
 
         <div
-          class="
-            bf-score-details-head
-            bf-score-pro-head
-          "
+          class="bf-score-details-head bf-score-pro-head"
+          style="display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:14px"
         >
+          <label style="display:flex;align-items:center;gap:10px;color:#91a5b8;font-size:11px;font-weight:800">
+            COMPÉTITION
+            <select
+              class="bf-score-competition-select"
+              aria-label="Choisir une compétition"
+              onchange="selectScoreCompetition(this.value)"
+              style="max-width:100%;min-width:210px;padding:10px 12px;border:1px solid #294155;border-radius:9px;background:#102234;color:#f4f7fb;font-weight:800"
+            >
+              ${competitionsHTML}
+            </select>
+          </label>
 
           <div
             class="
@@ -2683,9 +2472,6 @@ return `
             </div>
 
           </div>
-
-
-          ${filtersHTML}
 
         </div>
 
