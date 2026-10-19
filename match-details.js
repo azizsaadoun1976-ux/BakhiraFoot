@@ -3822,77 +3822,108 @@ function pitchPositions(lineup, side) {
     );
   }
 
-  function getEventAssist(
-    event
-  ) {
-    return first(
-      eventObjectName(
-        event?.assist
-      ),
-      eventObjectName(
-        event?.assist1
-      ),
-      eventObjectName(
-        event?.relatedPlayer
-      ),
-      event?.assist_name,
-      event?.assistName,
-      event?.goal?.assist,
-      ""
-    );
+  function eventPersonName(value) {
+    if (typeof value === "string") return value.trim();
+    if (!value || typeof value !== "object") return "";
+    return String(first(
+      value.name, value.displayName, value.display_name,
+      value.fullName, value.full_name, value.short_name, value.shortName,
+      value.player?.name, value.player?.displayName,
+      value.athlete?.displayName, value.athlete?.name,
+      value.person?.name, value.label, ""
+    ) || "").trim();
   }
 
-  function getSubIn(
-    event
-  ) {
-    return first(
-      eventObjectName(
-        event?.player_in
-      ),
-      eventObjectName(
-        event?.playerIn
-      ),
-      eventObjectName(
-        event?.incoming
-      ),
-      eventObjectName(
-        event?.in_player
-      ),
-      eventObjectName(
-        event?.substitute
-      ),
-      event?.player_in_name,
-      event?.playerInName,
-      ""
-    );
+  function substitutionNamesFromText(event) {
+    const type = norm(first(event?.type?.name, event?.type?.text, event?.type, event?.event_type, event?.incidentType, ""));
+    const textValue = String(first(event?.detail, event?.description, event?.text, event?.commentary, event?.shortText, event?.longText, event?.name, "") || "")
+      .replace(/\s+/g, " ").trim();
+    if (!/substitut|subbed|remplac|changement|player change|replaces|comes on|enters/.test(type + " " + norm(textValue))) {
+      return { inName: "", outName: "" };
+    }
+    const patterns = [
+      { re: /(?:substitution|remplacement)?\s*[:,\-]?\s*(.+?)\s+(?:comes on|came on|enters|entered|is brought on|replaces|replace|for)\s+(?:for\s+)?(.+?)(?:[.!;,]|$)/i, dir: "in-out" },
+      { re: /(.+?)\s+(?:is replaced by|replaced by|subbed off for)\s+(.+?)(?:[.!;,]|$)/i, dir: "out-in" },
+      { re: /(?:substitution|remplacement)[,:\-]?\s*(.+?)\s+for\s+(.+?)(?:[.!;,]|$)/i, dir: "in-out" },
+      { re: /(.+?)\s+off[,;:\s]+(.+?)\s+on(?:[.!;,]|$)/i, dir: "out-in" }
+    ];
+    for (const item of patterns) {
+      const match = textValue.match(item.re);
+      if (!match) continue;
+      const a = match[1].replace(/^(substitution|remplacement)\s*[:,\-]?\s*/i, "").trim();
+      const b = match[2].trim();
+      if (!a || !b || a.length > 75 || b.length > 75) continue;
+      return item.dir === "in-out" ? { inName: a, outName: b } : { inName: b, outName: a };
+    }
+    return { inName: "", outName: "" };
   }
 
-  function getSubOut(
-    event
-  ) {
-    return first(
-      eventObjectName(
-        event?.player_out
-      ),
-      eventObjectName(
-        event?.playerOut
-      ),
-      eventObjectName(
-        event?.outgoing
-      ),
-      eventObjectName(
-        event?.out_player
-      ),
-      eventObjectName(
-        event?.replaced
-      ),
-      event?.player_out_name,
-      event?.playerOutName,
-      ""
+  function getEventAssist(event) {
+    const direct = first(
+      eventPersonName(event?.assist),
+      eventPersonName(event?.assist1),
+      eventPersonName(event?.assistPlayer),
+      eventPersonName(event?.assist_player),
+      eventPersonName(event?.relatedPlayer),
+      eventPersonName(event?.related_player),
+      event?.assist_name, event?.assistName, event?.assist_player_name, event?.assistPlayerName,
+      eventPersonName(event?.goal?.assist),
+      eventPersonName(event?.assists?.[0]),
+      eventPersonName(event?.participants?.[1]?.athlete),
+      eventPersonName(event?.participants?.[1]?.player),
+      eventPersonName(event?.participants?.[1]),
+      eventPersonName(event?.players?.[1]), ""
     );
+    if (direct) return String(direct).trim();
+    const eventTypeText = norm([
+      event?.type?.name, event?.type?.text, event?.type,
+      event?.event_type, event?.incidentType
+    ].filter(Boolean).join(" "));
+    if (!/goal|score|but/.test(eventTypeText)) return "";
+    const textValue = String(first(event?.goalDescription, event?.goal_description, event?.detail, event?.description, event?.text, event?.commentary, "") || "");
+    const patterns = [
+      /assisted by\s+([^,.;()[\]]+)/i,
+      /assist(?:ed)?\s+(?:by|from)\s+([^,.;()[\]]+)/i,
+      /with an assist from\s+([^,.;()[\]]+)/i,
+      /passe d[ée]cisive\s+(?:de|par)\s+([^,.;()[\]]+)/i,
+      /assist[eé]?\s+par\s+([^,.;()[\]]+)/i
+    ];
+    for (const pattern of patterns) {
+      const match = textValue.match(pattern);
+      if (match?.[1]) return match[1].trim();
+    }
+    return "";
   }
 
-  function getEventTeamId(
+  function getSubIn(event) {
+    const direct = first(
+      eventPersonName(event?.player_in), eventPersonName(event?.playerIn),
+      eventPersonName(event?.incoming), eventPersonName(event?.in_player),
+      eventPersonName(event?.substituteIn), eventPersonName(event?.substitute_in),
+      eventPersonName(event?.playerOn), eventPersonName(event?.player_on),
+      eventPersonName(event?.substitution?.in), eventPersonName(event?.substitution?.incoming),
+      eventPersonName(event?.swap?.in), eventPersonName(event?.replacement),
+      event?.player_in_name, event?.playerInName, event?.incomingPlayerName, ""
+    );
+    if (direct) return String(direct).trim();
+    return substitutionNamesFromText(event).inName;
+  }
+
+  function getSubOut(event) {
+    const direct = first(
+      eventPersonName(event?.player_out), eventPersonName(event?.playerOut),
+      eventPersonName(event?.outgoing), eventPersonName(event?.out_player),
+      eventPersonName(event?.replaced), eventPersonName(event?.substituteOut),
+      eventPersonName(event?.substitute_out), eventPersonName(event?.playerOff),
+      eventPersonName(event?.player_off), eventPersonName(event?.substitution?.out),
+      eventPersonName(event?.substitution?.outgoing), eventPersonName(event?.swap?.out),
+      event?.player_out_name, event?.playerOutName, event?.outgoingPlayerName, ""
+    );
+    if (direct) return String(direct).trim();
+    return substitutionNamesFromText(event).outName;
+  }
+
+    function getEventTeamId(
     event
   ) {
     return first(
@@ -4640,27 +4671,29 @@ function normalizeEvent(event, index) {
   ========================================================= */
 
   function performanceIcon(kind) {
-    const icons = {
-      goal: '<circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="m12 7-3 2 1 4h4l1-4-3-2ZM9 9 6.8 8.2M16 9l2.2-.8M10 13l-1.7 3.1M14 13l1.7 3.1M9 16.1l3 2 3-2" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linejoin="round"/>',
-      penalty: '<circle cx="12" cy="12" r="9" fill="none" stroke="currentColor" stroke-width="1.6"/><circle cx="12" cy="12" r="5.2" fill="none" stroke="currentColor" stroke-width="1.4"/><circle cx="12" cy="12" r="1.8" fill="currentColor"/><path d="M17 5.5 20 3m-3.2.2h3v3" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round"/>',
-      own: '<circle cx="10.5" cy="13" r="7.4" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="m10.5 9-2.4 1.7.9 3h3l.9-3-2.4-1.7ZM8 10.7l-1.8-.6m6.3.6 1.8-.6M9 13.7l-1.3 2.2m3.8-2.2 1.3 2.2" fill="none" stroke="currentColor" stroke-width="1.2"/><path d="M13.8 5.5h6v6m0-6-6.5 6.5" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>',
-      assist: '<path d="M5 3h5l1.3 6 3 2.2 4.9 2.5-.6 4.4H4v-3.2l3-2.6L5 3Z" fill="currentColor" opacity=".95"/><path d="M4.7 18.1h14M7.5 21v-2.8m4 2.8v-2.8m4 2.8v-2.8" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>',
-      yellow: '<rect x="6" y="2.5" width="12" height="19" rx="1.8" fill="currentColor" stroke="currentColor" stroke-width="1.2"/><path d="M8.5 5h7" stroke="#1f2937" stroke-width="1" opacity=".45"/>',
-      red: '<rect x="6" y="2.5" width="12" height="19" rx="1.8" fill="currentColor" stroke="currentColor" stroke-width="1.2"/><path d="M8.5 5h7" stroke="#1f2937" stroke-width="1" opacity=".45"/>',
-      injury: '<rect x="3" y="5" width="18" height="14" rx="2.5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="M9 5V3.5h6V5m-3 3.5v7m-3.5-3.5h7" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round"/>',
-      subIn: '<path d="M12 20V5m-5 5 5-5 5 5" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"/><path d="M4 20h16" fill="none" stroke="currentColor" stroke-width="1.4" opacity=".7"/>',
-      subOut: '<path d="M12 4v15m-5-5 5 5 5-5" fill="none" stroke="currentColor" stroke-width="2.3" stroke-linecap="round" stroke-linejoin="round"/><path d="M4 4h16" fill="none" stroke="currentColor" stroke-width="1.4" opacity=".7"/>',
-      substitution: '<path d="M4 8h15m-4-4 4 4-4 4M20 16H5m4-4-4 4 4 4" fill="none" stroke="currentColor" stroke-width="1.9" stroke-linecap="round" stroke-linejoin="round"/>',
-      mvp: '<path d="M7 4H4v2a5 5 0 0 0 5 5m8-7h3v2a5 5 0 0 1-5 5M7 3h10v5a5 5 0 0 1-10 0V3Zm5 10v4m-4 3h8m-6-3h4" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/><path d="m12 5 .9 1.8 2 .3-1.45 1.4.35 2-1.8-1-1.8 1 .35-2L9.1 7.1l2-.3L12 5Z" fill="currentColor"/>',
-      rating: '<path d="m12 2.7 2.8 5.8 6.4.9-4.6 4.5 1.1 6.4-5.7-3-5.7 3 1.1-6.4-4.6-4.5 6.4-.9L12 2.7Z" fill="currentColor" stroke="currentColor" stroke-width="1" stroke-linejoin="round"/>',
-      var: '<circle cx="10.5" cy="10.5" r="6.5" fill="none" stroke="currentColor" stroke-width="1.8"/><path d="m15.2 15.2 5.3 5.3M7.5 10.5l2 2 4-4" fill="none" stroke="currentColor" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>',
-      missed: '<circle cx="10.5" cy="13" r="7.4" fill="none" stroke="currentColor" stroke-width="1.6"/><path d="m10.5 9-2.4 1.7.9 3h3l.9-3-2.4-1.7ZM8 10.7l-1.8-.6m6.3.6 1.8-.6" fill="none" stroke="currentColor" stroke-width="1.2"/><path d="m15.2 3 6 6m0-6-6 6" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"/>'
+    const labels = {
+      goal: "⚽",
+      penalty: "🎯",
+      own: "↗",
+      assist: "👟",
+      injury: "✚",
+      yellow: "",
+      red: "",
+      subIn: "↗",
+      subOut: "↙",
+      substitution: "⇄",
+      mvp: "🏆",
+      rating: "★",
+      var: "VAR",
+      missed: "×"
     };
-    return '<svg class="bfmd-vector-icon bfmd-vector-icon--' + esc(kind) + '" viewBox="0 0 24 24" width="16" height="16" aria-hidden="true" focusable="false">' +
-      (icons[kind] || icons.goal) + '</svg>';
+    if (kind === "yellow" || kind === "red") {
+      return '<span class="bfmd-performance-glyph-card bfmd-performance-glyph-card--' + esc(kind) + '" aria-hidden="true"></span>';
+    }
+    return '<span class="bfmd-performance-glyph bfmd-performance-glyph--' + esc(kind) + '" aria-hidden="true">' + (labels[kind] || "•") + '</span>';
   }
 
-  function eventIcon(event) {
+    function eventIcon(event) {
     if (event.kind === "goal") return performanceIcon(event.goalType === "own" ? "own" : event.goalType === "penalty" ? "penalty" : "goal");
     switch (event.kind) {
       case "penalty_missed": return performanceIcon("missed");
