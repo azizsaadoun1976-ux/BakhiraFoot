@@ -1879,6 +1879,7 @@ function bfAssignFormationRoles(players, formation, readPosition) {
       #bfMatchDetailsModal .bfmd-event-mini { position:absolute!important; top:-8px!important; right:-13px!important; left:auto!important; transform:none!important; z-index:15; display:flex!important; flex-direction:column!important; align-items:center!important; justify-content:flex-start!important; gap:3px!important; width:auto!important; max-width:none!important; min-height:0!important; margin:0!important; padding:0!important; overflow:visible; border:0!important; background:transparent!important; }
       #bfMatchDetailsModal .bfmd-chip { display:inline-flex!important; align-items:center!important; justify-content:center!important; gap:2px!important; width:auto!important; min-width:22px!important; height:22px!important; min-height:22px!important; padding:2px 4px!important; border:1px solid rgba(255,255,255,.36)!important; border-radius:7px!important; box-shadow:0 3px 8px rgba(0,0,0,.32)!important; }
       #bfMatchDetailsModal .bfmd-chip .bfmd-vector-icon { display:none!important; }
+      #bfMatchDetailsModal .bfmd-chip:before { content:none!important; display:none!important; }
       #bfMatchDetailsModal .bfmd-chip--goal:before { content:"⚽"; font-size:13px; line-height:1; }
       #bfMatchDetailsModal .bfmd-chip--penalty:before { content:"🎯"; font-size:13px; line-height:1; }
       #bfMatchDetailsModal .bfmd-chip--own:before { content:"↗"; font-size:15px; line-height:1; }
