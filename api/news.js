@@ -43,14 +43,14 @@ function parseRss(xml, source) {
   const entries = xml.match(/<item\b[\s\S]*?<\/item>/gi) || [];
   return entries.map(item => {
     const tag = name => {
-      const match = item.match(new RegExp("<" + name + "\\b[^>]*>([\\s\\S]*?)<\\/" + name + ">", "i"));
+      const match = item.match(new RegExp("<" + name + "\b[^>]*>([\\s\\S]*?)<\\/" + name + ">", "i"));
       return match ? clean(match[1].replace(/<!\[CDATA\[|\]\]>/g, "")) : "";
     };
     const title = tag("title");
     const link = tag("link");
     const description = tag("description");
     const pubDate = tag("pubDate") || tag("dc:date");
-    const imageMatch = item.match(/<(?:media:thumbnail|media:content|enclosure)\\b[^>]*(?:url|href)=["']([^"']+)["'][^>]*>/i) || description.match(/<img\\b[^>]*src=["']([^"']+)["']/i);
+    const imageMatch = item.match(/<(?:media:thumbnail|media:content|enclosure)\b[^>]*(?:url|href)=["']([^"']+)["'][^>]*>/i) || description.match(/<img\b[^>]*src=["']([^"']+)["']/i);
     const image = imageMatch ? absoluteUrl(imageMatch[1], source.url) : "";
     return {
       title, url: absoluteUrl(link, source.url),
