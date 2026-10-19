@@ -3864,19 +3864,33 @@ function pitchPositions(lineup, side) {
     const direct = first(
       eventPersonName(event?.assist),
       eventPersonName(event?.assist1),
+      eventPersonName(event?.assist_1),
+      eventPersonName(event?.assist2),
+      eventPersonName(event?.assist_2),
       eventPersonName(event?.assistPlayer),
       eventPersonName(event?.assist_player),
       eventPersonName(event?.relatedPlayer),
       eventPersonName(event?.related_player),
       event?.assist_name, event?.assistName, event?.assist_player_name, event?.assistPlayerName,
       eventPersonName(event?.goal?.assist),
+      eventPersonName(event?.goal?.assist1),
+      eventPersonName(event?.goal?.assist_1),
       eventPersonName(event?.assists?.[0]),
       eventPersonName(event?.participants?.[1]?.athlete),
       eventPersonName(event?.participants?.[1]?.player),
       eventPersonName(event?.participants?.[1]),
       eventPersonName(event?.players?.[1]), ""
     );
-    if (direct) return String(direct).trim();
+    const directText = String(direct || "").trim();
+    const directKey = norm(directText).replace(/[^a-z0-9]/g, "");
+    /* api/index.js can place its provider label in the assist field when no passer exists. */
+    const nonPlayerLabels = new Set([
+      "sportscore", "sofascore", "espn", "thesportsdb", "fotmob",
+      "provider", "unknown", "none", "null", "undefined"
+    ]);
+    if (directText && !nonPlayerLabels.has(directKey)) {
+      return directText;
+    }
     const eventTypeText = norm([
       event?.type?.name, event?.type?.text, event?.type,
       event?.event_type, event?.incidentType
