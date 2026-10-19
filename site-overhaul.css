@@ -1274,3 +1274,10 @@ body.dark input:not([type="checkbox"]):not([type="radio"]),body.dark select,body
 @media(prefers-reduced-motion:reduce){
   *,*::before,*::after{scroll-behavior:auto!important;animation-duration:.01ms!important;animation-iteration-count:1!important;transition-duration:.01ms!important}
 }
+
+
+/* Theme buttons generated for articles and policy pages */
+body>header>.site-theme{display:inline-flex;align-items:center;justify-content:center;margin-left:auto;flex:0 0 auto}
+@media(max-width:920px){
+  body>header>.site-theme{grid-area:tools;justify-self:end;margin:0}
+}
