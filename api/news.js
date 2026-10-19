@@ -43,7 +43,7 @@ function parseRss(xml, source) {
   const entries = xml.match(/<item\b[\s\S]*?<\/item>/gi) || [];
   return entries.map(item => {
     const tag = name => {
-      const match = item.match(new RegExp("<" + name + "\b[^>]*>([\\s\\S]*?)<\\/" + name + ">", "i"));
+      const match = item.match(new RegExp("<" + name + "\\b[^>]*>([\\s\\S]*?)<\\/" + name + ">", "i"));
       return match ? clean(match[1].replace(/<!\[CDATA\[|\]\]>/g, "")) : "";
     };
     const title = tag("title");
