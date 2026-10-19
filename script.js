@@ -2127,16 +2127,6 @@ return `
       openMatchDetails(${index})
     "
   >
-
-              <button
-                type="button"
-                class="bf-score-competition-link"
-                data-competition-name="${escapeHTML(getLeague(match))}"
-                onclick="event.stopPropagation(); if(typeof window.openBakhiraCompetitionStandings==='function'){window.openBakhiraCompetitionStandings(this.dataset.competitionName);} else {go('leagues');}"
-                aria-label="Ouvrir le classement de cette compétition"
-                style="display:block;width:100%;margin:0 0 8px;padding:6px 9px;text-align:left;border:1px solid #294155;border-radius:7px;background:#102234;color:#9be8c6;font-size:10px;font-weight:850;cursor:pointer"
-              >🏆 ${escapeHTML(getLeague(match))} <span aria-hidden="true">↗</span></button>
-
               <div
                 class="
                   bf-score-match-status
