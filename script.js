@@ -9479,73 +9479,47 @@ const news = [
 ];
 
 function renderNews() {
-
-  const grid =
-    $("newsGrid");
-
+  const grid = $("newsGrid");
   if (!grid) return;
 
-  grid.innerHTML =
-    news
-      .map(item => `
+  // real-news.js owns this area. Do not replace live articles with
+  // the old static placeholder cards when the user returns to Actualités.
+  if (document.querySelector('script[src*="real-news.js"]')) {
+    if (grid.dataset.newsLoaded === "true" || grid.querySelector(".bf-real-news-card, .bf-news-status")) {
+      return;
+    }
+    return;
+  }
 
-        <div class="card">
-
-          <div class="newsImg">
-            ${item.icon}
-          </div>
-
-          <h3>
-            ${escapeHTML(
-              item.title
-            )}
-          </h3>
-
-          <p>
-            ${escapeHTML(
-              item.text
-            )}
-          </p>
-
-        </div>
-
-      `)
-      .join("");
+  grid.innerHTML = news.map(item => `
+    <div class="card">
+      <div class="newsImg">${item.icon}</div>
+      <h3>${escapeHTML(item.title)}</h3>
+      <p>${escapeHTML(item.text)}</p>
+    </div>
+  `).join("");
 }
 
 function renderHomeNews() {
-
-  const grid =
-    $("homeNews");
-
+  const grid = $("homeNews");
   if (!grid) return;
 
-  grid.innerHTML =
-    news
-      .map(item => `
+  // The real feed owns the home news area too; keep its last rendered
+  // articles instead of briefly replacing them with generic placeholders.
+  if (document.querySelector('script[src*="real-news.js"]')) {
+    if (grid.dataset.newsLoaded === "true" || grid.querySelector(".bf-real-news-card, .bf-news-status")) {
+      return;
+    }
+    return;
+  }
 
-        <div class="card">
-
-          <div class="newsImg">
-            ${item.icon}
-          </div>
-
-          <h3>
-            ${escapeHTML(
-              item.title
-            )}
-          </h3>
-
-          <p>
-            ${escapeHTML(
-              item.text
-            )}
-          </p>
-
-        </div>
-
-      `)
-      .join("");
+  grid.innerHTML = news.map(item => `
+    <div class="card">
+      <div class="newsImg">${item.icon}</div>
+      <h3>${escapeHTML(item.title)}</h3>
+      <p>${escapeHTML(item.text)}</p>
+    </div>
+  `).join("");
 }
 
 /* =========================================================
