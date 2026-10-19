@@ -36,9 +36,10 @@
     const description = article.description && article.description !== article.title
       ? article.description
       : "Consultez l’article original pour lire les informations complètes et les détails.";
+    const imageUrl = /^https?:\/\//i.test(String(article.image || "")) ? article.image : "";
     return `
       <article class="bf-real-news-card" data-category="${esc(category)}">
-        <a class="bf-news-image-wrap ${article.image && (article.image.startsWith("https://") || article.image.startsWith("http://")) ? "" : "no-image"}" href="${esc(article.url)}" target="_blank" rel="noopener noreferrer" tabindex="-1" aria-hidden="true">${article.image && (article.image.startsWith("https://") || article.image.startsWith("http://")) ? `<img class="bf-news-image" src="${esc(article.image)}" alt="" loading="lazy" referrerpolicy="no-referrer">` : ""}<span class="bf-news-image-mark">BAKHIR<span>A</span>FOOT</span></a>
+        <a class="bf-news-image-wrap ${imageUrl ? "" : "no-image"}" href="${esc(article.url)}" target="_blank" rel="noopener noreferrer" tabindex="-1" aria-hidden="true">${imageUrl ? `<img class="bf-news-image" src="${esc(imageUrl)}" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.remove();this.parentElement.classList.add('no-image')">` : ""}<span class="bf-news-image-mark">BAKHIR<span>A</span>FOOT</span></a>
         <div class="bf-news-card-content">
         <div class="bf-real-news-top">
           <span class="bf-real-news-category">${esc(category)}</span>
@@ -84,9 +85,14 @@
   }
 
   function render(articles, updatedAt, sources = []) {
-    if (!articles.length) return renderError();
-    const homeCards = articles.slice(0, 3).map(articleCard).join("");
-    const fullCards = articles.map(articleCard).join("");
+    const safeArticles = (Array.isArray(articles) ? articles : []).filter(article =>
+      article && typeof article.title === "string" &&
+      article.title.trim().length >= 16 &&
+      /^https?:\/\//i.test(String(article.url || ""))
+    );
+    if (!safeArticles.length) return renderError();
+    const homeCards = safeArticles.slice(0, 3).map(articleCard).join("");
+    const fullCards = safeArticles.map(articleCard).join("");
     const note = '<div class="bf-news-update">Actualités récentes récupérées depuis des médias et flux RSS · Mise à jour : ' + esc(prettyDate(updatedAt) || "à l’instant") + '</div>';
     const sourceHtml = sources.length
       ? '<div class="bf-news-sources"><span>Sources consultées</span>' + sources.map(source => '<a href="' + esc(source.url) + '" target="_blank" rel="noopener noreferrer">' + esc(source.name) + ' ↗</a>').join("") + '</div>'
@@ -107,7 +113,7 @@
     container.querySelectorAll(".bf-real-news-card").forEach(card => { card.hidden = category !== "Toutes" && card.dataset.category !== category; });
   });
 
-  const NEWS_CACHE_KEY = "bakhirafoot-real-news-v1";
+  const NEWS_CACHE_KEY = "bakhirafoot-real-news-v2";
 
   function readCachedNews() {
     try {
