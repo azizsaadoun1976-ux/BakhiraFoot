@@ -1745,6 +1745,9 @@ function renderScoreCompetitions(
       matches
     );
 
+  if (typeof window.refreshBakhiraScoresCompetitionSidebar === "function") {
+    window.refreshBakhiraScoresCompetitionSidebar(scoreCompetitionGroups);
+  }
 
   if (
     selectedCompetitionIndex >=

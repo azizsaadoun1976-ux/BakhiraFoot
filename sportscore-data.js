@@ -241,7 +241,8 @@ const competitions = [
     document.head.appendChild(style);
   }
 
-  function renderScoresCompetitionSidebar() {
+
+  function renderScoresCompetitionSidebar(dynamicGroups = []) {
     const target = document.getElementById("bfScoresCompetitionItems");
     if (!target) return;
     installScoresCompetitionSidebarStyles();
@@ -249,20 +250,83 @@ const competitions = [
     const safe = value => String(value ?? "").replace(/[&<>"']/g, character => ({
       "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#039;"
     })[character]);
+    const labelKey = value => {
+      const text = String(value ?? "");
+      const canonical = typeof canonicalCompetitionName === "function"
+        ? canonicalCompetitionName(text)
+        : text;
+      return String(canonical).normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "").toLowerCase().replace(/[^a-z0-9]/g, "");
+    };
 
-    target.innerHTML = competitions.map(competition => `
-      <button type="button" class="bf-scores-league-link"
-        data-score-competition="${safe(competition.slug)}"
-        data-search-text="${safe(competition.name + " " + (competition.country || ""))}"
-        title="Ouvrir le classement : ${safe(competition.name)}">
-        <span class="bf-scores-league-logo-wrap">
-          ${competition.logo ? `<img class="bf-scores-league-logo" src="${safe(competition.logo)}" alt="" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">` : ""}
-          <span class="bf-scores-league-logo-fallback">🏆</span>
-        </span>
-        <span class="bf-scores-league-copy"><strong>${safe(competition.name)}</strong><small>${safe(competition.country || "International")}</small></span>
-        <span class="bf-scores-league-arrow" aria-hidden="true">↗</span>
-      </button>
-    `).join("");
+    // Start with the full known competition catalogue; then append any additional
+    // competitions which actually appear in the currently loaded Scores fixtures.
+    const items = new Map();
+    competitions.forEach(competition => {
+      items.set(labelKey(competition.name), {
+        name: competition.name,
+        country: competition.country || "International",
+        logo: competition.logo || "",
+        slug: competition.slug,
+        matchCount: 0,
+        scoreIndex: null
+      });
+    });
+
+    (Array.isArray(dynamicGroups) ? dynamicGroups : []).forEach((group, index) => {
+      if (!group?.name) return;
+      const key = labelKey(group.name);
+      const fixture = group.matches?.[0]?.match || {};
+      const countryValue =
+        fixture?.league?.country?.name || fixture?.league?.country ||
+        fixture?.competition?.country?.name || fixture?.competition?.country || "";
+      const country = typeof countryValue === "string"
+        ? countryValue
+        : (countryValue?.name || "");
+      const existing = items.get(key);
+      if (existing) {
+        existing.matchCount = group.matches?.length || 0;
+        if (!existing.logo && group.logo) existing.logo = group.logo;
+        existing.scoreIndex = index;
+      } else {
+        items.set(key, {
+          name: group.name,
+          country: country || "International",
+          logo: group.logo || "",
+          slug: "",
+          matchCount: group.matches?.length || 0,
+          scoreIndex: index
+        });
+      }
+    });
+
+    target.innerHTML = Array.from(items.values()).map(item => {
+      const meta = item.matchCount
+        ? item.matchCount + " match(s)" + (item.country ? " · " + item.country : "")
+        : item.country;
+      const actionAttrs = item.slug
+        ? 'data-score-competition="' + safe(item.slug) + '"'
+        : (item.scoreIndex !== null ? 'data-score-index="' + safe(item.scoreIndex) + '"' : "");
+      const actionTitle = item.slug
+        ? "Ouvrir le classement : " + item.name
+        : (item.scoreIndex !== null ? "Afficher les matchs de " + item.name : item.name);
+      return `
+        <button type="button" class="bf-scores-league-link"
+          ${actionAttrs}
+          data-search-text="${safe(item.name + " " + item.country)}"
+          title="${safe(actionTitle)}">
+          <span class="bf-scores-league-logo-wrap">
+            ${item.logo ? `<img class="bf-scores-league-logo" src="${safe(item.logo)}" alt="" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">` : ""}
+            <span class="bf-scores-league-logo-fallback">🏆</span>
+          </span>
+          <span class="bf-scores-league-copy">
+            <strong>${safe(item.name)}</strong>
+            <small>${safe(meta)}</small>
+          </span>
+          <span class="bf-scores-league-arrow" aria-hidden="true">↗</span>
+        </button>
+      `;
+    }).join("");
 
     if (search && search.dataset.bfBound !== "1") {
       search.dataset.bfBound = "1";
@@ -274,18 +338,30 @@ const competitions = [
         });
       });
     }
-    target.querySelectorAll("[data-score-competition]").forEach(button => {
+
+    target.querySelectorAll(".bf-scores-league-link").forEach(button => {
       button.addEventListener("click", () => {
         const slug = button.dataset.scoreCompetition;
-        if (typeof window.openBakhiraCompetitionStandings === "function") {
+        if (slug && typeof window.openBakhiraCompetitionStandings === "function") {
           window.openBakhiraCompetitionStandings(slug);
-        } else {
-          window.__bfPendingCompetitionName = slug;
-          if (typeof window.go === "function") window.go("leagues");
+          return;
         }
+
+        const index = Number(button.dataset.scoreIndex);
+        if (Number.isInteger(index) && index >= 0 && typeof window.selectScoreCompetition === "function") {
+          if (typeof window.go === "function") window.go("scores");
+          window.selectScoreCompetition(index);
+          return;
+        }
+
+        if (typeof window.go === "function") window.go("leagues");
       });
     });
   }
+
+  // Shared hook called again after the Scores API returns its competition list.
+  window.refreshBakhiraScoresCompetitionSidebar = renderScoresCompetitionSidebar;
+
 
   /* =========================================================
      HELPERS
