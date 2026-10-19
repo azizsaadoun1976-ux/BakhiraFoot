@@ -1658,6 +1658,58 @@ function bfAssignFormationRoles(players, formation, readPosition) {
         .bf-new-safe-stat-grid { grid-template-columns:1fr; }
       }
 
+      /* BROADCAST PERFORMANCE OVERLAYS — both match-detail modals */
+      .bf-new-safe-player { width:90px; gap:3px; z-index:8; }
+      .bf-new-safe-player img,.bf-new-safe-avatar { width:36px; height:36px; border:2px solid rgba(255,255,255,.98); box-shadow:0 4px 10px rgba(0,0,0,.32); }
+      .bf-new-safe-shirt { position:relative; display:inline-flex; align-items:center; justify-content:center; min-width:25px; height:22px; padding:0 6px; margin-top:-7px; z-index:4; border-radius:7px; border:1px solid #9bf0c8; background:linear-gradient(145deg,#f4fff9,#c9f8e0); color:#06462f; font-size:10px; line-height:1; font-weight:1000; box-shadow:0 3px 9px rgba(0,0,0,.3); }
+      .bf-new-safe-role,.bf-new-safe-pos { display:none!important; }
+      .bf-new-safe-player-name { width:100%; max-width:90px; padding:3px 5px; font-size:8px; line-height:1.15; font-weight:950; border:1px solid rgba(255,255,255,.22); box-shadow:0 2px 6px rgba(0,0,0,.23); }
+      .bf-new-safe-pitch-events { display:flex; justify-content:center; align-items:center; flex-wrap:wrap; gap:3px; max-width:90px; min-height:19px; margin-top:1px; }
+      .bf-new-safe-event-badge { display:inline-flex; align-items:center; justify-content:center; gap:2px; min-width:21px; height:21px; padding:2px 4px; border:1px solid rgba(255,255,255,.35); border-radius:7px; color:#fff; background:#25364a; box-shadow:0 2px 6px rgba(0,0,0,.26); }
+      .bf-new-safe-event-svg { display:block; width:14px; height:14px; flex:0 0 14px; }
+      .bf-new-safe-event-count { display:inline-flex; align-items:center; justify-content:center; min-width:9px; font-size:8px; line-height:1; font-weight:1000; color:#fff; }
+      .bf-new-safe-event-badge--goal { background:#087f5b; border-color:#56d7a7; }
+      .bf-new-safe-event-badge--penalty { background:#80530c; border-color:#f6d38a; }
+      .bf-new-safe-event-badge--own { background:#7d2d68; border-color:#f0a9db; }
+      .bf-new-safe-event-badge--assist { background:#1749a1; border-color:#9ac2ff; }
+      .bf-new-safe-event-badge--injury { background:#394a5e; border-color:#c2d0e0; }
+      .bf-new-safe-event-badge--yellow { background:#75520a; border-color:#facc15; }
+      .bf-new-safe-event-badge--red { background:#8b1d2c; border-color:#fda4af; }
+      .bf-new-safe-event-badge--sub { background:#145b54; border-color:#7be6d1; }
+      .bf-new-safe-player-rate { display:inline-flex; align-items:center; justify-content:center; gap:3px; min-width:43px; height:22px; padding:3px 6px; border:1px solid #f7d56c; border-radius:7px; background:linear-gradient(145deg,#fff7ce,#facc15); color:#392900; font-size:10px; line-height:1; font-weight:1000; box-shadow:0 3px 8px rgba(0,0,0,.26); }
+      .bf-new-safe-rating-star { width:12px; height:12px; display:block; fill:#7c5700; flex:0 0 12px; }
+      .bf-new-safe-mvp-chip { display:inline-flex; align-items:center; justify-content:center; min-width:22px; height:22px; padding:3px; border:1px solid #fde68a; border-radius:7px; background:#facc15; color:#422006; box-shadow:0 3px 8px rgba(0,0,0,.25); }
+      .bf-new-safe-mvp-chip svg { width:14px; height:14px; fill:#422006; }
+      /* Ensure position abbreviations are removed in the legacy SportScore window too. */
+      html body #bfMatchDetailsModal .bfmd-role,
+      html body #bfMatchDetailsModal .bfmd-bench-role,
+      html body #bfMatchDetailsModal .bfmd-position { display:none!important; }
+      html body #bfMatchDetailsModal .bfmd-player { width:clamp(70px,6.8vw,100px)!important; gap:2px!important; z-index:8!important; }
+      html body #bfMatchDetailsModal .bfmd-name { max-width:96px!important; padding:3px 5px!important; font-size:clamp(7px,.68vw,9px)!important; line-height:1.15!important; background:rgba(3,12,22,.96)!important; border-color:rgba(255,255,255,.28)!important; }
+      html body #bfMatchDetailsModal .bfmd-event-mini { position:static!important; left:auto!important; top:auto!important; transform:none!important; display:flex!important; flex-wrap:wrap!important; align-items:center!important; justify-content:center!important; gap:3px!important; width:100%!important; max-width:100%!important; min-height:20px!important; margin-top:3px!important; padding:0!important; border:0!important; background:transparent!important; }
+      html body #bfMatchDetailsModal .bfmd-chip { display:inline-flex!important; align-items:center!important; justify-content:center!important; min-width:20px!important; min-height:20px!important; padding:3px!important; gap:2px!important; border-radius:7px!important; font-size:8px!important; line-height:1!important; box-shadow:0 2px 6px rgba(0,0,0,.28)!important; }
+      html body #bfMatchDetailsModal .bfmd-chip .bfmd-vector-icon { width:14px!important; height:14px!important; }
+      html body #bfMatchDetailsModal .bfmd-chip--rating { display:inline-flex!important; color:#3f2e00!important; background:linear-gradient(145deg,#fff7ce,#facc15)!important; border:1px solid #f7d56c!important; }
+      html body #bfMatchDetailsModal .bfmd-chip-rating-number { color:#3f2e00!important; font-size:9px!important; font-weight:1000!important; }
+      html body #bfMatchDetailsModal .bfmd-chip--mvp { display:inline-flex!important; background:#facc15!important; color:#422006!important; border:1px solid #fde68a!important; }
+      @media(max-width:700px) {
+        .bf-new-safe-player { width:70px; gap:2px; }
+        .bf-new-safe-player img,.bf-new-safe-avatar { width:27px; height:27px; }
+        .bf-new-safe-shirt { min-width:20px; height:19px; font-size:9px; }
+        .bf-new-safe-player-name { max-width:70px; padding:2px 3px; font-size:7px; }
+        .bf-new-safe-pitch-events { max-width:70px; gap:2px; min-height:17px; }
+        .bf-new-safe-event-badge { min-width:18px; height:18px; padding:2px; border-radius:5px; }
+        .bf-new-safe-event-svg { width:11px; height:11px; flex-basis:11px; }
+        .bf-new-safe-event-count { font-size:7px; }
+        .bf-new-safe-player-rate { min-width:36px; height:19px; padding:2px 4px; font-size:9px; }
+        .bf-new-safe-rating-star { width:10px; height:10px; flex-basis:10px; }
+        .bf-new-safe-mvp-chip { min-width:19px; height:19px; }
+        html body #bfMatchDetailsModal .bfmd-player { width:clamp(66px,14vw,94px)!important; }
+        html body #bfMatchDetailsModal .bfmd-name { max-width:84px!important; font-size:7px!important; }
+        html body #bfMatchDetailsModal .bfmd-chip { min-width:18px!important; min-height:18px!important; }
+      }
+
+
     `;
 
     document.head.appendChild(
@@ -1982,11 +2034,11 @@ ${esc(String(playerName(player) || "P").split(/\s+/).map(part => part[0] || "").
                     }
 
                     <span class="bf-new-safe-shirt">${esc(playerNumber(player))}</span>
-                    <span class="bf-new-safe-role">${esc(playerPosition(player) || "—")}</span>
+                    
                     <div class="bf-new-safe-player-name">${esc(playerName(player))}</div>
                     <div class="bf-new-safe-pitch-events">${playerEventBadges(player, details)}</div>
-                    ${playerIsOfficialMvp(player) ? '<span class="bf-new-safe-mvp-chip" title="MVP officiel">MVP</span>' : ""}
-                    ${rating !== null ? '<span class="bf-new-safe-player-rate">' + esc(Number(rating).toFixed(1)) + '</span>' : ""}
+                    ${playerIsOfficialMvp(player) ? '<span class="bf-new-safe-mvp-chip" title="Joueur du match" aria-label="Joueur du match">' + playerEventGlyph("mvp") + '</span>' : ""}
+                    ${rating !== null ? '<span class="bf-new-safe-player-rate" title="Note du joueur ' + esc(Number(rating).toFixed(1)) + '/10" aria-label="Note du joueur ' + esc(Number(rating).toFixed(1)) + ' sur 10"><svg class="bf-new-safe-rating-star" viewBox="0 0 24 24" aria-hidden="true"><path d="M12 2.5l2.9 6 6.6 1-4.8 4.7 1.1 6.7-5.8-3.2-5.8 3.2 1.1-6.7-4.8-4.7 6.6-1z"/></svg><span>' + esc(Number(rating).toFixed(1)) + '</span></span>' : ""}
 
                   </div>
 
@@ -2096,13 +2148,7 @@ ${esc(String(playerName(player) || "P").split(/\s+/).map(part => part[0] || "").
                     )
                   )}
                 </div>
-
-                <div
-                  class="bf-new-safe-pos"
-                >
-                  ${esc(playerPosition(player) || "Position indisponible")}
-                </div>
-                <div class="bf-new-safe-player-events">${playerEventBadges(player, details)}</div>
+<div class="bf-new-safe-player-events">${playerEventBadges(player, details)}</div>
 
               </div>
 
@@ -2313,10 +2359,27 @@ ${esc(String(playerName(player) || "P").split(/\s+/).map(part => part[0] || "").
     }).join("") + '</div>';
   }
 
+  function playerEventGlyph(kind) {
+    const graphic = {
+      goal: '<circle cx="12" cy="12" r="9" fill="#ffffff" stroke="#d1fae5" stroke-width="1.5"/><path d="M12 7l3 2-1 4h-4L9 9zM8 4l1.5 3M16 4l-1 3M4.5 10l4.5-1M19.5 10L15 9M6 17l3-4M18 17l-4-4M12 21v-8" fill="#111827" stroke="#111827" stroke-width=".7" stroke-linejoin="round"/>',
+      penalty: '<circle cx="12" cy="12" r="9" fill="none" stroke="#fde68a" stroke-width="2"/><circle cx="12" cy="12" r="4.5" fill="none" stroke="#fde68a" stroke-width="2"/><circle cx="12" cy="12" r="1.5" fill="#fde68a"/>',
+      own: '<circle cx="9" cy="14" r="5.5" fill="#ffffff" stroke="#f9a8d4" stroke-width="1.4"/><path d="M13 6h7m-3-3 3 3-3 3M12 14l-2-2 3-2 2 3-2 3z" fill="none" stroke="#f9a8d4" stroke-width="1.8" stroke-linecap="round" stroke-linejoin="round"/>',
+      assist: '<path d="M3 15l4-2 2-6 4 2 2 4 4 1 2 3-1 3H5l-2-2z" fill="#eaf2ff" stroke="#ffffff" stroke-width="1.3" stroke-linejoin="round"/><path d="M9 9l3 2m-4 1l3 2m-4 1l3 2" stroke="#1d4ed8" stroke-width="1.4" stroke-linecap="round"/>',
+      injury: '<circle cx="12" cy="12" r="9" fill="#e2e8f0" stroke="#ffffff" stroke-width="1.3"/><path d="M10 5h4v5h5v4h-5v5h-4v-5H5v-4h5z" fill="#475569"/>',
+      yellow: '<rect x="6" y="3" width="12" height="18" rx="2" fill="#facc15" stroke="#ffffff" stroke-width="1.6"/>',
+      red: '<rect x="6" y="3" width="12" height="18" rx="2" fill="#ef4444" stroke="#ffffff" stroke-width="1.6"/>',
+      subIn: '<path d="M4 12h15m-5-5 5 5-5 5" fill="none" stroke="#bbf7d0" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/><path d="M5 5v4" stroke="#bbf7d0" stroke-width="2" stroke-linecap="round"/>',
+      subOut: '<path d="M20 12H5m5-5-5 5 5 5" fill="none" stroke="#fecdd3" stroke-width="2.4" stroke-linecap="round" stroke-linejoin="round"/><path d="M19 5v4" stroke="#fecdd3" stroke-width="2" stroke-linecap="round"/>',
+      sub: '<path d="M4 8h15m-5-4 5 4-5 4M20 16H5m5-4-5 4 5 4" fill="none" stroke="#d1fae5" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"/>',
+      mvp: '<path d="M12 2.5l2.9 6 6.6 1-4.8 4.7 1.1 6.7-5.8-3.2-5.8 3.2 1.1-6.7-4.8-4.7 6.6-1z" fill="#422006" stroke="#fff1a6" stroke-width="1"/>'
+    };
+    return '<svg class="bf-new-safe-event-svg" viewBox="0 0 24 24" aria-hidden="true" focusable="false">' + (graphic[kind] || graphic.sub) + '</svg>';
+  }
+
   function playerEventBadges(player, details) {
     const name = norm(playerName(player));
     if (!name) return "";
-    const counts = { goals:0, assists:0, yellow:0, red:0, injury:0, subs:0 };
+    const counts = { goals:0, penalties:0, ownGoals:0, assists:0, yellow:0, red:0, injury:0, subIn:0, subOut:0, subs:0 };
     getEvents(details).forEach(event => {
       const scorer = norm(first(
         event?.player?.name, event?.player_name, event?.athlete?.displayName,
@@ -2325,24 +2388,64 @@ ${esc(String(playerName(player) || "P").split(/\s+/).map(part => part[0] || "").
       const assist = norm(eventAssist(event));
       const type = eventType(event);
       if (scorer === name) {
-        if (type.includes("goal") || type.includes("score")) counts.goals += 1;
-        else if (type.includes("yellow")) counts.yellow += 1;
+        if (type.includes("goal") || type.includes("score")) {
+          const detailsText = norm([
+            event?.goalType, event?.goal_type, event?.detail, event?.text,
+            event?.description, event?.commentary
+          ].filter(Boolean).join(" "));
+          const ownGoal = event?.ownGoal === true || event?.own_goal === true ||
+            event?.isOwnGoal === true || /own goal|but contre son camp|autogoal/.test(detailsText);
+          const penalty = event?.isPenalty === true || event?.penalty === true ||
+            event?.penaltyGoal === true || /penalty|penalty goal|penalty shoot/.test(detailsText);
+          if (ownGoal) counts.ownGoals += 1;
+          else if (penalty) counts.penalties += 1;
+          else counts.goals += 1;
+        } else if (type.includes("yellow")) counts.yellow += 1;
         else if (type.includes("red")) counts.red += 1;
         else if (type.includes("sub")) counts.subs += 1;
         else if (type.includes("injur") || type.includes("hurt") || type.includes("medical")) counts.injury += 1;
       }
       if (assist && assist === name && (type.includes("goal") || type.includes("score"))) counts.assists += 1;
+      if (type.includes("sub")) {
+        const incoming = norm(first(
+          event?.playerIn?.name, typeof event?.playerIn === "string" ? event.playerIn : "",
+          event?.player_in?.name, typeof event?.player_in === "string" ? event.player_in : "",
+          event?.playerInName, event?.player_in_name,
+          event?.incomingPlayer?.name, event?.incoming_player?.name,
+          event?.substitution?.in?.name, event?.substitution?.in
+        ));
+        const outgoing = norm(first(
+          event?.playerOut?.name, typeof event?.playerOut === "string" ? event.playerOut : "",
+          event?.player_out?.name, typeof event?.player_out === "string" ? event.player_out : "",
+          event?.playerOutName, event?.player_out_name,
+          event?.outgoingPlayer?.name, event?.outgoing_player?.name,
+          event?.substitution?.out?.name, event?.substitution?.out
+        ));
+        if (incoming && incoming === name) counts.subIn += 1;
+        if (outgoing && outgoing === name) counts.subOut += 1;
+      }
     });
     const badges = [];
-    const add = (label,value,kind) => {
-      if (value > 0) badges.push('<span class="bf-new-safe-event-badge bf-new-safe-event-badge--' + kind + '">' + label + (value > 1 ? " " + value : "") + '</span>');
+    const add = (kind, value, title) => {
+      if (!(value > 0)) return;
+      badges.push(
+        '<span class="bf-new-safe-event-badge bf-new-safe-event-badge--' + kind +
+        '" title="' + esc(title) + '" aria-label="' + esc(title) + '">' +
+        playerEventGlyph(kind) +
+        (value > 1 ? '<span class="bf-new-safe-event-count">' + value + '</span>' : '') +
+        '</span>'
+      );
     };
-    add("G",counts.goals,"goal");
-    add("A",counts.assists,"assist");
-    add("INJ",counts.injury,"injury");
-    add("YC",counts.yellow,"yellow");
-    add("RC",counts.red,"red");
-    add("SUB",counts.subs,"sub");
+    add("goal",counts.goals,"But");
+    add("penalty",counts.penalties,"But sur penalty");
+    add("own",counts.ownGoals,"But contre son camp");
+    add("assist",counts.assists,"Passe décisive");
+    add("injury",counts.injury,"Blessure");
+    add("yellow",counts.yellow,"Carton jaune");
+    add("red",counts.red,"Carton rouge");
+    add("subIn",counts.subIn,"Entrée en jeu");
+    add("subOut",counts.subOut,"Sortie du terrain");
+    add("sub",counts.subs,"Remplacement");
     return badges.join("");
   }
 
@@ -3249,6 +3352,9 @@ ${esc(String(playerName(player) || "P").split(/\s+/).map(part => part[0] || "").
 
     }
   );
+
+  // Install shared match-centre styles at startup for both data-provider paths.
+  createStyles();
 
   console.log(
     "✅ BakhiraFoot NEW MATCH DETAILS SAFE loaded"
