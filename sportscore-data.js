@@ -5591,6 +5591,118 @@ async function loadAfcon2025PlayerLeaders(stat) {
    BAKHIRAFOOT — HISTORICAL ESPN STANDINGS
    ========================================= */
 
+function standingRowNumber(row, keys) {
+  for (const key of keys) {
+    const raw = row?.[key];
+    if (raw === null || raw === undefined || raw === "") continue;
+    const value = Number(String(raw).replace(/,/g, ""));
+    if (Number.isFinite(value)) return value;
+  }
+  return null;
+}
+
+function sortStandingRowsForDisplay(rows) {
+  const source = (Array.isArray(rows) ? rows : [])
+    .map((row, index) => ({ row, index }));
+  if (!source.length) return [];
+
+  const positionOf = item => standingRowNumber(item.row, ["position", "rank", "place"]);
+  const allRanked = source.every(item => positionOf(item) !== null && positionOf(item) > 0);
+
+  if (allRanked) {
+    source.sort((a, b) =>
+      positionOf(a) - positionOf(b) || a.index - b.index
+    );
+    return source.map(item => item.row);
+  }
+
+  const hasPoints = source.some(item =>
+    standingRowNumber(item.row, ["points", "pts", "leaguePoints", "total_points"]) !== null
+  );
+
+  if (hasPoints) {
+    source.sort((a, b) => {
+      const pointsA = standingRowNumber(a.row, ["points", "pts", "leaguePoints", "total_points"]) ?? -Infinity;
+      const pointsB = standingRowNumber(b.row, ["points", "pts", "leaguePoints", "total_points"]) ?? -Infinity;
+      if (pointsA !== pointsB) return pointsB - pointsA;
+
+      const gdA = standingRowNumber(a.row, ["goal_difference", "gd", "goalDifference", "pointDifferential"]) ?? -Infinity;
+      const gdB = standingRowNumber(b.row, ["goal_difference", "gd", "goalDifference", "pointDifferential"]) ?? -Infinity;
+      if (gdA !== gdB) return gdB - gdA;
+
+      const gfA = standingRowNumber(a.row, ["goals_for", "gf", "goalsScored", "goalsFor"]) ?? -Infinity;
+      const gfB = standingRowNumber(b.row, ["goals_for", "gf", "goalsScored", "goalsFor"]) ?? -Infinity;
+      if (gfA !== gfB) return gfB - gfA;
+
+      const winsA = standingRowNumber(a.row, ["wins", "won", "w"]) ?? -Infinity;
+      const winsB = standingRowNumber(b.row, ["wins", "won", "w"]) ?? -Infinity;
+      if (winsA !== winsB) return winsB - winsA;
+      return a.index - b.index;
+    });
+    return source.map((item, index) => ({ ...item.row, position: index + 1 }));
+  }
+
+  source.sort((a, b) => {
+    const pa = positionOf(a);
+    const pb = positionOf(b);
+    if (pa !== null && pb !== null && pa !== pb) return pa - pb;
+    if (pa !== null && pb === null) return -1;
+    if (pa === null && pb !== null) return 1;
+    return a.index - b.index;
+  });
+  return source.map((item, index) => ({
+    ...item.row,
+    position: positionOf(item) !== null && source.every(x => positionOf(x) !== null)
+      ? positionOf(item)
+      : index + 1
+  }));
+}
+function sortStandingGroupsForDisplay(groups) {
+  const input = (Array.isArray(groups) ? groups : []).map((group, index) => ({
+    ...group,
+    rows: sortStandingRowsForDisplay(group?.rows),
+    __sourceIndex: index
+  })).filter(group => Array.isArray(group.rows) && group.rows.length);
+
+  if (!input.length) return [];
+
+  const generic = name => /^(standings?|table|overall|league phase|group stage|regular season|classement|classement general)$/i
+    .test(String(name || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").trim());
+
+  const names = input.map(group => String(group.name || "").trim());
+  const allGeneric = names.every(generic);
+  if (allGeneric && input.length > 1) {
+    input.forEach((group, index) => {
+      group.name = "Groupe " + String.fromCharCode(65 + index);
+    });
+  } else {
+    input.forEach(group => {
+      if (generic(group.name)) group.name = "";
+    });
+  }
+
+  function groupKey(name) {
+    const value = String(name || "").normalize("NFD")
+      .replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
+    const letter = value.match(/^(?:group|groupe)\s+([a-z])\b/);
+    if (letter) return [0, letter[1].charCodeAt(0), value];
+    const number = value.match(/^(?:group|groupe)\s+(\d+)\b/);
+    if (number) return [0, Number(number[1]), value];
+    return [1, 0, value];
+  }
+
+  input.sort((a, b) => {
+    const ka = groupKey(a.name);
+    const kb = groupKey(b.name);
+    if (ka[0] !== kb[0]) return ka[0] - kb[0];
+    if (ka[1] !== kb[1]) return ka[1] - kb[1];
+    return String(ka[2]).localeCompare(String(kb[2]), "fr") || a.__sourceIndex - b.__sourceIndex;
+  });
+
+  return input.map(({ __sourceIndex, ...group }) => group);
+}
+
+
 function readESPNStandingStat(entry, aliases) {
   const stats = Array.isArray(entry?.stats)
     ? entry.stats
@@ -5705,7 +5817,7 @@ function normalizeESPNHistoricalGroups(payload) {
         );
 
         return {
-          position: rank ?? index + 1,
+          ...(rank !== null ? { position: rank } : {}),
 
           team: {
             name:
@@ -5795,16 +5907,10 @@ function normalizeESPNHistoricalGroups(payload) {
   // بعض البطولات كترجع جدولاً واحداً بلا children.
   if (!groups.length && Array.isArray(payload?.standings?.entries)) {
     const rows = extractRows(payload.standings.entries);
-
-    if (rows.length) {
-      groups.push({
-        name: "",
-        rows
-      });
-    }
+    if (rows.length) groups.push({ name: "", rows });
   }
 
-  return groups;
+  return sortStandingGroupsForDisplay(groups);
 }
 
 
@@ -6438,6 +6544,39 @@ function setHistoricalSeasonSections(card, visible) {
       }
     });
 }
+async function fetchHistoricalFotmobStandings(competitionSlug, season) {
+  if (!competitionSlug || !Number.isInteger(Number(season))) {
+    throw new Error("Competition ou saison historique invalide.");
+  }
+  const url = "/api/historical-players?type=standings&competition=" +
+    encodeURIComponent(competitionSlug) + "&season=" + encodeURIComponent(season);
+  const payload = await fetchHistoricalJSONWithTimeout(url, 17000);
+  if (payload?.error) throw new Error(payload.details || payload.error);
+  const groups = payload?.data?.groups;
+  if (!Array.isArray(groups) || !groups.some(group => Array.isArray(group?.rows) && group.rows.length)) {
+    throw new Error("FotMob n'a pas retourné de groupes historiques.");
+  }
+  return sortStandingGroupsForDisplay(groups);
+}
+
+function historicalCompetitionMayHaveGroups(slug, season) {
+  const year = Number(season);
+  const alwaysGrouped = new Set([
+    "fifa-world-cup",
+    "uefa-european-championship",
+    "caf-africa-cup-of-nations",
+    "afc-asian-cup",
+    "conmebol-copa-america",
+    "uefa-nations-league",
+    "argentine-division-1",
+    "egyptian-premier-league"
+  ]);
+  if (alwaysGrouped.has(slug)) return true;
+  if (slug === "uefa-champions-league" || slug === "uefa-europa-league") return year < 2024;
+  if (slug === "uefa-europa-conference-league") return year < 2024 && year >= 2021;
+  return false;
+}
+
 const historicalStandingsCache = new Map();
 function bindHistoricalSeasonSelectors(container) {
   if (!container) return;
@@ -6519,13 +6658,38 @@ const originalPlayersHTML = playersBox
           let groups = historicalStandingsCache.get(cacheKey);
 
           if (!groups) {
-            try {
-              groups = await fetchHistoricalESPNStandings(espnCode, year);
+            const historicalSlug = select.dataset.competitionSlug || competition?.slug;
+            if (historicalCompetitionMayHaveGroups(historicalSlug, year)) {
+              // Compétitions à groupes : interroger ESPN et FotMob en parallèle,
+              // puis garder le fournisseur qui retourne le plus de groupes complets.
+              const [espnResult, fotmobResult] = await Promise.allSettled([
+                fetchHistoricalESPNStandings(espnCode, year),
+                fetchHistoricalFotmobStandings(historicalSlug, year)
+              ]);
+              const espnGroups = espnResult.status === "fulfilled" ? espnResult.value : [];
+              const fotmobGroups = fotmobResult.status === "fulfilled" ? fotmobResult.value : [];
+              groups = fotmobGroups.length > espnGroups.length ? fotmobGroups : espnGroups;
+              if (!espnGroups.length && !fotmobGroups.length) {
+                console.warn("Classements historiques absents chez ESPN et FotMob:", espnResult.reason, fotmobResult.reason);
+              }
+            } else {
+              try {
+                groups = await fetchHistoricalESPNStandings(espnCode, year);
+              } catch (standingsError) {
+                console.warn("Classement historique ESPN absent; essai FotMob:", standingsError);
+                try {
+                  groups = await fetchHistoricalFotmobStandings(historicalSlug, year);
+                } catch (fotmobError) {
+                  console.warn("Classement historique FotMob absent; les joueurs restent chargés indépendamment:", fotmobError);
+                  groups = [];
+                }
+              }
+            }
+            groups = sortStandingGroupsForDisplay(groups || []);
+            if (groups.length) {
               historicalStandingsCache.set(cacheKey, groups);
-            } catch (standingsError) {
-              // Continue loading historical player stats if ESPN has no old table for this league.
-              console.warn("Classement historique absent; on continue les statistiques:", standingsError);
-              groups = [];
+            } else {
+              historicalStandingsCache.delete(cacheKey);
             }
           }
 
@@ -6850,7 +7014,8 @@ async function loadCompetition(competition) {
      ========================================================= */
 
  function renderStandingTable(rows, title, competition) {
-  const rowHTML = rows
+  const sortedRows = sortStandingRowsForDisplay(rows);
+  const rowHTML = sortedRows
     .map((row, index) => renderStandingRow(row, index, competition))
     .join("");
 
@@ -7500,7 +7665,7 @@ function renderSeasonSelector(competition) {
   } = result;
 
   
-const usefulGroups = standingGroups.filter(group => {
+const usefulGroups = sortStandingGroupsForDisplay(standingGroups).filter(group => {
   if (!group.rows || !group.rows.length) {
     return false;
   }
@@ -7598,6 +7763,46 @@ ${renderPlayers(assists, "assists", "Meilleurs passeurs", "🎯")}
     </details>
   `;
 }
+
+
+let bfStandingsLoaded = false;
+let bfStandingsLoadPromise = null;
+
+function ensureBakhiraStandingsLoaded() {
+  if (bfStandingsLoaded) return Promise.resolve();
+  if (bfStandingsLoadPromise) return bfStandingsLoadPromise;
+
+  bfStandingsLoadPromise = loadAllStandings()
+    .then(() => {
+      bfStandingsLoaded = true;
+    })
+    .catch(error => {
+      bfStandingsLoadPromise = null;
+      console.error("BakhiraFoot: impossible de charger les classements.", error);
+      const container = document.getElementById("realStandings");
+      if (container && !container.querySelector(".bf-competition")) {
+        container.innerHTML = '<div class="ss-no-data">Les classements ne sont pas disponibles actuellement. Réessayez en ouvrant cette page à nouveau.</div>';
+      }
+    });
+
+  return bfStandingsLoadPromise;
+}
+
+function installLazyStandingsNavigation() {
+  const originalGo = window.go;
+  if (typeof originalGo !== "function" || originalGo.__bfLazyStandingsHook) return;
+
+  const wrappedGo = function(page) {
+    const result = originalGo.apply(this, arguments);
+    if (page === "leagues") {
+      ensureBakhiraStandingsLoaded();
+    }
+    return result;
+  };
+  wrappedGo.__bfLazyStandingsHook = true;
+  window.go = wrappedGo;
+}
+
 
 async function loadAllStandings() {
 
@@ -9913,24 +10118,13 @@ body.dark .ss-zone-caption {
      ========================================================= */
 
   async function init() {
-
     addStyles();
-
-
-    /* Toute la liste des compétitions reste visible, même sans rencontre aujourd'hui. */
     renderScoresCompetitionSidebar();
+    installLazyStandingsNavigation();
 
-    /* Les matchs d'accueil sont chargés par script.js via /api?date=.
-       On évite de lancer un second chargeur sur le même #homeMatches. */
-    await Promise.all([
-      loadAllStandings()
-    ]);
-
-
-    console.log(
-      "✅ BakhiraFoot : SportScore real data ready"
-    );
-
+    /* Les classements sont chargés uniquement quand la page Compétitions est ouverte.
+       On évite d'attendre les données de toutes les ligues sur l'accueil. */
+    console.log("✅ BakhiraFoot : initialisation légère prête");
   }
 
 

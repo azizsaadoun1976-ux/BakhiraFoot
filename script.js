@@ -17,6 +17,7 @@ let currentFilter = "all";
 let currentOpenedFixture = null;
 let selectedCompetitionIndex = 0;
 let selectedCompetitionFilterKey = "";
+let selectedCompetitionFilterKeys = [];
 let selectedCompetitionFilterName = "";
 let selectedCompetitionFilterLogo = "";
 let scoreCompetitionGroups = [];
@@ -1455,12 +1456,44 @@ function getScoreState(match) {
    مع India / Jordan Premier League
 ========================================================= */
 
+const SCORE_COMPETITION_ALIASES = {
+  "english-premier-league": ["Premier League", "English Premier League", "Premier League England"],
+  "spanish-la-liga": ["LaLiga", "La Liga", "Spanish La Liga", "Primera Division Spain"],
+  "italian-serie-a": ["Serie A", "Italian Serie A", "Serie A Italy"],
+  "bundesliga": ["Bundesliga", "German Bundesliga"],
+  "french-ligue-1": ["Ligue 1", "French Ligue 1"],
+  "netherlands-eredivisie": ["Eredivisie", "Dutch Eredivisie"],
+  "uefa-champions-league": ["UEFA Champions League", "Champions League", "UCL"],
+  "uefa-europa-league": ["UEFA Europa League", "Europa League", "UEL"],
+  "uefa-europa-conference-league": ["UEFA Conference League", "UEFA Europa Conference League", "Conference League", "UECL"],
+  "the-botola-pro": ["Botola Pro", "Botola Pro Inwi", "Moroccan Botola Pro", "Botola Pro D1"],
+  "fifa-world-cup": ["FIFA World Cup", "World Cup"],
+  "uefa-european-championship": ["UEFA Euro", "UEFA European Championship", "European Championship", "EURO"],
+  "caf-africa-cup-of-nations": ["CAF Africa Cup of Nations", "Africa Cup of Nations", "African Cup of Nations", "AFCON"],
+  "afc-asian-cup": ["AFC Asian Cup", "Asian Cup"],
+  "conmebol-copa-america": ["Copa América", "Copa America", "CONMEBOL Copa America"],
+  "uefa-nations-league": ["UEFA Nations League", "Nations League"],
+  "english-football-league-championship": ["EFL Championship", "English Football League Championship", "Championship England"],
+  "italian-serie-b": ["Serie B", "Italian Serie B"],
+  "brazilian-serie-a": ["Brasileirão Série A", "Brasileirao Serie A", "Brazilian Serie A", "Campeonato Brasileiro Serie A"],
+  "egyptian-premier-league": ["Egyptian Premier League", "Egypt Premier League"],
+  "saudi-professional-league": ["Saudi Professional League", "Saudi Pro League", "Roshn Saudi League"],
+  "portuguese-primera-liga": ["Primeira Liga", "Liga Portugal", "Liga Portugal Betclic", "Portuguese Primeira Liga"],
+  "turkish-super-league": ["Süper Lig", "Super Lig", "Turkish Super League"],
+  "belgian-pro-league": ["Belgian Pro League", "Pro League Belgium"],
+  "scottish-premiership": ["Scottish Premiership", "Premiership Scotland"],
+  "argentine-division-1": ["Argentine Division 1", "Liga Profesional", "Argentina Primera Division"]
+};
+
 function canonicalCompetitionName(value) {
   let name = normalizeText(value)
-    .replace(/\b(?:19|20)\d{2}(?:[-/](?:\d{2}|(?:19|20)\d{2}))?\b/g, " ")
+    .replace(/\b(?:19|20)\d{2}(?:\s*[-/]\s*(?:\d{2}|(?:19|20)\d{2}))?\b/g, " ")
     .replace(/[_–—-]+/g, " ")
+    .replace(/\b(?:league phase|group stage|regular season|fall season|spring season|first round|second round|third round|qualifying round|qualification round|round of 32|round of 16|group\s+[a-z]|pool\s+[a-z]|matchday\s+\d+|match week\s+\d+|week\s+\d+)\b/g, " ")
+    .replace(/[^a-z0-9\s]/g, " ")
     .replace(/\s+/g, " ")
     .trim();
+
   const aliases = {
     "english premier league":"premier league",
     "premier league england":"premier league",
@@ -1472,36 +1505,67 @@ function canonicalCompetitionName(value) {
     "nations league":"nations league",
     "uefa champions league":"champions league",
     "champions league":"champions league",
+    "ucl":"champions league",
     "uefa europa league":"europa league",
     "europa league":"europa league",
+    "uel":"europa league",
     "uefa conference league":"conference league",
     "uefa europa conference league":"conference league",
     "europa conference league":"conference league",
     "conference league":"conference league",
+    "uecl":"conference league",
     "german bundesliga":"bundesliga",
     "bundesliga":"bundesliga",
     "italian serie a":"serie a",
+    "serie a italy":"serie a",
     "serie a":"serie a",
     "french ligue 1":"ligue 1",
     "ligue 1":"ligue 1",
     "the botola pro":"botola pro",
     "botola pro inwi":"botola pro",
+    "botola pro d1":"botola pro",
     "moroccan botola pro":"botola pro",
-    "brasileirao serie a":"campeonato brasileiro serie a",
-    "brazilian serie a":"campeonato brasileiro serie a",
+    "la liga":"laliga",
+    "spanish la liga":"laliga",
+    "laliga":"laliga",
     "uefa european championship":"uefa euro",
     "european championship":"uefa euro",
     "uefa euro":"uefa euro",
+    "euro":"uefa euro",
     "caf africa cup of nations":"africa cup of nations",
     "african cup of nations":"africa cup of nations",
+    "africa cup of nations":"africa cup of nations",
     "afcon":"africa cup of nations",
+    "copa america":"copa america",
     "portuguese primera liga":"primeira liga",
-    "portuguese primeira":"primeira liga",
+    "portuguese primera":"primeira liga",
+    "liga portugal":"primeira liga",
+    "liga portugal betclic":"primeira liga",
     "primeira liga":"primeira liga",
     "saudi professional league":"saudi pro league",
-    "roshan saudi league":"saudi pro league"
+    "saudi pro league":"saudi pro league",
+    "roshan saudi league":"saudi pro league",
+    "brasileirao serie a":"campeonato brasileiro serie a",
+    "brazilian serie a":"campeonato brasileiro serie a",
+    "campeonato brasileiro serie a":"campeonato brasileiro serie a",
+    "world cup":"fifa world cup",
+    "fifa world cup":"fifa world cup",
+    "argentina primera division":"argentine division 1",
+    "liga profesional":"argentine division 1"
   };
   return aliases[name] || name || "football";
+}
+
+function scoreCompetitionKeys(name, slug) {
+  const values = [name, ...(SCORE_COMPETITION_ALIASES[slug] || [])];
+  return Array.from(new Set(values.map(canonicalCompetitionName).filter(Boolean)));
+}
+
+function findScoreCompetitionIndex(name, slug = "") {
+  const keys = new Set(scoreCompetitionKeys(name, slug));
+  return scoreCompetitionGroups.findIndex(group =>
+    keys.has(canonicalCompetitionName(group.name))
+  );
 }
 
 function getCompetitionGroupKey(match) {
@@ -1692,8 +1756,11 @@ function renderScoreCompetitions(matches) {
   }
 
   if (selectedCompetitionFilterKey) {
+    const filterKeys = selectedCompetitionFilterKeys.length
+      ? selectedCompetitionFilterKeys
+      : [selectedCompetitionFilterKey];
     selectedCompetitionIndex = scoreCompetitionGroups.findIndex(group =>
-      canonicalCompetitionName(group.name) === selectedCompetitionFilterKey
+      filterKeys.includes(canonicalCompetitionName(group.name))
     );
   } else if (selectedCompetitionIndex < 0 || selectedCompetitionIndex >= scoreCompetitionGroups.length) {
     selectedCompetitionIndex = scoreCompetitionGroups.length ? 0 : -1;
@@ -1715,6 +1782,7 @@ function selectScoreCompetition(
   index
 ) {
   selectedCompetitionFilterKey = "";
+  selectedCompetitionFilterKeys = [];
   selectedCompetitionFilterName = "";
   selectedCompetitionFilterLogo = "";
   selectedCompetitionIndex =
@@ -1754,16 +1822,24 @@ function selectScoreCompetition(
 function selectScoreCompetitionByName(name, slug = "", logo = "") {
   const requestedName = String(name || "").trim();
   if (!requestedName) return;
+
   selectedCompetitionFilterName = requestedName;
   selectedCompetitionFilterLogo = String(logo || "");
-  selectedCompetitionFilterKey = canonicalCompetitionName(requestedName);
-  selectedCompetitionIndex = scoreCompetitionGroups.findIndex(group =>
-    canonicalCompetitionName(group.name) === selectedCompetitionFilterKey
-  );
+  selectedCompetitionFilterKeys = scoreCompetitionKeys(requestedName, slug);
+  selectedCompetitionFilterKey =
+    selectedCompetitionFilterKeys[0] || canonicalCompetitionName(requestedName);
+
+  selectedCompetitionIndex = findScoreCompetitionIndex(requestedName, slug);
   if (selectedCompetitionIndex >= 0) {
-    selectedCompetitionFilterName = scoreCompetitionGroups[selectedCompetitionIndex].name;
-    selectedCompetitionFilterKey = canonicalCompetitionName(scoreCompetitionGroups[selectedCompetitionIndex].name);
+    const matchedGroup = scoreCompetitionGroups[selectedCompetitionIndex];
+    selectedCompetitionFilterName = matchedGroup.name;
+    selectedCompetitionFilterKey = canonicalCompetitionName(matchedGroup.name);
+    selectedCompetitionFilterKeys = Array.from(new Set([
+      ...selectedCompetitionFilterKeys,
+      selectedCompetitionFilterKey
+    ]));
   }
+
   if (typeof window.go === "function" && !$("scores")?.classList.contains("active")) {
     window.go("scores");
   }
@@ -9522,6 +9598,14 @@ async function renderHomeMatches() {
 
   if (!container) return;
 
+  const loadedAt = Number(container.dataset.homeMatchesLoadedAt || 0);
+  if (
+    container.dataset.homeMatchesLoaded === "true" &&
+    Date.now() - loadedAt < 60000
+  ) {
+    return;
+  }
+
   try {
 
     const today =
@@ -9557,28 +9641,21 @@ async function renderHomeMatches() {
         emptyCard(
           "Aucun match aujourd'hui."
         );
-
+      container.dataset.homeMatchesLoaded = "true";
+      container.dataset.homeMatchesLoadedAt = String(Date.now());
       return;
     }
 
-    /*
-       نخلي currentMatches متوافق
-       مع cards اللي باينين فالـHome.
-    */
-    // Huit affiches maximum : grandes compétitions et grands clubs d'abord,
-    // sans réserver les premières places aux seuls matchs en direct.
-    currentMatches =
-      matches.slice(0, 8);
+    // Limit the homepage display without replacing the complete Scores match list.
+    const homeMatches = matches.slice(0, 8);
 
     container.innerHTML =
-      currentMatches
-        .map((match, index) =>
-          createMatchHTML(
-            match,
-            index
-          )
-        )
+      homeMatches
+        .map((match, index) => createMatchHTML(match, index))
         .join("");
+
+    container.dataset.homeMatchesLoaded = "true";
+    container.dataset.homeMatchesLoadedAt = String(Date.now());
 
   } catch (error) {
 

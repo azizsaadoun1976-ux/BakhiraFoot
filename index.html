@@ -2,7 +2,7 @@
 <html lang="fr">
 <head>  
   <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-4186453820862227" crossorigin="anonymous"></script>        
-  <script async custom-element="amp-auto-ads" src="https://cdn.ampproject.org/v0/amp-auto-ads-0.1.js"></script>  
+
   <meta charset="utf-8">
   <meta name="viewport" content="width=device-width, initial-scale=1">
 
@@ -60,12 +60,10 @@
     "logo": "https://bakhira-foot.vercel.app/logo.svg"
   }
   </script>
-  <link rel="stylesheet" href="/bakhira-design-2026.css?v=20261019-06">
+  <link rel="stylesheet" href="/bakhira-design-2026.css?v=20261019-07">
 </head>
 
 <body>
-  <amp-auto-ads type="adsense" data-ad-client="ca-pub-4186453820862227"></amp-auto-ads>
-
   <!-- ================= HEADER (الموحد والرئيسي) ================= -->
   <header>
     <div class="logo">
@@ -140,6 +138,25 @@
             </div>
           </div>
         </div>
+
+        <section class="home-shortcuts" aria-label="Accès rapide">
+          <button type="button" class="home-shortcut home-shortcut--live" onclick="go('scores')">
+            <span class="home-shortcut-icon" aria-hidden="true">↗</span>
+            <span class="home-shortcut-copy"><small>CENTRE LIVE</small><strong>Scores en direct</strong><span>Tous les matchs et résultats</span></span>
+            <span class="home-shortcut-arrow" aria-hidden="true">→</span>
+          </button>
+          <button type="button" class="home-shortcut home-shortcut--competitions" onclick="go('leagues')">
+            <span class="home-shortcut-icon" aria-hidden="true">♜</span>
+            <span class="home-shortcut-copy"><small>TOURNOIS & LIGUES</small><strong>Compétitions</strong><span>Classements et qualifications</span></span>
+            <span class="home-shortcut-arrow" aria-hidden="true">→</span>
+          </button>
+          <button type="button" class="home-shortcut home-shortcut--news" onclick="go('news')">
+            <span class="home-shortcut-icon" aria-hidden="true">▤</span>
+            <span class="home-shortcut-copy"><small>À LA UNE</small><strong>Actualités football</strong><span>Les dernières infos du football</span></span>
+            <span class="home-shortcut-arrow" aria-hidden="true">→</span>
+          </button>
+        </section>
+
         <!-- MATCHS DU JOUR : script.js gère l'affichage via l'API du site -->
         <section class="home-live-section" aria-labelledby="home-live-title">
           <div class="home-live-heading">
@@ -272,12 +289,12 @@
   </footer>
 
   <!-- Scripts -->
-  <script src="script.js?v=20261019-31"></script>
+  <script src="script.js?v=20261019-32"></script>
   <script src="real-news.js?v=20261019-07"></script>
   <script src="match-center.js?v=20261017-11"></script>
   <script src="cookies.js?v=20261017-11"></script>
   <script src="theme-auto.js?v=20261017-11"></script>
-  <script src="sportscore-data.js?v=20261019-20"></script>
+  <script src="sportscore-data.js?v=20261019-21"></script>
   <script src="match-details.js?v=20261019-03"></script>
   <script src="new-match-details.js?v=20261019-04"></script>
 </body>

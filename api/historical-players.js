@@ -41,6 +41,180 @@ const LEAGUES = {
   "conmebol-copa-america": "conmebol.america"
 };
 
+
+const FOTMOB_ROOT = "https://www.fotmob.com/api/data";
+const FOTMOB_FIXED_IDS = {
+  "english-premier-league":47,"spanish-la-liga":87,"italian-serie-a":55,
+  "bundesliga":54,"french-ligue-1":53,"netherlands-eredivisie":57,
+  "uefa-champions-league":42,"uefa-europa-league":73,"the-botola-pro":530,
+  "english-football-league-championship":48,"fifa-world-cup":77
+};
+const FOTMOB_DIRECTORY_HINTS = {
+  "italian-serie-b":{names:["serie b"],countries:["italy","ita"]},
+  "portuguese-primera-liga":{names:["primeira liga","liga portugal","liga portugal betclic"],countries:["portugal","por"]},
+  "turkish-super-league":{names:["super lig","trendyol super lig"],countries:["turkey","tur"]},
+  "belgian-pro-league":{names:["pro league","jupiler pro league"],countries:["belgium","bel"]},
+  "scottish-premiership":{names:["scottish premiership","premiership"],countries:["scotland","sco"]},
+  "argentine-division-1":{names:["liga profesional","argentina primera division"],countries:["argentina","arg"]},
+  "brazilian-serie-a":{names:["brasileirao","brasileirao serie a","serie a"],countries:["brazil","bra"]},
+  "egyptian-premier-league":{names:["egyptian premier league","premier league"],countries:["egypt","egy"]},
+  "saudi-professional-league":{names:["saudi pro league","saudi professional league","roshn saudi league"],countries:["saudi arabia","ksa"]},
+  "uefa-europa-conference-league":{names:["conference league","uefa conference league"],countries:["international","int"]},
+  "uefa-european-championship":{names:["european championship","uefa euro","euro"],countries:["international","int"]},
+  "uefa-nations-league":{names:["nations league","uefa nations league"],countries:["international","int"]},
+  "caf-africa-cup-of-nations":{names:["africa cup of nations","afcon"],countries:["international","int"]},
+  "afc-asian-cup":{names:["asian cup","afc asian cup"],countries:["international","int"]},
+  "conmebol-copa-america":{names:["copa america"],countries:["international","int"]}
+};
+let fotmobDirectoryCache = null;
+let fotmobDirectoryCacheAt = 0;
+let fotmobDirectoryPending = null;
+
+async function getFotmobJSON(url, timeoutMs = 6000) {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    const response = await fetch(url, {
+      method:"GET",
+      headers:{Accept:"application/json", Referer:"https://www.fotmob.com/"},
+      signal:controller.signal
+    });
+    const body = await response.text();
+    if (!response.ok) throw new Error("FotMob HTTP " + response.status);
+    try { return JSON.parse(body); }
+    catch { throw new Error("FotMob returned invalid JSON"); }
+  } finally { clearTimeout(timer); }
+}
+
+async function getFotmobDirectory() {
+  if (fotmobDirectoryCache && Date.now()-fotmobDirectoryCacheAt < 21600000) return fotmobDirectoryCache;
+  if (fotmobDirectoryPending) return fotmobDirectoryPending;
+  fotmobDirectoryPending = getFotmobJSON(FOTMOB_ROOT+"/allLeagues",5500)
+    .then(payload => { fotmobDirectoryCache=payload; fotmobDirectoryCacheAt=Date.now(); return payload; })
+    .finally(() => { fotmobDirectoryPending=null; });
+  return fotmobDirectoryPending;
+}
+
+function flattenFotmobLeagues(payload) {
+  const found=[];
+  function walk(node,country="",code="") {
+    if (Array.isArray(node)) { node.forEach(item=>walk(item,country,code)); return; }
+    if (!node || typeof node!=="object") return;
+    const currentCountry=node.country || node.countryName || country;
+    const currentCode=node.ccode || node.ccode3 || node.countryCode || code;
+    if (node.id!==undefined && (node.name || node.localizedName)) {
+      const id=Number(node.id);
+      if(Number.isFinite(id)) found.push({id,name:node.name||node.localizedName,country:currentCountry,ccode:currentCode});
+    }
+    if (node.leagues) walk(node.leagues,node.name||currentCountry,node.ccode||currentCode);
+    if (node.international) walk(node.international,"International","INT");
+    if (node.countries) walk(node.countries);
+    if (node.popular) walk(node.popular);
+    if (node.items) walk(node.items,currentCountry,currentCode);
+  }
+  walk(payload);
+  const unique=new Map();
+  found.forEach(item=>unique.set(String(item.id),item));
+  return Array.from(unique.values());
+}
+
+async function getFotmobLeagueId(slug) {
+  if(FOTMOB_FIXED_IDS[slug]) return FOTMOB_FIXED_IDS[slug];
+  const hint=FOTMOB_DIRECTORY_HINTS[slug];
+  if(!hint) return null;
+  const directory=await getFotmobDirectory();
+  const all=flattenFotmobLeagues(directory);
+  const wantedNames=new Set(hint.names.map(normalize));
+  const wantedCountries=new Set(hint.countries.map(normalize));
+  const matches=all.filter(item=>wantedNames.has(normalize(item.name)));
+  if(!matches.length)return null;
+  const countryMatch=matches.find(item=>wantedCountries.has(normalize(item.country))||wantedCountries.has(normalize(item.ccode)));
+  return (countryMatch||matches[0]).id||null;
+}
+
+function fotmobSeasonLabel(slug, season) {
+  const year=Number(season);
+  if(!Number.isInteger(year))return String(season);
+  const singleYear=new Set(["fifa-world-cup","uefa-european-championship","caf-africa-cup-of-nations","afc-asian-cup","conmebol-copa-america","brazilian-serie-a","argentine-division-1"]);
+  if(singleYear.has(slug))return String(year);
+  return year+"/"+String(year+1);
+}
+
+function fotmobStatLabelMatches(label, stat) {
+  const key=normalize(label);
+  if(stat==="goals")return ["goal","goals","topscorer","topscorers","goalscorer","goalscorers","scoring"].includes(key);
+  return ["assist","assists","goalassist","goalassists","topassists","assistleader"].includes(key);
+}
+
+function normalizeFotmobPlayerRows(payload, stat) {
+  const root=payload?.data||payload||{};
+  const candidates=[
+    ...(Array.isArray(root?.statsData)?root.statsData:[]),
+    ...(Array.isArray(root?.stats?.players)?root.stats.players.flatMap(group=>{
+      const title=group.header||group.title||group.name||"";
+      const list=Array.isArray(group.topThree)?group.topThree:Array.isArray(group.players)?group.players:[];
+      return list.map(player=>({...player,__statHeader:title}));
+    }):[]),
+    ...(Array.isArray(root?.players)?root.players:[]),
+    ...(Array.isArray(root?.topThree)?root.topThree:[])
+  ];
+  const rows=candidates.map(item=>{
+    if(!item||typeof item!=="object")return null;
+    const categoryHeader = item.__statHeader || item.statHeader || item.categoryName ||
+      item.statName || item.statType || item.category || item.header || "";
+    if(categoryHeader&&!fotmobStatLabelMatches(categoryHeader,stat))return null;
+    const name=item.name||item.playerName||item.participant?.name||item.player?.name||item.athlete?.displayName||item.displayName||"";
+    const total=numberValue(item.statValue?.value??item.statValue??item.substatValue??item.value??item.total??item.displayValue??item.stat?.value);
+    if(!name||total===null||total<0)return null;
+    const teamName=item.teamName||item.team?.name||item.clubName||item.team?.displayName||"";
+    const teamLogo=item.teamLogo||item.team?.logo||item.team?.image||"";
+    const photo=item.photo||item.imageUrl||item.image||item.player?.photo||"";
+    const id=String(item.id||item.playerId||item.participant?.id||"");
+    const team={name:teamName||"Équipe non renseignée",logo:teamLogo};
+    return {name,player_name:name,value:total,[stat]:total,player:{id,name,full_name:name,photo,photo_url:photo,image:photo,logo:photo,team,[stat]:total},team};
+  }).filter(Boolean);
+  const unique=new Map();
+  rows.forEach(row=>{const key=normalize(row.name);if(!unique.has(key)||row.value>unique.get(key).value)unique.set(key,row);});
+  return Array.from(unique.values()).sort((a,b)=>b.value-a.value).slice(0,5);
+}
+
+async function fetchFotmobSeasonLeaders(slug, season) {
+  const leagueId=await getFotmobLeagueId(slug);
+  if(!leagueId)return {goals:[],assists:[],source:""};
+  const label=fotmobSeasonLabel(slug,season);
+  let leaguePayload=null;
+  try {
+    leaguePayload=await getFotmobJSON(FOTMOB_ROOT+"/leagues?id="+encodeURIComponent(leagueId)+"&season="+encodeURIComponent(label),6000);
+  } catch(error) {
+    console.warn("FotMob historical league:",slug,season,error.message||error);
+  }
+  const root=leaguePayload?.data||leaguePayload||{};
+  const directGoals=normalizeFotmobPlayerRows(root,"goals");
+  const directAssists=normalizeFotmobPlayerRows(root,"assists");
+  const seasons=Array.isArray(root.seasons)?root.seasons:[];
+  const keys=new Set([normalize(label),normalize(String(season))]);
+  const selected=seasons.find(item=>keys.has(normalize(item?.name||""))||keys.has(normalize(item?.id||"")));
+  const seasonId=selected?.id||label;
+  const seasonCandidates=Array.from(new Set([String(seasonId),label]));
+  const requests=[];
+  for(const seasonValue of seasonCandidates){
+    for(const [stat,statId] of [["goals","goals"],["assists","goal_assist"]]){
+      const url=FOTMOB_ROOT+"/leagueseasondeepstats?id="+encodeURIComponent(leagueId)+"&season="+encodeURIComponent(seasonValue)+"&type=players&stat="+encodeURIComponent(statId);
+      requests.push({stat,url});
+    }
+  }
+  const deep=await Promise.all(requests.map(async request=>{
+    try{return {stat:request.stat,rows:normalizeFotmobPlayerRows(await getFotmobJSON(request.url,5500),request.stat)};}
+    catch(error){return {stat:request.stat,rows:[],error:error.message||"failed"};}
+  }));
+  let goals=directGoals,assists=directAssists;
+  for(const item of deep){
+    if(item.stat==="goals"&&item.rows.length>goals.length)goals=item.rows;
+    if(item.stat==="assists"&&item.rows.length>assists.length)assists=item.rows;
+  }
+  return {goals,assists,source:"FotMob historical players"};
+}
+
 const referenceCache = new Map();
 
 function normalize(value) {
@@ -606,90 +780,203 @@ async function fetchHistoricalByAthlete(league, season) {
   return result;
 }
 
-async function fetchSeasonLeaders(league, season) {
-  // ESPN's newer season-filtered athlete leaderboard is the primary source.
-  try {
-    const modern = await fetchHistoricalByAthlete(league, season);
-    if (modern.goals.length || modern.assists.length) {
-      return { goals: modern.goals, assists: modern.assists, source: "ESPN by-athlete" };
-    }
-  } catch (error) {
-    console.warn("ESPN by-athlete fallback:", error?.message || error);
-  }
-
-  const code = encodeURIComponent(league);
-  const siteV2 = ESPN_SITE.replace("/apis/site/v2", "/apis/v2");
-  const urls = [
-    // ESPN Core seasonal endpoints first. Site endpoints are fallbacks.
-    ESPN_CORE + "/" + code + "/seasons/" + season + "/types/2/leaders?limit=100&lang=en&region=us",
-    ESPN_CORE + "/" + code + "/seasons/" + season + "/leaders?limit=100&lang=en&region=us",
-    siteV2 + "/" + code + "/leaders?season=" + season + "&limit=100&lang=en&region=us",
-    ESPN_SITE + "/" + code + "/leaders?season=" + season + "&limit=100&lang=en&region=us"
+async function fetchLegacySeasonLeaders(league, season) {
+  const code=encodeURIComponent(league);
+  const siteV2=ESPN_SITE.replace("/apis/site/v2","/apis/v2");
+  const urls=[
+    ESPN_CORE+"/"+code+"/seasons/"+season+"/types/2/leaders?limit=100&lang=en&region=us",
+    ESPN_CORE+"/"+code+"/seasons/"+season+"/leaders?limit=100&lang=en&region=us",
+    siteV2+"/"+code+"/leaders?season="+season+"&limit=100&lang=en&region=us",
+    ESPN_SITE+"/"+code+"/leaders?season="+season+"&limit=100&lang=en&region=us"
   ];
-
-  let goals = [];
-  let assists = [];
-  let lastError = null;
-  const diagnostics = [];
-
-  for (const url of urls) {
-    try {
-      const payload = await getJSON(url, 8000);
-      const rawCategories = await findCategories(payload);
-      const categories = await flattenLeaderCategories(rawCategories);
-
-      // A first category named "Goals" may be an empty parent/container.
-      // Continue until a matching category actually contains normalizable player rows.
-      for (const category of categories) {
-        const wantsGoals = !goals.length && categoryMatches(category, "goals");
-        const wantsAssists = !assists.length && categoryMatches(category, "assists");
-        if (!wantsGoals && !wantsAssists) continue;
-
-        try {
-          const rows = await getCategoryRows(category);
-          if (!rows.length) {
-            diagnostics.push((category.displayName || category.name || category.abbreviation || "category") + ": empty");
-            continue;
-          }
-
-          if (wantsGoals) {
-            const normalized = await normalizeLeaderRows(rows, "goals");
-            if (normalized.length) goals = normalized;
-            else diagnostics.push((category.displayName || category.name || "goals") + ": no usable player rows");
-          }
-          if (wantsAssists) {
-            const normalized = await normalizeLeaderRows(rows, "assists");
-            if (normalized.length) assists = normalized;
-            else diagnostics.push((category.displayName || category.name || "assists") + ": no usable player rows");
-          }
-        } catch (categoryError) {
-          diagnostics.push((category.displayName || category.name || "category") + ": " + (categoryError.message || "failed"));
-        }
-
-        if (goals.length && assists.length) break;
+  const responses=await Promise.all(urls.map(async url=>{
+    try{return {url,payload:await getJSON(url,5000)};}
+    catch(error){return {url,error};}
+  }));
+  let goals=[],assists=[];
+  const diagnostics=[];
+  for(const result of responses){
+    if(!result.payload){diagnostics.push((result.error?.message||"failed").slice(0,150));continue;}
+    try{
+      const raw=await findCategories(result.payload);
+      const categories=await flattenLeaderCategories(raw);
+      for(const category of categories){
+        const wantsGoals=!goals.length&&categoryMatches(category,"goals");
+        const wantsAssists=!assists.length&&categoryMatches(category,"assists");
+        if(!wantsGoals&&!wantsAssists)continue;
+        try{
+          const rows=await getCategoryRows(category);
+          if(!rows.length)continue;
+          if(wantsGoals){const normalized=await normalizeLeaderRows(rows,"goals");if(normalized.length)goals=normalized;}
+          if(wantsAssists){const normalized=await normalizeLeaderRows(rows,"assists");if(normalized.length)assists=normalized;}
+        }catch(error){diagnostics.push((error.message||"category failed").slice(0,150));}
+        if(goals.length&&assists.length)break;
       }
+    }catch(error){diagnostics.push((error.message||"parse failed").slice(0,150));}
+    if(goals.length&&assists.length)break;
+  }
+  return {goals,assists,source:"ESPN seasonal leaders fallback",diagnostics};
+}
 
-      if (goals.length && assists.length) {
-        return { goals, assists, source: url };
-      }
-      lastError = new Error("Endpoint returned no usable rows for both stats: " + url);
-    } catch (error) {
-      lastError = error;
-      diagnostics.push(url + ": " + (error.message || "failed"));
+function chooseHistoricalLeaderRows(...lists) {
+  return lists.reduce((best,current)=>Array.isArray(current)&&current.length>best.length?current:best,[]);
+}
+
+async function fetchSeasonLeaders(league, season, competitionSlug) {
+  const results=await Promise.allSettled([
+    fetchHistoricalByAthlete(league,season),
+    fetchLegacySeasonLeaders(league,season),
+    fetchFotmobSeasonLeaders(competitionSlug,season)
+  ]);
+  const modern=results[0].status==="fulfilled"?results[0].value:{goals:[],assists:[],diagnostics:[]};
+  const legacy=results[1].status==="fulfilled"?results[1].value:{goals:[],assists:[],diagnostics:[]};
+  const fotmob=results[2].status==="fulfilled"?results[2].value:{goals:[],assists:[],diagnostics:[]};
+  const goals=chooseHistoricalLeaderRows(modern.goals,legacy.goals,fotmob.goals);
+  const assists=chooseHistoricalLeaderRows(modern.assists,legacy.assists,fotmob.assists);
+  if(goals.length||assists.length){
+    const source=[
+      modern.goals.length||modern.assists.length?"ESPN by-athlete":"",
+      legacy.goals.length||legacy.assists.length?"ESPN seasonal leaders":"",
+      fotmob.goals.length||fotmob.assists.length?"FotMob":""
+    ].filter(Boolean).join(" + ");
+    return {goals,assists,source};
+  }
+  const diagnostics=[...(modern.diagnostics||[]),...(legacy.diagnostics||[]),...(fotmob.diagnostics||[])];
+  throw new Error("Aucune statistique historique exploitable pour "+league+", saison "+season+
+    (diagnostics.length?". "+diagnostics.slice(0,4).join(" | "):""));
+}
+
+module.exports =
+
+function normalizeFotmobStandingTableRows(entries) {
+  if (!Array.isArray(entries)) return [];
+  return entries.map((row,index)=>{
+    const scoreText=String(row?.scoresStr||row?.scoreStr||"");
+    const scoreMatch=scoreText.match(/(-?\d+)\s*[-:]\s*(-?\d+)/);
+    const goalsFor=scoreMatch?Number(scoreMatch[1]):null;
+    const goalsAgainst=scoreMatch?Number(scoreMatch[2]):null;
+    const gd=numberValue(row?.goalConDiff??row?.goalDifference??row?.gd) ??
+      (goalsFor!==null&&goalsAgainst!==null?goalsFor-goalsAgainst:null);
+    const teamId=String(row?.id||row?.teamId||"");
+    const logo=row?.logo||row?.teamLogo||row?.image||
+      (teamId?"https://images.fotmob.com/image_resources/logo/teamlogo/"+encodeURIComponent(teamId)+".png":"");
+    const teamName=row?.name||row?.teamName||row?.team?.name||"";
+    if(!teamName)return null;
+    const position=numberValue(row?.idx??row?.position??row?.rank) ?? index+1;
+    const played=numberValue(row?.played??row?.matches);
+    const wins=numberValue(row?.wins);
+    const draws=numberValue(row?.draws);
+    const losses=numberValue(row?.losses);
+    const points=numberValue(row?.pts??row?.points);
+    return {
+      position,
+      team:{id:teamId,name:teamName,logo},
+      ...(played!==null?{played}:{}),
+      ...(wins!==null?{wins}:{}),
+      ...(draws!==null?{draws}:{}),
+      ...(losses!==null?{losses}:{}),
+      ...(goalsFor!==null?{goals_for:goalsFor}:{}),
+      ...(goalsAgainst!==null?{goals_against:goalsAgainst}:{}),
+      ...(gd!==null?{goal_difference:gd}:{}),
+      ...(points!==null?{points}:{}),
+      ...(row?.form?{form:row.form}:{})
+    };
+  }).filter(Boolean).sort((x,y)=>x.position-y.position);
+}
+
+function normalizeFotmobStandingGroups(payload) {
+  const root=payload?.data||payload||{};
+  const tables=Array.isArray(root?.table)?root.table:
+    Array.isArray(root?.tables)?root.tables:[];
+  const groups=[];
+  tables.forEach((entry,tableIndex)=>{
+    const data=entry?.data||entry;
+    const direct=data?.table?.all||data?.table?.overall||data?.all;
+    if(Array.isArray(direct)&&direct.length){
+      const rows=normalizeFotmobStandingTableRows(direct);
+      if(rows.length)groups.push({
+        name:data?.table?.name||data?.leagueName||data?.name||"",
+        rows
+      });
+    }
+
+    const subtables=Array.isArray(data?.tables)?data.tables:[];
+    subtables.forEach((sub,subIndex)=>{
+      const rowsData=sub?.table?.all||sub?.table?.overall||sub?.all||
+        sub?.data?.table?.all||[];
+      const rows=normalizeFotmobStandingTableRows(rowsData);
+      if(!rows.length)return;
+      groups.push({
+        name:sub?.leagueName||sub?.name||sub?.title||sub?.table?.name||
+          ("Groupe "+String.fromCharCode(65+subIndex)),
+        rows
+      });
+    });
+
+    if(!direct&&!subtables.length){
+      const nested=data?.data?.table?.all||data?.standings?.all||[];
+      const rows=normalizeFotmobStandingTableRows(nested);
+      if(rows.length)groups.push({name:data?.leagueName||data?.name||"",rows});
+    }
+  });
+
+  // Some responses use a table object directly instead of an array.
+  if(!groups.length){
+    const direct=root?.table?.all||root?.standings?.all;
+    const rows=normalizeFotmobStandingTableRows(direct);
+    if(rows.length)groups.push({name:root?.details?.name||root?.leagueName||"",rows});
+  }
+  const seen=new Set();
+  return groups.filter(group=>{
+    const signature=group.name+"|"+group.rows.map(row=>row.team.name+":"+row.position).join(",");
+    if(seen.has(signature))return false;
+    seen.add(signature);
+    return true;
+  });
+}
+
+async function fetchFotmobSeasonStandings(competitionSlug, season) {
+  const leagueId=await getFotmobLeagueId(competitionSlug);
+  if(!leagueId)return [];
+  const label=fotmobSeasonLabel(competitionSlug,season);
+  const candidates=Array.from(new Set([
+    label,
+    String(season),
+    String(season)+"/"+String(Number(season)+1),
+    String(season)+"/"+String(Number(season)+1)
+  ]));
+  for(const seasonValue of candidates){
+    try{
+      const payload=await getFotmobJSON(
+        FOTMOB_ROOT+"/leagues?id="+encodeURIComponent(leagueId)+"&season="+encodeURIComponent(seasonValue),
+        6500
+      );
+      const groups=normalizeFotmobStandingGroups(payload);
+      if(groups.length)return sortFotmobStandingGroups(groups);
+    }catch(error){
+      console.warn("FotMob historical standings:",competitionSlug,seasonValue,error.message||error);
     }
   }
+  return [];
+}
 
-  // Return whichever real list exists rather than dropping it because the other category is missing.
-  if (goals.length || assists.length) {
-    return { goals, assists, source: "ESPN seasonal leaders (partial)" };
-  }
-
-  throw new Error(
-    "ESPN returned no usable historical scorers or assists for " + league +
-    ", season " + season +
-    (diagnostics.length ? ". " + diagnostics.slice(0, 6).join(" | ") : "") +
-    (lastError?.message ? ". " + lastError.message : "")
-  );
+function sortFotmobStandingGroups(groups) {
+  return (Array.isArray(groups)?groups:[]).map(group=>({
+    ...group,
+    rows:Array.isArray(group.rows)?group.rows.slice().sort((a,b)=>
+      Number(a.position||999)-Number(b.position||999)
+    ):[]
+  })).filter(group=>group.rows.length).sort((a,b)=>{
+    const parse=name=>{
+      const label=String(name||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase();
+      const letter=label.match(/(?:group|groupe)\s+([a-z])\b/);
+      if(letter)return letter[1].charCodeAt(0);
+      const number=label.match(/(?:group|groupe)\s+(\d+)\b/);
+      if(number)return Number(number[1]);
+      return 999;
+    };
+    return parse(a.name)-parse(b.name)||String(a.name||"").localeCompare(String(b.name||""));
+  });
 }
 
 module.exports = async (req, res) => {
@@ -717,7 +1004,26 @@ module.exports = async (req, res) => {
   }
 
   try {
-    const { goals, assists, source } = await fetchSeasonLeaders(league, season);
+    if (String(req.query?.type || "").toLowerCase() === "standings") {
+      const groups = await fetchFotmobSeasonStandings(competition, season);
+      if (!groups.length) {
+        return res.status(404).json({
+          error: "historical_standings_unavailable",
+          competition,
+          season,
+          details: "FotMob ne fournit pas de classement historique exploitable pour cette saison."
+        });
+      }
+      res.setHeader("Cache-Control", "s-maxage=3600, stale-while-revalidate=86400");
+      return res.status(200).json({
+        provider: "FotMob historical standings",
+        competition,
+        season,
+        data: { groups }
+      });
+    }
+
+    const { goals, assists, source } = await fetchSeasonLeaders(league, season, competition);
 
     if (!goals.length && !assists.length) {
       throw new Error(
@@ -727,7 +1033,8 @@ module.exports = async (req, res) => {
 
     res.setHeader("Cache-Control", "s-maxage=3600, stale-while-revalidate=86400");
     return res.status(200).json({
-      provider: "ESPN seasonal leaders",
+      provider: "ESPN/FotMob historical leaders",
+      source: source || "Historical statistics provider",
       competition,
       league,
       season,

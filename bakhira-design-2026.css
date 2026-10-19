@@ -629,3 +629,78 @@ body.dark #scoreList .bf-score-pro-details { border-top-color: #2a3e4d; color: #
   #scoreList .bf-score-pro-team strong { font-size: 10px !important; }
   #scoreList .bf-score-pro-score { min-width: 62px !important; min-height: 40px; gap: 4px !important; padding: 6px 3px !important; font-size: 18px !important; }
 }
+
+
+/* BakhiraFoot Home — refined broadcast-style front page */
+#home .hero{
+  min-height:clamp(330px,34vw,430px)!important;
+  grid-template-columns:minmax(0,1.08fr) minmax(280px,.92fr)!important;
+  gap:clamp(22px,3.5vw,58px)!important;
+  margin-bottom:18px!important;
+  padding:clamp(25px,4vw,52px)!important;
+  border:1px solid #28475a!important;border-radius:22px!important;
+  background:radial-gradient(ellipse at 90% 8%,rgba(57,230,165,.16),transparent 35%),radial-gradient(ellipse at 8% 100%,rgba(31,112,145,.16),transparent 44%),linear-gradient(118deg,#102a3d 0%,#0b1a28 56%,#0c2a26 100%)!important;
+  box-shadow:0 22px 56px rgba(0,0,0,.22)!important;
+}
+#home .hero-content>small{margin:0 0 13px!important;font-size:10px!important;letter-spacing:.19em!important}
+#home .hero h1{max-width:660px;font-size:clamp(37px,4.6vw,61px)!important;line-height:.99!important;letter-spacing:-.065em!important}
+#home .hero p{max-width:570px!important;color:#c0cfdb!important;font-size:14px!important;line-height:1.82!important}
+#home .hero-feature-pills{gap:8px!important;margin:23px 0!important}
+#home .hero-feature-pills span{display:inline-flex;align-items:center;gap:6px;padding:8px 10px!important;border-color:#ffffff20!important;background:#ffffff09!important;color:#dce8ef!important}
+#home .hero-feature-pills span:first-child i{display:inline-block;width:6px;height:6px;border-radius:50%;background:#ff6377;box-shadow:0 0 9px #ff6377}
+#home .hero-actions{gap:10px!important}
+#home .hero-actions button{min-height:45px!important;padding:12px 16px!important;border-radius:9px!important;transition:transform .16s,border-color .16s,background .16s}
+#home .hero-actions button:hover{transform:translateY(-2px)}
+#home .hero-actions .green{background:linear-gradient(135deg,#53efb2,#2bd59a)!important;color:#062218!important;border-color:#53efb2!important;box-shadow:0 8px 20px #39e6a520!important}
+#home .hero-live-panel{position:relative;padding:15px!important;border-radius:15px!important;background:linear-gradient(145deg,#07131fe8,#0c211fee)!important;border-color:#ffffff2a!important;box-shadow:0 18px 44px #0003!important}
+#home .pitch-visual{min-height:clamp(190px,19vw,250px)!important;border-radius:7px!important;background:repeating-linear-gradient(90deg,#105138 0,#105138 10%,#176342 10%,#176342 20%)!important;box-shadow:inset 0 0 45px #00180d35}
+#home .pitch-center-circle{width:76px!important;height:76px!important}
+#home .pitch-ball{width:14px!important;height:14px!important;left:61%;top:43%;box-shadow:0 0 0 7px #ffffff18,0 0 18px #fff6}
+#home .live-panel-bottom{padding-top:14px!important}
+#home .home-shortcuts{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:11px;margin:0 0 22px}
+#home .home-shortcut{display:grid;grid-template-columns:43px minmax(0,1fr) 18px;align-items:center;gap:12px;min-width:0;min-height:94px;padding:15px;border:1px solid #263f52;border-radius:13px;background:linear-gradient(145deg,#102437,#0c1a27);color:#f2f7fa;text-align:left;cursor:pointer;transition:transform .16s,border-color .16s,box-shadow .16s}
+#home .home-shortcut:hover{transform:translateY(-2px);border-color:#387a5e;box-shadow:0 11px 27px #0002}
+#home .home-shortcut-icon{display:flex;align-items:center;justify-content:center;width:43px;height:43px;border:1px solid #2d5a49;border-radius:11px;background:#14392f;color:#73efb9;font-size:23px;font-weight:900}
+#home .home-shortcut--competitions .home-shortcut-icon{border-color:#374d73;background:#17273d;color:#91b4ff}
+#home .home-shortcut--news .home-shortcut-icon{border-color:#6a4f32;background:#322719;color:#ffd28b}
+#home .home-shortcut-copy{display:flex;flex-direction:column;gap:3px;min-width:0}
+#home .home-shortcut-copy small{color:#77e9b8;font-size:9px;font-weight:950;letter-spacing:.13em}
+#home .home-shortcut--competitions .home-shortcut-copy small{color:#9cbaff}
+#home .home-shortcut--news .home-shortcut-copy small{color:#f4c57b}
+#home .home-shortcut-copy strong{overflow:hidden;color:#f3f7fb;font-size:13px;font-weight:950;letter-spacing:-.02em;text-overflow:ellipsis;white-space:nowrap}
+#home .home-shortcut-copy>span{overflow:hidden;color:#93a8b9;font-size:10px;line-height:1.4;text-overflow:ellipsis;white-space:nowrap}
+#home .home-shortcut-arrow{color:#8da5b8;font-size:18px;text-align:right;transition:transform .16s,color .16s}
+#home .home-shortcut:hover .home-shortcut-arrow{transform:translateX(3px);color:#6aefb9}
+#home .home-live-section{margin-top:0!important;border-color:#243f51!important;background:linear-gradient(145deg,#0e2030,#0a1723 78%,#0d2925)!important}
+#home .home-live-heading{align-items:flex-end!important}
+#home .home-live-heading .section-kicker{margin-bottom:7px!important}
+#home .home-live-heading p{max-width:620px!important;line-height:1.65!important}
+#home .home-live-more{display:inline-flex;align-items:center;gap:9px;transition:background .16s,border-color .16s}
+#home .home-live-more:hover{background:#174332!important;border-color:#34795b!important}
+#home .home-news-heading{padding-top:9px}
+#home #homeNews.cards .card{min-width:0;border-color:#243a4d!important;background:linear-gradient(150deg,#102235,#0c1926)!important;transition:transform .18s,border-color .18s}
+#home #homeNews.cards .card:hover{transform:translateY(-3px);border-color:#367657!important}
+#home #homeNews.cards .newsImg{height:125px!important;border-radius:9px!important}
+@media(max-width:1000px){
+ #home .hero{grid-template-columns:minmax(0,1fr) minmax(250px,.85fr)!important}
+ #home .home-shortcuts{gap:8px}
+ #home .home-shortcut{grid-template-columns:38px minmax(0,1fr) 14px;gap:9px;padding:12px}
+ #home .home-shortcut-icon{width:38px;height:38px}
+}
+@media(max-width:700px){
+ #home .hero{grid-template-columns:1fr!important;min-height:0!important;padding:22px!important;gap:19px!important;border-radius:15px!important}
+ #home .hero h1{font-size:clamp(35px,9vw,45px)!important}
+ #home .hero p{font-size:13px!important}
+ #home .hero-live-panel{padding:11px!important}
+ #home .pitch-visual{min-height:175px!important}
+ #home .home-shortcuts{grid-template-columns:1fr;gap:8px;margin-bottom:15px}
+ #home .home-shortcut{min-height:76px;grid-template-columns:40px minmax(0,1fr) 20px;padding:11px 13px}
+ #home .home-shortcut-icon{width:40px;height:40px}
+ #home .home-shortcut-copy strong{font-size:12px}
+ #home .home-live-heading{gap:10px!important}
+ #home .home-news-heading{margin-top:22px!important}
+}
+@media(prefers-reduced-motion:reduce){
+ #home .hero-actions button,#home .home-shortcut,#home .home-shortcut-arrow,#home #homeNews.cards .card{transition:none!important}
+ #home .hero-actions button:hover,#home .home-shortcut:hover,#home #homeNews.cards .card:hover{transform:none!important}
+}
