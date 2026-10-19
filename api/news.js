@@ -70,8 +70,8 @@ function parseHtml(html, source) {
     const title = clean(anchor);
     if (title.length < 24 || title.length > 190) continue;
     // Les sites officiels mettent souvent la miniature dans le lien de l'article.
-    const imageAttr = anchor.match(/<(?:img|source)\\b[^>]*(?:src|data-src|data-lazy-src)=["']([^"']+)["']/i)
-      || anchor.match(/<(?:img|source)\\b[^>]*srcset=["']([^"', ]+)/i);
+    const imageAttr = anchor.match(/<(?:img|source)\b[^>]*(?:src|data-src|data-lazy-src)=["']([^"']+)["']/i)
+      || anchor.match(/<(?:img|source)\b[^>]*srcset=["']([^"', ]+)/i);
     const image = imageAttr ? absoluteUrl(imageAttr[1], source.url) : "";
     if (/^(accueil|actualités|actualites|en savoir plus|lire plus|voir plus|news|contact|facebook|instagram)$/i.test(title)) continue;
     const url = absoluteUrl(hrefMatch[1], source.url);
