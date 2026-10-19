@@ -6,6 +6,10 @@
       "dest": "/api/historical-players.js"
     },
     {
+      "src": "/api/news$",
+      "dest": "/api/news.js"
+    },
+    {
       "src": "/api/(.*)",
       "dest": "/api/index.js"
     }
