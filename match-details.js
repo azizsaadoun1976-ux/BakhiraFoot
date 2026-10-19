@@ -3836,7 +3836,9 @@ function pitchPositions(lineup, side) {
 
   function substitutionNamesFromText(event) {
     const type = norm(first(event?.type?.name, event?.type?.text, event?.type, event?.event_type, event?.incidentType, ""));
-    const textValue = String(first(event?.detail, event?.description, event?.text, event?.commentary, event?.shortText, event?.longText, event?.name, "") || "")
+    const textValue = [event?.detail, event?.description, event?.text, event?.commentary, event?.shortText, event?.longText, event?.name]
+      .filter(value => value !== null && value !== undefined && String(value).trim())
+      .map(value => String(value).trim()).filter((value,index,items) => items.indexOf(value) === index).join(" ")
       .replace(/\s+/g, " ").trim();
     if (!/substitut|subbed|remplac|changement|player change|replaces|comes on|enters/.test(type + " " + norm(textValue))) {
       return { inName: "", outName: "" };
@@ -3880,7 +3882,9 @@ function pitchPositions(lineup, side) {
       event?.event_type, event?.incidentType
     ].filter(Boolean).join(" "));
     if (!/goal|score|but/.test(eventTypeText)) return "";
-    const textValue = String(first(event?.goalDescription, event?.goal_description, event?.detail, event?.description, event?.text, event?.commentary, "") || "");
+    const textValue = [event?.goalDescription, event?.goal_description, event?.detail, event?.description, event?.text, event?.commentary]
+      .filter(value => value !== null && value !== undefined && String(value).trim())
+      .map(value => String(value).trim()).filter((value,index,items) => items.indexOf(value) === index).join(" ");
     const patterns = [
       /assisted by\s+([^,.;()[\]]+)/i,
       /assist(?:ed)?\s+(?:by|from)\s+([^,.;()[\]]+)/i,
