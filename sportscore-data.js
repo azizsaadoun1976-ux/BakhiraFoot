@@ -217,6 +217,8 @@ const ESPN_SEASON_CODES = {
   "uefa-nations-league": "uefa.nations",
 
   "english-football-league-championship": "eng.2",
+  "the-botola-pro": "mar.1",
+  "egyptian-premier-league": "egy.1",
   "italian-serie-b": "ita.2",
   "brazilian-serie-a": "bra.1",
   "saudi-professional-league": "ksa.1",
@@ -7266,6 +7268,8 @@ function renderSeasonSelector(competition) {
     "uefa-nations-league": "uefa.nations",
 
     "english-football-league-championship": "eng.2",
+    "the-botola-pro": "mar.1",
+    "egyptian-premier-league": "egy.1",
     "italian-serie-b": "ita.2",
     "brazilian-serie-a": "bra.1",
     "saudi-professional-league": "ksa.1",
@@ -7589,6 +7593,10 @@ for (let i = 0; i < competitions.length; i += 3) {
         .join("");
    bindHistoricalSeasonSelectors(container);
 
+   if (window.__bfPendingCompetitionName) {
+     window.openBakhiraCompetitionStandings(window.__bfPendingCompetitionName);
+   }
+
 container
   .querySelectorAll("details.bf-competition")
   .forEach(card => {
@@ -7638,6 +7646,65 @@ container
 
   }
 
+
+  /* =========================================================
+     DIRECT LINK: SCORES -> COMPETITION STANDINGS
+     ========================================================= */
+  function normalizeCompetitionName(value) {
+    return String(value || "")
+      .normalize("NFD")
+      .replace(/[\\u0300-\\u036f]/g, "")
+      .toLowerCase()
+      .replace(/[^a-z0-9]/g, "");
+  }
+
+  function competitionNameAliases(value) {
+    const normalized = normalizeCompetitionName(value);
+    const aliases = {
+      "championsleague": "uefachampionsleague",
+      "ucl": "uefachampionsleague",
+      "europaleague": "uefaeuropaleague",
+      "uel": "uefaeuropaleague",
+      "conferenceleague": "uefaeuropaconferenceleague",
+      "uecl": "uefaeuropaconferenceleague",
+      "spanishlaliga": "laliga",
+      "botola": "botolapro",
+      "botolaproinwi": "botolapro",
+      "worldcup": "fifaworldcup",
+      "afcon": "cafafricacupofnations"
+    };
+    return aliases[normalized] || normalized;
+  }
+
+  window.openBakhiraCompetitionStandings = function (competitionName) {
+    const requested = competitionNameAliases(competitionName);
+    window.__bfPendingCompetitionName = String(competitionName || "");
+
+    if (typeof window.go === "function") window.go("leagues");
+
+    const container = document.getElementById("realStandings");
+    const cards = container
+      ? Array.from(container.querySelectorAll("details.bf-competition"))
+      : [];
+
+    if (!cards.length) return;
+
+    const target = cards.find(card =>
+      competitionNameAliases(card.dataset.competitionName) === requested
+    );
+
+    if (!target) {
+      if (typeof window.toast === "function") {
+        window.toast("Classement non disponible pour cette compétition.");
+      }
+      window.__bfPendingCompetitionName = "";
+      return;
+    }
+
+    window.__bfPendingCompetitionName = "";
+    target.open = true;
+    target.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
 
   /* =========================================================
      STYLES
