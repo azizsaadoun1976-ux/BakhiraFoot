@@ -1,21 +1,73 @@
 const SOURCES = [
   {
+    name: "BBC News — Europe",
+    url: "https://feeds.bbci.co.uk/news/world/europe/rss.xml",
+    kind: "rss",
+    category: "Europe",
+    priority: 1
+  },
+  {
+    name: "BBC News — Monde",
+    url: "https://feeds.bbci.co.uk/news/world/rss.xml",
+    kind: "rss",
+    category: "Monde",
+    priority: 2
+  },
+  {
+    name: "The Guardian — Monde",
+    url: "https://www.theguardian.com/world/rss",
+    kind: "rss",
+    category: "Monde",
+    priority: 2
+  },
+  {
+    name: "BBC News — Culture & célébrités",
+    url: "https://feeds.bbci.co.uk/news/entertainment_and_arts/rss.xml",
+    kind: "rss",
+    category: "Célébrités",
+    priority: 3
+  },
+  {
+    name: "Variety — Entertainment",
+    url: "https://variety.com/feed/",
+    kind: "rss",
+    category: "Célébrités",
+    priority: 3
+  },
+  {
+    name: "Google News — Tendances Europe",
+    url: "https://news.google.com/rss/search?q=Europe+trending+news&hl=en-GB&gl=GB&ceid=GB:en",
+    kind: "rss",
+    category: "Tendances",
+    priority: 0
+  },
+  {
+    name: "Google News — Tendances mondiales",
+    url: "https://news.google.com/rss/search?q=world+trending+news&hl=en-GB&gl=GB&ceid=GB:en",
+    kind: "rss",
+    category: "Tendances",
+    priority: 0
+  },
+  {
+    name: "BBC Sport — Football",
+    url: "https://feeds.bbci.co.uk/sport/football/rss.xml",
+    kind: "rss",
+    category: "Football européen",
+    priority: 4
+  },
+  {
     name: "FRMF",
     url: "https://frmf.ma/fr/categorie/actualites",
     kind: "html",
-    category: "Football marocain"
+    category: "Football marocain",
+    priority: 5
   },
   {
     name: "CAF",
     url: "https://www.cafonline.com/fr/ligue-des-champions/news/",
     kind: "html",
-    category: "Football africain"
-  },
-  {
-    name: "BBC Sport",
-    url: "https://feeds.bbci.co.uk/sport/football/rss.xml",
-    kind: "rss",
-    category: "Football international"
+    category: "Football africain",
+    priority: 5
   }
 ];
 
@@ -61,7 +113,7 @@ function parseRss(xml, source) {
     const pubDate = tag("pubDate");
     return {
       title, url: absoluteUrl(link, source.url),
-      description, date: pubDate ? new Date(pubDate).toISOString() : "",
+      description: description || title, date: pubDate && Number.isFinite(Date.parse(pubDate)) ? new Date(pubDate).toISOString() : "",
       source: source.name, category: source.category
     };
   }).filter(item => item.title && item.url);
@@ -124,7 +176,7 @@ module.exports = async (req, res) => {
     const unique = [];
     const seenTitles = new Set();
     for (const item of all) {
-      const key = item.title.toLowerCase().replace(/[^a-z0-9à-ÿ]+/gi, " ").trim();
+      const key = item.title.toLowerCase().replace(/\s*[-|–]\s*(bbc news|bbc sport|the guardian|variety|google news).*$/i, "").replace(/[^a-z0-9à-ÿ]+/gi, " ").trim();
       if (seenTitles.has(key)) continue;
       seenTitles.add(key);
       unique.push(item);
@@ -132,12 +184,15 @@ module.exports = async (req, res) => {
     unique.sort((a, b) => {
       const ad = Date.parse(a.date || "") || 0;
       const bd = Date.parse(b.date || "") || 0;
-      return bd - ad;
+      if (ad && bd) return bd - ad;
+      if (ad) return -1;
+      if (bd) return 1;
+      return (a.priority ?? 9) - (b.priority ?? 9);
     });
     return res.status(200).json({
       updatedAt: new Date().toISOString(),
       count: unique.length,
-      articles: unique.slice(0, 18),
+      articles: unique.slice(0, 36),
       sources: SOURCES.map(({ name, url, category }) => ({ name, url, category }))
     });
   } catch (error) {
