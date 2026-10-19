@@ -3436,10 +3436,53 @@ ${esc(String(playerName(player) || "P").split(/\s+/).map(part => part[0] || "").
           ""
         ).trim();
 
-        if (!cardIdentifier || typeof window.bfOpenMatchDetails !== "function") {
+        if (!cardIdentifier) return;
+
+        /*
+         * Home cards and a few competition lists don't carry data-match-index.
+         * Resolve their identifier against the API-backed currentMatches array
+         * before choosing a provider. Otherwise ESPN/SofaScore/TSDB fixtures
+         * incorrectly fall through to the SportScore-only details endpoint.
+         */
+        const identifierKeys = match => [
+          match?.fixture?.upstreamId,
+          match?.upstreamId,
+          match?.fixture?.id,
+          match?.fixture?.slug,
+          match?.slug,
+          match?.id,
+          match?.match_slug,
+          match?.fixture_id,
+          match?.match_id
+        ].filter(value => value !== null && value !== undefined && String(value).trim())
+          .map(value => String(value).trim().toLowerCase());
+
+        const clickedKey = cardIdentifier.toLowerCase();
+        const matches = getMatches();
+        const resolvedIndex = matches.findIndex(match =>
+          identifierKeys(match).includes(clickedKey)
+        );
+
+        if (resolvedIndex >= 0) {
+          const resolvedMatch = getMatch(resolvedIndex);
+          const resolvedSources = getExternalSources(resolvedMatch);
+
+          event.preventDefault();
+          event.stopImmediatePropagation();
+
+          if (resolvedSources.length) {
+            openNewMatch(resolvedIndex);
+          } else if (typeof window.bfOpenMatchDetails === "function") {
+            window.bfOpenMatchDetails(cardIdentifier);
+          }
           return;
         }
 
+        /*
+         * If no matching list entry exists, preserve the old SportScore path.
+         * Never invent provider IDs or guess an external fixture from its label.
+         */
+        if (typeof window.bfOpenMatchDetails !== "function") return;
         event.preventDefault();
         event.stopImmediatePropagation();
         window.bfOpenMatchDetails(cardIdentifier);
