@@ -1143,7 +1143,12 @@ function bfAssignFormationRoles(players, formation, readPosition) {
       eventPersonName(event?.related_player), eventPersonName(event?.secondPlayer),
       eventPersonName(event?.second_player), event?.assist_name, event?.assistName,
       event?.assist_player_name, event?.assistPlayerName,
+      /* SofaScore incidents expose the decisive passer as assist1 (sometimes assist2). */
+      eventPersonName(event?.assist1), eventPersonName(event?.assist_1),
+      eventPersonName(event?.assist2), eventPersonName(event?.assist_2),
+      event?.assist1_name, event?.assist1Name, event?.assist_1_name,
       eventPersonName(event?.goal?.assist), eventPersonName(event?.goal?.assistPlayer),
+      eventPersonName(event?.goal?.assist1), eventPersonName(event?.goal?.assist_1),
       eventPersonName(event?.assists?.[0]), eventPersonName(event?.participants?.[1]?.athlete),
       eventPersonName(event?.participants?.[1]?.player), eventPersonName(event?.participants?.[1]),
       eventPersonName(event?.players?.[1]), ""
