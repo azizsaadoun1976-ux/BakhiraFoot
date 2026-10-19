@@ -5764,8 +5764,17 @@ function bfSameFixtureMetadata(candidate,expected,requireDate=false) {
     if(window.__bfActiveExpectedMatch&&String(window.__bfActiveExpectedIdentifier||"").trim().toLowerCase()===id)return window.__bfActiveExpectedMatch;
     try{
       const matches=typeof currentMatches!=="undefined"&&Array.isArray(currentMatches)?currentMatches:[];
-      const keys=match=>[match?.fixture?.upstreamId,match?.upstreamId,match?.fixture?.id,match?.fixture?.slug,match?.slug,match?.id,match?.match_id].filter(v=>v!==null&&v!==undefined).map(v=>String(v).trim().toLowerCase());
-      return matches.find(match=>keys(match).includes(id))||null;
+      const keys=match=>[match?.fixture?.upstreamId,match?.upstreamId,match?.fixture?.id,match?.fixture?.slug,match?.slug,match?.id,match?.match_id,match?.fixture_id].filter(v=>v!==null&&v!==undefined).map(v=>String(v).trim().toLowerCase());
+      const scoreMatch=matches.find(match=>keys(match).includes(id));
+      if(scoreMatch)return scoreMatch;
+      const homeRegistry=window.__bfHomeMatchRegistry;
+      if(homeRegistry instanceof Map&&homeRegistry.has(id))return homeRegistry.get(id);
+      if(homeRegistry instanceof Map){
+        for(const [key,match] of homeRegistry.entries()){
+          if(keys(match).includes(id)||String(key).trim().toLowerCase()===id)return match;
+        }
+      }
+      return null;
     }catch(error){return null;}
   }
 

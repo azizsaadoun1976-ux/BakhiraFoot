@@ -3276,7 +3276,7 @@ function bfSameFixtureMetadata(candidate,expected,requireDate=false) {
 
     if (match) {
       window.__bfActiveExpectedMatch = match;
-      window.__bfActiveExpectedIdentifier = String(match?.fixture?.id || match?.id || match?.fixture?.slug || match?.slug || "");
+      window.__bfActiveExpectedIdentifier = String(identifierOverride || match?.fixture?.id || match?.id || match?.fixture?.slug || match?.slug || "");
     }
 
     if (!match) {
@@ -3544,6 +3544,24 @@ function bfSameFixtureMetadata(candidate,expected,requireDate=false) {
             openNewMatch(resolvedIndex);
           } else if (typeof window.bfOpenMatchDetails === "function") {
             window.__bfActiveExpectedMatch = resolvedMatch;
+            window.__bfActiveExpectedIdentifier = cardIdentifier;
+            window.bfOpenMatchDetails(cardIdentifier);
+          }
+          return;
+        }
+
+        // Homepage fixtures are fetched separately from Scores. Resolve the exact
+        // clicked fixture from this registry instead of using the same numeric index.
+        const homeRegistry = window.__bfHomeMatchRegistry;
+        const homeMatch = homeRegistry instanceof Map ? homeRegistry.get(clickedKey) : null;
+        if (homeMatch) {
+          event.preventDefault();
+          event.stopImmediatePropagation();
+          const homeSources = getExternalSources(homeMatch);
+          if (homeSources.length) {
+            openNewMatch(-1, homeMatch, cardIdentifier);
+          } else if (typeof window.bfOpenMatchDetails === "function") {
+            window.__bfActiveExpectedMatch = homeMatch;
             window.__bfActiveExpectedIdentifier = cardIdentifier;
             window.bfOpenMatchDetails(cardIdentifier);
           }
