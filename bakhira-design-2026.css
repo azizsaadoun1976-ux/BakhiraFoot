@@ -704,3 +704,54 @@ body.dark #scoreList .bf-score-pro-details { border-top-color: #2a3e4d; color: #
  #home .hero-actions button,#home .home-shortcut,#home .home-shortcut-arrow,#home #homeNews.cards .card{transition:none!important}
  #home .hero-actions button:hover,#home .home-shortcut:hover,#home #homeNews.cards .card:hover{transform:none!important}
 }
+
+/* BakhiraFoot Club — premium matchday identity */
+#home .hero{min-height:350px!important;grid-template-columns:minmax(0,1.08fr) minmax(270px,.92fr)!important;padding:clamp(27px,4.3vw,54px)!important;border:1px solid #34465b!important;border-radius:10px!important;background:radial-gradient(ellipse at 100% 0%,#2945387a 0,transparent 42%),linear-gradient(118deg,#091321 0%,#101c2c 57%,#182d29 100%)!important;box-shadow:0 24px 52px #0005!important}
+#home .hero:before{content:"";position:absolute;z-index:-1;inset:0;background:linear-gradient(135deg,transparent 0 63%,#d6b77508 63% 64%,transparent 64%);pointer-events:none}
+#home .hero:after{right:-80px;top:-190px;width:430px;height:430px;border:1px solid #d5b77b17;box-shadow:0 0 0 35px #d5b77b08,0 0 0 70px #d5b77b05}
+#home .hero-badge{display:inline-flex;align-items:center;gap:8px;border:1px solid #c7a96866!important;border-radius:4px!important;background:#c4a45a12!important;color:#e8d3a0!important;letter-spacing:.16em!important}
+#home .bf-hero-star{font-size:16px;color:#e6ca84}
+#home .hero-content>small{color:#cfb576!important;letter-spacing:.16em!important;line-height:1.7}
+#home .hero h1{max-width:640px;font-size:clamp(36px,4.4vw,60px)!important;letter-spacing:-.055em!important;line-height:.99!important}
+#home .hero h1 span{color:#d9bf7d!important}
+#home .hero p{max-width:570px;color:#c1cbd7!important;line-height:1.82!important;font-size:14px!important}
+#home .hero-feature-pills{gap:7px;margin:20px 0}
+#home .hero-feature-pills span{border:1px solid #c2a96d38!important;border-radius:4px!important;background:#ffffff05!important;color:#e2e6ed!important;font-size:9px!important;letter-spacing:.055em!important}
+#home .hero-feature-pills span i{background:#d5bb7b!important}
+#home .hero-actions button{min-height:45px;border-radius:4px!important;letter-spacing:.01em}
+#home .hero-actions .green{background:#d6bd7d!important;border-color:#d6bd7d!important;color:#101725!important}
+#home .hero-actions .green:hover{background:#ebd89e!important}
+#home .hero-actions .hero-more{background:#ffffff06!important;border-color:#ffffff2b!important;color:#f5f5f5!important}
+#home .hero-live-panel{padding:13px!important;border:1px solid #d6bd7d45!important;border-radius:7px!important;background:linear-gradient(160deg,#101e2b,#07121be8)!important;box-shadow:0 15px 30px #0003!important}
+#home .live-panel-top{padding:2px 2px 10px!important;border-bottom:1px solid #ffffff12!important}
+#home .live-panel-brand{color:#dfca92!important;font-size:9px!important;letter-spacing:.17em!important}
+#home .live-dot{background:#dbbc72!important;box-shadow:0 0 0 4px #dbbc721a}
+#home .live-panel-ball{display:grid;place-items:center;width:35px;height:35px;border:1px solid #d9c17d66;border-radius:50%;background:#d6bd7d12;color:#d9c17d!important;font-size:21px!important}
+#home .pitch-visual{position:relative;overflow:hidden;border:1px solid #d6e9d61b!important;border-radius:4px!important;background:repeating-linear-gradient(90deg,#123e30 0,#123e30 10%,#174c38 10%,#174c38 20%)!important;box-shadow:inset 0 0 65px #00150e55}
+#home .pitch-visual:after{content:"";position:absolute;inset:0;background:linear-gradient(90deg,#071b1199,transparent 24% 76%,#071b1199);pointer-events:none}
+#home .pitch-center-circle{border:1px solid #e4f2e45c!important}
+#home .pitch-halfway,#home .pitch-box{border-color:#e4f2e44a!important}
+#home .pitch-ball{z-index:2;background:#e4d098!important;box-shadow:0 0 0 7px #ffffff18,0 0 20px #e4d0987a!important}
+#home .live-panel-bottom{padding:14px 3px 3px!important}
+#home .live-panel-bottom strong{color:#f3f0e6!important;font-size:13px!important;letter-spacing:-.02em}
+#home .live-panel-bottom span:not(.live-panel-arrow){color:#9eafbd!important;font-size:10px!important}
+#home .live-panel-arrow{color:#d8c081!important}
+#home .home-shortcut{border-radius:7px!important;background:linear-gradient(145deg,#111f2e,#0b1622)!important;border-color:#29384a!important}
+#home .home-shortcut-icon{border-radius:7px!important;border-color:#9a834a70!important;background:#c7a95912!important;color:#d9c17f!important}
+#home .home-shortcut--competitions .home-shortcut-icon{border-color:#56657b!important;background:#172235!important;color:#becde5!important}
+#home .home-shortcut--news .home-shortcut-icon{border-color:#9a754570!important;background:#2a2116!important;color:#e8c98c!important}
+#home .home-shortcut-copy small{color:#d2ba78!important}
+#home .home-shortcut--competitions .home-shortcut-copy small{color:#bac8dc!important}
+#home .home-shortcut--news .home-shortcut-copy small{color:#e7c98e!important}
+#home .home-shortcut:hover{border-color:#bba15e!important;box-shadow:0 12px 27px #0004!important}
+#home .home-shortcut:hover .home-shortcut-arrow{color:#e3c97f!important}
+#scores .bf-scores-competition-empty{padding:18px 12px;border:1px dashed var(--bf-line);border-radius:9px;color:var(--bf-muted);font-size:12px;line-height:1.6;text-align:center}
+.ss-player-card-head>span{padding:5px 8px;border:1px solid #c7a96855;border-radius:4px;background:#c7a96812;color:#d8bd76!important;font-size:10px;font-weight:900;letter-spacing:.1em;text-transform:uppercase}
+.ss-player-row{align-items:center}
+.ss-player-rank{display:grid;place-items:center;min-width:25px;height:25px;border:1px solid #30465a;border-radius:5px;background:#102033;color:#d7c184!important;font-weight:950}
+.ss-player .ss-player-photo,.ss-player .ss-player-fallback{width:48px!important;height:48px!important;flex-basis:48px!important;border-radius:7px!important;border:1px solid #43556a!important}
+.ss-player-info{min-width:0}
+.ss-player-meta{gap:7px}
+.ss-player-appearances{display:inline-flex;align-items:center;padding:3px 6px;border-radius:4px;background:#8793a00e;color:var(--bf-muted);font-size:10px}
+.ss-player-value{min-width:36px;text-align:center}
+@media(max-width:700px){#home .hero{grid-template-columns:1fr!important;min-height:0!important;padding:23px!important}#home .hero-live-panel{max-width:100%}#home .pitch-visual{min-height:175px!important}.ss-player .ss-player-photo,.ss-player .ss-player-fallback{width:42px!important;height:42px!important;flex-basis:42px!important}}

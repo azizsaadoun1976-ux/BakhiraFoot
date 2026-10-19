@@ -166,12 +166,21 @@ function normalizeFotmobPlayerRows(payload, stat) {
     const name=item.name||item.playerName||item.participant?.name||item.player?.name||item.athlete?.displayName||item.displayName||"";
     const total=numberValue(item.statValue?.value??item.statValue??item.substatValue??item.value??item.total??item.displayValue??item.stat?.value);
     if(!name||total===null||total<0)return null;
-    const teamName=item.teamName||item.team?.name||item.clubName||item.team?.displayName||"";
-    const teamLogo=item.teamLogo||item.team?.logo||item.team?.image||"";
-    const photo=item.photo||item.imageUrl||item.image||item.player?.photo||"";
-    const id=String(item.id||item.playerId||item.participant?.id||"");
+    const playerObject=item.player||item.participant||item.athlete||{};
+    const teamName=item.teamName||item.team?.name||item.clubName||item.team?.displayName||item.participant?.teamName||"";
+    const teamLogo=item.teamLogo||item.team?.logo||item.team?.image||item.participant?.team?.logo||"";
+    const id=String(item.id||item.playerId||item.participant?.id||item.player?.id||item.athlete?.id||"");
+    let photo=item.photo||item.playerPhoto||item.playerImage||item.imageUrl||item.imgUrl||
+      item.image||item.participant?.imageUrl||item.participant?.photo||
+      playerObject.photo||playerObject.imageUrl||playerObject.image||playerObject.headshot?.url||
+      playerObject.headshot?.href||item.athlete?.headshot?.href||"";
+    if(!photo&&id)photo="https://images.fotmob.com/image_resources/playerimages/"+encodeURIComponent(id)+".png";
+    const appearances=stat==="appearances"?total:extractHistoricalAppearances(item,playerObject);
     const team={name:teamName||"Équipe non renseignée",logo:teamLogo};
-    return {name,player_name:name,value:total,[stat]:total,player:{id,name,full_name:name,photo,photo_url:photo,image:photo,logo:photo,team,[stat]:total},team};
+    return {name,player_name:name,value:total,[stat]:total,
+      ...(appearances!==null?{appearances}:{}),
+      player:{id,name,full_name:playerObject.fullName||name,photo,photo_url:photo,image:photo,logo:photo,team,
+        ...(appearances!==null?{appearances}:{}),[stat]:total},team};
   }).filter(Boolean);
   const unique=new Map();
   rows.forEach(row=>{const key=normalize(row.name);if(!unique.has(key)||row.value>unique.get(key).value)unique.set(key,row);});
@@ -203,14 +212,36 @@ async function fetchFotmobSeasonLeaders(slug, season) {
       requests.push({stat,url});
     }
   }
+  // Separate appearances table, because the goals/assists rows omit it in some seasons.
+  for(const seasonValue of seasonCandidates.slice(0,1)){
+    const url=FOTMOB_ROOT+"/leagueseasondeepstats?id="+encodeURIComponent(leagueId)+"&season="+encodeURIComponent(seasonValue)+"&type=players&stat=appearances";
+    requests.push({stat:"appearances",url});
+  }
   const deep=await Promise.all(requests.map(async request=>{
     try{return {stat:request.stat,rows:normalizeFotmobPlayerRows(await getFotmobJSON(request.url,5500),request.stat)};}
     catch(error){return {stat:request.stat,rows:[],error:error.message||"failed"};}
   }));
-  let goals=directGoals,assists=directAssists;
+  let goals=directGoals,assists=directAssists,appearanceRows=[];
   for(const item of deep){
     if(item.stat==="goals"&&item.rows.length>goals.length)goals=item.rows;
     if(item.stat==="assists"&&item.rows.length>assists.length)assists=item.rows;
+    if(item.stat==="appearances"&&item.rows.length>appearanceRows.length)appearanceRows=item.rows;
+  }
+  if(appearanceRows.length){
+    const byId=new Map(),byName=new Map();
+    for(const row of appearanceRows){
+      const player=row.player||{},apps=Number(row.appearances??row.value);
+      if(!Number.isFinite(apps))continue;
+      if(player.id)byId.set(String(player.id),apps);
+      byName.set(normalize(row.name),apps);
+    }
+    const enrich=rows=>rows.map(row=>{
+      const id=String(row.player?.id||"");
+      const apps=(id&&byId.has(id))?byId.get(id):byName.get(normalize(row.name));
+      if(apps===undefined)return row;
+      return {...row,appearances:apps,player:{...(row.player||{}),appearances:apps}};
+    });
+    goals=enrich(goals);assists=enrich(assists);
   }
   return {goals,assists,source:"FotMob historical players"};
 }
@@ -555,11 +586,14 @@ async function normalizeLeaderRows(rows, stat) {
       athlete?.images?.[0]?.href ||
       athlete?.photo ||
       athlete?.image ||
+      row?.headshot?.href ||
+      row?.photo ||
       "";
 
     if (!photo && id) {
       photo = `https://a.espncdn.com/i/headshots/soccer/players/full/${id}.png`;
     }
+    const appearances = extractHistoricalAppearances(row, athlete);
 
     const team = {
       name:
@@ -578,6 +612,7 @@ async function normalizeLeaderRows(rows, stat) {
       player_name: name,
       value: total,
       [stat]: total,
+      ...(appearances !== null ? { appearances } : {}),
       player: {
         id,
         name,
@@ -587,6 +622,7 @@ async function normalizeLeaderRows(rows, stat) {
         image: photo,
         logo: photo,
         team,
+        ...(appearances !== null ? { appearances } : {}),
         [stat]: total
       },
       team
@@ -717,6 +753,71 @@ function historicalAthleteRows(payload) {
   }
   return [];
 }
+function extractHistoricalAppearances(...roots) {
+  const visited = new Set();
+  const directKeys = ["appearances","appearance","apps","app","gamesplayed","matchesplayed","playedmatches","appearancetotal","games","matches","played"];
+  const valueKeys = ["value","total","displayvalue","displayvaluetext","count"];
+  function walk(node, depth = 0) {
+    if (!node || typeof node !== "object" || depth > 7 || visited.has(node)) return null;
+    visited.add(node);
+    for (const key of directKeys) {
+      if (Object.prototype.hasOwnProperty.call(node, key)) {
+        const value = numberValue(node[key]);
+        if (value !== null && value >= 0 && value < 1000) return value;
+      }
+    }
+    if (Array.isArray(node)) {
+      for (const item of node) {
+        if (!item || typeof item !== "object") continue;
+        const label = normalize([item.name,item.displayName,item.shortDisplayName,item.abbreviation,item.label,item.statName,item.key,item.type].filter(Boolean).join(" "));
+        if (/(appearances?|apps?|matchesplayed|gamesplayed|playedmatches)/.test(label)) {
+          for (const key of valueKeys) {
+            const value = numberValue(item[key]);
+            if (value !== null && value >= 0 && value < 1000) return value;
+          }
+        }
+      }
+      for (const item of node) {
+        const value = walk(item, depth + 1);
+        if (value !== null) return value;
+      }
+      return null;
+    }
+    for (const labelsKey of ["names","displayNames","labels","abbreviations","shortDisplayNames"]) {
+      const labels = node[labelsKey];
+      if (!Array.isArray(labels)) continue;
+      const index = labels.findIndex(label => /(appearance|apps?|matches played|games played|played matches)/i.test(String(label || "")));
+      if (index < 0) continue;
+      for (const valuesKey of ["totals","values","stats","statistics"]) {
+        const values = node[valuesKey];
+        if (Array.isArray(values) && values[index] !== undefined) {
+          const value = numberValue(values[index]);
+          if (value !== null && value >= 0 && value < 1000) return value;
+        }
+      }
+    }
+    for (const key of ["statistics","stats","playerStats","athlete","player","categories"]) {
+      if (node[key] && typeof node[key] === "object") {
+        const value = walk(node[key], depth + 1);
+        if (value !== null) return value;
+      }
+    }
+    for (const [key, child] of Object.entries(node)) {
+      if (["team","club","logos","images","headshot","photo","image"].includes(key.toLowerCase())) continue;
+      if (child && typeof child === "object") {
+        const value = walk(child, depth + 1);
+        if (value !== null) return value;
+      }
+    }
+    return null;
+  }
+  for (const root of roots) {
+    const value = walk(root);
+    if (value !== null) return value;
+  }
+  return null;
+}
+
 function normalizeHistoricalAthletes(payload, stat) {
   const results = [];
   for (const row of historicalAthleteRows(payload)) {
@@ -739,11 +840,14 @@ function normalizeHistoricalAthletes(payload, stat) {
       (typeof athlete?.headshot === "string" ? athlete.headshot : "") ||
       athlete?.photo || athlete?.image ||
       (id ? "https://a.espncdn.com/i/headshots/soccer/players/full/" + id + ".png" : "");
+    const appearances = extractHistoricalAppearances(row, athlete);
     results.push({
       name: name, player_name: name, value: total, [stat]: total,
+      ...(appearances !== null ? { appearances } : {}),
       player: {
         id: id, name: name, full_name: athlete.fullName || name,
-        photo: photo, photo_url: photo, image: photo, logo: photo, team: team, [stat]: total
+        photo: photo, photo_url: photo, image: photo, logo: photo, team: team,
+        ...(appearances !== null ? { appearances } : {}), [stat]: total
       },
       team: team
     });

@@ -290,7 +290,16 @@ const competitions = [
       }
     });
 
-    target.innerHTML = Array.from(items.values()).map(item => {
+    // N'afficher que les compétitions qui ont au moins un match pour la date choisie.
+    const dateItems = Array.from(items.values())
+      .filter(item => Number(item.matchCount) > 0);
+
+    if (!dateItems.length) {
+      target.innerHTML = '<div class="bf-scores-competition-empty">Aucune compétition avec match à cette date.</div>';
+      return;
+    }
+
+    target.innerHTML = dateItems.map(item => {
       const active = !!selectedKey && labelKey(item.name) === labelKey(selectedKey);
       const meta = item.matchCount
         ? item.matchCount + " match(s)" + (item.country ? " · " + item.country : "")
@@ -320,8 +329,14 @@ const competitions = [
     }
     target.querySelectorAll(".bf-scores-league-link").forEach(button => {
       button.addEventListener("click", () => {
-        if (typeof window.selectScoreCompetitionByName === "function") {
-          window.selectScoreCompetitionByName(button.dataset.scoreName || "", button.dataset.scoreSlug || "", button.dataset.scoreLogo || "");
+        const competition = button.dataset.scoreSlug || button.dataset.scoreName || "";
+        if (typeof window.openBakhiraCompetitionStandings === "function") {
+          window.openBakhiraCompetitionStandings(competition);
+        } else if (typeof window.go === "function") {
+          window.go("leagues");
+          if (typeof window.toast === "function") {
+            window.toast("Ouverture du classement de la compétition…");
+          }
         }
       });
     });
@@ -6479,34 +6494,39 @@ async function fetchHistoricalESPNPlayers(competitionSlug, season) {
   `/api/historical-players?competition=${encodeURIComponent(competitionSlug)}` +
   `&season=${encodeURIComponent(season)}`;
 
-    const payload = await fetchHistoricalJSONWithTimeout(
-      url,
-      25000
-    );
+    let lastError = null;
 
-    if (payload?.error) {
-      throw new Error(
-        payload.details || payload.error
-      );
+    // Les sources historiques échouent parfois ponctuellement : seconde tentative.
+    for (let attempt = 0; attempt < 2; attempt++) {
+      try {
+        const requestUrl = url + (url.includes("?") ? "&" : "?") +
+          "retry=" + (attempt + 1) + "-" + Date.now();
+        const payload = await fetchHistoricalJSONWithTimeout(requestUrl, 13500);
+
+        if (payload?.error) {
+          throw new Error(payload.details || payload.error);
+        }
+
+        const data = payload?.data || {};
+        const goals = Array.isArray(data.goals) ? data.goals : [];
+        const assists = Array.isArray(data.assists) ? data.assists : [];
+
+        if (!goals.length && !assists.length) {
+          throw new Error(
+            `La source historique n'a retourné aucun buteur ou passeur pour ${season}.`
+          );
+        }
+
+        return { goals, assists };
+      } catch (error) {
+        lastError = error;
+        if (attempt === 0) {
+          await new Promise(resolve => setTimeout(resolve, 350));
+        }
+      }
     }
 
-    const data = payload?.data || {};
-
-    const goals = Array.isArray(data.goals)
-      ? data.goals
-      : [];
-
-    const assists = Array.isArray(data.assists)
-      ? data.assists
-      : [];
-
-    if (!goals.length && !assists.length) {
-      throw new Error(
-        `La source historique n'a retourné aucun buteur ou passeur pour ${season}.`
-      );
-    }
-
-    return { goals, assists };
+    throw lastError || new Error("Statistiques historiques indisponibles.");
   })();
 
   historicalESPNPlayersCache.set(cacheKey, request);
