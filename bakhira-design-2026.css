@@ -215,3 +215,63 @@ body:not(.dark):not(.dark-mode) .page.active{color:var(--bf-text)}
  .bf-score-team img{width:21px;height:21px;flex-basis:21px}
  .bf-score-professional-score,.bf-score-pro-score{font-size:18px!important}
 }
+
+
+/* =========================================================
+   HOME MATCH OF THE DAY — clean broadcast-style layout
+========================================================= */
+#home .home-live-section{
+  position:relative!important;
+  overflow:hidden!important;
+  padding:clamp(16px,2.2vw,25px)!important;
+  border:1px solid #223b4e!important;
+  border-radius:16px!important;
+  background:linear-gradient(145deg,#0e2030 0%,#0a1723 72%,#102b27 100%)!important;
+  box-shadow:0 15px 40px rgba(0,0,0,.13)!important;
+}
+#home .home-live-heading{position:relative;z-index:1;margin:0 0 18px!important;padding:0 0 15px!important;border-bottom:1px solid #233a4d!important}
+#home .home-live-heading .section-kicker{color:#56e6aa!important;letter-spacing:.16em!important}
+#home .home-live-heading h2{color:#f5f8fb!important;font-size:clamp(22px,2.3vw,30px)!important;font-weight:950!important;letter-spacing:-.04em!important}
+#home .home-live-heading p{color:#91a7b9!important;font-size:12px!important}
+#home .home-live-more{border:1px solid #2b5548!important;border-radius:8px!important;background:#123528!important;color:#8af0c3!important}
+#home .home-live-matches{display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:13px!important;align-items:stretch!important}
+#home .home-live-matches .match-card.bf-score-clean-card{
+  display:flex!important;flex-direction:column!important;justify-content:space-between!important;
+  min-width:0!important;min-height:150px!important;margin:0!important;padding:14px 15px 11px!important;
+  border:1px solid #263e51!important;border-radius:12px!important;
+  background:linear-gradient(160deg,#12283a,#0d1b29 78%)!important;
+  color:#edf4fa!important;box-shadow:0 5px 16px rgba(0,0,0,.12)!important;
+}
+#home .home-live-matches .match-card.bf-score-clean-card:hover{transform:translateY(-2px)!important;border-color:#3c8c69!important;box-shadow:0 12px 25px rgba(0,0,0,.2)!important}
+#home .bf-score-card-header{display:flex!important;align-items:center!important;justify-content:space-between!important;gap:8px!important;padding:0 0 10px!important;border-bottom:1px solid #23394b!important}
+#home .bf-score-card-league{min-width:0!important;color:#9cb1c1!important;font-size:10px!important;font-weight:850!important}
+#home .bf-score-card-league-logo{width:18px!important;height:18px!important;flex:0 0 18px!important}
+#home .bf-score-card-status{max-width:45%!important;color:#9eb1bf!important;font-size:9px!important;line-height:1.35!important;text-align:right!important}
+#home .bf-score-card-status.live{color:#ff6676!important}
+#home .bf-score-card-status.upcoming{color:#83efbd!important}
+#home .bf-score-card-time{color:#a1b4c3!important;font-size:10px!important;font-weight:800!important}
+#home .bf-score-card-body{display:grid!important;grid-template-columns:minmax(0,1fr) 64px minmax(0,1fr)!important;align-items:center!important;gap:6px!important;padding:15px 0 13px!important}
+#home .bf-score-card-team{display:flex!important;flex-direction:column!important;align-items:center!important;justify-content:center!important;gap:7px!important;min-width:0!important;color:#f1f6fa!important;text-align:center!important;font-size:11px!important;font-weight:850!important}
+#home .bf-score-card-team.home,#home .bf-score-card-team.away{justify-content:center!important;text-align:center!important}
+#home .bf-score-card-team img,#home .bf-score-card-team .bf-score-card-team-logo{width:32px!important;height:32px!important;flex:0 0 32px!important;object-fit:contain!important}
+#home .bf-score-card-team strong{display:-webkit-box!important;max-width:100%!important;overflow:hidden!important;-webkit-line-clamp:2!important;-webkit-box-orient:vertical!important;overflow-wrap:anywhere!important;color:#edf4fa!important;font-size:11px!important;line-height:1.25!important;text-align:center!important}
+#home .bf-score-card-center{display:flex!important;flex-direction:column!important;align-items:center!important;justify-content:center!important;min-width:0!important;text-align:center!important}
+#home .bf-score-card-score{display:flex!important;align-items:center!important;justify-content:center!important;gap:6px!important;white-space:nowrap!important;color:#f8fbfd!important;font-size:22px!important;font-weight:950!important;font-variant-numeric:tabular-nums!important;letter-spacing:-.04em!important}
+#home .bf-score-card-score span{color:inherit!important}
+#home .bf-score-card-score b{color:#6f8799!important;font-size:13px!important}
+#home .bf-score-card-center small{display:block!important;margin-top:5px!important;color:#91a7b9!important;font-size:8px!important;font-weight:800!important;text-transform:uppercase!important;letter-spacing:.08em!important}
+#home .bf-score-card-footer{display:flex!important;align-items:center!important;justify-content:space-between!important;min-height:25px!important;padding-top:8px!important;border-top:1px solid #203648!important;color:#89a0b2!important;font-size:9px!important}
+#home .bf-score-card-arrow{color:#6ee7b7!important;font-size:17px!important}
+@media(max-width:760px){
+  #home .home-live-matches{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:9px!important}
+  #home .home-live-matches .match-card.bf-score-clean-card{min-height:145px!important;padding:11px 10px 9px!important}
+  #home .bf-score-card-body{grid-template-columns:minmax(0,1fr) 48px minmax(0,1fr)!important;gap:3px!important;padding:12px 0 10px!important}
+  #home .bf-score-card-team img,#home .bf-score-card-team .bf-score-card-team-logo{width:27px!important;height:27px!important;flex-basis:27px!important}
+  #home .bf-score-card-team strong{font-size:10px!important}
+  #home .bf-score-card-score{gap:4px!important;font-size:18px!important}
+}
+@media(max-width:420px){
+  #home .home-live-matches{grid-template-columns:minmax(0,1fr)!important}
+  #home .home-live-matches .match-card.bf-score-clean-card{min-height:132px!important}
+  #home .bf-score-card-body{grid-template-columns:minmax(0,1fr) 66px minmax(0,1fr)!important}
+}
