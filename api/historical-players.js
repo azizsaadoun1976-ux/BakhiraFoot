@@ -351,7 +351,12 @@ async function normalizeLeaderRows(rows, stat) {
         } catch {
           // Continue to the other common fields below.
         }
-        total = numberValue(stats?.value ?? stats?.displayValue ?? stats?.total);
+        if (Array.isArray(stats)) {
+          const matchingStat = stats.find(item => categoryMatches(item, stat));
+          total = numberValue(matchingStat?.value ?? matchingStat?.displayValue ?? matchingStat?.total);
+        } else {
+          total = numberValue(stats?.value ?? stats?.displayValue ?? stats?.total);
+        }
       }
     }
 
@@ -416,32 +421,43 @@ async function normalizeLeaderRows(rows, stat) {
 }
 
 async function fetchSeasonLeaders(league, season) {
+  const code = encodeURIComponent(league);
+  const siteV2 = ESPN_SITE.replace('/apis/site/v2', '/apis/v2');
   const urls = [
-    `${ESPN_CORE}/${encodeURIComponent(league)}/seasons/${season}/leaders?limit=100&lang=en&region=us`,
-    `${ESPN_CORE}/${encodeURIComponent(league)}/seasons/${season}/types/2/leaders?limit=100&lang=en&region=us`,
-    `${ESPN_SITE}/${encodeURIComponent(league)}/leaders?season=${season}&limit=100&lang=en&region=us`
+    siteV2 + '/' + code + '/leaders?season=' + season + '&limit=100&lang=en&region=us',
+    ESPN_SITE + '/' + code + '/leaders?season=' + season + '&limit=100&lang=en&region=us',
+    ESPN_CORE + '/' + code + '/seasons/' + season + '/types/2/leaders?limit=100&lang=en&region=us',
+    ESPN_CORE + '/' + code + '/seasons/' + season + '/leaders?limit=100&lang=en&region=us'
   ];
 
   let lastError = null;
-
+  const collected = [];
+  const seen = new Set();
   for (const url of urls) {
     try {
-      const payload = await getJSON(url);
+      const payload = await getJSON(url, 5000);
       const foundCategories = await findCategories(payload);
       const categories = await flattenLeaderCategories(foundCategories);
-      if (categories.some(category =>
-        categoryMatches(category, "goals") ||
-        categoryMatches(category, "assists")
-      )) {
-        return { categories, source: url };
+      for (const category of categories) {
+        const isGoals = categoryMatches(category, 'goals');
+        const isAssists = categoryMatches(category, 'assists');
+        if (!isGoals && !isAssists) continue;
+        const label = normalize(category?.name || category?.displayName || category?.abbreviation || '');
+        const key = label + ':' + (isGoals ? 'goals' : 'assists');
+        if (seen.has(key)) continue;
+        seen.add(key);
+        collected.push(category);
       }
-      lastError = new Error(`No leader categories in ESPN response: ${url}`);
+      const hasGoals = collected.some(category => categoryMatches(category, 'goals'));
+      const hasAssists = collected.some(category => categoryMatches(category, 'assists'));
+      if (hasGoals && hasAssists) break;
+      lastError = new Error('No complete goals/assists categories in ESPN response: ' + url);
     } catch (error) {
       lastError = error;
     }
   }
-
-  throw lastError || new Error(`ESPN returned no leader categories for ${league}, season ${season}.`);
+  if (collected.length) return { categories: collected, source: 'ESPN seasonal leaders' };
+  throw lastError || new Error('ESPN returned no leader categories for ' + league + ', season ' + season + '.');
 }
 
 module.exports = async (req, res) => {
