@@ -111,7 +111,7 @@ async function resolveEntity(entity) {
     .replace("sports.core.api.espn.pvt", "sports.core.api.espn.com");
 
   if (!referenceCache.has(url)) {
-    const request = getJSON(url).catch(error => {
+    const request = getJSON(url, 5000).catch(error => {
       referenceCache.delete(url);
       throw error;
     });
@@ -424,7 +424,142 @@ async function normalizeLeaderRows(rows, stat) {
     .slice(0, 5);
 }
 
+
+function historicalStatAliases(stat) {
+  return stat === "goals"
+    ? ["goal", "goals", "totalgoal", "totalgoals", "goalscored", "goalsscored", "g", "gls"]
+    : ["assist", "assists", "goalassist", "goalassists", "totalassist", "totalassists", "a", "ast"];
+}
+
+function historicalNestedStat(node, stat, depth = 0, visited = new Set()) {
+  if (!node || typeof node !== "object" || depth > 9 || visited.has(node)) return null;
+  visited.add(node);
+  const aliases = historicalStatAliases(stat);
+  if (Array.isArray(node)) {
+    for (const child of node) {
+      const found = historicalNestedStat(child, stat, depth + 1, visited);
+      if (found !== null) return found;
+    }
+    return null;
+  }
+  const label = normalize(node.name || node.displayName || node.shortDisplayName || node.abbreviation || node.label || node.statName || node.key || "");
+  if (aliases.includes(label)) {
+    const n = numberValue(node.value ?? node.total ?? node.displayValue ?? node.displayValueText ?? node.count ?? node.stat);
+    if (n !== null) return n;
+  }
+  for (const labelsKey of ["names", "labels", "abbreviations"]) {
+    const labels = node[labelsKey];
+    if (!Array.isArray(labels)) continue;
+    const index = labels.findIndex(item => aliases.includes(normalize(item)));
+    if (index < 0) continue;
+    for (const valuesKey of ["totals", "values", "stats", "statistics"]) {
+      const values = node[valuesKey];
+      if (Array.isArray(values) && values[index] !== undefined) {
+        const n = numberValue(values[index]);
+        if (n !== null) return n;
+      }
+    }
+  }
+  for (const [key, value] of Object.entries(node)) {
+    if (aliases.includes(normalize(key))) {
+      const n = numberValue(value);
+      if (n !== null) return n;
+    }
+  }
+  for (const [key, value] of Object.entries(node)) {
+    if (["athlete", "player", "team", "headshot", "images", "logos"].includes(key)) continue;
+    if (value && typeof value === "object") {
+      const found = historicalNestedStat(value, stat, depth + 1, visited);
+      if (found !== null) return found;
+    }
+  }
+  return null;
+}
+
+function historicalAthleteRows(payload) {
+  const candidates = [
+    payload?.athletes?.items, payload?.athletes, payload?.items, payload?.results,
+    payload?.data?.athletes?.items, payload?.data?.athletes, payload?.data?.items,
+    payload?.data?.results, payload?.data
+  ];
+  for (const value of candidates) {
+    if (Array.isArray(value)) return value;
+    if (Array.isArray(value?.items)) return value.items;
+    if (Array.isArray(value?.athletes)) return value.athletes;
+    if (Array.isArray(value?.results)) return value.results;
+  }
+  return [];
+}
+
+function normalizeHistoricalAthletes(payload, stat) {
+  const results = [];
+  for (const row of historicalAthleteRows(payload)) {
+    if (!row || typeof row !== "object") continue;
+    const athlete = row.athlete || row.player || row;
+    const name = athlete?.displayName || athlete?.fullName || athlete?.shortName || athlete?.name || row?.displayName || row?.name || "";
+    if (!name) continue;
+    let total = historicalNestedStat(row, stat);
+    if (total === null) total = numberValue(row?.value ?? row?.displayValue ?? row?.total);
+    if (total === null || total <= 0) continue;
+    const rawTeam = row.team || athlete.team || {};
+    const team = {
+      name: rawTeam.displayName || rawTeam.name || rawTeam.shortDisplayName || "Équipe non renseignée",
+      logo: rawTeam?.logos?.find(item => item?.href)?.href || rawTeam.logo || rawTeam.logoUrl || ""
+    };
+    const id = String(athlete.id || row.athleteId || row.playerId || "");
+    const photo = athlete?.headshot?.href || athlete?.headshot?.url ||
+      (typeof athlete?.headshot === "string" ? athlete.headshot : "") ||
+      athlete?.photo || athlete?.image ||
+      (id ? "https://a.espncdn.com/i/headshots/soccer/players/full/" + id + ".png" : "");
+    results.push({
+      name, player_name:name, value:total, [stat]:total,
+      player:{id,name,full_name:athlete.fullName || name,photo,photo_url:photo,image:photo,logo:photo,team,[stat]:total},
+      team
+    });
+  }
+  return results.sort((a,b)=>b.value-a.value).slice(0,5);
+}
+
+async function fetchHistoricalByAthlete(league, season) {
+  const code = encodeURIComponent(league);
+  const requests = [];
+  for (const host of ["https://site.web.api.espn.com", "https://site.api.espn.com"]) {
+    for (const [stat, sortKey] of [["goals","offensive.goals"],["assists","offensive.assists"]]) {
+      const url = host + "/apis/common/v3/sports/soccer/" + code +
+        "/statistics/byathlete?category=offensive&season=" + season +
+        "&seasontype=2&limit=50&page=1&sort=" + encodeURIComponent(sortKey + ":desc") +
+        "&region=us&lang=en";
+      requests.push({stat,url});
+    }
+  }
+  const rows = await Promise.all(requests.map(async request => {
+    try {
+      const payload = await getJSON(request.url, 5000);
+      return {stat:request.stat, rows:normalizeHistoricalAthletes(payload,request.stat)};
+    } catch (error) {
+      return {stat:request.stat,rows:[],error:error.message || "request failed"};
+    }
+  }));
+  const result = {goals:[],assists:[],diagnostics:[]};
+  for (const item of rows) {
+    if (item.stat === "goals" && item.rows.length > result.goals.length) result.goals = item.rows;
+    if (item.stat === "assists" && item.rows.length > result.assists.length) result.assists = item.rows;
+    if (item.error) result.diagnostics.push(item.error);
+  }
+  return result;
+}
+
 async function fetchSeasonLeaders(league, season) {
+  // ESPN's newer season-filtered athlete leaderboard is the primary source.
+  try {
+    const modern = await fetchHistoricalByAthlete(league, season);
+    if (modern.goals.length || modern.assists.length) {
+      return { goals: modern.goals, assists: modern.assists, source: "ESPN by-athlete" };
+    }
+  } catch (error) {
+    console.warn("ESPN by-athlete fallback:", error?.message || error);
+  }
+
   const code = encodeURIComponent(league);
   const siteV2 = ESPN_SITE.replace("/apis/site/v2", "/apis/v2");
   const urls = [
@@ -501,7 +636,7 @@ async function fetchSeasonLeaders(league, season) {
 }
 
 module.exports = async (req, res) => {
-  res.setHeader("Cache-Control", "s-maxage=3600, stale-while-revalidate=86400");
+  res.setHeader("Cache-Control", "no-store");
 
   if (req.method !== "GET") {
     return res.status(405).json({ error: "method_not_allowed" });
@@ -533,6 +668,7 @@ module.exports = async (req, res) => {
       );
     }
 
+    res.setHeader("Cache-Control", "s-maxage=3600, stale-while-revalidate=86400");
     return res.status(200).json({
       provider: "ESPN seasonal leaders",
       competition,

@@ -180,7 +180,22 @@
           <div id="dateBar" class="dates"></div>
         </div>
 
-        <div id="scoreList" class="scores-match-list"></div>
+        <div class="bf-scores-workspace">
+          <div id="scoreList" class="scores-match-list"></div>
+          <aside id="bfScoresCompetitionSidebar" class="bf-scores-competition-sidebar" aria-label="Toutes les compétitions">
+            <div class="bf-scores-sidebar-head">
+              <span>RÉPERTOIRE FOOTBALL</span>
+              <h2>Compétitions</h2>
+              <p>Choisissez une compétition pour ouvrir son classement.</p>
+            </div>
+            <label class="bf-scores-sidebar-search-label" for="bfScoresCompetitionSearch">Rechercher</label>
+            <input id="bfScoresCompetitionSearch" type="search" placeholder="Nom de la ligue…" autocomplete="off">
+            <div id="bfScoresCompetitionItems" class="bf-scores-competition-items">
+              <div class="bf-scores-competition-loading">Chargement des compétitions…</div>
+            </div>
+            <div class="bf-scores-sidebar-foot">Les logos vous mènent directement aux classements.</div>
+          </aside>
+        </div>
       </section>
 
       <!-- ================= MATCH DETAILS PAGE (قسم تفاصيل الماتش) ================= -->
@@ -257,12 +272,12 @@
   </footer>
 
   <!-- Scripts -->
-  <script src="script.js?v=20261019-28"></script>
+  <script src="script.js?v=20261019-29"></script>
   <script src="real-news.js?v=20261019-07"></script>
   <script src="match-center.js?v=20261017-11"></script>
   <script src="cookies.js?v=20261017-11"></script>
   <script src="theme-auto.js?v=20261017-11"></script>
-  <script src="sportscore-data.js?v=20261019-16"></script>
+  <script src="sportscore-data.js?v=20261019-17"></script>
   <script src="match-details.js?v=20261019-03"></script>
   <script src="new-match-details.js?v=20261019-04"></script>
 </body>

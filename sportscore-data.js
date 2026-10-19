@@ -187,6 +187,106 @@ const competitions = [
 ];
 
 
+
+  /* ========================================= SCORES COMPETITION SIDEBAR ========================================= */
+  function installScoresCompetitionSidebarStyles() {
+    if (document.getElementById("bf-scores-sidebar-styles")) return;
+    const style = document.createElement("style");
+    style.id = "bf-scores-sidebar-styles";
+    style.textContent = `
+      #scores .bf-scores-workspace { display:grid; grid-template-columns:minmax(0,1fr) 278px; gap:16px; align-items:start; width:100%; min-width:0; margin-top:16px; }
+      #scores #scoreList { grid-column:1; grid-row:1; min-width:0; width:100%; }
+      #scores .bf-scores-competition-sidebar { grid-column:2; grid-row:1; position:sticky; top:92px; min-width:0; max-height:calc(100vh - 112px); overflow:auto; padding:14px; border:1px solid #dbe5ec; border-radius:15px; background:linear-gradient(160deg,#fff,#f5f9fc); color:#142b3b; box-shadow:0 8px 26px rgba(15,35,50,.06); }
+      #scores .bf-scores-sidebar-head>span { color:#13815d; font-size:9px; font-weight:950; letter-spacing:.15em; }
+      #scores .bf-scores-sidebar-head h2 { margin:4px 0 5px; font-size:20px; line-height:1.2; font-weight:950; letter-spacing:-.03em; }
+      #scores .bf-scores-sidebar-head p { margin:0 0 13px; color:#64788a; font-size:10px; line-height:1.55; }
+      #scores .bf-scores-sidebar-search-label { display:block; margin:0 0 5px; color:#617789; font-size:10px; font-weight:850; }
+      #scores #bfScoresCompetitionSearch { display:block; width:100%; min-width:0; margin:0 0 10px; padding:10px; border:1px solid #d5e0e8; border-radius:9px; background:#fff; color:#152a3a; font-family:inherit; font-size:11px; font-weight:700; line-height:1.4; outline:none; }
+      #scores #bfScoresCompetitionSearch:focus { border-color:#1c9b6a; box-shadow:0 0 0 3px rgba(28,155,106,.12); }
+      #scores .bf-scores-competition-items { display:flex; flex-direction:column; gap:5px; }
+      #scores .bf-scores-league-link { display:grid; grid-template-columns:35px minmax(0,1fr) 16px; align-items:center; gap:9px; width:100%; min-height:51px; padding:7px; border:1px solid transparent; border-radius:10px; background:transparent; color:#193044; text-align:left; cursor:pointer; transition:background .15s,border-color .15s,transform .15s; }
+      #scores .bf-scores-league-link:hover,#scores .bf-scores-league-link:focus-visible { background:#e8f7ef; border-color:#b8e5cd; transform:translateX(-2px); outline:none; }
+      #scores .bf-scores-league-logo-wrap { display:flex; align-items:center; justify-content:center; width:35px; height:35px; border:1px solid #e0e7ed; border-radius:9px; background:#fff; overflow:hidden; }
+      #scores .bf-scores-league-logo { display:block; width:27px; height:27px; object-fit:contain; }
+      #scores .bf-scores-league-logo-fallback { display:none; align-items:center; justify-content:center; font-size:18px; }
+      #scores .bf-scores-league-copy { display:flex; flex-direction:column; min-width:0; gap:2px; }
+      #scores .bf-scores-league-copy strong { overflow:hidden; color:inherit; font-size:11px; line-height:1.35; font-weight:900; text-overflow:ellipsis; }
+      #scores .bf-scores-league-copy small { color:#718396; font-size:9px; line-height:1.3; }
+      #scores .bf-scores-league-arrow { color:#7a8d9d; font-size:17px; text-align:center; }
+      #scores .bf-scores-sidebar-foot { padding-top:10px; margin-top:10px; border-top:1px solid #e4ebf0; color:#75889a; font-size:9px; line-height:1.5; }
+      body.dark #scores .bf-scores-competition-sidebar { border-color:#2a4050; background:linear-gradient(160deg,#142634,#101e2a); color:#eef5f9; box-shadow:0 8px 24px #0003; }
+      body.dark #scores .bf-scores-sidebar-head>span { color:#6ee7b7; }
+      body.dark #scores .bf-scores-sidebar-head p,body.dark #scores .bf-scores-sidebar-search-label { color:#a0b2bf; }
+      body.dark #scores #bfScoresCompetitionSearch { border-color:#304858; background:#0d1b27; color:#eef5f9; }
+      body.dark #scores .bf-scores-league-link { color:#e4edf4; }
+      body.dark #scores .bf-scores-league-link:hover,body.dark #scores .bf-scores-league-link:focus-visible { background:#17382f; border-color:#286248; }
+      body.dark #scores .bf-scores-league-logo-wrap { border-color:#344958; background:#f8fafc; }
+      body.dark #scores .bf-scores-league-copy small { color:#9dafbb; }
+      body.dark #scores .bf-scores-sidebar-foot { border-top-color:#2a4050; color:#9dafbb; }
+      @media(max-width:900px) { #scores .bf-scores-workspace { grid-template-columns:minmax(0,1fr) 245px; gap:10px; } #scores .bf-scores-competition-sidebar { padding:10px; } }
+      @media(max-width:760px) {
+        #scores .bf-scores-workspace { grid-template-columns:minmax(0,1fr); gap:12px; }
+        #scores .bf-scores-competition-sidebar { grid-column:1; grid-row:1; position:static; max-height:260px; padding:11px; }
+        #scores #scoreList { grid-column:1; grid-row:2; }
+        #scores .bf-scores-sidebar-head h2 { font-size:17px; }
+        #scores .bf-scores-sidebar-head p { margin-bottom:9px; }
+        #scores .bf-scores-competition-items { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:4px; }
+        #scores .bf-scores-league-link { grid-template-columns:30px minmax(0,1fr); min-height:43px; gap:6px; padding:5px; }
+        #scores .bf-scores-league-logo-wrap { width:30px; height:30px; }
+        #scores .bf-scores-league-logo { width:23px; height:23px; }
+        #scores .bf-scores-league-arrow { display:none; }
+      }
+      @media(max-width:390px) { #scores .bf-scores-competition-items { grid-template-columns:1fr; } }
+    `;
+    document.head.appendChild(style);
+  }
+
+  function renderScoresCompetitionSidebar() {
+    const target = document.getElementById("bfScoresCompetitionItems");
+    if (!target) return;
+    installScoresCompetitionSidebarStyles();
+    const search = document.getElementById("bfScoresCompetitionSearch");
+    const safe = value => String(value ?? "").replace(/[&<>"']/g, character => ({
+      "&":"&amp;", "<":"&lt;", ">":"&gt;", '"':"&quot;", "'":"&#039;"
+    })[character]);
+
+    target.innerHTML = competitions.map(competition => `
+      <button type="button" class="bf-scores-league-link"
+        data-score-competition="${safe(competition.slug)}"
+        data-search-text="${safe(competition.name + " " + (competition.country || ""))}"
+        title="Ouvrir le classement : ${safe(competition.name)}">
+        <span class="bf-scores-league-logo-wrap">
+          ${competition.logo ? `<img class="bf-scores-league-logo" src="${safe(competition.logo)}" alt="" loading="lazy" onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">` : ""}
+          <span class="bf-scores-league-logo-fallback">🏆</span>
+        </span>
+        <span class="bf-scores-league-copy"><strong>${safe(competition.name)}</strong><small>${safe(competition.country || "International")}</small></span>
+        <span class="bf-scores-league-arrow" aria-hidden="true">↗</span>
+      </button>
+    `).join("");
+
+    if (search && search.dataset.bfBound !== "1") {
+      search.dataset.bfBound = "1";
+      search.addEventListener("input", () => {
+        const q = String(search.value || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase().trim();
+        target.querySelectorAll(".bf-scores-league-link").forEach(button => {
+          const label = String(button.dataset.searchText || "").normalize("NFD").replace(/[\u0300-\u036f]/g, "").toLowerCase();
+          button.style.display = label.includes(q) ? "" : "none";
+        });
+      });
+    }
+    target.querySelectorAll("[data-score-competition]").forEach(button => {
+      button.addEventListener("click", () => {
+        const slug = button.dataset.scoreCompetition;
+        if (typeof window.openBakhiraCompetitionStandings === "function") {
+          window.openBakhiraCompetitionStandings(slug);
+        } else {
+          window.__bfPendingCompetitionName = slug;
+          if (typeof window.go === "function") window.go("leagues");
+        }
+      });
+    });
+  }
+
   /* =========================================================
      HELPERS
      ========================================================= */
@@ -9804,6 +9904,9 @@ body.dark .ss-zone-caption {
 
     addStyles();
 
+
+    /* Toute la liste des compétitions reste visible, même sans rencontre aujourd'hui. */
+    renderScoresCompetitionSidebar();
 
     /* Les matchs d'accueil sont chargés par script.js via /api?date=.
        On évite de lancer un second chargeur sur le même #homeMatches. */
