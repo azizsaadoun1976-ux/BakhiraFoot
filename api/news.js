@@ -1,74 +1,13 @@
 const SOURCES = [
-  {
-    name: "BBC News — Europe",
-    url: "https://feeds.bbci.co.uk/news/world/europe/rss.xml",
-    kind: "rss",
-    category: "Europe",
-    priority: 1
-  },
-  {
-    name: "BBC News — Monde",
-    url: "https://feeds.bbci.co.uk/news/world/rss.xml",
-    kind: "rss",
-    category: "Monde",
-    priority: 2
-  },
-  {
-    name: "The Guardian — Monde",
-    url: "https://www.theguardian.com/world/rss",
-    kind: "rss",
-    category: "Monde",
-    priority: 2
-  },
-  {
-    name: "BBC News — Culture & célébrités",
-    url: "https://feeds.bbci.co.uk/news/entertainment_and_arts/rss.xml",
-    kind: "rss",
-    category: "Célébrités",
-    priority: 3
-  },
-  {
-    name: "Variety — Entertainment",
-    url: "https://variety.com/feed/",
-    kind: "rss",
-    category: "Célébrités",
-    priority: 3
-  },
-  {
-    name: "Google News — Tendances Europe",
-    url: "https://news.google.com/rss/search?q=Europe+trending+news&hl=en-GB&gl=GB&ceid=GB:en",
-    kind: "rss",
-    category: "Tendances",
-    priority: 0
-  },
-  {
-    name: "Google News — Tendances mondiales",
-    url: "https://news.google.com/rss/search?q=world+trending+news&hl=en-GB&gl=GB&ceid=GB:en",
-    kind: "rss",
-    category: "Tendances",
-    priority: 0
-  },
-  {
-    name: "BBC Sport — Football",
-    url: "https://feeds.bbci.co.uk/sport/football/rss.xml",
-    kind: "rss",
-    category: "Football européen",
-    priority: 4
-  },
-  {
-    name: "FRMF",
-    url: "https://frmf.ma/fr/categorie/actualites",
-    kind: "html",
-    category: "Football marocain",
-    priority: 5
-  },
-  {
-    name: "CAF",
-    url: "https://www.cafonline.com/fr/ligue-des-champions/news/",
-    kind: "html",
-    category: "Football africain",
-    priority: 5
-  }
+ {name:"BBC Sport Football",url:"https://feeds.bbci.co.uk/sport/football/rss.xml",kind:"rss",category:"Europe",priority:1},
+ {name:"Sky Sports Football",url:"https://www.skysports.com/rss/12040",kind:"rss",category:"Europe",priority:1},
+ {name:"The Guardian Football",url:"https://www.theguardian.com/football/rss",kind:"rss",category:"Europe",priority:1},
+ {name:"UEFA",url:"https://www.uefa.com/rssfeed/news/",kind:"rss",category:"Europe",priority:1},
+ {name:"ESPN Soccer",url:"https://www.espn.com/espn/rss/soccer/news",kind:"rss",category:"International",priority:2},
+ {name:"Google News Football Europe",url:"https://news.google.com/rss/search?q=football+soccer+Europe+transfer+news&hl=en-GB&gl=GB&ceid=GB:en",kind:"rss",category:"Europe",priority:2},
+ {name:"Google News Football Maroc",url:"https://news.google.com/rss/search?q=football+Maroc+Botola+Maroc+football+news&hl=fr&gl=MA&ceid=MA:fr",kind:"rss",category:"Maroc",priority:2},
+ {name:"FRMF",url:"https://frmf.ma/fr/categorie/actualites",kind:"html",category:"Maroc",priority:3},
+ {name:"CAF",url:"https://www.cafonline.com/fr/ligue-des-champions/news/",kind:"html",category:"Afrique",priority:3}
 ];
 
 function decodeEntities(value = "") {
@@ -110,11 +49,14 @@ function parseRss(xml, source) {
     const title = tag("title");
     const link = tag("link");
     const description = tag("description");
-    const pubDate = tag("pubDate");
+    const pubDate = tag("pubDate") || tag("dc:date");
+    const imageMatch = item.match(/<(?:media:thumbnail|media:content|enclosure)\\b[^>]*(?:url|href)=["']([^"']+)["'][^>]*>/i) || description.match(/<img\\b[^>]*src=["']([^"']+)["']/i);
+    const image = imageMatch ? absoluteUrl(imageMatch[1], source.url) : "";
     return {
       title, url: absoluteUrl(link, source.url),
-      description: description || title, date: pubDate && Number.isFinite(Date.parse(pubDate)) ? new Date(pubDate).toISOString() : "",
-      source: source.name, category: source.category
+      description: description || title, image,
+      date: pubDate && Number.isFinite(Date.parse(pubDate)) ? new Date(pubDate).toISOString() : "",
+      source: source.name, category: source.category, priority: source.priority
     };
   }).filter(item => item.title && item.url);
 }
@@ -137,8 +79,8 @@ function parseHtml(html, source) {
     if (url.replace(/\/$/, "") === source.url.replace(/\/$/, "")) continue;
     if (/\/(categorie|category|tag|author|page)\//i.test(new URL(url).pathname)) continue;
     found.push({
-      title, url, description: title, date: "",
-      source: source.name, category: source.category
+      title, url, description: title, image: "", date: "",
+      source: source.name, category: source.category, priority: source.priority
     });
   }
   const seen = new Set();
