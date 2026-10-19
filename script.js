@@ -1797,6 +1797,19 @@ function selectScoreCompetition(
   renderSelectedCompetition();
 }
 
+/* Ouvre directement le classement de la compétition sélectionnée. */
+function openSelectedCompetitionStandings() {
+  const group = scoreCompetitionGroups[selectedCompetitionIndex];
+  if (!group) return;
+
+  if (typeof window.openBakhiraCompetitionStandings === "function") {
+    window.openBakhiraCompetitionStandings(group.name);
+  } else {
+    go("leagues");
+    toast("Le classement est en cours de chargement.");
+  }
+}
+
 
 /* =========================================================
    STATUS FILTER
@@ -2390,11 +2403,24 @@ return `
             </select>
           </label>
 
+          <button
+            type="button"
+            onclick="openSelectedCompetitionStandings()"
+            aria-label="Ouvrir le classement de cette compétition"
+            style="flex:0 0 auto;padding:9px 12px;border:1px solid #2a7258;border-radius:8px;background:#14392f;color:#90f0c7;font-size:11px;font-weight:900;cursor:pointer"
+          >Classement ↗</button>
+
           <div
             class="
               bf-score-selected-competition
               bf-score-pro-selected
             "
+            role="button"
+            tabindex="0"
+            title="Ouvrir le classement de cette compétition"
+            onclick="openSelectedCompetitionStandings()"
+            onkeydown="if(event.key==='Enter'||event.key===' '){event.preventDefault();openSelectedCompetitionStandings()}"
+            style="cursor:pointer"
           >
 
             ${
