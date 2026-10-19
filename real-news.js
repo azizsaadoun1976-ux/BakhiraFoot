@@ -4,12 +4,12 @@
 
   const NEWS_API = "/api/news";
   const sourceFallbacks = [
-    { name: "BBC Europe", url: "https://www.bbc.com/news/world/europe" },
-    { name: "BBC World", url: "https://www.bbc.com/news/world" },
-    { name: "BBC Entertainment", url: "https://www.bbc.com/news/entertainment_and_arts" },
-    { name: "The Guardian", url: "https://www.theguardian.com/world" },
-    { name: "Variety", url: "https://variety.com/" },
-    { name: "Google News — tendances", url: "https://news.google.com/" },
+    { name: "BBC Sport Football", url: "https://www.bbc.com/sport/football" },
+    { name: "Sky Sports Football", url: "https://www.skysports.com/football" },
+    { name: "The Guardian Football", url: "https://www.theguardian.com/football" },
+    { name: "UEFA", url: "https://www.uefa.com/news/" },
+    { name: "ESPN Soccer", url: "https://www.espn.com/soccer/" },
+    { name: "Google News Football Maroc", url: "https://news.google.com/search?q=football%20Maroc&hl=fr&gl=MA&ceid=MA:fr" },
     { name: "FRMF", url: "https://frmf.ma/fr/categorie/actualites" },
     { name: "CAF", url: "https://www.cafonline.com/fr/ligue-des-champions/news/" }
   ];
