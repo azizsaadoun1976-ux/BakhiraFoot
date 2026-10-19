@@ -1052,10 +1052,9 @@ function bfAssignFormationRoles(players, formation, readPosition) {
       eventPersonName(nested?.playerOut), event?.playerOutName, event?.player_out_name, ""
     ) || "").trim();
 
-    const textValue = String(first(
-      event?.detail, event?.description, event?.text,
-      event?.commentary, event?.shortText, event?.longText, event?.name, ""
-    ) || "").replace(/\s+/g, " ").trim();
+    const textValue = [event?.detail, event?.description, event?.text, event?.commentary, event?.shortText, event?.longText, event?.name]
+      .filter(value => value !== null && value !== undefined && String(value).trim())
+      .map(value => String(value).trim()).filter((value,index,items) => items.indexOf(value) === index).join(" ").replace(/\s+/g, " ").trim();
     const patterns = [
       { regex: /(?:substitution|remplacement)?\s*[:,\-]?\s*(.+?)\s+(?:comes on|come on|came on|enters|entered|is brought on|replaces|replace|for)\s+(?:for\s+)?(.+?)(?:[.!;,]|$)/i, mode: "in-out" },
       { regex: /(.+?)\s+(?:is substituted off|goes off|comes off|leaves the field|is taken off)\s*[,;:\-]?\s*(?:and\s+)?(.+?)\s+(?:comes on|enters|is brought on)/i, mode: "out-in" },
@@ -1151,10 +1150,9 @@ function bfAssignFormationRoles(players, formation, readPosition) {
     );
     if (direct && String(direct).trim()) return String(direct).trim();
     if (!eventIsGoal(event)) return "";
-    const textValue = String(first(
-      event?.goalDescription, event?.goal_description, event?.detail,
-      event?.description, event?.text, event?.commentary, event?.shortText, ""
-    ) || "");
+    const textValue = [event?.goalDescription, event?.goal_description, event?.detail, event?.description, event?.text, event?.commentary, event?.shortText]
+      .filter(value => value !== null && value !== undefined && String(value).trim())
+      .map(value => String(value).trim()).filter((value,index,items) => items.indexOf(value) === index).join(" ");
     const patterns = [
       /assisted by\s+([^,.;()[\]]+)/i,
       /assist(?:ed)?\s+(?:by|from)\s+([^,.;()[\]]+)/i,
