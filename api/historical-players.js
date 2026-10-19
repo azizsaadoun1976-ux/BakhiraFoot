@@ -23,6 +23,8 @@ const LEAGUES = {
   "uefa-europa-league": "uefa.europa",
   "uefa-europa-conference-league": "uefa.europa.conf",
   "english-football-league-championship": "eng.2",
+  "the-botola-pro": "mar.1",
+  "egyptian-premier-league": "egy.1",
   "italian-serie-b": "ita.2",
   "portuguese-primera-liga": "por.1",
   "belgian-pro-league": "bel.1",
