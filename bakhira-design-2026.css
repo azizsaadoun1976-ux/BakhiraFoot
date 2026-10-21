@@ -904,6 +904,10 @@ html[dir="rtl"] #home .bf-club-hero-index{right:auto;left:20px}
 #home .bf-matchday-art-vertical span{padding:7px 0;color:#baf05b}
 @media(max-width:950px){#home .bf-matchday-hero{grid-template-columns:minmax(0,1fr) minmax(260px,.85fr);gap:20px;padding:25px}#home .bf-matchday-brandline{margin:20px 0}#home .bf-matchday-art{min-height:325px}#home .bf-matchday-art-vertical{display:none}}
 @media(max-width:700px){#home .bf-matchday-hero{grid-template-columns:1fr;min-height:0;padding:22px;gap:18px;border-radius:8px}#home .bf-matchday-hero h1{font-size:clamp(35px,9vw,49px)}#home .bf-matchday-intro{font-size:12px}#home .bf-matchday-art{min-height:305px}#home .bf-matchday-ball{width:175px;top:37%}#home .bf-matchday-art-panel-main strong{font-size:25px}#home .bf-matchday-trustline{gap:8px;margin-top:22px}#home .bf-matchday-trustline>b{margin-left:0}}
+
+/* Home refresh: remove the decorative right-hand square; keep the ad rectangle. */
+#home .bf-matchday-hero{grid-template-columns:minmax(0,1fr)!important;}
+#home .bf-matchday-art{display:none!important;}
 html[dir=rtl] #home .bf-matchday-hero{direction:rtl}
 html[dir=rtl] #home .bf-matchday-copy{align-items:flex-start;text-align:right}
 html[dir=rtl] #home .bf-matchday-art-top,html[dir=rtl] #home .bf-matchday-art-panel-head,html[dir=rtl] #home .bf-matchday-art-panel-foot{direction:rtl}
