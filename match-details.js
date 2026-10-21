@@ -6248,15 +6248,18 @@ const response =
       );
 
       const broadcastChannel = bfFindMatchMeta(details, [
-        "tvChannel", "tv_channel", "broadcastChannel", "broadcast_channel",
-        "channel", "channels", "broadcaster", "broadcasters",
-        "broadcast", "broadcasts", "network", "networks", "television", "coverage"
+        "tvChannel", "tv_channel", "tvChannels", "tv_channels", "tvStation", "tvStations",
+        "broadcastChannel", "broadcast_channel", "broadcastName", "broadcast_name",
+        "channel", "channels", "channelName", "channel_name", "broadcaster", "broadcasters",
+        "broadcasterName", "broadcast", "broadcasts", "network", "networks", "television",
+        "media", "coverage"
       ]);
 
       const commentator = bfFindMatchMeta(details, [
         "commentator", "commentators", "commentatorName", "commentator_name",
         "tvCommentator", "tv_commentator", "matchCommentator", "match_commentator",
-        "announcer", "announcers", "commentaryTeam", "commentary_team"
+        "liveCommentator", "broadcastCommentator", "announcer", "announcers",
+        "commentaryTeam", "commentary_team", "presenter", "presenters", "caster"
       ]);
 
       /* =====================================================
