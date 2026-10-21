@@ -14,6 +14,10 @@
       "dest": "/api/community.js"
     },
     {
+      "src": "/api/match-event-enrichment$",
+      "dest": "/api/match-event-enrichment.js"
+    },
+    {
       "src": "/api/(.*)",
       "dest": "/api/index.js"
     }
