@@ -161,6 +161,86 @@ async function loadHeadToHead(homeName, awayName) {
   return [...unique.values()].sort((a, b) => (Date.parse(b.date) || 0) - (Date.parse(a.date) || 0)).slice(0, 8);
 }
 
+function metadataText(value, depth = 0) {
+  if (depth > 5 || value == null) return "";
+  if (typeof value === "string" || typeof value === "number") return String(value).trim();
+  if (Array.isArray(value)) return value.map(item => metadataText(item, depth + 1)).filter(Boolean).join(" · ");
+  if (typeof value !== "object") return "";
+  for (const key of ["name","displayName","display_name","fullName","full_name","shortName","short_name","label","title","channelName","channel_name","officialName","official_name","value"]) {
+    const candidate = value[key];
+    if (candidate !== undefined && candidate !== null && candidate !== value) {
+      const text = metadataText(candidate, depth + 1);
+      if (text) return text;
+    }
+  }
+  return "";
+}
+
+function findMetadataValue(root, aliases) {
+  const targets = new Set(aliases.map(value => String(value).toLowerCase().replace(/[^a-z0-9]/g, "")));
+  const queue = [{value:root,depth:0}];
+  const seen = new Set();
+  while (queue.length && seen.size < 1600) {
+    const item = queue.shift();
+    const node = item?.value;
+    if (!node || typeof node !== "object" || seen.has(node) || item.depth > 6) continue;
+    seen.add(node);
+    if (Array.isArray(node)) {
+      if (item.depth < 6) node.forEach(child => { if (child && typeof child === "object") queue.push({value:child,depth:item.depth+1}); });
+      continue;
+    }
+    for (const [key,value] of Object.entries(node)) {
+      const normalized = key.toLowerCase().replace(/[^a-z0-9]/g, "");
+      if (targets.has(normalized)) {
+        const text = metadataText(value);
+        if (text && text.length < 180) return text;
+      }
+      if (value && typeof value === "object" && item.depth < 6) queue.push({value,depth:item.depth+1});
+    }
+  }
+  return "";
+}
+
+async function loadFixtureMetadata(homeName, awayName, requestedDate) {
+  if (!homeName || !awayName) return {};
+  const searchResult = await Promise.allSettled([findSofaTeam(homeName)]);
+  const homeTeam = searchResult[0].status === "fulfilled" ? searchResult[0].value : null;
+  if (!homeTeam) return {};
+  const [lastResult,nextResult] = await Promise.allSettled([
+    sofaJSON("/team/" + encodeURIComponent(homeTeam.id) + "/events/last/0"),
+    sofaJSON("/team/" + encodeURIComponent(homeTeam.id) + "/events/next/0")
+  ]);
+  const events = [];
+  for (const result of [lastResult,nextResult]) {
+    if (result.status !== "fulfilled") continue;
+    const values = result.value?.events;
+    if (Array.isArray(values)) events.push(...values);
+  }
+  const expectedTimestamp = Date.parse(String(requestedDate || ""));
+  const candidates = events.filter(event => {
+    const h = event?.homeTeam?.name || "";
+    const a = event?.awayTeam?.name || "";
+    return (sameTeam(h,homeName) && sameTeam(a,awayName)) ||
+      (sameTeam(h,awayName) && sameTeam(a,homeName));
+  }).map(event => {
+    const dateValue = eventTime(event);
+    const timestamp = dateValue ? Date.parse(dateValue) : NaN;
+    return {event,delta:Number.isFinite(expectedTimestamp)&&Number.isFinite(timestamp)?Math.abs(expectedTimestamp-timestamp):Number.POSITIVE_INFINITY};
+  }).filter(item => !Number.isFinite(item.delta) || item.delta <= 72 * 60 * 60 * 1000)
+    .sort((a,b) => a.delta-b.delta);
+  const candidate = candidates[0]?.event;
+  if (!candidate?.id) return {};
+  let detail = {};
+  try { detail = await sofaJSON("/event/" + encodeURIComponent(candidate.id)); } catch (_) {}
+  const root = {event:candidate,detail,...(detail?.event && typeof detail.event === "object" ? detail.event : {})};
+  return {
+    venue: findMetadataValue(root, ["venue","stadium","ground","arena","venueName","stadiumName","groundName"]),
+    referee: findMetadataValue(root, ["referee","mainReferee","matchReferee","refereeName","official","mainOfficial"]),
+    broadcastChannel: findMetadataValue(root, ["tvChannel","tvChannels","tvStation","broadcastChannel","broadcastName","channel","channels","channelName","broadcaster","broadcasters","network","television","beIN","beinSports","beINConnect"]),
+    commentator: findMetadataValue(root, ["commentator","commentators","commentatorName","tvCommentator","matchCommentator","liveCommentator","broadcastCommentator","announcer","announcers","commentaryTeam","presenter","caster","beINCommentator","beinSportsCommentator"])
+  };
+}
+
 function collectEntries(root) {
   const out = [];
   const seen = new Set();
@@ -252,16 +332,20 @@ module.exports = async function matchCenter(req, res) {
   const date = String(req.query?.date || "").trim().slice(0, 30);
   if (!home || !away) return send(res, 400, { error: "home_and_away_required" });
 
-  const [h2hResult, standingsResult] = await Promise.allSettled([
+  const [h2hResult, standingsResult, metadataResult] = await Promise.allSettled([
     loadHeadToHead(home, away),
-    loadStandings(competition, date)
+    loadStandings(competition, date),
+    loadFixtureMetadata(home, away, date)
   ]);
+  const metadata = metadataResult.status === "fulfilled" ? metadataResult.value : {};
   return send(res, 200, {
     headToHead: h2hResult.status === "fulfilled" ? h2hResult.value : [],
     standings: standingsResult.status === "fulfilled" ? standingsResult.value : { league: competition, rows: [] },
+    metadata,
     availability: {
       headToHead: h2hResult.status === "fulfilled" && h2hResult.value.length > 0,
-      standings: standingsResult.status === "fulfilled" && standingsResult.value.rows.length > 0
+      standings: standingsResult.status === "fulfilled" && standingsResult.value.rows.length > 0,
+      metadata: !!(metadata.venue || metadata.referee || metadata.broadcastChannel || metadata.commentator)
     }
   });
 };
