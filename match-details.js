@@ -6521,6 +6521,7 @@ function bfSameFixtureMetadata(candidate,expected,requireDate=false) {
     const allSections = Array.from(content.querySelectorAll(sectionSelector));
     const headingMatches = regex => allSections.filter(section => regex.test(getSectionTitle(section).toLowerCase()));
     const tabDefinitions = [
+      {key:"result",label:"Résultat",find:()=>[]},
       {key:"summary",label:"Résumé",find:()=>headingMatches(/événements|evenements|résumé/).slice(0,1)},
       {key:"lineup",label:"Compos & terrain",find:()=> {
         const explicit = content.querySelector(".bfmd-match-analysis");
@@ -6572,9 +6573,11 @@ function bfSameFixtureMetadata(candidate,expected,requireDate=false) {
         content.querySelectorAll(".bfmd-pitches,.bfmd-pitch-legend,.bfmd-tactics-caption,.bfmd-match-analysis > .bfmd-title")
           .forEach(node => { node.style.display = "none"; });
       }
-      viewHint.textContent = targets.length
-        ? "Rubrique sélectionnée : " + definition.label + ". Choisis une autre rubrique dans le menu pour changer l’affichage."
-        : "Les données de « " + definition.label + " » ne sont pas disponibles pour ce match.";
+      viewHint.textContent = key === "result"
+        ? "Résultat du match affiché en haut. Choisis une rubrique pour ouvrir ses détails."
+        : targets.length
+          ? "Rubrique sélectionnée : " + definition.label + ". Choisis une autre rubrique dans le menu pour changer l’affichage."
+          : "Les données de « " + definition.label + " » ne sont pas disponibles pour ce match.";
       nav.querySelectorAll("button[data-bf-match-tab]").forEach(button => {
         const active = button.dataset.bfMatchTab === key;
         button.setAttribute("aria-pressed", active ? "true" : "false");
@@ -6599,7 +6602,7 @@ function bfSameFixtureMetadata(candidate,expected,requireDate=false) {
     else content.insertBefore(nav,content.firstChild);
     nav.insertAdjacentElement("afterend",viewHint);
     allSections.filter(section => !isHeaderSection(section)).forEach(section => { section.style.display = "none"; });
-    activateTab("summary");
+    activateTab("result");
   }
 
   async function openDetails(
