@@ -4,7 +4,13 @@ const crypto = require("crypto");
 
 const REDIS_URL = String(process.env.UPSTASH_REDIS_REST_URL || "").replace(/\/+$/, "");
 const REDIS_TOKEN = String(process.env.UPSTASH_REDIS_REST_TOKEN || "");
-const COMMENTS_KEY = "bf:community:comments";
+const DEFAULT_COMMENTS_KEY = "bf:community:comments";
+
+function matchCommentsKey(value) {
+  const match = String(value || "").trim().toLowerCase()
+    .replace(/[^a-z0-9_-]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 100);
+  return match ? "bf:community:match:" + match : DEFAULT_COMMENTS_KEY;
+}
 
 function send(res, status, payload) {
   res.setHeader("Cache-Control", "no-store, max-age=0");
@@ -136,7 +142,7 @@ module.exports = async function community(req, res) {
       if (String(req.query?.status || "") === "1") {
         return send(res, 200, { banned: false });
       }
-      const records = await redisCommand("LRANGE", COMMENTS_KEY, "0", "99");
+      const key = matchCommentsKey(req.query?.match);\n      const records = await redisCommand("LRANGE", key, "0", "99");
       const comments = [];
       for (const item of Array.isArray(records) ? records : []) {
         try {
