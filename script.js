@@ -7179,151 +7179,73 @@ function renderStatistics(statistics) {
    MATCH INFORMATION
 ========================================================= */
 
-function renderMatchInformation(
-  details
-) {
-
-  const venue =
-    details?.fixture?.venue?.name ||
-    details?.venue?.name ||
-    details?.venue ||
-    null;
-
-  const city =
-    details?.fixture?.venue?.city ||
-    details?.venue?.city ||
-    null;
-
-  const referee =
-    details?.fixture?.referee ||
-    details?.referee ||
-    null;
-
-  const round =
-    details?.league?.round ||
-    details?.round ||
-    null;
-
-  const season =
-    details?.league?.season ||
-    details?.season ||
-    null;
-
-  const timezone =
-    details?.fixture?.timezone ||
-    null;
-
-  if (
-    !venue &&
-    !city &&
-    !referee &&
-    !round &&
-    !season &&
-    !timezone
-  ) {
+function renderMatchInformation(details) {
+  const firstText = (...values) => {
+    for (const value of values) {
+      if (value === null || value === undefined) continue;
+      if (typeof value === "object") {
+        const nested = value.name || value.title || value.label || value.short_name;
+        if (nested !== undefined && nested !== null && String(nested).trim()) return String(nested).trim();
+        continue;
+      }
+      const text = String(value).trim();
+      if (text && text !== "[object Object]" && text !== "null" && text !== "undefined") return text;
+    }
     return "";
-  }
+  };
+
+  const venueObject = details?.fixture?.venue || details?.venue || details?.stadium || details?.ground || null;
+  const venue = firstText(
+    venueObject?.name, venueObject?.stadium, venueObject?.ground,
+    typeof venueObject === "string" ? venueObject : "",
+    details?.fixture?.stadium, details?.stadium_name, details?.ground_name
+  );
+  const city = firstText(
+    venueObject?.city, details?.fixture?.venue_city, details?.venue_city, details?.city
+  );
+  const referee = firstText(
+    details?.fixture?.referee?.name, details?.fixture?.referee,
+    details?.referee?.name, details?.referee, details?.officials?.referee?.name,
+    Array.isArray(details?.officials)
+      ? details.officials.find(item => /referee|arbitre/i.test(String(item?.type || item?.role || "")))?.name
+      : ""
+  );
+  const channel = firstText(
+    details?.broadcast?.name, details?.broadcast?.channel,
+    details?.tv?.name, details?.tv?.channel,
+    details?.fixture?.broadcast?.name, details?.fixture?.broadcast,
+    details?.fixture?.tv?.name, details?.fixture?.tv,
+    details?.broadcast_channel, details?.tv_channel, details?.channel,
+    Array.isArray(details?.broadcasts) ? details.broadcasts[0]?.name : "",
+    Array.isArray(details?.channels) ? details.channels[0]?.name : ""
+  );
+  const round = firstText(details?.league?.round, details?.round, details?.round_name, details?.stage);
+  const season = firstText(
+    details?.league?.season?.name, details?.league?.season,
+    details?.season?.name, details?.season
+  );
+  const date = firstText(details?.fixture?.date, details?.date, details?.time, details?.kickoff);
+  const rows = [
+    ["🏟️ Stade", venue ? venue + (city && !venue.toLowerCase().includes(city.toLowerCase()) ? " — " + city : "") : "Non communiqué"],
+    ["👨‍⚖️ Arbitre", referee || "Non communiqué"],
+    ["📺 Chaîne", channel || "Non communiquée"],
+    ["🔢 Journée", round || "Non communiquée"],
+    ["📅 Saison", season || "Non communiquée"],
+    ["🕒 Date", date ? (typeof formatDate === "function" ? formatDate(date) : date) : "Non communiquée"]
+  ];
 
   return `
-
-    <div class="bf-detail-section">
-
-      <h3>
-        Informations
-      </h3>
-
+    <div class="bf-detail-section bf-match-information">
+      <h3>Informations du match</h3>
       <div class="bf-detail-grid">
-
-        ${
-          venue
-            ? `
-              <div class="bf-detail-item">
-
-                <strong>
-                  Stade
-                </strong>
-
-                ${escapeHTML(venue)}
-
-                ${
-                  city
-                    ? ` — ${escapeHTML(city)}`
-                    : ""
-                }
-
-              </div>
-            `
-            : ""
-        }
-
-        ${
-          referee
-            ? `
-              <div class="bf-detail-item">
-
-                <strong>
-                  Arbitre
-                </strong>
-
-                ${escapeHTML(referee)}
-
-              </div>
-            `
-            : ""
-        }
-
-        ${
-          round
-            ? `
-              <div class="bf-detail-item">
-
-                <strong>
-                  🔢 Journée
-                </strong>
-
-                ${escapeHTML(round)}
-
-              </div>
-            `
-            : ""
-        }
-
-        ${
-          season
-            ? `
-              <div class="bf-detail-item">
-
-                <strong>
-                  📅 Saison
-                </strong>
-
-                ${escapeHTML(season)}
-
-              </div>
-            `
-            : ""
-        }
-
-        ${
-          timezone
-            ? `
-              <div class="bf-detail-item">
-
-                <strong>
-                  🌍 Fuseau
-                </strong>
-
-                ${escapeHTML(timezone)}
-
-              </div>
-            `
-            : ""
-        }
-
+        ${rows.map(([label, value]) => `
+          <div class="bf-detail-item">
+            <strong>${escapeHTML(label)}</strong>
+            <span>${escapeHTML(value)}</span>
+          </div>
+        `).join("")}
       </div>
-
     </div>
-
   `;
 }
 
