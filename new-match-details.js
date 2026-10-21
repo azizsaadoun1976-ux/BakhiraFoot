@@ -2272,7 +2272,7 @@ ${esc(String(playerName(player) || "P").split(/\s+/).map(part => part[0] || "").
                     <div class="bf-new-safe-player-name">${esc(playerName(player))}</div>
                     <div class="bf-new-safe-pitch-events">${playerEventBadges(player, details)}</div>
                     ${(playerIsOfficialMvp(player) || playerIsNamedMvp(player, details)) ? '<span class="bf-new-safe-mvp-chip" title="Joueur du match" aria-label="Joueur du match">' + playerPerformanceIcon("mvp") + '</span>' : ""}
-                    ${rating !== null ? '<span class="bf-new-safe-player-rate" title="Note du joueur ' + esc(Number(rating).toFixed(1)) + '/10" aria-label="Note du joueur ' + esc(Number(rating).toFixed(1)) + ' sur 10"><span class="bf-new-safe-rating-star" aria-hidden="true">★</span><span>' + esc(Number(rating).toFixed(1)) + '</span></span>' : ""}
+                    ${rating !== null ? '<span class="bf-new-safe-player-rate ' + ratingToneClass(rating) + '" title="Note du joueur ' + esc(Number(rating).toFixed(1)) + '/10" aria-label="Note du joueur ' + esc(Number(rating).toFixed(1)) + ' sur 10">' + esc(Number(rating).toFixed(1)) + '</span>' : ""}
 
                   </div>
 
