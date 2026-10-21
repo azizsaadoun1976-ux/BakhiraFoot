@@ -1420,6 +1420,58 @@ function bfAssignFormationRoles(players, formation, readPosition) {
         padding:8px;
       }
 
+      .bf-new-safe-combined-wrap { padding:8px 0; border:1px solid rgba(127,127,127,.18); border-radius:16px; overflow:hidden; background:rgba(127,127,127,.025); }
+      .bf-new-safe-combined-head { display:grid; grid-template-columns:minmax(0,1fr) auto minmax(0,1fr); align-items:center; gap:8px; padding:12px; background:linear-gradient(110deg,rgba(11,155,105,.13),rgba(59,130,246,.09)); }
+      .bf-new-safe-combined-team { display:flex; align-items:center; justify-content:center; flex-wrap:wrap; gap:6px; min-width:0; font-size:12px; text-align:center; }
+      .bf-new-safe-combined-team img { width:27px; height:27px; object-fit:contain; }
+      .bf-new-safe-combined-team strong { overflow-wrap:anywhere; }
+      .bf-new-safe-combined-team em { padding:3px 6px; border-radius:6px; background:rgba(127,127,127,.13); font-size:10px; font-style:normal; }
+      .bf-new-safe-combined-vs { opacity:.55; font-size:10px; font-weight:950; }
+      .bf-new-safe-combined-pitch { position:relative; width:100%; height:clamp(360px,42vw,510px); min-height:360px; max-height:510px; overflow:hidden; background:repeating-linear-gradient(90deg,#26743b 0,#26743b 10%,#2e8045 10%,#2e8045 20%); }
+      .bf-new-safe-combined-border { position:absolute; inset:8px; border:2px solid rgba(255,255,255,.92); }
+      .bf-new-safe-combined-half { position:absolute; left:8px; right:8px; top:50%; height:2px; background:#fff; }
+      .bf-new-safe-combined-circle { position:absolute; left:50%; top:50%; width:18%; aspect-ratio:1; transform:translate(-50%,-50%); border:2px solid #fff; border-radius:50%; }
+      .bf-new-safe-combined-dot { position:absolute; left:50%; top:50%; width:6px; height:6px; transform:translate(-50%,-50%); border-radius:50%; background:#fff; }
+      .bf-new-safe-combined-box { position:absolute; left:32%; right:32%; height:14%; border:2px solid #fff; }
+      .bf-new-safe-combined-box--top { top:8px; }
+      .bf-new-safe-combined-box--bottom { bottom:8px; }
+      .bf-new-safe-combined-player { position:absolute; transform:translate(-50%,-50%); width:clamp(72px,7vw,100px); display:flex; flex-direction:column; align-items:center; z-index:5; cursor:pointer; color:#fff; text-align:center; outline-offset:2px; }
+      .bf-new-safe-combined-player img,.bf-new-safe-combined-avatar { display:block; width:clamp(29px,2.8vw,42px); height:clamp(29px,2.8vw,42px); border:2px solid white; border-radius:50%; object-fit:cover; background:#f4f7f9; box-shadow:0 3px 10px #0005; }
+      .bf-new-safe-combined-avatar { display:grid; place-items:center; color:#122; font-weight:900; font-size:12px; }
+      .bf-new-safe-combined-shirt { position:absolute; right:calc(50% - 27px); top:-2px; display:grid; place-items:center; min-width:18px; height:18px; padding:0 3px; border-radius:6px; background:#07121d; color:#fff; font-size:9px; font-weight:950; }
+      .bf-new-safe-combined-name { display:block; max-width:100px; margin-top:3px; padding:3px 5px; border:1px solid #ffffff4f; border-radius:5px; background:#07121df0; color:#fff; font-size:clamp(8px,.72vw,10px); font-weight:900; line-height:1.1; overflow-wrap:anywhere; }
+      .bf-new-safe-combined-player--active .bf-new-safe-combined-name { background:#087f5b; }
+      .bf-new-safe-combined-empty { position:absolute; left:5%; width:90%; padding:8px; border-radius:8px; background:#07121dbd; color:white; text-align:center; font-size:11px; font-weight:800; }
+      .bf-new-safe-combined-empty--home { top:22%; }
+      .bf-new-safe-combined-empty--away { top:72%; }
+      .bf-new-safe-player-detail-panel:not([hidden]) { margin:10px 12px; padding:13px; border:1px solid rgba(11,155,105,.35); border-radius:14px; background:rgba(11,155,105,.08); }
+      .bf-new-safe-selected-player { display:flex; align-items:center; gap:13px; }
+      .bf-new-safe-selected-player>img,.bf-new-safe-selected-avatar { flex:0 0 62px; width:62px; height:62px; border-radius:50%; object-fit:cover; background:#dce7e2; }
+      .bf-new-safe-selected-avatar { display:grid; place-items:center; font-weight:950; }
+      .bf-new-safe-selected-copy { min-width:0; }
+      .bf-new-safe-selected-copy strong { display:block; font-size:15px; font-weight:950; }
+      .bf-new-safe-selected-copy>span { display:block; margin-top:4px; font-size:11px; opacity:.7; }
+      .bf-new-safe-selected-rating { display:inline-block; margin-top:6px; font-size:11px; }
+      .bf-new-safe-selected-events { display:flex; flex-wrap:wrap; gap:5px; margin-top:8px; }
+      .bf-new-safe-selected-mvp { margin:7px 0 0; font-size:11px; font-weight:900; }
+      .bf-new-safe-selected-note { margin:7px 0 0; font-size:10px; opacity:.65; }
+      .bf-new-safe-combined-caption { display:flex; flex-wrap:wrap; gap:8px 14px; padding:9px 12px; font-size:10px; font-weight:850; opacity:.7; }
+      .bf-new-safe-combined-caption small { flex-basis:100%; }
+      .bf-new-safe-combined-benches { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:10px; padding:12px; }
+      .bf-new-safe-combined-benches>div { min-width:0; }
+      .bf-new-safe-combined-benches>div>b { display:block; margin-bottom:8px; font-size:12px; }
+      .bf-new-safe-player-list>summary { cursor:pointer; list-style:none; }
+      .bf-new-safe-player-list>summary::-webkit-details-marker { display:none; }
+      .bf-new-safe-player-list>summary:after { content:"＋"; float:right; opacity:.6; }
+      .bf-new-safe-player-list[open]>summary:after { content:"−"; }
+      @media(max-width:650px) {
+        .bf-new-safe-combined-pitch { height:370px; min-height:370px; }
+        .bf-new-safe-combined-player { width:clamp(52px,14vw,67px); }
+        .bf-new-safe-combined-name { max-width:62px; font-size:7px; padding:2px; }
+        .bf-new-safe-combined-player img,.bf-new-safe-combined-avatar { width:27px; height:27px; }
+        .bf-new-safe-combined-benches { grid-template-columns:minmax(0,1fr); }
+      }
+
       .bf-new-safe-pitch-head{
         display:flex;
 
@@ -2350,6 +2402,53 @@ ${esc(String(playerName(player) || "P").split(/\s+/).map(part => part[0] || "").
     `;
   }
 
+  function renderCombinedPitch(homeLineup, home, awayLineup, away, details, pitchMvp) {
+    const markings = '<div class="bf-new-safe-combined-border"></div><div class="bf-new-safe-combined-half"></div><div class="bf-new-safe-combined-circle"></div><div class="bf-new-safe-combined-dot"></div><div class="bf-new-safe-combined-box bf-new-safe-combined-box--top"></div><div class="bf-new-safe-combined-box bf-new-safe-combined-box--bottom"></div>';
+    const detailTemplate = (player, team, side) => {
+      const photo = playerPhoto(player);
+      const rating = playerRating(player);
+      const badges = playerEventBadges(player, details);
+      const isMvp = playerIsOfficialMvp(player) || playerIsNamedMvp(player, details) ||
+        (pitchMvp && samePerson(pitchMvp.player, player));
+      return '<template class="bf-new-safe-player-template"><div class="bf-new-safe-selected-player">' +
+        (photo ? '<img src="' + esc(photo) + '" alt="" loading="lazy">' :
+          '<span class="bf-new-safe-selected-avatar">' + esc(String(playerName(player) || "P").split(/\s+/).map(part=>part[0]||"").join("").slice(0,2).toUpperCase()) + '</span>') +
+        '<div class="bf-new-safe-selected-copy"><strong>' + esc(playerName(player) || "Joueur") + '</strong>' +
+        '<span>' + esc(team.name || "Équipe") + ' · ' + esc(side === "home" ? "Domicile" : "Extérieur") + ' · #' + esc(playerNumber(player)) + '</span>' +
+        (rating !== null ? '<b class="bf-new-safe-selected-rating ' + ratingToneClass(rating) + '">Note ' + esc(Number(rating).toFixed(1)) + '/10</b>' : '') +
+        '<div class="bf-new-safe-selected-events">' + badges + '</div>' +
+        (isMvp ? '<p class="bf-new-safe-selected-mvp">⭐ Joueur clé de la rencontre</p>' : '') +
+        '<p class="bf-new-safe-selected-note">Seules les informations reçues de la source du match sont affichées.</p></div></div></template>';
+    };
+    const renderTeam = (lineup, team, side) => {
+      const positions = getPitchPlayers(lineup, side);
+      if (!positions.length) {
+        return '<div class="bf-new-safe-combined-empty bf-new-safe-combined-empty--' + side + '">' +
+          esc(team.name || "Équipe") + ' · composition ou positions indisponibles</div>';
+      }
+      return positions.map(item => {
+        const player = item.player;
+        const y = side === "home" ? 5 + item.y * 0.43 : 57 + item.y * 0.38;
+        const photo = playerPhoto(player);
+        return '<div class="bf-new-safe-combined-player" role="button" tabindex="0" aria-expanded="false" data-bf-new-player="1" ' +
+          'style="left:' + item.x + '%;top:' + Math.max(5,Math.min(95,y)) + '%" title="Cliquer pour afficher ' + esc(playerName(player)) + '">' +
+          (photo ? '<img src="' + esc(photo) + '" alt="" loading="lazy">' :
+            '<span class="bf-new-safe-combined-avatar">' + esc(String(playerName(player) || "P").split(/\s+/).map(part=>part[0]||"").join("").slice(0,2).toUpperCase()) + '</span>') +
+          '<span class="bf-new-safe-combined-shirt">' + esc(playerNumber(player)) + '</span>' +
+          '<span class="bf-new-safe-combined-name">' + esc(playerName(player) || "Joueur") + '</span>' +
+          detailTemplate(player, team, side) + '</div>';
+      }).join("");
+    };
+    const head = (lineup, team, fallback) => '<div class="bf-new-safe-combined-team">' +
+      (team.logo ? '<img src="' + esc(team.logo) + '" alt="" loading="lazy">' : '<span>⚽</span>') +
+      '<strong>' + esc(team.name || fallback) + '</strong><em>' + esc(lineup.formation || "—") + '</em></div>';
+    return '<div class="bf-new-safe-combined-wrap"><div class="bf-new-safe-combined-head">' +
+      head(homeLineup,home,"Domicile") + '<span class="bf-new-safe-combined-vs">VS</span>' + head(awayLineup,away,"Extérieur") +
+      '</div><div class="bf-new-safe-combined-pitch">' + markings + renderTeam(homeLineup,home,"home") + renderTeam(awayLineup,away,"away") +
+      '</div><div class="bf-new-safe-player-detail-panel" hidden></div><div class="bf-new-safe-combined-caption"><span>Domicile · moitié haute</span><span>Extérieur · moitié basse</span><small>Clique sur un joueur pour ouvrir sa fiche</small></div>' +
+      '<div class="bf-new-safe-combined-benches"><div><b>' + esc(home.name || "Domicile") + ' · Banc</b>' + renderPlayers(homeLineup,details) + '</div><div><b>' + esc(away.name || "Extérieur") + ' · Banc</b>' + renderPlayers(awayLineup,details) + '</div></div></div>';
+  }
+
   /* =========================================================
      RENDER PLAYERS
      ========================================================= */
@@ -2996,7 +3095,7 @@ ${esc(String(playerName(player) || "P").split(/\s+/).map(part => part[0] || "").
       "commentator", "commentators", "commentatorName", "commentator_name",
       "tvCommentator", "tv_commentator", "matchCommentator", "match_commentator",
       "liveCommentator", "broadcastCommentator", "announcer", "announcers",
-      "commentaryTeam", "commentary_team", "presenter", "presenters", "caster"
+      "commentaryTeam", "commentary_team", "presenter", "presenters", "caster", "beINCommentator", "beinCommentator", "beINCommentators", "beinSportsCommentator", "commentatorBein", "bein_sports_commentator"
     ]);
 
     const providerText =
@@ -3122,16 +3221,14 @@ ${esc(String(playerName(player) || "P").split(/\s+/).map(part => part[0] || "").
       </div>
 
 
-      ${date || venue || referee || broadcastChannel || commentator || providerText
-        ? '<div class="bf-new-safe-info">' +
+      '<div class="bf-new-safe-info">' +
           (date ? '<span>📅 ' + esc(new Date(date).toLocaleString("fr-FR")) + '</span>' : '') +
-          (venue ? '<span>🏟️ ' + esc(venue) + '</span>' : '') +
-          (referee ? '<span>👨‍⚖️ ' + esc(referee) + '</span>' : '') +
-          (broadcastChannel ? '<span>📺 ' + esc(broadcastChannel) + '</span>' : '') +
-          (commentator ? '<span>🎙️ ' + esc(commentator) + '</span>' : '') +
+          '<span>🏟️ Stade : ' + esc(venue || "Non communiqué") + '</span>' +
+          '<span>👨‍⚖️ Arbitre : ' + esc(referee || "Non communiqué") + '</span>' +
+          '<span>📺 Chaîne : ' + esc(broadcastChannel || "Non communiquée") + '</span>' +
+          '<span>🎙️ Commentateur : ' + esc(commentator || "Non communiqué") + '</span>' +
           (providerText ? '<span>' + providerText + '</span>' : '') +
         '</div>'
-        : ''}
 
       <div
         class="bf-new-safe-section"
@@ -3143,27 +3240,14 @@ ${esc(String(playerName(player) || "P").split(/\s+/).map(part => part[0] || "").
           Formations et compositions
         </div>
 
-        <div
-          class="bf-new-safe-pitches"
-        >
-
-          ${renderPitch(
-            homeLineup,
-            home,
-            "home",
-            details,
-            pitchMvp
-          )}
-
-          ${renderPitch(
-            awayLineup,
-            away,
-            "away",
-            details,
-            pitchMvp
-          )}
-
-        </div>
+        ${renderCombinedPitch(
+          homeLineup,
+          home,
+          awayLineup,
+          away,
+          details,
+          pitchMvp
+        )}
 
       </div>
 
@@ -3178,15 +3262,8 @@ ${esc(String(playerName(player) || "P").split(/\s+/).map(part => part[0] || "").
         ${renderStatistics(details)}
       </div>
 
-      <div
-        class="bf-new-safe-section"
-      >
-
-        <div
-          class="bf-new-safe-title"
-        >
-          Joueurs
-        </div>
+      <details class="bf-new-safe-section bf-new-safe-player-list">
+        <summary class="bf-new-safe-title">Joueurs et statistiques individuelles · ouvrir</summary>
 
         <div
           class="bf-new-safe-columns"
@@ -3229,7 +3306,7 @@ ${esc(String(playerName(player) || "P").split(/\s+/).map(part => part[0] || "").
 
         </div>
 
-      </div>
+      </details>
 
 
       <div
@@ -3250,11 +3327,45 @@ ${esc(String(playerName(player) || "P").split(/\s+/).map(part => part[0] || "").
 
     `;
 
+    if (!content.dataset.bfNewPlayerDetailEvents) {
+      content.dataset.bfNewPlayerDetailEvents = "1";
+      const openPlayerDetail = target => {
+        const player = target?.closest?.(".bf-new-safe-combined-player");
+        if (!player || !content.contains(player)) return;
+        const frame = player.closest(".bf-new-safe-combined-wrap");
+        const panel = frame?.querySelector(".bf-new-safe-player-detail-panel");
+        const template = player.querySelector("template.bf-new-safe-player-template");
+        if (!panel || !template) return;
+        const alreadyOpen = player.getAttribute("aria-expanded") === "true";
+        frame.querySelectorAll(".bf-new-safe-combined-player[aria-expanded='true']").forEach(other => {
+          other.setAttribute("aria-expanded","false");
+          other.classList.remove("bf-new-safe-combined-player--active");
+        });
+        if (alreadyOpen) { panel.hidden = true; panel.innerHTML = ""; return; }
+        player.setAttribute("aria-expanded","true");
+        player.classList.add("bf-new-safe-combined-player--active");
+        panel.innerHTML = template.innerHTML;
+        panel.hidden = false;
+      };
+      content.addEventListener("click", event => openPlayerDetail(event.target));
+      content.addEventListener("keydown", event => {
+        if ((event.key === "Enter" || event.key === " ") && event.target?.closest?.(".bf-new-safe-combined-player")) {
+          event.preventDefault();
+          openPlayerDetail(event.target);
+        }
+      });
+    }
+
     modal.style.display =
       "block";
 
     document.body.style.overflow =
       "hidden";
+
+    if (typeof window.bfSetupMatchCenter === "function") {
+      const matchIdentifier = first(source?.value, source?.id, window.__bfActiveExpectedIdentifier, "");
+      window.bfSetupMatchCenter(matchIdentifier, {home,away}, competition, date, content);
+    }
   }
 
   /* =========================================================
