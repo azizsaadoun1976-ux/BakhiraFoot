@@ -357,13 +357,13 @@ module.exports = async function matchEventEnrichment(req, res) {
         "tvChannel", "tv_channel", "tvChannels", "tv_channels", "tvStation", "tvStations",
         "channel", "channels", "channelName", "channel_name", "broadcaster", "broadcasters",
         "broadcasterName", "broadcastName", "broadcastChannel", "broadcast_channel",
-        "broadcast", "broadcasts", "network", "networks", "television", "media", "coverage"
+        "broadcast", "broadcasts", "network", "networks", "television", "media", "coverage", "beIN", "beinSports", "beIN Sports", "beINConnect"
       ]),
       commentator: findMeta(root, [
         "commentator", "commentators", "commentatorName", "commentator_name",
         "tvCommentator", "tv_commentator", "matchCommentator", "match_commentator",
         "liveCommentator", "broadcastCommentator", "announcer", "announcers",
-        "commentaryTeam", "commentary_team", "presenter", "presenters", "caster"
+        "commentaryTeam", "commentary_team", "presenter", "presenters", "caster", "beINCommentator", "beinCommentator", "beINCommentators", "beinSportsCommentator", "commentatorBein", "bein_sports_commentator"
       ])
     };
 
