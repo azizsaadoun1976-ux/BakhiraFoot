@@ -185,19 +185,10 @@
             </div>
             <span id="bfCommunityCount" class="bf-community-count">Chargement…</span>
           </div>
-          <div id="bfCommunityNotice" class="bf-community-notice" role="status" aria-live="polite" hidden></div>
           <div class="bf-community-grid">
-            <div id="bfCommunityFeed" class="bf-community-feed" aria-live="polite">
-              <div class="bf-community-empty">Chargement des réactions…</div>
+            <div style="width:100%;min-height:120px;grid-column:1/-1;color:var(--bf-muted,#71808a);font-size:12px;">
+              Chargement des commentaires partagés…
             </div>
-            <form id="bfCommunityForm" class="bf-community-form">
-              <label for="bfCommunityAuthor">Pseudo</label>
-              <input id="bfCommunityAuthor" name="author" type="text" maxlength="28" minlength="2" autocomplete="nickname" placeholder="Ton pseudo" required>
-              <label for="bfCommunityMessage">Ton commentaire</label>
-              <textarea id="bfCommunityMessage" name="message" maxlength="500" minlength="3" placeholder="Ton avis sur le match…" required></textarea>
-              <button id="bfCommunitySubmit" class="bf-community-submit" type="submit">Publier le commentaire</button>
-              <p class="bf-community-rules">Exprime ton avis en 500 caractères maximum. Les commentaires publiés sont visibles par tous les visiteurs.</p>
-            </form>
           </div>
         </section>
       </section>
@@ -336,7 +327,7 @@
   <script src="sportscore-data.js?v=20261019-22"></script>
   <script src="match-details.js?v=20261021-07"></script>
   <script src="new-match-details.js?v=20261021-06"></script>
-  <script src="community.js?v=20261021-02"></script>
+  <script src="community.js?v=20261021-03"></script>
   <script src="language.js?v=20261019-01"></script>
 </body>
 </html>
