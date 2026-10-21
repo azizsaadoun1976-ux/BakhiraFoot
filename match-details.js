@@ -5949,6 +5949,89 @@ function bfSameFixtureMetadata(candidate,expected,requireDate=false) {
     }catch(error){return null;}
   }
 
+
+  function setupMatchCenterNavigation(matchIdentifier, teams) {
+    const content = document.getElementById("bfmdContent");
+    if (!content || content.querySelector(".bfmd-center-nav")) return;
+    const sections = Array.from(content.querySelectorAll(".bfmd-section"));
+    if (sections.length) {
+      const nav = document.createElement("nav");
+      nav.className = "bfmd-center-nav";
+      nav.setAttribute("aria-label", "Navigation du centre de match");
+      nav.style.cssText = "display:flex;gap:7px;overflow-x:auto;padding:12px 0 4px;margin:14px 0 6px;position:sticky;top:0;z-index:20;background:#0b1422";
+      sections.forEach((section, index) => {
+        const heading = section.querySelector(".bfmd-title");
+        const title = String(heading?.textContent || "").trim();
+        const lower = title.toLowerCase();
+        let label = title || ("Section " + (index + 1));
+        if (/statistique/.test(lower)) label = "Stats";
+        else if (/composition|performance|terrain/.test(lower)) label = "Compos";
+        else if (/événement|evenement|substitution/.test(lower)) label = "Résumé";
+        else if (/joueur du match|man of the match/.test(lower)) label = "Joueur clé";
+        const button = document.createElement("button");
+        button.type = "button";
+        button.textContent = label;
+        button.style.cssText = "flex:0 0 auto;border:1px solid rgba(148,163,184,.25);border-radius:999px;padding:9px 14px;background:" + (index === 0 ? "#0b9b69" : "rgba(127,127,127,.12)") + ";color:#edf4ff;font-weight:850;cursor:pointer";
+        button.addEventListener("click", () => {
+          section.scrollIntoView({behavior:"smooth",block:"start"});
+          nav.querySelectorAll("button").forEach((other, i) => other.style.background = i === index ? "#0b9b69" : "rgba(127,127,127,.12)");
+        });
+        nav.appendChild(button);
+      });
+      const header = content.querySelector(".bfmd-header");
+      if (header) header.insertAdjacentElement("afterend", nav);
+      else content.insertBefore(nav, content.firstChild);
+    }
+    const comments = document.createElement("section");
+    comments.className = "bfmd-section bfmd-match-comments";
+    comments.innerHTML = '<div class="bfmd-title">💬 Commentaires de cette rencontre</div>' +
+      '<p style="opacity:.75;font-size:13px">Discussion dédiée à ' + esc(teams?.home?.name || "l’équipe à domicile") + ' – ' + esc(teams?.away?.name || "l’équipe visiteuse") + '.</p>' +
+      '<form style="display:grid;gap:10px;margin-bottom:16px">' +
+      '<input name="author" maxlength="28" minlength="2" required placeholder="Ton pseudo" aria-label="Ton pseudo" style="box-sizing:border-box;width:100%;padding:12px;border:1px solid rgba(148,163,184,.25);border-radius:10px;background:rgba(127,127,127,.08);color:inherit">' +
+      '<textarea name="message" maxlength="500" minlength="3" rows="3" required placeholder="Ton commentaire sur le match…" aria-label="Ton commentaire" style="box-sizing:border-box;width:100%;padding:12px;border:1px solid rgba(148,163,184,.25);border-radius:10px;background:rgba(127,127,127,.08);color:inherit;font:inherit"></textarea>' +
+      '<div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap"><button type="submit" style="border:0;border-radius:10px;padding:11px 16px;background:#0b9b69;color:white;font-weight:900;cursor:pointer">Publier le commentaire</button><span role="status" style="font-size:12px"></span></div></form>' +
+      '<div class="bfmd-match-comment-list"><div class="bfmd-empty">Chargement des commentaires…</div></div>';
+    content.appendChild(comments);
+    const matchKey = String(matchIdentifier || "").slice(0,120);
+    const api = "/api/community?match=" + encodeURIComponent(matchKey);
+    const form = comments.querySelector("form");
+    const status = form.querySelector('[role="status"]');
+    const list = comments.querySelector(".bfmd-match-comment-list");
+    async function load() {
+      try {
+        const response = await fetch(api,{cache:"no-store",headers:{Accept:"application/json"}});
+        const data = await response.json().catch(()=>({}));
+        if (!response.ok) {
+          list.innerHTML = '<div class="bfmd-empty">Les commentaires partagés ne sont pas encore activés sur le serveur.</div>';
+          if (response.status === 503) status.textContent = "Stockage partagé à configurer dans Vercel.";
+          return;
+        }
+        const rows = Array.isArray(data.comments) ? data.comments : [];
+        list.innerHTML = rows.length ? rows.map(item => {
+          const date = item.createdAt ? new Date(item.createdAt) : null;
+          const dateText = date && !Number.isNaN(date.getTime()) ? date.toLocaleString("fr-FR",{dateStyle:"medium",timeStyle:"short"}) : "";
+          return '<article style="padding:12px;border:1px solid rgba(148,163,184,.2);border-radius:11px;margin:8px 0;overflow-wrap:anywhere"><strong>' + esc(item.author || "Supporter") + '</strong><small style="float:right;opacity:.7">' + esc(dateText) + '</small><p style="white-space:pre-wrap;line-height:1.55;margin:7px 0 0">' + esc(item.message || "") + '</p></article>';
+        }).join("") : '<div class="bfmd-empty">Pas encore de commentaire pour ce match. Lance la discussion !</div>';
+      } catch (_) { list.innerHTML = '<div class="bfmd-empty">Impossible de charger les commentaires.</div>'; }
+    }
+    form.addEventListener("submit", async event => {
+      event.preventDefault();
+      const author = String(form.elements.author.value || "").trim();
+      const message = String(form.elements.message.value || "").trim();
+      const button = form.querySelector("button");
+      if (author.length < 2 || message.length < 3) { status.textContent = "Vérifie le pseudo et le commentaire."; return; }
+      button.disabled = true; status.textContent = "Publication…";
+      try {
+        const response = await fetch(api,{method:"POST",cache:"no-store",headers:{"Content-Type":"application/json",Accept:"application/json"},body:JSON.stringify({author,message,match:matchKey})});
+        const data = await response.json().catch(()=>({}));
+        if (!response.ok) { status.textContent = response.status === 503 ? "Stockage partagé à configurer dans Vercel." : (data.message || "Publication impossible."); return; }
+        form.elements.message.value = ""; status.textContent = "Commentaire publié."; await load();
+      } catch (_) { status.textContent = "Erreur de connexion."; }
+      finally { button.disabled = false; }
+    });
+    load();
+  }
+
   async function openDetails(
     identifier
   ) {
@@ -6489,6 +6572,8 @@ const response =
   ]
 )}
       `;
+
+      setupMatchCenterNavigation(value, teams);
 
     }
     catch (error) {
