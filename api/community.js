@@ -6,6 +6,19 @@ const REDIS_URL = String(process.env.UPSTASH_REDIS_REST_URL || "").replace(/\/+$
 const REDIS_TOKEN = String(process.env.UPSTASH_REDIS_REST_TOKEN || "");
 const DEFAULT_COMMENTS_KEY = "bf:community:comments";
 
+function safeMatchSlug(value) {
+  return String(value || "").trim().toLowerCase()
+    .replace(/[^a-z0-9_-]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 100) || "general";
+}
+
+function matchVotesKey(value) {
+  return "bf:community:votes:" + safeMatchSlug(value);
+}
+
+function matchVoterKey(value, hash) {
+  return "bf:community:voter:" + safeMatchSlug(value) + ":" + hash;
+}
+
 function matchCommentsKey(value) {
   const match = String(value || "").trim().toLowerCase()
     .replace(/[^a-z0-9_-]+/g, "-").replace(/^-+|-+$/g, "").slice(0, 100);
@@ -142,6 +155,14 @@ module.exports = async function community(req, res) {
       if (String(req.query?.status || "") === "1") {
         return send(res, 200, { banned: false });
       }
+      if (String(req.query?.vote || "") === "1") {
+        const match = req.query?.match;
+        const countsKey = matchVotesKey(match);
+        const currentVote = await redisCommand("GET", matchVoterKey(match, hash));
+        const homeVotes = Number(await redisCommand("HGET", countsKey, "home") || 0);
+        const awayVotes = Number(await redisCommand("HGET", countsKey, "away") || 0);
+        return send(res, 200, { votes: { home: homeVotes, away: awayVotes }, voted: currentVote || null });
+      }
       const key = matchCommentsKey(req.query?.match);
       const records = await redisCommand("LRANGE", key, "0", "99");
       const comments = [];
@@ -161,6 +182,41 @@ module.exports = async function community(req, res) {
       try { body = JSON.parse(body); } catch (_) { body = {}; }
     }
     if (!body || typeof body !== "object" || Array.isArray(body)) body = {};
+
+    if (body.type === "vote") {
+      const team = String(body.team || "").toLowerCase();
+      if (team !== "home" && team !== "away") {
+        return send(res, 400, { error: "invalid_vote", message: "Choisis une des deux équipes." });
+      }
+      const match = body.match || req.query?.match;
+      const slug = safeMatchSlug(match);
+      const voterKey = matchVoterKey(slug, hash);
+      const countsKey = matchVotesKey(slug);
+      const previous = await redisCommand("GET", voterKey);
+      if (previous !== "home" && previous !== "away") {
+        const reserved = await redisCommand("SET", voterKey, team, "NX");
+        if (reserved === "OK") {
+          await redisCommand("HINCRBY", countsKey, team, "1");
+        } else {
+          const latest = await redisCommand("GET", voterKey);
+          if (latest === "home" || latest === "away") {
+            if (latest !== team) {
+              await redisCommand("HINCRBY", countsKey, latest, "-1");
+              await redisCommand("HINCRBY", countsKey, team, "1");
+              await redisCommand("SET", voterKey, team);
+            }
+          }
+        }
+      } else if (previous !== team) {
+        await redisCommand("HINCRBY", countsKey, previous, "-1");
+        await redisCommand("HINCRBY", countsKey, team, "1");
+        await redisCommand("SET", voterKey, team);
+      }
+      const homeVotes = Number(await redisCommand("HGET", countsKey, "home") || 0);
+      const awayVotes = Number(await redisCommand("HGET", countsKey, "away") || 0);
+      return send(res, 200, { votes: { home: homeVotes, away: awayVotes }, voted: await redisCommand("GET", voterKey) || team });
+    }
+
     const author = safeComment(body.author, 28);
     const message = safeComment(body.message, 500);
 
