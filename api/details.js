@@ -863,12 +863,15 @@ async function sofaDetails(
       const direct = first(
         value.displayName, value.display_name, value.fullName, value.full_name,
         value.name, value.shortName, value.short_name, value.abbreviation,
-        value.station?.displayName, value.network?.displayName, value.network?.name,
-        value.channel?.displayName, value.channel?.name,
+        value.station?.displayName, value.station?.name,
+        value.network?.displayName, value.network?.name, value.network?.shortName,
+        value.channel?.displayName, value.channel?.name, value.channel?.shortName,
+        value.media?.displayName, value.media?.name, value.media?.shortName,
+        value.broadcast?.displayName, value.broadcast?.name, value.broadcast?.shortName,
         value.athlete?.displayName, value.athlete?.fullName, value.person?.displayName
       );
       if (direct != null && typeof direct !== "object" && String(direct).trim()) return String(direct).trim();
-      for (const key of ["items", "names", "officials", "referees", "channels", "networks", "broadcasts", "commentators", "announcers", "talent", "person", "athlete"]) {
+      for (const key of ["items", "names", "officials", "referees", "channels", "networks", "broadcasts", "commentators", "announcers", "talent", "person", "athlete", "media", "broadcast", "station", "channel", "network"]) {
         const found = metaText(value[key], depth + 1);
         if (found) return found;
       }
@@ -906,12 +909,10 @@ async function sofaDetails(
       "officials", "referees", "referee", "mainReferee", "matchReferee", "matchOfficials"
     ]).flatMap(value => Array.isArray(value) ? value : [value]).filter(Boolean);
     const refereeCandidate = rawOfficials.find(value => {
-      const role = norm(first(
-        value?.role?.displayName, value?.role?.name, value?.role,
-        value?.type?.displayName, value?.type?.name, value?.type,
-        value?.position?.displayName, value?.position?.name, value?.position,
-        value?.title, value?.designation, value?.officialType
-      ));
+      const role = norm([
+        metaText(value?.role), metaText(value?.type), metaText(value?.position),
+        metaText(value?.title), metaText(value?.designation), metaText(value?.officialType)
+      ].filter(Boolean).join(" "));
       return /referee|matchofficial|mainofficial|centerreferee|centrereferee/.test(role);
     }) || (rawOfficials.length === 1 ? rawOfficials[0] : null);
     const referee = first(
