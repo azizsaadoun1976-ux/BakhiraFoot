@@ -59,7 +59,7 @@
     const title = document.createElement("h1");
     title.textContent = "Accès suspendu";
     const text = document.createElement("p");
-    text.textContent = message || "L’accès à BakhiraFoot est suspendu pour ce réseau à la suite d’un commentaire contenant des insultes ou des propos obscènes. Les commentaires doivent rester respectueux.";
+    text.textContent = message || "Le service communautaire est temporairement indisponible.";
     const help = document.createElement("p");
     help.textContent = "Pour demander une révision de cette décision, utilisez la page Contact.";
     const contact = document.createElement("a");
@@ -95,7 +95,7 @@
     if (!comments.length) {
       const empty = document.createElement("div");
       empty.className = "bf-community-empty";
-      empty.textContent = "Pas encore de réaction. Lance le débat, mais reste respectueux.";
+      empty.textContent = "Pas encore de réaction. Lance le débat avec ton premier commentaire.";
       feed.appendChild(empty);
       return;
     }
@@ -192,7 +192,7 @@
           createdAt: node.querySelector("time")?.dateTime || ""
         }));
         renderComments(root,[data.comment].concat(existing).slice(0,100));
-        setNotice(root,"success","Ton commentaire a été publié. Merci de garder un débat sportif et respectueux.");
+        setNotice(root,"success","Ton commentaire a été publié. Merci de participer au débat.");
       } catch (error) {
         if (error.status === 403) {
           showSiteBan(error.data?.message || error.message);
