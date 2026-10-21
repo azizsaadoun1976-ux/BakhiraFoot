@@ -6166,6 +6166,32 @@ function bfSameFixtureMetadata(candidate,expected,requireDate=false) {
     if (metaAnchor) metaAnchor.insertAdjacentElement("afterend", voteSection);
     else content.appendChild(voteSection);
 
+    if (!rootElement && matchKey && !/^(sofa|espn|tsdb)-/i.test(matchKey)) {
+      fetch("/api/match-event-enrichment?fixture=" + encodeURIComponent(matchKey), {
+        cache:"no-store", headers:{Accept:"application/json"}
+      }).then(response => response.ok ? response.json() : Promise.reject(new Error("metadata_unavailable")))
+        .then(payload => {
+          const metadata = payload?.data || {};
+          const values = {
+            venue: metadata.venue,
+            referee: metadata.referee,
+            channel: metadata.broadcastChannel,
+            commentator: metadata.commentator
+          };
+          const labels = {
+            venue: value => "🏟️ Stade : " + value,
+            referee: value => "👨‍⚖️ Arbitre : " + value,
+            channel: value => "📺 Chaîne : " + value,
+            commentator: value => "🎙️ Commentateur : " + value
+          };
+          Object.entries(values).forEach(([key,value]) => {
+            if (!value) return;
+            const node = content.querySelector('[data-bf-meta="' + key + '"]');
+            if (node && /Non communiqué/i.test(node.textContent)) node.textContent = labels[key](value);
+          });
+        }).catch(() => {});
+    }
+
     const voteStatus = voteSection.querySelector(".bfmd-vote-status");
     const voteButtons = Array.from(voteSection.querySelectorAll("[data-bf-vote]"));
     const renderVotes = payload => {
