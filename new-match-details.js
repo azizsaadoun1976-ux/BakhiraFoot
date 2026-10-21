@@ -531,45 +531,27 @@
   function playerRating(
     player
   ) {
-    const p =
-      getPlayerObject(
-        player
-      );
-
-    const value =
-      first(
-        player?.rating,
-        player?.match_rating,
-        player?.statistics
-          ?.rating,
-        player?.performance
-          ?.rating,
-
-        p?.rating,
-        p?.statistics
-          ?.rating
-      );
-
-    if (
-      value === null
-    ) {
-      return null;
-    }
-
-    const number =
-      Number(
-        String(value)
-          .replace(
-            ",",
-            "."
-          )
-      );
-
-    return Number.isFinite(
-      number
-    )
-      ? number
+    const p = getPlayerObject(player);
+    const value = first(
+      player?.rating, player?.match_rating, player?.statistics?.rating,
+      player?.performance?.rating, p?.rating, p?.statistics?.rating,
+      p?.performance?.rating, player?.raw?.rating, player?.raw?.statistics?.rating
+    );
+    if (value === null) return null;
+    const number = Number(String(value).replace(",", "."));
+    return Number.isFinite(number) && number > 0
+      ? (number > 10 && number <= 100 ? number / 10 : number)
       : null;
+  }
+
+  function ratingToneClass(value) {
+    const rating = Number(value);
+    if (!Number.isFinite(rating)) return "";
+    if (rating >= 8) return "bf-rating--excellent";
+    if (rating >= 7) return "bf-rating--good";
+    if (rating >= 6) return "bf-rating--average";
+    if (rating >= 5.5) return "bf-rating--low";
+    return "bf-rating--poor";
   }
 
   /* =========================================================
@@ -989,24 +971,32 @@ function bfAssignFormationRoles(players, formation, readPosition) {
   }
 
   function eventType(event) {
+    const typeValue = value => {
+      if (typeof value === "string" || typeof value === "number") return String(value);
+      if (value && typeof value === "object") return String(first(value.name, value.text, value.label, value.slug, value.description, value.type, ""));
+      return "";
+    };
     const values = [
-      typeof event?.type === "object" ? event?.type?.name : event?.type,
-      typeof event?.type === "object" ? event?.type?.text : "",
-      event?.incidentType, event?.kind, event?.detail, event?.text,
-      event?.description, event?.commentary, event?.injury?.type, event?.card?.type
+      typeValue(event?.type), typeValue(event?.eventType), typeValue(event?.event_type),
+      typeValue(event?.incidentType), typeValue(event?.kind), typeValue(event?.detail),
+      typeValue(event?.goal?.type), typeValue(event?.goal?.detail),
+      typeValue(event?.injury?.type), typeValue(event?.card?.type),
+      event?.text, event?.description, event?.commentary, event?.shortText, event?.longText,
+      event?.incidentClass?.name, event?.reason?.name, event?.reason
     ];
     return norm(values.filter(v => v !== null && v !== undefined && v !== "").join(" "));
   }
 
   function eventPersonName(value) {
-    if (typeof value === "string") return value.trim();
+    if (typeof value === "string" || typeof value === "number") return String(value).trim();
     if (!value || typeof value !== "object") return "";
     return String(first(
       value.name, value.displayName, value.display_name,
       value.fullName, value.full_name, value.shortName, value.short_name,
       value.player?.name, value.player?.displayName,
       value.athlete?.displayName, value.athlete?.name,
-      value.person?.name, value.label, ""
+      value.person?.name, value.injury?.player?.name, value.card?.player?.name,
+      value.label, value.value?.name, value.value?.displayName, ""
     ) || "").trim();
   }
 
@@ -2518,15 +2508,23 @@ ${esc(String(playerName(player) || "P").split(/\s+/).map(part => part[0] || "").
   }
 
   function playerPerformanceIcon(kind) {
-    const icons = {
-      goal: "⚽", penalty: "🎯", own: "↗", assist: "👟",
-      injury: "✚", yellow: "", red: "", subIn: "↗", subOut: "↙",
-      sub: "⇄", mvp: "🏆"
-    };
     if (kind === "yellow" || kind === "red") {
       return '<span class="bf-new-safe-card-glyph bf-new-safe-card-glyph--' + kind + '" aria-hidden="true"></span>';
     }
-    return '<span class="bf-new-safe-icon-glyph bf-new-safe-icon-glyph--' + kind + '" aria-hidden="true">' + (icons[kind] || "•") + '</span>';
+    const drawings = {
+      goal: '<circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.8"/><path d="M9 8.5 12 6.8l3 1.7v3.4l-3 1.8-3-1.8zM9 8.5 6.7 10M15 8.5l2.3 1.5M9 11.9l-1.6 3M15 11.9l1.6 3M12 15.4v3.3" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linejoin="round"/>',
+      penalty: '<circle cx="12" cy="12" r="8.5" stroke="currentColor" stroke-width="1.8"/><circle cx="12" cy="12" r="4.5" stroke="currentColor" stroke-width="1.6"/><circle cx="12" cy="12" r="1.3" fill="currentColor"/>',
+      own: '<path d="M6 18 18 6M9 6h9v9" stroke="currentColor" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"/><path d="M5 5v5M5 5h5" stroke="currentColor" stroke-width="1.7" fill="none"/>',
+      assist: '<circle cx="6" cy="18" r="2.2" fill="currentColor"/><path d="M8 16 17.5 6.5M11 6.5h6.5V13" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>',
+      injury: '<path d="M10 3h4v7h7v4h-7v7h-4v-7H3v-4h7z" fill="currentColor"/>',
+      subIn: '<path d="M4 12h15M13 5l7 7-7 7" stroke="currentColor" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>',
+      subOut: '<path d="M20 12H5M11 5l-7 7 7 7" stroke="currentColor" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>',
+      sub: '<path d="M4 7h14l-3-3M20 17H6l3 3" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>',
+      mvp: '<path d="m12 2.8 2.8 5.7 6.3.9-4.6 4.5 1.1 6.3-5.6-3-5.6 3 1.1-6.3L3 9.4l6.3-.9z" fill="currentColor"/>',
+      rating: '<path d="m12 2.8 2.8 5.7 6.3.9-4.6 4.5 1.1 6.3-5.6-3-5.6 3 1.1-6.3L3 9.4l6.3-.9z" fill="currentColor"/>'
+    };
+    return '<svg class="bf-new-safe-event-svg" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+      (drawings[kind] || '<circle cx="12" cy="12" r="8" stroke="currentColor" stroke-width="2"/>') + '</svg>';
   }
 
   function playerMetricCount(player, aliases) {
