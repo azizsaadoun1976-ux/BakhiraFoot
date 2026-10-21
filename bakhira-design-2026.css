@@ -920,3 +920,36 @@ html[dir=rtl] .bf-language-choice-arrow{transform:rotate(180deg)}
 .bf-score-league-inline span{color:#1a9c6b;font-size:13px;transition:transform .15s}
 .bf-score-league-inline:hover{color:#149565}
 .bf-score-league-inline:hover span{transform:translate(2px,-2px)}
+
+
+/* Production guard: hide only the hero artwork; keep the responsive AdSense rectangle. */
+#home .bf-matchday-hero{grid-template-columns:minmax(0,1fr)!important;}
+#home .bf-matchday-art,
+#home .bf-matchday-art *{display:none!important;}
+#home .bf-matchday-ambient{pointer-events:none;}
+.ad-top{
+  box-sizing:border-box;
+  display:flex;
+  align-items:center;
+  justify-content:center;
+  width:calc(100% - 24px);
+  max-width:1000px;
+  min-height:98px;
+  margin:12px auto 14px;
+  padding:4px 10px;
+  overflow:hidden;
+  border:1px solid var(--bf-border,rgba(100,116,139,.24));
+  border-radius:8px;
+  background:var(--bf-surface,#f8fafc);
+}
+.ad-top ins.adsbygoogle{
+  display:block!important;
+  width:100%!important;
+  max-width:970px!important;
+  min-height:80px;
+  margin-inline:auto;
+}
+@media(max-width:700px){
+  .ad-top{width:calc(100% - 16px);min-height:82px;margin:8px auto 10px;padding:3px 6px;}
+  .ad-top ins.adsbygoogle{min-height:70px;}
+}
