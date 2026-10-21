@@ -6098,6 +6098,53 @@ const response =
         throw new Error("Le fournisseur a renvoyé une ancienne rencontre ; ces données sont ignorées.");
       }
 
+      /*
+       * SportScore's normalized event mapping may omit event flags or string details.
+       * Ask a separate endpoint for raw provider incidents; do not alter api/index.js.
+       * On any failure, the already working normalized response remains in use.
+       */
+      if (!/^(sofa|espn|tsdb)-/i.test(value)) {
+        try {
+          const enrichmentResponse = await fetch(
+            "/api/match-event-enrichment?fixture=" + encodeURIComponent(value),
+            {
+              cache: "no-store",
+              signal: detailsController.signal,
+              headers: { Accept: "application/json" }
+            }
+          );
+          const enrichmentPayload = await enrichmentResponse.json().catch(() => ({}));
+          const enrichment = enrichmentPayload?.data || {};
+          if (enrichmentResponse.ok && enrichment && typeof enrichment === "object") {
+            const rawEvents = Array.isArray(enrichment.events) ? enrichment.events : [];
+            const merged = { ...details };
+            if (rawEvents.length) {
+              merged.events = rawEvents;
+              merged.incidents = rawEvents;
+              merged.match_events = rawEvents;
+            }
+            if (!merged.player_of_match && enrichment.player_of_match) merged.player_of_match = enrichment.player_of_match;
+            if (!merged.playerOfMatch && enrichment.playerOfMatch) merged.playerOfMatch = enrichment.playerOfMatch;
+            if (!merged.venue && enrichment.venue) merged.venue = enrichment.venue;
+            if (!merged.referee && enrichment.referee) merged.referee = enrichment.referee;
+            if (!merged.broadcastChannel && enrichment.broadcastChannel) merged.broadcastChannel = enrichment.broadcastChannel;
+            if (!merged.commentator && enrichment.commentator) merged.commentator = enrichment.commentator;
+            details = merged;
+            console.info("BAKHIRAFOOT: raw SportScore event enrichment", {
+              events: rawEvents.length,
+              venue: Boolean(enrichment.venue),
+              referee: Boolean(enrichment.referee),
+              broadcastChannel: Boolean(enrichment.broadcastChannel),
+              commentator: Boolean(enrichment.commentator)
+            });
+          }
+        } catch (enrichmentError) {
+          if (enrichmentError?.name !== "AbortError") {
+            console.warn("BAKHIRAFOOT: raw event enrichment unavailable; using current match details", enrichmentError);
+          }
+        }
+      }
+
       /* Fill missing official positions and/or missing match statistics from FotMob. */
       if (!hasOfficialLineupCoordinates(details) || !getMatchStatistics(details).length) {
         try {
