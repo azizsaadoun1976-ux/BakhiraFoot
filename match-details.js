@@ -6248,7 +6248,8 @@ const response =
       );
 
       const broadcastChannel = bfFindMatchMeta(details, [
-        "tvChannel", "tv_channel", "channel", "channels", "broadcaster", "broadcasters",
+        "tvChannel", "tv_channel", "broadcastChannel", "broadcast_channel",
+        "channel", "channels", "broadcaster", "broadcasters",
         "broadcast", "broadcasts", "network", "networks", "television", "coverage"
       ]);
 
