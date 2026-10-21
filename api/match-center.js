@@ -321,6 +321,18 @@ async function loadStandings(competition, date) {
   return { league: competition, rows: [] };
 }
 
+async function withDeadline(promise, milliseconds, fallback) {
+  let timer;
+  try {
+    return await Promise.race([
+      Promise.resolve(promise).catch(() => fallback),
+      new Promise(resolve => { timer = setTimeout(() => resolve(fallback), milliseconds); })
+    ]);
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
 module.exports = async function matchCenter(req, res) {
   if (req.method !== "GET") {
     res.setHeader("Allow", "GET");
@@ -332,19 +344,19 @@ module.exports = async function matchCenter(req, res) {
   const date = String(req.query?.date || "").trim().slice(0, 30);
   if (!home || !away) return send(res, 400, { error: "home_and_away_required" });
 
-  const [h2hResult, standingsResult, metadataResult] = await Promise.allSettled([
-    loadHeadToHead(home, away),
-    loadStandings(competition, date),
-    loadFixtureMetadata(home, away, date)
+  const [headToHead, standings, metadataResult] = await Promise.all([
+    withDeadline(loadHeadToHead(home, away), 5200, []),
+    withDeadline(loadStandings(competition, date), 5200, { league: competition, rows: [] }),
+    withDeadline(loadFixtureMetadata(home, away, date), 3500, {})
   ]);
-  const metadata = metadataResult.status === "fulfilled" ? metadataResult.value : {};
+  const metadata = metadataResult || {};
   return send(res, 200, {
-    headToHead: h2hResult.status === "fulfilled" ? h2hResult.value : [],
-    standings: standingsResult.status === "fulfilled" ? standingsResult.value : { league: competition, rows: [] },
+    headToHead,
+    standings,
     metadata,
     availability: {
-      headToHead: h2hResult.status === "fulfilled" && h2hResult.value.length > 0,
-      standings: standingsResult.status === "fulfilled" && standingsResult.value.rows.length > 0,
+      headToHead: headToHead.length > 0,
+      standings: standings.rows.length > 0,
       metadata: !!(metadata.venue || metadata.referee || metadata.broadcastChannel || metadata.commentator)
     }
   });
