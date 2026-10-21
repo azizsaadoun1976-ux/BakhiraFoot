@@ -4541,7 +4541,7 @@ function normalizeEvent(event, index) {
       if (!positions.length) return '<div class="bfmd-combined-empty bfmd-combined-empty--' + side + '">' + esc(lineup?.team?.name || "Équipe") + ' · positions non disponibles</div>';
       return positions.map(item => {
         const player = item.player;
-        const y = side === "home" ? 5 + item.y * 0.43 : 57 + (100 - item.y) * 0.38;
+        const y = side === "home" ? 5 + item.y * 0.43 : 57 + item.y * 0.38;
         return '<div class="bfmd-player bfmd-combined-player bfmd-combined-player--' + side + '" style="left:' + item.x + '%;top:' + Math.max(5,Math.min(95,y)) + '%" title="' + esc(getPlayerName(player)) + '">' +
           playerAvatar(player) + '<div class="bfmd-name">' + esc(getPlayerName(player)) + '</div>' +
           (getPlayerPosition(player) ? '<div class="bfmd-role">' + esc(getPlayerPosition(player)) + '</div>' : '') +
