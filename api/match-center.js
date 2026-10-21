@@ -25,7 +25,6 @@ const ESPN_CODES = [
   [/asian cup/i, "afc.asian.cup"],
   [/copa america/i, "conmebol.america"],
   [/nations league/i, "uefa.nations"],
-  [/egyptian premier/i, "egy.1"],
   [/brazilian|brasileirao/i, "bra.1"],
   [/saudi/i, "ksa.1"],
   [/primeira liga|portuguese/i, "por.1"],
