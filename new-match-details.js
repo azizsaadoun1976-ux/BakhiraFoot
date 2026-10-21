@@ -2578,43 +2578,68 @@ ${esc(String(playerName(player) || "P").split(/\s+/).map(part => part[0] || "").
   function playerEventBadges(player, details) {
     const counts = { goals:0, penalties:0, ownGoals:0, assists:0, yellow:0, red:0, injury:0, subIn:0, subOut:0, subs:0 };
     const events = getEvents(details);
+    const truthyFlag = value => value === true || value === 1 || /^(true|1|yes|y)$/i.test(String(value ?? "").trim());
+
     events.forEach(event => {
       const type = eventType(event);
-      const primary = [
+      const description = norm([
+        event?.goalType, event?.goal_type, event?.detail, event?.text, event?.description,
+        event?.commentary, event?.shortText, event?.longText, event?.goalDescription,
+        event?.goal_description, event?.reason?.name, event?.reason,
+        event?.injury?.type?.name, event?.injury?.type
+      ].filter(value => value !== null && value !== undefined && value !== "").join(" "));
+      const people = [
         event?.player, event?.scorer, event?.goalScorer, event?.goal_scorer,
-        event?.goal?.player, event?.athlete, event?.actor, event?.injury?.player, event?.card?.player,
-        event?.relatedPlayer, event?.related_player, event?.participant, event?.person,
-        event?.player_name, event?.playerName, event?.scorer_name,
-        event?.participants?.[0]?.athlete, event?.participants?.[0]?.player,
-        event?.participants?.[0], event?.players?.[0]
-      ].find(value => eventPersonName(value));
+        event?.goal?.player, event?.goal?.scorer, event?.athlete, event?.actor,
+        event?.injury?.player, event?.injury?.athlete, event?.injuredPlayer, event?.injured_player,
+        event?.card?.player, event?.relatedPlayer, event?.related_player,
+        event?.participant, event?.person, event?.player_name, event?.playerName, event?.scorer_name,
+        event?.participants?.[0]?.athlete, event?.participants?.[0]?.player, event?.participants?.[0],
+        event?.players?.[0]?.athlete, event?.players?.[0]?.player, event?.players?.[0],
+        event?.playerIn, event?.player_in, event?.playerOut, event?.player_out,
+        event?.substitution?.incoming, event?.substitution?.outgoing
+      ].filter(value => eventPersonName(value));
+      const primary = people[0] || null;
+      const playerInvolved = people.some(value => samePerson(value, player));
       const isGoal = eventIsGoal(event);
+
       if (isGoal && primary && samePerson(primary, player)) {
-        const detailsText = norm([
-          event?.goalType, event?.goal_type, event?.detail, event?.text,
-          event?.description, event?.commentary, event?.goalDescription
-        ].filter(Boolean).join(" "));
-        const truthyFlag = value => value === true || value === 1 || /^(true|1|yes)$/i.test(String(value ?? "").trim());
+        const goalText = norm([type, description].join(" "));
         const ownGoal = [
           event?.ownGoal, event?.own_goal, event?.isOwnGoal, event?.is_own_goal,
-          event?.goal?.ownGoal, event?.goal?.own_goal, event?.goal?.isOwnGoal, event?.goal?.is_own_goal
+          event?.goal?.ownGoal, event?.goal?.own_goal, event?.goal?.isOwnGoal,
+          event?.goal?.is_own_goal
         ].some(truthyFlag) ||
-          /own[ _-]?goal|but contre son camp|contre son camp|autogoal|auto[ _-]?goal|autobut|\bcsc\b/.test(detailsText);
+          /own[ _-]?goal|but contre son camp|contre son camp|autogoal|auto[ _-]?goal|autobut|\bcsc\b/.test(goalText);
         const penalty = [
           event?.isPenalty, event?.is_penalty, event?.penalty, event?.penaltyGoal,
-          event?.penalty_goal, event?.goal?.penalty, event?.goal?.isPenalty, event?.goal?.is_penalty
-        ].some(truthyFlag) || /penalt|tir au but/.test(detailsText);
+          event?.penalty_goal, event?.goal?.penalty, event?.goal?.isPenalty,
+          event?.goal?.is_penalty
+        ].some(truthyFlag) || /penalt|tir au but/.test(goalText);
         if (ownGoal) counts.ownGoals += 1;
         else if (penalty) counts.penalties += 1;
         else counts.goals += 1;
-      } else if (!isGoal && primary && samePerson(primary, player)) {
+      }
+
+      let injuryCounted = false;
+      if (!isGoal && playerInvolved) {
         if (/second yellow|red card|redcard|carton rouge/.test(type)) counts.red += 1;
         else if (/yellow card|yellowcard|carton jaune/.test(type)) counts.yellow += 1;
-        else if (/injur|hurt|medical|bless/.test(type)) counts.injury += 1;
+        else if (/injur|hurt|medical|bless|lesion/.test(type + " " + description)) {
+          counts.injury += 1;
+          injuryCounted = true;
+        }
       }
 
       const assist = eventIsGoal(event) ? eventAssist(event) : "";
       if (assist && samePerson(assist, player)) counts.assists += 1;
+
+      const injuryTargets = [
+        event?.injury?.player, event?.injury?.athlete, event?.injuredPlayer,
+        event?.injured_player, event?.injured, event?.player_injured, event?.injuryPlayer
+      ].filter(value => eventPersonName(value));
+      if (!injuryCounted && /injur|hurt|medical|bless|lesion/.test(type + " " + description) &&
+          injuryTargets.some(value => samePerson(value, player))) counts.injury += 1;
 
       if (eventIsSubstitution(event)) {
         const swap = eventSubstitutionData(event);
@@ -2630,12 +2655,14 @@ ${esc(String(playerName(player) || "P").split(/\s+/).map(part => part[0] || "").
     const reds = playerMetricCount(player, ["redCards", "redCard", "red", "redCardsTotal"]);
     const penalties = playerMetricCount(player, ["penaltyGoals", "penaltiesScored", "goalsFromPenalty"]);
     const ownGoals = playerMetricCount(player, ["ownGoals", "ownGoal"]);
+    const injuries = playerMetricCount(player, ["injury", "injuries", "injuryCount", "injuryEvents"]);
     counts.penalties = Math.max(counts.penalties, penalties);
     counts.ownGoals = Math.max(counts.ownGoals, ownGoals);
     counts.goals = Math.max(counts.goals, Math.max(0, goals - counts.penalties - counts.ownGoals));
     counts.assists = Math.max(counts.assists, assists);
     counts.yellow = Math.max(counts.yellow, yellows);
     counts.red = Math.max(counts.red, reds);
+    counts.injury = Math.max(counts.injury, injuries);
 
     const badges = [];
     const add = (kind, value, title) => {
