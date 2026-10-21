@@ -3119,14 +3119,16 @@ ${esc(String(playerName(player) || "P").split(/\s+/).map(part => part[0] || "").
       </div>
 
 
-      <div class="bf-new-safe-info">
-        ${date ? '<span>📅 ' + esc(new Date(date).toLocaleString("fr-FR")) + '</span>' : ''}
-        <span>🏟️ ${esc(venue || "Stade non communiqué")}</span>
-        <span>👨‍⚖️ ${esc(referee || "Arbitre non communiqué")}</span>
-        <span>📺 ${esc(broadcastChannel || "Chaîne non confirmée")}</span>
-        <span>🎙️ ${esc(commentator || "Commentateur non annoncé")}</span>
-        <span>${providerText}</span>
-      </div>
+      ${date || venue || referee || broadcastChannel || commentator || providerText
+        ? '<div class="bf-new-safe-info">' +
+          (date ? '<span>📅 ' + esc(new Date(date).toLocaleString("fr-FR")) + '</span>' : '') +
+          (venue ? '<span>🏟️ ' + esc(venue) + '</span>' : '') +
+          (referee ? '<span>👨‍⚖️ ' + esc(referee) + '</span>' : '') +
+          (broadcastChannel ? '<span>📺 ' + esc(broadcastChannel) + '</span>' : '') +
+          (commentator ? '<span>🎙️ ' + esc(commentator) + '</span>' : '') +
+          (providerText ? '<span>' + providerText + '</span>' : '') +
+        '</div>'
+        : ''}
 
       <div
         class="bf-new-safe-section"
