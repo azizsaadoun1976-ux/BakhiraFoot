@@ -2212,7 +2212,8 @@ function bfAssignFormationRoles(players, formation, readPosition) {
     lineup,
     team,
     side,
-    details
+    details,
+    pitchMvp = null
   ) {
 
     if (!getPitchPlayers(lineup, side).length) {
@@ -2331,7 +2332,7 @@ ${esc(String(playerName(player) || "P").split(/\s+/).map(part => part[0] || "").
                     
                     <div class="bf-new-safe-player-name">${esc(playerName(player))}</div>
                     <div class="bf-new-safe-pitch-events">${playerEventBadges(player, details)}</div>
-                    ${(playerIsOfficialMvp(player) || playerIsNamedMvp(player, details)) ? '<span class="bf-new-safe-mvp-chip" title="Joueur du match" aria-label="Joueur du match">' + playerPerformanceIcon("mvp") + '</span>' : ""}
+                    ${((playerIsOfficialMvp(player) || playerIsNamedMvp(player, details)) || (pitchMvp && samePerson(pitchMvp.player, player))) ? '<span class="bf-new-safe-mvp-chip" title="' + esc(pitchMvp && samePerson(pitchMvp.player, player) && !pitchMvp.official ? "Meilleure note disponible — MVP non communiqué par la source" : "Joueur du match") + '" aria-label="' + esc(pitchMvp && samePerson(pitchMvp.player, player) && !pitchMvp.official ? "Meilleure note disponible" : "Joueur du match") + '">' + playerPerformanceIcon("mvp") + '</span>' : ""}
                     ${rating !== null ? '<span class="bf-new-safe-player-rate ' + ratingToneClass(rating) + '" title="Note du joueur ' + esc(Number(rating).toFixed(1)) + '/10" aria-label="Note du joueur ' + esc(Number(rating).toFixed(1)) + ' sur 10">' + esc(Number(rating).toFixed(1)) + '</span>' : ""}
 
                   </div>
@@ -2924,6 +2925,8 @@ ${esc(String(playerName(player) || "P").split(/\s+/).map(part => part[0] || "").
         away
       );
 
+    const pitchMvp = selectPitchMvp(homeLineup, awayLineup, details);
+
     const homeScore =
       first(
         details?.score?.home,
@@ -3142,14 +3145,16 @@ ${esc(String(playerName(player) || "P").split(/\s+/).map(part => part[0] || "").
             homeLineup,
             home,
             "home",
-            details
+            details,
+            pitchMvp
           )}
 
           ${renderPitch(
             awayLineup,
             away,
             "away",
-            details
+            details,
+            pitchMvp
           )}
 
         </div>
@@ -3159,7 +3164,7 @@ ${esc(String(playerName(player) || "P").split(/\s+/).map(part => part[0] || "").
 
       <div class="bf-new-safe-section">
         <div class="bf-new-safe-title">MVP et meilleure note</div>
-        ${renderMvp(homeLineup, awayLineup)}
+        ${renderMvp(homeLineup, awayLineup, details)}
       </div>
 
       <div class="bf-new-safe-section">
