@@ -54,6 +54,9 @@ async function getJSON(url) {
     if (host.endsWith("sportscore.com")) {
       headers.Referer = "https://sportscore.com/";
       headers.Origin = "https://sportscore.com";
+    } else if (host.endsWith("sofascore.com")) {
+      headers.Referer = "https://www.sofascore.com/";
+      headers.Origin = "https://www.sofascore.com";
     }
     const response = await fetch(url, {
       method: "GET",
@@ -75,6 +78,150 @@ async function getJSON(url) {
   } finally {
     clearTimeout(timeout);
   }
+}
+
+
+
+// Exact-date fallback for match metadata: when SportScore omits the referee or
+// venue, locate the same fixture on SofaScore using both teams and match date.
+// The team pair must match; we never borrow an official from a different match.
+function scalarByKeys(root, aliases) {
+  const targets = new Set(aliases.map(normalizeKey));
+  const queue = [{ value: root, depth: 0 }];
+  const visited = new Set();
+  while (queue.length && visited.size < 1800) {
+    const item = queue.shift();
+    const value = item?.value;
+    if (!value || typeof value !== "object" || visited.has(value) || item.depth > 6) continue;
+    visited.add(value);
+    if (Array.isArray(value)) {
+      if (item.depth < 6) value.forEach(child => {
+        if (child && typeof child === "object") queue.push({ value: child, depth: item.depth + 1 });
+      });
+      continue;
+    }
+    for (const [key, child] of Object.entries(value)) {
+      if (targets.has(normalizeKey(key))) {
+        if (typeof child === "string" || typeof child === "number") return child;
+        if (child && typeof child === "object") {
+          for (const dateKey of ["iso", "datetime", "dateTime", "date", "value", "timestamp", "startTimestamp"]) {
+            if (typeof child[dateKey] === "string" || typeof child[dateKey] === "number") return child[dateKey];
+          }
+        }
+      }
+      if (child && typeof child === "object" && item.depth < 6) {
+        queue.push({ value: child, depth: item.depth + 1 });
+      }
+    }
+  }
+  return null;
+}
+
+function normalTeamName(value) {
+  return String(value || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .toLowerCase()
+    .replace(/&/g, " and ")
+    .replace(/\b(football club|soccer club|fc|cf|afc|sc|cfc|club)\b/g, " ")
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim()
+    .replace(/\s+/g, " ");
+}
+
+function sameTeamName(left, right) {
+  const a = normalTeamName(left);
+  const b = normalTeamName(right);
+  if (!a || !b) return false;
+  if (a === b) return true;
+  const aa = a.split(" ").filter(token => token.length > 2);
+  const bb = b.split(" ").filter(token => token.length > 2);
+  if (!aa.length || !bb.length) return false;
+  const common = aa.filter(token => bb.includes(token));
+  return common.length >= 2 && common.length / Math.min(aa.length, bb.length) >= 0.8;
+}
+
+function asCalendarDate(value) {
+  if (value == null || value === "") return "";
+  if (typeof value === "number" || /^\d{10,13}$/.test(String(value))) {
+    const numeric = Number(value);
+    const milliseconds = String(Math.trunc(numeric)).length >= 13 ? numeric : numeric * 1000;
+    const date = new Date(milliseconds);
+    return Number.isFinite(date.getTime()) ? date.toISOString().slice(0, 10) : "";
+  }
+  const match = String(value).match(/\b(20\d{2}-\d{2}-\d{2})\b/);
+  if (match) return match[1];
+  const date = new Date(value);
+  return Number.isFinite(date.getTime()) ? date.toISOString().slice(0, 10) : "";
+}
+
+function shiftCalendarDate(value, days) {
+  const date = new Date(value + "T12:00:00Z");
+  date.setUTCDate(date.getUTCDate() + days);
+  return date.toISOString().slice(0, 10);
+}
+
+async function getSofaJSON(path) {
+  const hosts = [
+    "https://www.sofascore.com/api/v1",
+    "https://api.sofascore.com/api/v1"
+  ];
+  let lastError = null;
+  for (const host of hosts) {
+    try {
+      return await getJSON(host + path);
+    } catch (error) {
+      lastError = error;
+    }
+  }
+  throw lastError || new Error("SofaScore unavailable");
+}
+
+async function lookupSofaScoreMetadata(root) {
+  const homeName = findMeta(root, ["homeTeam", "home_team", "homeTeamName", "home_team_name", "homeName", "localTeam"]);
+  const awayName = findMeta(root, ["awayTeam", "away_team", "awayTeamName", "away_team_name", "awayName", "visitorTeam"]);
+  const rawDate = scalarByKeys(root, [
+    "date", "matchDate", "startDate", "kickoff", "kickoffTime", "startTime",
+    "datetime", "dateTime", "startTimestamp", "timestamp"
+  ]);
+  const baseDate = asCalendarDate(rawDate);
+  if (!homeName || !awayName || !baseDate) return {};
+
+  const dates = [baseDate, shiftCalendarDate(baseDate, -1), shiftCalendarDate(baseDate, 1)];
+  for (const date of dates) {
+    let calendar;
+    try {
+      calendar = await getSofaJSON("/sport/football/scheduled-events/" + date);
+    } catch (_) {
+      continue;
+    }
+    const events = Array.isArray(calendar?.events)
+      ? calendar.events
+      : Array.isArray(calendar?.scheduledEvents) ? calendar.scheduledEvents : [];
+    const match = events.find(event => {
+      const h = event?.homeTeam?.name || event?.homeTeam?.shortName;
+      const a = event?.awayTeam?.name || event?.awayTeam?.shortName;
+      return (sameTeamName(h, homeName) && sameTeamName(a, awayName)) ||
+        (sameTeamName(h, awayName) && sameTeamName(a, homeName));
+    });
+    if (!match?.id) continue;
+
+    let matchRoot = match;
+    const matchId = encodeURIComponent(String(match.id));
+    try {
+      const detail = await getSofaJSON("/event/" + matchId);
+      if (detail?.event && typeof detail.event === "object") matchRoot = detail.event;
+    } catch (_) {}
+
+    return {
+      venue: findMeta(matchRoot, ["venue", "stadium", "ground", "arena", "venueName", "stadiumName"]),
+      referee: findMeta(matchRoot, ["referee", "mainReferee", "matchReferee", "refereeName"]),
+      broadcastChannel: findMeta(matchRoot, ["tvChannel", "tv_channel", "channel", "channels", "broadcaster", "broadcasters", "broadcast", "broadcasts", "network", "networks", "television"]),
+      commentator: findMeta(matchRoot, ["commentator", "commentators", "commentatorName", "tvCommentator", "matchCommentator", "announcer", "announcers", "commentaryTeam"]),
+      metadataSource: "SofaScore exact match lookup"
+    };
+  }
+  return {};
 }
 
 function detailRoot(body) {
@@ -207,7 +354,23 @@ module.exports = async function matchEventEnrichment(req, res) {
       broadcastChannel: findMeta(root, ["tvChannel", "tv_channel", "channel", "channels", "broadcaster", "broadcasters", "broadcast", "broadcasts", "network", "networks", "television"]),
       commentator: findMeta(root, ["commentator", "commentators", "commentatorName", "tvCommentator", "matchCommentator", "announcer", "announcers", "commentaryTeam"])
     };
-    return send(res, 200, { data: metadata, provider: "SportScore raw event enrichment" });
+
+    // SportScore can omit venue/referee on otherwise well-known fixtures.
+    // Look up the exact same teams on the same date before displaying metadata.
+    if (!metadata.venue || !metadata.referee) {
+      try {
+        const fallback = await lookupSofaScoreMetadata(root);
+        if (!metadata.venue && fallback.venue) metadata.venue = fallback.venue;
+        if (!metadata.referee && fallback.referee) metadata.referee = fallback.referee;
+        if (!metadata.broadcastChannel && fallback.broadcastChannel) metadata.broadcastChannel = fallback.broadcastChannel;
+        if (!metadata.commentator && fallback.commentator) metadata.commentator = fallback.commentator;
+        if (fallback.metadataSource) metadata.metadataSource = fallback.metadataSource;
+      } catch (error) {
+        console.warn("BAKHIRAFOOT metadata fallback unavailable:", error?.message || error);
+      }
+    }
+
+    return send(res, 200, { data: metadata, provider: metadata.metadataSource || "SportScore raw event enrichment" });
   } catch (error) {
     console.warn("BAKHIRAFOOT raw match event enrichment unavailable:", error?.message || firstError?.message || error);
     return send(res, 502, { error: "match_event_enrichment_unavailable" });
