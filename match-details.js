@@ -6321,6 +6321,24 @@ function bfSameFixtureMetadata(candidate,expected,requireDate=false) {
     fetch(matchCenterURL, {cache:"no-store",headers:{Accept:"application/json"}})
       .then(response => response.ok ? response.json() : Promise.reject(new Error("match_center_unavailable")))
       .then(payload => {
+        const metadata = payload.metadata || {};
+        const metadataLabels = {
+          venue: value => "🏟️ Stade : " + value,
+          referee: value => "👨‍⚖️ Arbitre : " + value,
+          channel: value => "📺 Chaîne : " + value,
+          commentator: value => "🎙️ Commentateur : " + value
+        };
+        const metadataValues = {
+          venue: metadata.venue,
+          referee: metadata.referee,
+          channel: metadata.broadcastChannel,
+          commentator: metadata.commentator
+        };
+        Object.entries(metadataValues).forEach(([key,value]) => {
+          if (!value) return;
+          const node = content.querySelector('[data-bf-meta="' + key + '"]');
+          if (node && /Non communiqué/i.test(node.textContent)) node.textContent = metadataLabels[key](value);
+        });
         const h2h = Array.isArray(payload.headToHead) ? payload.headToHead : [];
         h2hList.innerHTML = h2h.length ? h2h.map(item => {
           const date = item.date && !Number.isNaN(Date.parse(item.date))
@@ -6516,6 +6534,7 @@ function bfSameFixtureMetadata(candidate,expected,requireDate=false) {
       const reveal = target => {
         if (!target || !content.contains(target)) return;
         target.style.display = "block";
+        if (target.tagName === "DETAILS") target.open = true;
         let parent = target.parentElement;
         while (parent && parent !== content) {
           if (parent.matches(sectionSelector) && !isHeaderSection(parent)) parent.style.display = "block";
@@ -7044,10 +7063,10 @@ const response =
 
         '<div class="bfmd-info">' +
             (date ? '<span>📅 ' + esc(date) + '</span>' : '') +
-            '<span>🏟️ Stade : ' + esc(venue || "Non communiqué") + '</span>' +
-            '<span>👨‍⚖️ Arbitre : ' + esc(referee || "Non communiqué") + '</span>' +
-            '<span>📺 Chaîne : ' + esc(broadcastChannel || "Non communiquée") + '</span>' +
-            '<span>🎙️ Commentateur : ' + esc(commentator || "Non communiqué") + '</span>' +
+            '<span data-bf-meta="venue">🏟️ Stade : ' + esc(venue || "Non communiqué") + '</span>' +
+            '<span data-bf-meta="referee">👨‍⚖️ Arbitre : ' + esc(referee || "Non communiqué") + '</span>' +
+            '<span data-bf-meta="channel">📺 Chaîne : ' + esc(broadcastChannel || "Non communiquée") + '</span>' +
+            '<span data-bf-meta="commentator">🎙️ Commentateur : ' + esc(commentator || "Non communiqué") + '</span>' +
           '</div>'
 
         ${renderMatchStatistics(details)}
