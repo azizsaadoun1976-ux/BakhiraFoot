@@ -6,6 +6,7 @@ const SOFA_HOSTS = [
 ];
 
 const ESPN_CODES = [
+  [/egyptian premier/i, "egy.1"],
   [/premier league|english premier/i, "eng.1"],
   [/championship/i, "eng.2"],
   [/la liga|spanish/i, "esp.1"],
@@ -208,8 +209,9 @@ async function loadStandings(competition, date) {
   const rawDate = String(date || "");
   const parsedYear = Number(rawDate.slice(0, 4));
   const month = Number(rawDate.slice(5, 7));
+  const calendarCompetition = /world cup|european championship|euro|africa cup of nations|afcon|asian cup|copa america|nations league/i.test(competition);
   const currentYear = Number.isInteger(parsedYear) && parsedYear >= 2000
-    ? (month >= 7 ? parsedYear : parsedYear - 1)
+    ? (calendarCompetition ? parsedYear : (month >= 7 ? parsedYear : parsedYear - 1))
     : new Date().getUTCFullYear();
   const urls = [
     "https://site.api.espn.com/apis/v2/sports/soccer/" + encodeURIComponent(codeEntry[1]) + "/standings?season=" + currentYear,
