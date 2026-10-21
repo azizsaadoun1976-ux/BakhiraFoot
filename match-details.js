@@ -5732,11 +5732,11 @@ function normalizeEvent(event, index) {
   ) {
     return first(
       details?.league?.name,
+      details?.tournament?.name,
+      details?.fixture?.league?.name,
+      details?.fixture?.competition?.name,
       details?.competition?.name,
-      typeof details?.competition ===
-        "string"
-        ? details.competition
-        : null,
+      typeof details?.competition === "string" ? details.competition : null,
       "Football"
     );
   }
