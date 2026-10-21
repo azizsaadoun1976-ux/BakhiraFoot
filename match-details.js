@@ -5497,7 +5497,8 @@ function normalizeEvent(event, index) {
       details?.broadcast, details?.broadcasts, details?.tv, details?.coverage,
       details?.officials, details?.matchOfficials, details?.match_officials,
       details?.data, details?.response, details?.result
-    ].filter(value => value && typeof value === "object" && !Array.isArray(value));
+    ].flatMap(value => Array.isArray(value) ? value : [value])
+      .filter(value => value && typeof value === "object" && !Array.isArray(value));
     for (const root of roots) {
       for (const [key, value] of Object.entries(root)) {
         if (targets.has(normalizeKey(key))) {
