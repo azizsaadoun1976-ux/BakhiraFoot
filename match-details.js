@@ -1217,10 +1217,10 @@
       #bfMatchDetailsModal .bfmd-combined-team strong { overflow-wrap:anywhere; }
       #bfMatchDetailsModal .bfmd-combined-team em { padding:3px 6px; border-radius:6px; background:rgba(127,127,127,.13); font-size:10px; font-style:normal; }
       #bfMatchDetailsModal .bfmd-combined-vs { font-size:10px; font-weight:950; opacity:.55; }
-      #bfMatchDetailsModal .bfmd-pitch--combined { height:clamp(360px,42vw,510px); min-height:360px; max-height:510px; aspect-ratio:auto; }
-      #bfMatchDetailsModal .bfmd-combined-player { width:clamp(74px,7vw,100px); cursor:pointer; pointer-events:auto; outline-offset:2px; }
+      #bfMatchDetailsModal .bfmd-pitch--combined { width:min(100%,460px); height:auto; min-height:0; max-height:none; aspect-ratio:.70; margin:0 auto; }
+      #bfMatchDetailsModal .bfmd-combined-player { width:clamp(74px,7vw,94px); cursor:pointer; pointer-events:auto; outline-offset:2px; }
       #bfMatchDetailsModal .bfmd-combined-player .bfmd-photo-wrap,#bfMatchDetailsModal .bfmd-combined-player .bfmd-number-only { width:clamp(29px,2.8vw,42px); height:clamp(29px,2.8vw,42px); }
-      #bfMatchDetailsModal .bfmd-combined-player .bfmd-name { max-width:100px; font-size:clamp(8px,.72vw,10px); padding:3px 5px; line-height:1.15; }
+      #bfMatchDetailsModal .bfmd-combined-player .bfmd-name { max-width:92px; font-size:clamp(8px,.72vw,10px); padding:3px 5px; line-height:1.15; }
       #bfMatchDetailsModal .bfmd-combined-player--active .bfmd-name { background:#087f5b; color:#fff; }
       #bfMatchDetailsModal .bfmd-selected-player-panel:not([hidden]) { display:block; margin:10px 12px; padding:13px; border:1px solid rgba(11,155,105,.35); border-radius:14px; background:rgba(11,155,105,.08); }
       #bfMatchDetailsModal .bfmd-selected-player-inner { display:flex; align-items:center; gap:13px; }
@@ -1258,7 +1258,7 @@
       #bfMatchDetailsModal .bfmd-mini-team { display:flex; gap:6px; align-items:center; min-width:100px; }
       #bfMatchDetailsModal .bfmd-mini-team img { width:19px; height:19px; object-fit:contain; }
       @media(max-width:650px) {
-        #bfMatchDetailsModal .bfmd-pitch--combined { height:370px; min-height:370px; }
+        #bfMatchDetailsModal .bfmd-pitch--combined { width:min(100%,390px); aspect-ratio:.68; height:auto; min-height:0; }
         #bfMatchDetailsModal .bfmd-combined-player { width:clamp(58px,14vw,72px); }
         #bfMatchDetailsModal .bfmd-combined-player .bfmd-name { max-width:68px; font-size:7px; }
         #bfMatchDetailsModal .bfmd-combined-player .bfmd-photo-wrap,#bfMatchDetailsModal .bfmd-combined-player .bfmd-number-only { width:27px; height:27px; }
