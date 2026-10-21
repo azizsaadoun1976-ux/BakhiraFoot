@@ -10,6 +10,10 @@
       "dest": "/api/news.js"
     },
     {
+      "src": "/api/match-center$",
+      "dest": "/api/match-center.js"
+    },
+    {
       "src": "/api/community$",
       "dest": "/api/community.js"
     },
