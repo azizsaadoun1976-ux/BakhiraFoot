@@ -1233,6 +1233,13 @@
       #bfMatchDetailsModal .bfmd-player-stats-grid { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:14px; }
       #bfMatchDetailsModal .bfmd-player-stats-team { min-width:0; padding:12px; border:1px solid rgba(127,127,127,.18); border-radius:14px; }
       #bfMatchDetailsModal .bfmd-player-stats-team h3 { margin:0 0 10px; font-size:14px; }
+      #bfMatchDetailsModal .bfmd-extra-copy { margin:-4px 0 14px; font-size:12px; line-height:1.6; opacity:.72; }
+      #bfMatchDetailsModal .bfmd-extra-button { display:inline-flex; align-items:center; justify-content:center; gap:8px; max-width:100%; border:0; border-radius:11px; padding:11px 15px; background:linear-gradient(110deg,#087f5b,#0b9b69); color:#fff; font-size:12px; font-weight:900; text-decoration:none; cursor:pointer; }
+      #bfMatchDetailsModal .bfmd-news-card { display:grid; grid-template-columns:88px minmax(0,1fr); gap:12px; align-items:center; margin:8px 0; padding:10px; border:1px solid rgba(127,127,127,.18); border-radius:12px; text-decoration:none; color:inherit; }
+      #bfMatchDetailsModal .bfmd-news-card img,#bfMatchDetailsModal .bfmd-news-card-mark { display:flex; width:88px; height:62px; align-items:center; justify-content:center; object-fit:cover; border-radius:8px; background:rgba(127,127,127,.12); font-weight:950; }
+      #bfMatchDetailsModal .bfmd-news-card strong { display:block; font-size:12px; line-height:1.45; }
+      #bfMatchDetailsModal .bfmd-news-card small { display:block; margin-top:6px; font-size:10px; opacity:.65; }
+      #bfMatchDetailsModal .bfmd-news-card:hover { border-color:#0b9b69; }
       @media(max-width:650px) {
         #bfMatchDetailsModal .bfmd-pitch--combined { min-height:370px; }
         #bfMatchDetailsModal .bfmd-combined-player { width:55px; }
@@ -6005,7 +6012,7 @@ function bfSameFixtureMetadata(candidate,expected,requireDate=false) {
   }
 
 
-  function setupMatchCenterNavigation(matchIdentifier, teams) {
+  function setupMatchCenterNavigation(matchIdentifier, teams, competition) {
     const content = document.getElementById("bfmdContent");
     if (!content) return;
     content.querySelector(".bfmd-center-nav")?.remove();
@@ -6020,6 +6027,55 @@ function bfSameFixtureMetadata(candidate,expected,requireDate=false) {
       '<div style="display:flex;gap:10px;align-items:center;flex-wrap:wrap"><button type="submit" style="border:0;border-radius:10px;padding:11px 16px;background:#0b9b69;color:white;font-weight:900;cursor:pointer">Publier le commentaire</button><span role="status" style="font-size:12px"></span></div></form>' +
       '<div class="bfmd-match-comment-list"><div class="bfmd-empty">Chargement des commentaires…</div></div>';
     content.appendChild(comments);
+
+    const extras = document.createElement("div");
+    extras.className = "bfmd-match-center-extras";
+    const competitionName = String(competition || "").trim();
+    const homeName = String(teams?.home?.name || "").trim();
+    const awayName = String(teams?.away?.name || "").trim();
+    const highlightQuery = [homeName, awayName, competitionName, "highlights"].filter(Boolean).join(" ");
+    const highlightUrl = "https://www.youtube.com/results?search_query=" + encodeURIComponent(highlightQuery);
+    extras.innerHTML =
+      '<section class="bfmd-section bfmd-linked-standings"><div class="bfmd-title">🏆 Classement de la compétition</div>' +
+      '<p class="bfmd-extra-copy">Consulte le classement de ' + esc(competitionName || "cette compétition") + ' depuis les données de BakhiraFoot.</p>' +
+      '<button type="button" class="bfmd-extra-button bfmd-open-standings">Ouvrir le classement ↗</button></section>' +
+      '<section class="bfmd-section bfmd-linked-highlights"><div class="bfmd-title">🎬 Highlights & résumés vidéo</div>' +
+      '<p class="bfmd-extra-copy">Recherche les résumés liés à ' + esc(homeName || "l’équipe à domicile") + ' – ' + esc(awayName || "l’équipe visiteuse") + '.</p>' +
+      '<a class="bfmd-extra-button" href="' + esc(highlightUrl) + '" target="_blank" rel="noopener noreferrer">Voir les vidéos du match ↗</a></section>' +
+      '<section class="bfmd-section bfmd-linked-news"><div class="bfmd-title">📰 Actualités liées au match</div>' +
+      '<p class="bfmd-extra-copy">Recherche des articles qui mentionnent les équipes ou la compétition.</p>' +
+      '<div class="bfmd-linked-news-list"><div class="bfmd-empty">Chargement des actualités…</div></div></section>';
+    content.appendChild(extras);
+
+    const standingsButton = extras.querySelector(".bfmd-open-standings");
+    standingsButton.addEventListener("click", () => {
+      if (typeof window.openBakhiraCompetitionStandings === "function" && competitionName) {
+        window.openBakhiraCompetitionStandings(competitionName);
+      } else if (typeof window.go === "function") {
+        window.go("leagues");
+      } else {
+        status.textContent = "Le classement est indisponible pour cette compétition.";
+      }
+    });
+
+    const newsList = extras.querySelector(".bfmd-linked-news-list");
+    fetch("/api/news", { cache:"no-store", headers:{Accept:"application/json"} })
+      .then(response => response.ok ? response.json() : Promise.reject(new Error("news_unavailable")))
+      .then(payload => {
+        const articles = Array.isArray(payload.articles) ? payload.articles : [];
+        const tokens = [homeName, awayName, competitionName].map(value => value.toLocaleLowerCase()).filter(value => value.length >= 3);
+        const related = articles.filter(article => {
+          const text = (String(article.title || "") + " " + String(article.description || "")).toLocaleLowerCase();
+          return tokens.some(token => text.includes(token));
+        }).slice(0, 4);
+        newsList.innerHTML = related.length ? related.map(article =>
+          '<a class="bfmd-news-card" href="' + esc(article.url || "#") + '" target="_blank" rel="noopener noreferrer">' +
+          (article.image ? '<img src="' + esc(article.image) + '" alt="" loading="lazy">' : '<span class="bfmd-news-card-mark">BF</span>') +
+          '<span><strong>' + esc(article.title || "Actualité football") + '</strong><small>' + esc(article.source || "Source football") + '</small></span></a>'
+        ).join("") : '<div class="bfmd-empty">Aucune actualité directement liée aux deux équipes ou à cette compétition pour le moment.</div>';
+      })
+      .catch(() => { newsList.innerHTML = '<div class="bfmd-empty">Les actualités ne sont pas disponibles pour le moment.</div>'; });
+
     const matchKey = String(matchIdentifier || "").slice(0,120);
     const api = "/api/community?match=" + encodeURIComponent(matchKey);
     const form = comments.querySelector("form");
@@ -6641,7 +6697,7 @@ const response =
 )}
       `;
 
-      setupMatchCenterNavigation(value, teams);
+      setupMatchCenterNavigation(value, teams, competition);
 
     }
     catch (error) {
