@@ -3044,6 +3044,9 @@ ${esc(String(playerName(player) || "P").split(/\s+/).map(part => part[0] || "").
     const competition =
       first(
         details?.league?.name,
+        details?.tournament?.name,
+        details?.fixture?.league?.name,
+        details?.fixture?.competition?.name,
         details?.competition?.name,
         "Football"
       );
