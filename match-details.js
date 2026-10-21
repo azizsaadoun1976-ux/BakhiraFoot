@@ -1234,6 +1234,8 @@
       #bfMatchDetailsModal .bfmd-player-stats-team { min-width:0; padding:12px; border:1px solid rgba(127,127,127,.18); border-radius:14px; }
       #bfMatchDetailsModal .bfmd-player-stats-team h3 { margin:0 0 10px; font-size:14px; }
       #bfMatchDetailsModal .bfmd-extra-copy { margin:-4px 0 14px; font-size:12px; line-height:1.6; opacity:.72; }
+      #bfMatchDetailsModal .bfmd-recent-team-actions { display:flex; flex-wrap:wrap; gap:10px; }
+      #bfMatchDetailsModal .bfmd-recent-team-actions .bfmd-extra-button { max-width:100%; text-align:center; overflow-wrap:anywhere; }
       #bfMatchDetailsModal .bfmd-extra-button { display:inline-flex; align-items:center; justify-content:center; gap:8px; max-width:100%; border:0; border-radius:11px; padding:11px 15px; background:linear-gradient(110deg,#087f5b,#0b9b69); color:#fff; font-size:12px; font-weight:900; text-decoration:none; cursor:pointer; }
       #bfMatchDetailsModal .bfmd-news-card { display:grid; grid-template-columns:88px minmax(0,1fr); gap:12px; align-items:center; margin:8px 0; padding:10px; border:1px solid rgba(127,127,127,.18); border-radius:12px; text-decoration:none; color:inherit; }
       #bfMatchDetailsModal .bfmd-news-card img,#bfMatchDetailsModal .bfmd-news-card-mark { display:flex; width:88px; height:62px; align-items:center; justify-content:center; object-fit:cover; border-radius:8px; background:rgba(127,127,127,.12); font-weight:950; }
@@ -6036,6 +6038,10 @@ function bfSameFixtureMetadata(candidate,expected,requireDate=false) {
     const highlightQuery = [homeName, awayName, competitionName, "highlights"].filter(Boolean).join(" ");
     const highlightUrl = "https://www.youtube.com/results?search_query=" + encodeURIComponent(highlightQuery);
     extras.innerHTML =
+      '<section class="bfmd-section bfmd-linked-recent"><div class="bfmd-title">🕘 Derniers matchs des deux équipes</div>' +
+      '<p class="bfmd-extra-copy">Ouvre l’historique et recherche les résultats précédents de chaque équipe.</p>' +
+      '<div class="bfmd-recent-team-actions"><button type="button" class="bfmd-extra-button" data-bf-history-team="home">Historique · ' + esc(homeName || "Domicile") + '</button>' +
+      '<button type="button" class="bfmd-extra-button" data-bf-history-team="away">Historique · ' + esc(awayName || "Extérieur") + '</button></div></section>' +
       '<section class="bfmd-section bfmd-linked-standings"><div class="bfmd-title">🏆 Classement de la compétition</div>' +
       '<p class="bfmd-extra-copy">Consulte le classement de ' + esc(competitionName || "cette compétition") + ' depuis les données de BakhiraFoot.</p>' +
       '<button type="button" class="bfmd-extra-button bfmd-open-standings">Ouvrir le classement ↗</button></section>' +
@@ -6046,6 +6052,24 @@ function bfSameFixtureMetadata(candidate,expected,requireDate=false) {
       '<p class="bfmd-extra-copy">Recherche des articles qui mentionnent les équipes ou la compétition.</p>' +
       '<div class="bfmd-linked-news-list"><div class="bfmd-empty">Chargement des actualités…</div></div></section>';
     content.appendChild(extras);
+
+    extras.querySelectorAll("[data-bf-history-team]").forEach(button => {
+      button.addEventListener("click", () => {
+        const teamName = button.dataset.bfHistoryTeam === "home" ? homeName : awayName;
+        const historyButton = document.getElementById("bf-history-open");
+        const historyModal = document.getElementById("bfMatchDetailsModal");
+        if (historyModal) historyModal.style.display = "none";
+        document.body.style.overflow = "";
+        if (historyButton) historyButton.click();
+        window.setTimeout(() => {
+          const input = document.getElementById("bfh-team");
+          if (input) {
+            input.value = teamName;
+            input.focus();
+          }
+        }, 180);
+      });
+    });
 
     const standingsButton = extras.querySelector(".bfmd-open-standings");
     standingsButton.addEventListener("click", () => {
