@@ -851,6 +851,87 @@ async function sofaDetails(
       )[0] ||
       {};
 
+    // ESPN's summary sometimes includes officials and regional broadcast records.
+    // Only publish names actually present in the provider response.
+    function metaText(value, depth = 0) {
+      if (depth > 5 || value == null) return "";
+      if (typeof value === "string" || typeof value === "number") return String(value).trim();
+      if (Array.isArray(value)) {
+        return [...new Set(value.map(item => metaText(item, depth + 1)).filter(Boolean))].join(" · ");
+      }
+      if (typeof value !== "object") return "";
+      const direct = first(
+        value.displayName, value.display_name, value.fullName, value.full_name,
+        value.name, value.shortName, value.short_name, value.abbreviation,
+        value.station?.displayName, value.network?.displayName, value.network?.name,
+        value.channel?.displayName, value.channel?.name,
+        value.athlete?.displayName, value.athlete?.fullName, value.person?.displayName
+      );
+      if (direct != null && typeof direct !== "object" && String(direct).trim()) return String(direct).trim();
+      for (const key of ["items", "names", "officials", "referees", "channels", "networks", "broadcasts", "commentators", "announcers", "talent", "person", "athlete"]) {
+        const found = metaText(value[key], depth + 1);
+        if (found) return found;
+      }
+      return "";
+    }
+
+    function deepMetaValues(roots, aliases) {
+      const keys = new Set(aliases.map(norm));
+      const queue = roots.filter(Boolean).map(value => ({ value, depth: 0 }));
+      const visited = new Set();
+      const found = [];
+      while (queue.length && visited.size < 1600) {
+        const item = queue.shift();
+        const value = item?.value;
+        if (!value || typeof value !== "object" || visited.has(value) || item.depth > 6) continue;
+        visited.add(value);
+        if (Array.isArray(value)) {
+          if (item.depth < 6) value.forEach(child => {
+            if (child && typeof child === "object") queue.push({ value: child, depth: item.depth + 1 });
+          });
+          continue;
+        }
+        for (const [key, child] of Object.entries(value)) {
+          if (keys.has(norm(key)) && child != null) found.push(child);
+          if (child && typeof child === "object" && item.depth < 6) {
+            queue.push({ value: child, depth: item.depth + 1 });
+          }
+        }
+      }
+      return found;
+    }
+
+    const metaRoots = [competition, header, body];
+    const rawOfficials = deepMetaValues(metaRoots, [
+      "officials", "referees", "referee", "mainReferee", "matchReferee", "matchOfficials"
+    ]).flatMap(value => Array.isArray(value) ? value : [value]).filter(Boolean);
+    const refereeCandidate = rawOfficials.find(value => {
+      const role = norm(first(
+        value?.role?.displayName, value?.role?.name, value?.role,
+        value?.type?.displayName, value?.type?.name, value?.type,
+        value?.position?.displayName, value?.position?.name, value?.position,
+        value?.title, value?.designation, value?.officialType
+      ));
+      return /referee|matchofficial|mainofficial|centerreferee|centrereferee/.test(role);
+    }) || (rawOfficials.length === 1 ? rawOfficials[0] : null);
+    const referee = first(
+      metaText(competition?.referee),
+      metaText(competition?.mainReferee),
+      metaText(refereeCandidate),
+      typeof competition?.referee === "string" ? competition.referee : null
+    );
+
+    const rawBroadcasts = deepMetaValues(metaRoots, [
+      "broadcastChannel", "tvChannel", "channels", "channel", "broadcasts",
+      "broadcast", "networks", "network", "television", "media"
+    ]).flatMap(value => Array.isArray(value) ? value : [value]).filter(Boolean);
+    const broadcastChannel = [...new Set(rawBroadcasts.map(metaText).filter(Boolean))].slice(0, 4).join(" · ");
+
+    const rawCommentators = deepMetaValues(metaRoots, [
+      "commentator", "commentators", "tvCommentator", "commentatorName",
+      "announcer", "announcers", "commentaryTeam", "playByPlay", "talent"
+    ]).flatMap(value => Array.isArray(value) ? value : [value]).filter(Boolean);
+    const commentator = [...new Set(rawCommentators.map(metaText).filter(Boolean))].slice(0, 4).join(" · ");
 
     const competitors =
       arr(
@@ -1251,7 +1332,16 @@ async function sofaDetails(
         null,
 
       referee:
-        null,
+        referee || null,
+
+      broadcastChannel:
+        broadcastChannel || null,
+
+      commentator:
+        commentator || null,
+
+      broadcasts:
+        rawBroadcasts.map(metaText).filter(Boolean).slice(0, 8),
 
       timezone:
         null
@@ -1341,6 +1431,11 @@ async function sofaDetails(
       statistics: espnTeamStats,
 
       players: espnLineups.flatMap(lineup => lineup.players),
+
+      broadcastChannel: broadcastChannel || null,
+      commentator: commentator || null,
+      officials: rawOfficials.map(metaText).filter(Boolean).slice(0, 8),
+      broadcasts: rawBroadcasts.map(metaText).filter(Boolean).slice(0, 8),
 
       provider:
         "ESPN"
