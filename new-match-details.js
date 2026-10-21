@@ -1944,6 +1944,30 @@ function bfAssignFormationRoles(players, formation, readPosition) {
         .bf-new-safe-event-badge svg { width:12px!important; height:12px!important; }
       }
 
+
+      /* SofaScore-inspired pitch performance markers: SVG icons, compact badges, color-coded ratings. */
+      .bf-new-safe-event-badge { position:relative; display:inline-flex!important; align-items:center; justify-content:center; flex:0 0 21px; width:21px; min-width:21px; height:21px; padding:2px; border-radius:50%!important; gap:0; overflow:visible; }
+      .bf-new-safe-event-svg { display:block; width:13px; height:13px; flex:0 0 13px; color:currentColor; }
+      .bf-new-safe-event-count { position:absolute; right:-4px; bottom:-4px; display:inline-flex; align-items:center; justify-content:center; min-width:11px; height:11px; padding:0 2px; border:1px solid #fff; border-radius:99px; background:#102033; color:#fff; font-size:7px; line-height:1; font-weight:1000; }
+      .bf-new-safe-player-rate { display:inline-flex!important; align-items:center; justify-content:center; position:absolute!important; top:-8px!important; left:-11px!important; z-index:16; min-width:30px; width:auto; height:22px; padding:3px 5px; border:1px solid rgba(255,255,255,.68); border-radius:7px!important; color:#fff; font-size:10px; line-height:1; font-weight:1000; box-shadow:0 3px 8px rgba(0,0,0,.3); font-variant-numeric:tabular-nums; }
+      .bf-new-safe-player-rate.bf-rating--excellent { background:#087f5b!important; border-color:#6ee7b7!important; color:#f0fdf4!important; }
+      .bf-new-safe-player-rate.bf-rating--good { background:#36a66b!important; border-color:#a7f3d0!important; color:#062d1a!important; }
+      .bf-new-safe-player-rate.bf-rating--average { background:#d7d93b!important; border-color:#fef08a!important; color:#27300a!important; }
+      .bf-new-safe-player-rate.bf-rating--low { background:#e9a23b!important; border-color:#fed7aa!important; color:#422006!important; }
+      .bf-new-safe-player-rate.bf-rating--poor { background:#d94848!important; border-color:#fda4af!important; color:#fff!important; }
+      .bf-new-safe-mvp-chip { display:inline-flex!important; align-items:center; justify-content:center; position:absolute!important; top:27px!important; left:-10px!important; min-width:21px; width:21px; height:21px; padding:3px; border-radius:50%!important; background:#facc15!important; color:#422006!important; }
+      .bf-new-safe-mvp-chip .bf-new-safe-event-svg { width:13px; height:13px; flex-basis:13px; }
+      #bfMatchDetailsModal .bfmd-chip .bfmd-vector-icon { display:block!important; width:13px!important; height:13px!important; flex:0 0 13px; }
+      #bfMatchDetailsModal .bfmd-chip:before { content:none!important; display:none!important; }
+      #bfMatchDetailsModal .bfmd-chip--rating { border-radius:7px!important; }
+      @media(max-width:700px) {
+        .bf-new-safe-event-badge { flex-basis:18px; width:18px; min-width:18px; height:18px; padding:1px; }
+        .bf-new-safe-event-svg { width:11px; height:11px; flex-basis:11px; }
+        .bf-new-safe-event-count { min-width:10px; height:10px; font-size:6px; }
+        .bf-new-safe-player-rate { min-width:27px; height:19px; font-size:9px; }
+        .bf-new-safe-mvp-chip { min-width:18px; width:18px; height:18px; }
+        #bfMatchDetailsModal .bfmd-chip .bfmd-vector-icon { width:11px!important; height:11px!important; flex-basis:11px; }
+      }
     `;
 
     document.head.appendChild(
@@ -2689,34 +2713,53 @@ ${esc(String(playerName(player) || "P").split(/\s+/).map(part => part[0] || "").
   }
 
     function playerIsNamedMvp(player, details) {
-    const candidates = [
-      details?.player_of_match, details?.playerOfMatch,
-      details?.man_of_the_match, details?.manOfTheMatch,
-      details?.mvp, details?.best_player, details?.bestPlayer,
-      details?.data?.player_of_match, details?.data?.playerOfMatch,
-      details?.data?.man_of_the_match, details?.data?.manOfTheMatch,
-      details?.match?.player_of_match, details?.match?.playerOfMatch
-    ].filter(value => value !== null && value !== undefined && value !== "");
-    return candidates.some(candidate => {
-      if (samePerson(candidate, player)) return true;
-      const name = eventPersonName(candidate);
-      return !!name && norm(name) === norm(playerName(player));
-    });
+    const keys = new Set([
+      "playerofmatch", "playerofthematch", "manofthematch", "mvp",
+      "bestplayer", "playerofthegame", "playermatch"
+    ]);
+    const queue = [{value:details,depth:0}], seen = new Set();
+    while (queue.length && seen.size < 1500) {
+      const item = queue.shift(), current = item?.value;
+      if (!current || typeof current !== "object" || seen.has(current) || item.depth > 6) continue;
+      seen.add(current);
+      if (Array.isArray(current)) {
+        current.forEach(child => { if (child && typeof child === "object") queue.push({value:child,depth:item.depth+1}); });
+        continue;
+      }
+      for (const [key, value] of Object.entries(current)) {
+        const normalizedKey = String(key).toLowerCase().replace(/[^a-z0-9]/g, "");
+        if (keys.has(normalizedKey) && value !== null && value !== undefined && value !== "" && value !== false) {
+          if (samePerson(value, player)) return true;
+          const name = eventPersonName(value);
+          if (name && norm(name) === norm(playerName(player))) return true;
+          if ((value === true || value === 1) &&
+              [current.player, current.athlete, current.name, current.player_name, current.playerName]
+                .some(candidate => samePerson(candidate, player))) return true;
+        }
+        if (value && typeof value === "object" && item.depth < 6) queue.push({value,depth:item.depth+1});
+      }
+    }
+    return false;
   }
 
     function playerIsOfficialMvp(player) {
     const p = getPlayerObject(player);
-    const sources = [player, p, player?.raw, player?.raw?.player].filter(value => value && typeof value === "object");
+    const sources = [player, p, player?.raw, player?.raw?.player, player?.statistics, player?.stats, player?.performance]
+      .filter(value => value && typeof value === "object");
+    const isMvpValue = (value, depth = 0) => {
+      if (value === true || value === 1) return true;
+      if (typeof value === "string") return /\bmvp\b|man of the match|player of the match|player of the game|best player/i.test(value.trim());
+      if (!value || typeof value !== "object" || depth > 3) return false;
+      if (Array.isArray(value)) return value.some(item => isMvpValue(item, depth + 1));
+      return Object.values(value).some(item => isMvpValue(item, depth + 1));
+    };
     return sources.some(source => [
       source.mvp, source.is_mvp, source.isMvp, source.isMVP,
       source.man_of_the_match, source.manOfTheMatch,
       source.player_of_match, source.playerOfMatch,
       source.player_of_the_match, source.playerOfTheMatch,
       source.award, source.awards
-    ].some(value => value === true || (
-      typeof value === "string" &&
-      /^(mvp|man of the match|player of the match|player of the game)$/i.test(value.trim())
-    )));
+    ].some(value => isMvpValue(value)));
   }
 
   function renderMvp(homeLineup, awayLineup) {
