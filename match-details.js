@@ -4439,8 +4439,13 @@ function normalizeEvent(event, index) {
     badges.push('<span class="bfmd-chip bfmd-chip--rating bfmd-rating--' + ratingTone + '" title="Note du joueur">' +
       performanceIcon("rating") + '<span class="bfmd-chip-rating-number">' + ratingValue.toFixed(1) + '</span></span>');
   }
-  if (playerIsOfficialMvp(player) || (statsMap.mvpKey && statsMap.mvpKey === playerKey(player))) {
-    badges.push('<span class="bfmd-chip bfmd-chip--mvp" title="Joueur du match">' + performanceIcon("mvp") + '</span>');
+  const officialMvp = playerIsOfficialMvp(player);
+  const selectedMvp = statsMap.mvpKey && statsMap.mvpKey === playerKey(player);
+  if (officialMvp || selectedMvp) {
+    const mvpTitle = statsMap.mvpFallback && !officialMvp
+      ? "Meilleure note disponible — MVP non communiqué par la source"
+      : "Joueur du match";
+    badges.push('<span class="bfmd-chip bfmd-chip--mvp" title="' + esc(mvpTitle) + '">' + performanceIcon("mvp") + '</span>');
   }
   if (!badges.length) return "";
   return '<div class="bfmd-event-mini" aria-label="Performance de ' + esc(getPlayerName(player)) + '">' + badges.join("") + '</div>';
@@ -6224,7 +6229,32 @@ const response =
       const explicitMvpName = typeof explicitMvp === "string"
         ? explicitMvp
         : first(eventPersonName(explicitMvp), explicitMvp?.name, explicitMvp?.player?.name, explicitMvp?.player_name, "");
-      if (explicitMvpName) statsMap.mvpKey = playerKey(explicitMvpName);
+      if (explicitMvpName) {
+        statsMap.mvpKey = playerKey(explicitMvpName);
+        statsMap.mvpFallback = false;
+      }
+
+      /* If the provider omits a named MVP, show the best sourced rating as a fallback,
+         but label it honestly instead of claiming it is an official MVP. */
+      if (!statsMap.mvpKey) {
+        const allLineupPlayers = [
+          ...arr(homeLineup.xi), ...arr(homeLineup.subs),
+          ...arr(awayLineup.xi), ...arr(awayLineup.subs)
+        ];
+        const officialMvp = allLineupPlayers.find(player => playerIsOfficialMvp(player));
+        if (officialMvp) {
+          statsMap.mvpKey = playerKey(officialMvp);
+          statsMap.mvpFallback = false;
+        } else {
+          const bestRated = allLineupPlayers.map(player => ({player, rating:getPlayerRating(player)}))
+            .filter(item => item.rating !== null && Number.isFinite(Number(item.rating)))
+            .sort((a,b) => Number(b.rating) - Number(a.rating))[0];
+          if (bestRated) {
+            statsMap.mvpKey = playerKey(bestRated.player);
+            statsMap.mvpFallback = true;
+          }
+        }
+      }
 
       console.log(
         "BAKHIRAFOOT HOME LINEUP:",
