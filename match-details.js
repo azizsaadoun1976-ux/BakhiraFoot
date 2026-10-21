@@ -6690,7 +6690,7 @@ const response =
         "broadcastChannel", "broadcast_channel", "broadcastName", "broadcast_name",
         "channel", "channels", "channelName", "channel_name", "broadcaster", "broadcasters",
         "broadcasterName", "broadcast", "broadcasts", "network", "networks", "television",
-        "media", "coverage"
+        "media", "coverage", "beIN", "beinSports", "beIN Sports", "beINConnect"
       ]);
 
       const commentator = bfFindMatchMeta(details, [
