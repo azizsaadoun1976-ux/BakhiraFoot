@@ -1960,6 +1960,18 @@ function bfAssignFormationRoles(players, formation, readPosition) {
       #bfMatchDetailsModal .bfmd-chip .bfmd-vector-icon { display:block!important; width:13px!important; height:13px!important; flex:0 0 13px; }
       #bfMatchDetailsModal .bfmd-chip:before { content:none!important; display:none!important; }
       #bfMatchDetailsModal .bfmd-chip--rating { border-radius:7px!important; }
+      html body #bfMatchDetailsModal .bfmd-chip:not(.bfmd-chip--rating) { width:22px!important; min-width:22px!important; height:22px!important; min-height:22px!important; padding:2px!important; border-radius:50%!important; position:relative!important; overflow:visible!important; }
+      html body #bfMatchDetailsModal .bfmd-chip-count { position:absolute!important; right:-4px!important; bottom:-4px!important; display:inline-flex!important; align-items:center!important; justify-content:center!important; min-width:11px!important; height:11px!important; padding:0 2px!important; border:1px solid #fff!important; border-radius:99px!important; background:#102033!important; color:#fff!important; font-size:7px!important; line-height:1!important; font-weight:1000!important; }
+      html body #bfMatchDetailsModal .bfmd-chip--rating.bfmd-rating--excellent { background:#087f5b!important; border-color:#6ee7b7!important; color:#fff!important; }
+      html body #bfMatchDetailsModal .bfmd-chip--rating.bfmd-rating--good { background:#36a66b!important; border-color:#a7f3d0!important; color:#062d1a!important; }
+      html body #bfMatchDetailsModal .bfmd-chip--rating.bfmd-rating--average { background:#d7d93b!important; border-color:#fef08a!important; color:#27300a!important; }
+      html body #bfMatchDetailsModal .bfmd-chip--rating.bfmd-rating--low { background:#e9a23b!important; border-color:#fed7aa!important; color:#422006!important; }
+      html body #bfMatchDetailsModal .bfmd-chip--rating.bfmd-rating--poor { background:#d94848!important; border-color:#fda4af!important; color:#fff!important; }
+      html body #bfMatchDetailsModal .bfmd-rating--excellent .bfmd-chip-rating-number,
+      html body #bfMatchDetailsModal .bfmd-rating--poor .bfmd-chip-rating-number { color:#fff!important; }
+      html body #bfMatchDetailsModal .bfmd-rating--good .bfmd-chip-rating-number,
+      html body #bfMatchDetailsModal .bfmd-rating--average .bfmd-chip-rating-number,
+      html body #bfMatchDetailsModal .bfmd-rating--low .bfmd-chip-rating-number { color:inherit!important; }
       @media(max-width:700px) {
         .bf-new-safe-event-badge { flex-basis:18px; width:18px; min-width:18px; height:18px; padding:1px; }
         .bf-new-safe-event-svg { width:11px; height:11px; flex-basis:11px; }
