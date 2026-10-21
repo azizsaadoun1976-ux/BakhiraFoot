@@ -1427,7 +1427,7 @@ function bfAssignFormationRoles(players, formation, readPosition) {
       .bf-new-safe-combined-team strong { overflow-wrap:anywhere; }
       .bf-new-safe-combined-team em { padding:3px 6px; border-radius:6px; background:rgba(127,127,127,.13); font-size:10px; font-style:normal; }
       .bf-new-safe-combined-vs { opacity:.55; font-size:10px; font-weight:950; }
-      .bf-new-safe-combined-pitch { position:relative; width:100%; height:clamp(360px,42vw,510px); min-height:360px; max-height:510px; overflow:hidden; background:repeating-linear-gradient(90deg,#26743b 0,#26743b 10%,#2e8045 10%,#2e8045 20%); }
+      .bf-new-safe-combined-pitch { position:relative; width:min(100%,460px); height:auto; aspect-ratio:.70; min-height:0; max-height:none; margin:0 auto; overflow:hidden; background:repeating-linear-gradient(90deg,#26743b 0,#26743b 10%,#2e8045 10%,#2e8045 20%); }
       .bf-new-safe-combined-border { position:absolute; inset:8px; border:2px solid rgba(255,255,255,.92); }
       .bf-new-safe-combined-half { position:absolute; left:8px; right:8px; top:50%; height:2px; background:#fff; }
       .bf-new-safe-combined-circle { position:absolute; left:50%; top:50%; width:18%; aspect-ratio:1; transform:translate(-50%,-50%); border:2px solid #fff; border-radius:50%; }
@@ -1435,7 +1435,7 @@ function bfAssignFormationRoles(players, formation, readPosition) {
       .bf-new-safe-combined-box { position:absolute; left:32%; right:32%; height:14%; border:2px solid #fff; }
       .bf-new-safe-combined-box--top { top:8px; }
       .bf-new-safe-combined-box--bottom { bottom:8px; }
-      .bf-new-safe-combined-player { position:absolute; transform:translate(-50%,-50%); width:clamp(72px,7vw,100px); display:flex; flex-direction:column; align-items:center; z-index:5; cursor:pointer; color:#fff; text-align:center; outline-offset:2px; }
+      .bf-new-safe-combined-player { position:absolute; transform:translate(-50%,-50%); width:clamp(74px,7vw,94px); display:flex; flex-direction:column; align-items:center; z-index:5; cursor:pointer; color:#fff; text-align:center; outline-offset:2px; }
       .bf-new-safe-combined-player img,.bf-new-safe-combined-avatar { display:block; width:clamp(29px,2.8vw,42px); height:clamp(29px,2.8vw,42px); border:2px solid white; border-radius:50%; object-fit:cover; background:#f4f7f9; box-shadow:0 3px 10px #0005; }
       .bf-new-safe-combined-avatar { display:grid; place-items:center; color:#122; font-weight:900; font-size:12px; }
       .bf-new-safe-combined-shirt { position:absolute; right:calc(50% - 27px); top:-2px; display:grid; place-items:center; min-width:18px; height:18px; padding:0 3px; border-radius:6px; background:#07121d; color:#fff; font-size:9px; font-weight:950; }
@@ -1465,7 +1465,7 @@ function bfAssignFormationRoles(players, formation, readPosition) {
       .bf-new-safe-player-list>summary:after { content:"＋"; float:right; opacity:.6; }
       .bf-new-safe-player-list[open]>summary:after { content:"−"; }
       @media(max-width:650px) {
-        .bf-new-safe-combined-pitch { height:370px; min-height:370px; }
+        .bf-new-safe-combined-pitch { width:min(100%,390px); aspect-ratio:.68; height:auto; min-height:0; }
         .bf-new-safe-combined-player { width:clamp(52px,14vw,67px); }
         .bf-new-safe-combined-name { max-width:62px; font-size:7px; padding:2px; }
         .bf-new-safe-combined-player img,.bf-new-safe-combined-avatar { width:27px; height:27px; }
