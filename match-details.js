@@ -4401,8 +4401,11 @@ function normalizeEvent(event, index) {
 
   const rating = getPlayerRating(player);
   if (rating !== null && rating !== undefined && rating !== "" && Number.isFinite(Number(rating))) {
-    badges.push('<span class="bfmd-chip bfmd-chip--rating" title="Note du joueur">' +
-      performanceIcon("rating") + '<span class="bfmd-chip-rating-number">' + Number(rating).toFixed(1) + '</span></span>');
+    const ratingValue = Number(rating);
+    const ratingTone = ratingValue >= 8 ? "excellent" : ratingValue >= 7 ? "good" :
+      ratingValue >= 6 ? "average" : ratingValue >= 5.5 ? "low" : "poor";
+    badges.push('<span class="bfmd-chip bfmd-chip--rating bfmd-rating--' + ratingTone + '" title="Note du joueur">' +
+      performanceIcon("rating") + '<span class="bfmd-chip-rating-number">' + ratingValue.toFixed(1) + '</span></span>');
   }
   if (playerIsOfficialMvp(player) || (statsMap.mvpKey && statsMap.mvpKey === playerKey(player))) {
     badges.push('<span class="bfmd-chip bfmd-chip--mvp" title="Joueur du match">' + performanceIcon("mvp") + '</span>');
