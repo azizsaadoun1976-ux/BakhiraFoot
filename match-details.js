@@ -3989,6 +3989,13 @@ function normalizeEvent(event, index) {
   const detail =
     norm(rawDetail);
 
+  /* Preserve the event kind already normalized by the existing API response. */
+  const sourceKind = norm(first(
+    event?.kind?.name, event?.kind?.text,
+    typeof event?.kind === "string" ? event.kind : null,
+    ""
+  )).replace(/[_-]+/g, " ");
+
   let kind = "other";
 
   /*
@@ -3998,6 +4005,9 @@ function normalizeEvent(event, index) {
 
   if (
     !missedPenalty && (
+      sourceKind === "goal" ||
+      sourceKind === "own goal" ||
+      sourceKind === "penalty goal" ||
       type.includes("goal") ||
       type.includes("but") ||
       detail.includes("goal") ||
@@ -4016,6 +4026,8 @@ function normalizeEvent(event, index) {
    * CARTON ROUGE
    */
   else if (
+    sourceKind.includes("red") ||
+    sourceKind.includes("second yellow") ||
     type.includes("second yellow") ||
     detail.includes("second yellow") ||
     type.includes("red") ||
@@ -4030,6 +4042,7 @@ function normalizeEvent(event, index) {
    * CARTON JAUNE
    */
   else if (
+    sourceKind.includes("yellow") ||
     type.includes("yellow") ||
     detail.includes("yellow") ||
     type.includes("jaune") ||
@@ -4046,6 +4059,7 @@ function normalizeEvent(event, index) {
    * CHANGEMENT
    */
   else if (
+    sourceKind.includes("substitution") ||
     type.includes("subst") ||
     type.includes("change") ||
     type.includes("changement") ||
@@ -4062,6 +4076,7 @@ function normalizeEvent(event, index) {
    * BLESSURE
    */
   else if (
+    sourceKind.includes("injur") ||
     type.includes("injur") ||
     detail.includes("injur") ||
     type.includes("medical") ||
@@ -4078,6 +4093,7 @@ function normalizeEvent(event, index) {
    * VAR
    */
   else if (
+    sourceKind.includes("var") ||
     type.includes("var") ||
     detail.includes("var")
   ) {
@@ -4087,7 +4103,7 @@ function normalizeEvent(event, index) {
   let goalType = "regular";
   if (kind === "goal") {
     const goalDescriptor = norm([
-      rawType, rawDetail, event?.incidentType, event?.incidentClass,
+      rawType, rawDetail, sourceKind, event?.kind, event?.incidentType, event?.incidentClass,
       event?.goalType, event?.goal_type, event?.goal?.type,
       event?.goal?.detail, event?.goal?.description
     ].filter(value => value !== null && value !== undefined).join(" ")).replace(/[_-]+/g, " ");
@@ -4105,6 +4121,7 @@ function normalizeEvent(event, index) {
     ].some(truthyEventFlag);
     if (
       ownGoalFlag ||
+      sourceKind.includes("own goal") ||
       /\bown goal\b|\bauto[- ]?goal\b|\bautogoal\b|\bbut contre son camp\b|\bcontre son camp\b|\bautobut\b|\bcsc\b/.test(goalDescriptor)
     ) {
       goalType = "own";
