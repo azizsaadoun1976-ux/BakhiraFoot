@@ -2985,7 +2985,8 @@ ${esc(String(playerName(player) || "P").split(/\s+/).map(part => part[0] || "").
     );
 
     const broadcastChannel = bfNewFindMatchMeta(details, [
-      "tvChannel", "tv_channel", "channel", "channels", "broadcaster", "broadcasters",
+      "tvChannel", "tv_channel", "broadcastChannel", "broadcast_channel",
+      "channel", "channels", "broadcaster", "broadcasters",
       "broadcast", "broadcasts", "network", "networks", "television", "coverage"
     ]);
 
