@@ -8527,11 +8527,59 @@ async function openMatchDetails(index) {
 
   try {
 
-    const raw =
-      await loadRealMatchDetails(
-        fixtureId
-      );
+    let raw = null;
+    let primaryDetailsError = null;
 
+    try {
+      raw = await loadRealMatchDetails(fixtureId);
+      if (!bfSameFixtureMetadata(raw, match, false)) {
+        throw new Error("Les données reçues ne correspondent pas à cette rencontre.");
+      }
+    } catch (error) {
+      primaryDetailsError = error;
+      console.warn("BAKHIRAFOOT: SportScore details unavailable/mismatched; trying exact-match fallback.", error?.message || error);
+
+      const lookupDate =
+        match?.fixture?.date ||
+        match?.date ||
+        match?.time ||
+        "";
+
+      try {
+        const params = new URLSearchParams({
+          fixture: "sofa-fotmob-lookup",
+          home,
+          away,
+          date: String(lookupDate)
+        });
+        const fallbackResponse = await fetch("/api?" + params.toString(), {
+          method: "GET",
+          cache: "no-store",
+          headers: { Accept: "application/json" }
+        });
+        const fallbackPayload = await fallbackResponse.json().catch(() => ({}));
+        const fallbackData =
+          fallbackPayload?.data ||
+          fallbackPayload?.match ||
+          fallbackPayload;
+
+        if (
+          fallbackResponse.ok &&
+          bfSameFixtureMetadata(fallbackData, match, true) &&
+          (Array.isArray(fallbackData?.lineups) ||
+            Array.isArray(fallbackData?.events) ||
+            Array.isArray(fallbackData?.statistics))
+        ) {
+          raw = fallbackPayload;
+          console.info("BAKHIRAFOOT: exact fixture fallback loaded", { home, away, date: lookupDate });
+        } else {
+          throw new Error(fallbackPayload?.details || fallbackPayload?.error || "Aucun détail alternatif vérifié pour ce match.");
+        }
+      } catch (fallbackError) {
+        console.warn("BAKHIRAFOOT: exact fixture fallback failed.", fallbackError?.message || fallbackError);
+        throw primaryDetailsError || fallbackError;
+      }
+    }
 
     if (
       currentOpenedFixture !==
@@ -8540,9 +8588,8 @@ async function openMatchDetails(index) {
       return;
     }
 
-
     if (!bfSameFixtureMetadata(raw, match, false)) {
-      throw new Error("Le fournisseur a renvoyé une ancienne rencontre ; ses détails sont ignorés.");
+      throw new Error("Les détails reçus ne correspondent pas à la rencontre sélectionnée.");
     }
 
     const details =
