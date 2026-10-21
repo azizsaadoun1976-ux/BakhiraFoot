@@ -82,7 +82,7 @@ function sameTeam(a, b) {
   return common.length >= 2 && common.length / Math.min(xt.length || 1, yt.length || 1) >= 0.8;
 }
 
-function findSofaTeam(payload, desiredName) {
+function selectSofaTeam(payload, desiredName) {
   const results = Array.isArray(payload?.results) ? payload.results : [];
   const candidates = results
     .filter(item => !item?.type || String(item.type).toLowerCase() === "team")
@@ -103,7 +103,7 @@ async function sofaJSON(path) {
 
 async function findSofaTeam(name) {
   const payload = await sofaJSON("/search/all?q=" + encodeURIComponent(name));
-  return findSofaTeam(payload, name);
+  return selectSofaTeam(payload, name);
 }
 
 function eventTime(event) {
