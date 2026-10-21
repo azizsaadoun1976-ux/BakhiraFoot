@@ -6471,38 +6471,90 @@ function bfSameFixtureMetadata(candidate,expected,requireDate=false) {
       }
     });
     load();
-    const navSections = Array.from(content.querySelectorAll(".bfmd-section,.bf-new-safe-section"));
-    if (navSections.length) {
-      const nav = document.createElement("nav");
-      nav.className = "bfmd-center-nav";
-      nav.setAttribute("aria-label", "Navigation du centre de match");
-      nav.style.cssText = "display:flex;gap:7px;overflow-x:auto;padding:12px 0 4px;margin:14px 0 6px;position:sticky;top:0;z-index:20;background:var(--card,#fff)";
-      navSections.forEach((section,index) => {
-        const title = String(section.querySelector(".bfmd-title,.bf-new-safe-title")?.textContent || "").trim();
-        const lower = title.toLowerCase();
-        let label = title || ("Section " + (index + 1));
-        if (/qui va gagner|vote/.test(lower)) label = "Vote";
-        else if (/statistiques du match/.test(lower)) label = "Stats";
-        else if (/statistiques des joueurs|joueurs/.test(lower)) label = "Joueurs";
-        else if (/composition|performance|terrain/.test(lower)) label = "Compos";
-        else if (/événements|evenements|résumé/.test(lower)) label = "Résumé";
-        else if (/mvp|meilleure note/.test(lower)) label = "Joueur clé";
-        else if (/confrontations directes/.test(lower)) label = "H2H";
-        else if (/classement/.test(lower)) label = "Classement";
-        else if (/highlights|résumés vidéo/.test(lower)) label = "Highlights";
-        else if (/actualités liées/.test(lower)) label = "Actus";
-        else if (/commentaires/.test(lower)) label = "Commentaires";
-        const button = document.createElement("button");
-        button.type = "button";
-        button.textContent = label;
-        button.style.cssText = "flex:0 0 auto;border:1px solid rgba(148,163,184,.25);border-radius:999px;padding:9px 14px;background:rgba(127,127,127,.12);color:inherit;font-weight:850;cursor:pointer";
-        button.addEventListener("click",() => section.scrollIntoView({behavior:"smooth",block:"start"}));
-        nav.appendChild(button);
+    const sectionSelector = ".bfmd-section,.bf-new-safe-section";
+    const isHeaderSection = section => section.matches(".bfmd-header,.bfmd-info,.bf-new-safe-head,.bf-new-safe-info");
+    const getSectionTitle = section => String(section.querySelector(".bfmd-title,.bf-new-safe-title")?.textContent || "").trim();
+    const allSections = Array.from(content.querySelectorAll(sectionSelector));
+    const headingMatches = regex => allSections.filter(section => regex.test(getSectionTitle(section).toLowerCase()));
+    const tabDefinitions = [
+      {key:"summary",label:"Résumé",find:()=>headingMatches(/événements|evenements|résumé/).slice(0,1)},
+      {key:"lineup",label:"Compos & terrain",find:()=> {
+        const explicit = content.querySelector(".bfmd-match-analysis");
+        if (explicit) return [explicit];
+        return headingMatches(/formations et compositions|compositions.*performances|terrain/).slice(0,1);
+      }},
+      {key:"stats",label:"Stats du match",find:()=> {
+        const explicit = Array.from(content.querySelectorAll(".bfmd-statistics-section"));
+        return explicit.length ? explicit : headingMatches(/statistiques du match/).slice(0,1);
+      }},
+      {key:"players",label:"Joueurs",find:()=>Array.from(content.querySelectorAll(".bfmd-player-statistics-details,.bfmd-player-statistics,.bf-new-safe-player-list"))},
+      {key:"h2h",label:"Derniers matchs",find:()=>Array.from(content.querySelectorAll(".bfmd-linked-recent"))},
+      {key:"standings",label:"Classement",find:()=>Array.from(content.querySelectorAll(".bfmd-linked-standings"))},
+      {key:"vote",label:"Vote",find:()=>Array.from(content.querySelectorAll(".bfmd-match-vote"))},
+      {key:"highlights",label:"Highlights",find:()=>Array.from(content.querySelectorAll(".bfmd-linked-highlights"))},
+      {key:"news",label:"Actualités",find:()=>Array.from(content.querySelectorAll(".bfmd-linked-news"))},
+      {key:"comments",label:"Commentaires",find:()=>Array.from(content.querySelectorAll(".bfmd-match-comments"))}
+    ];
+    const nav = document.createElement("nav");
+    nav.className = "bfmd-center-nav";
+    nav.setAttribute("aria-label", "Choisir une rubrique des détails du match");
+    nav.style.cssText = "display:flex;gap:7px;overflow-x:auto;padding:12px 0 8px;margin:14px 0 8px;position:sticky;top:0;z-index:20;background:var(--card,#fff)";
+    const viewHint = document.createElement("div");
+    viewHint.className = "bfmd-view-hint";
+    viewHint.textContent = "Choisis une rubrique pour afficher ses détails.";
+    viewHint.style.cssText = "padding:10px 12px;margin:4px 0 12px;border:1px solid rgba(127,127,127,.18);border-radius:10px;font-size:12px;opacity:.78";
+    nav.appendChild(viewHint);
+
+    const activateTab = key => {
+      const definition = tabDefinitions.find(tab => tab.key === key);
+      if (!definition) return;
+      const selectable = allSections.filter(section => !isHeaderSection(section));
+      selectable.forEach(section => { section.style.display = "none"; });
+      content.querySelectorAll(".bfmd-pitches,.bfmd-pitch-legend,.bfmd-tactics-caption,.bfmd-match-analysis > .bfmd-title")
+        .forEach(node => { node.style.display = ""; });
+      const targets = definition.find();
+      const reveal = target => {
+        if (!target || !content.contains(target)) return;
+        target.style.display = "block";
+        let parent = target.parentElement;
+        while (parent && parent !== content) {
+          if (parent.matches(sectionSelector) && !isHeaderSection(parent)) parent.style.display = "block";
+          parent = parent.parentElement;
+        }
+      };
+      targets.forEach(reveal);
+      if (key === "players") {
+        content.querySelectorAll(".bfmd-pitches,.bfmd-pitch-legend,.bfmd-tactics-caption,.bfmd-match-analysis > .bfmd-title")
+          .forEach(node => { node.style.display = "none"; });
+      }
+      viewHint.textContent = targets.length
+        ? "Rubrique sélectionnée : " + definition.label + ". Choisis une autre rubrique dans le menu pour changer l’affichage."
+        : "Les données de « " + definition.label + " » ne sont pas disponibles pour ce match.";
+      nav.querySelectorAll("button[data-bf-match-tab]").forEach(button => {
+        const active = button.dataset.bfMatchTab === key;
+        button.setAttribute("aria-pressed", active ? "true" : "false");
+        button.style.background = active ? "linear-gradient(110deg,#087f5b,#0b9b69)" : "rgba(127,127,127,.12)";
+        button.style.color = active ? "#fff" : "inherit";
+        button.style.borderColor = active ? "#0b9b69" : "rgba(148,163,184,.25)";
       });
-      const header = content.querySelector(".bfmd-header,.bf-new-safe-head");
-      if (header) header.insertAdjacentElement("afterend",nav);
-      else content.insertBefore(nav,content.firstChild);
-    }
+      content.dataset.bfActiveMatchTab = key;
+    };
+    tabDefinitions.forEach(definition => {
+      const button = document.createElement("button");
+      button.type = "button";
+      button.dataset.bfMatchTab = definition.key;
+      button.textContent = definition.label;
+      button.setAttribute("aria-pressed","false");
+      button.style.cssText = "flex:0 0 auto;border:1px solid rgba(148,163,184,.25);border-radius:999px;padding:9px 14px;background:rgba(127,127,127,.12);color:inherit;font-weight:850;cursor:pointer;white-space:nowrap";
+      button.addEventListener("click",() => activateTab(definition.key));
+      nav.appendChild(button);
+    });
+    const hero = content.querySelector(".bfmd-header,.bf-new-safe-head");
+    if (hero) hero.insertAdjacentElement("afterend",nav);
+    else content.insertBefore(nav,content.firstChild);
+    nav.insertAdjacentElement("afterend",viewHint);
+    allSections.filter(section => !isHeaderSection(section)).forEach(section => { section.style.display = "none"; });
+    activateTab("summary");
   }
 
   async function openDetails(
