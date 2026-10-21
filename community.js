@@ -68,19 +68,57 @@
       }).join("");
     }
 
+    const localCommentsKey = "bf:local-comments:general";
+    let localCommentsMode = false;
+    const localOnlyMessage = "Commentaire sauvegardé sur cet appareil uniquement. Pour le partager avec tous les visiteurs, il faut connecter un stockage commun à Vercel.";
+    function readLocalComments() {
+      try {
+        const value = JSON.parse(localStorage.getItem(localCommentsKey) || "[]");
+        return Array.isArray(value) ? value.filter(item => item && typeof item.message === "string") : [];
+      } catch (_) { return []; }
+    }
+    function saveLocalComment(author, message) {
+      const comments = readLocalComments();
+      comments.unshift({
+        id: "local-" + Date.now() + "-" + Math.random().toString(36).slice(2,7),
+        author, message, createdAt: new Date().toISOString()
+      });
+      try {
+        localStorage.setItem(localCommentsKey, JSON.stringify(comments.slice(0,50)));
+        localCommentsMode = true;
+        renderComments(comments.slice(0,50));
+        if (count) count.textContent = comments.slice(0,50).length + " commentaire(s) · local";
+        return true;
+      } catch (_) {
+        localCommentsMode = true;
+        return false;
+      }
+    }
+
     async function loadComments() {
+      if (localCommentsMode) {
+        const local = readLocalComments();
+        renderComments(local);
+        if (count) count.textContent = local.length + " commentaire(s) · local";
+        return;
+      }
       try {
         const response = await fetch(API, { method: "GET", cache: "no-store", headers: { Accept: "application/json" } });
         const data = await response.json().catch(() => ({}));
         if (!response.ok) {
-          if (response.status === 503) throw new Error("Le service de commentaires partagés n’est pas encore activé.");
-          throw new Error("Impossible de charger les commentaires pour le moment.");
+          localCommentsMode = true;
+          renderComments(readLocalComments());
+          if (count) count.textContent = readLocalComments().length + " commentaire(s) · local";
+          setStatus("Mode local activé. Les nouveaux commentaires resteront sur cet appareil tant que le stockage partagé n’est pas configuré.");
+          return;
         }
         renderComments(data.comments || []);
         if (count) count.textContent = (data.comments || []).length + " commentaire(s)";
-      } catch (error) {
-        commentsNode.innerHTML = '<p style="margin:0;padding:14px;border:1px solid rgba(217,75,75,.35);border-radius:10px;color:var(--bf-muted,#71808a)">Les commentaires ne peuvent pas être chargés pour le moment.</p>';
-        setStatus(error.message || "Erreur de connexion.", true);
+      } catch (_) {
+        localCommentsMode = true;
+        renderComments(readLocalComments());
+        if (count) count.textContent = readLocalComments().length + " commentaire(s) · local";
+        setStatus("Mode local activé. Les nouveaux commentaires resteront sur cet appareil tant que le stockage partagé n’est pas configuré.");
       }
     }
 
@@ -95,7 +133,20 @@
       submit.disabled = true;
       submit.style.opacity = ".65";
       setStatus("Publication…");
+      const publishLocally = () => {
+        const saved = saveLocalComment(author, message);
+        if (saved) {
+          messageInput.value = "";
+          setStatus(localOnlyMessage);
+        } else {
+          setStatus("Le navigateur n’a pas permis de sauvegarder le commentaire localement.", true);
+        }
+      };
       try {
+        if (localCommentsMode) {
+          publishLocally();
+          return;
+        }
         const response = await fetch(API, {
           method: "POST",
           cache: "no-store",
@@ -104,15 +155,20 @@
         });
         const data = await response.json().catch(() => ({}));
         if (!response.ok) {
-          if (response.status === 503) throw new Error("Il faut activer le stockage partagé dans Vercel avant de publier.");
-          if (response.status === 429) throw new Error(data.message || "Attends un peu avant de publier à nouveau.");
-          throw new Error(data.message || "Le commentaire n’a pas pu être publié.");
+          if (response.status === 429) {
+            setStatus(data.message || "Attends un peu avant de publier à nouveau.", true);
+          } else if (response.status === 400 && data.error === "invalid_comment") {
+            setStatus(data.message || "Vérifie le pseudo et le commentaire.", true);
+          } else {
+            publishLocally();
+          }
+          return;
         }
         messageInput.value = "";
         setStatus("Commentaire publié.");
         await loadComments();
-      } catch (error) {
-        setStatus(error.message || "Erreur de connexion.", true);
+      } catch (_) {
+        publishLocally();
       } finally {
         submit.disabled = false;
         submit.style.opacity = "1";
