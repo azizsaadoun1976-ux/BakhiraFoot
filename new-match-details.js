@@ -936,6 +936,16 @@ function bfAssignFormationRoles(players, formation, readPosition) {
     const visited = new Set();
     const combined = [];
     const seenEvents = new Set();
+    const looksLikeEvent = event => {
+      if (!event || typeof event !== "object" || Array.isArray(event)) return false;
+      const has = key => Object.prototype.hasOwnProperty.call(event, key);
+      return [
+        "event_type", "eventType", "incidentType", "goal", "scorer", "goal_scorer",
+        "goalScorer", "injury", "card", "player_in", "playerIn", "player_out", "playerOut"
+      ].some(has) || (
+        has("type") && ["player","athlete","actor","scorer","minute","elapsed","time","detail","description","text","comments"].some(has)
+      );
+    };
     const addEvent = event => {
       if (!event || typeof event !== "object" || Array.isArray(event)) return;
       const time = first(event.minute, event.elapsed, event.time?.elapsed, event.time?.minute, event.time);
@@ -950,6 +960,20 @@ function bfAssignFormationRoles(players, formation, readPosition) {
       seenEvents.add(identity);
       combined.push(event);
     };
+    const collectEventContainer = (value, depth = 0) => {
+      if (!value || typeof value !== "object" || depth > 4) return;
+      if (Array.isArray(value)) {
+        value.forEach(item => {
+          if (looksLikeEvent(item)) addEvent(item);
+          else collectEventContainer(item, depth + 1);
+        });
+        return;
+      }
+      if (looksLikeEvent(value)) addEvent(value);
+      for (const child of Object.values(value)) {
+        if (child && typeof child === "object") collectEventContainer(child, depth + 1);
+      }
+    };
     while (queue.length && visited.size < 2000) {
       const item = queue.shift();
       const current = item?.value;
@@ -963,7 +987,7 @@ function bfAssignFormationRoles(players, formation, readPosition) {
       }
       for (const [key, value] of Object.entries(current)) {
         const normalizedKey = String(key).toLowerCase().replace(/[^a-z0-9]/g, "");
-        if (eventKeys.has(normalizedKey) && Array.isArray(value)) value.forEach(addEvent);
+        if (eventKeys.has(normalizedKey)) collectEventContainer(value);
         if (value && typeof value === "object" && item.depth < 6) queue.push({ value, depth: item.depth + 1 });
       }
     }
