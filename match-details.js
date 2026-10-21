@@ -6185,43 +6185,92 @@ function bfSameFixtureMetadata(candidate,expected,requireDate=false) {
         button.setAttribute("aria-pressed", selected ? "true" : "false");
       });
     };
+    const voteStorageKey = "bf:local-votes:" + matchKey;
+    let localVoteMode = false;
+    const readLocalVote = () => {
+      try {
+        const saved = JSON.parse(localStorage.getItem(voteStorageKey) || "{}");
+        return {
+          votes: {
+            home: Math.max(0, Number(saved?.votes?.home) || 0),
+            away: Math.max(0, Number(saved?.votes?.away) || 0)
+          },
+          voted: saved?.voted === "home" || saved?.voted === "away" ? saved.voted : null
+        };
+      } catch (_) {
+        return { votes:{home:0,away:0}, voted:null };
+      }
+    };
+    const saveLocalVote = team => {
+      const saved = readLocalVote();
+      if (saved.voted !== team) {
+        if (saved.voted === "home" || saved.voted === "away") {
+          saved.votes[saved.voted] = Math.max(0, saved.votes[saved.voted] - 1);
+        }
+        saved.votes[team] = Math.max(0, saved.votes[team] + 1);
+        saved.voted = team;
+        try { localStorage.setItem(voteStorageKey, JSON.stringify(saved)); } catch (_) {}
+      }
+      return saved;
+    };
+    const localVoteMessage = "Vote enregistré sur cet appareil uniquement ; il n’est pas partagé avec les autres visiteurs.";
+    const applyLocalVote = team => {
+      localVoteMode = true;
+      const local = saveLocalVote(team);
+      renderVotes(local);
+      voteStatus.textContent = localVoteMessage;
+    };
     const voteURL = "/api/community?match=" + encodeURIComponent(matchKey) + "&vote=1";
     const loadVotes = async () => {
       try {
         const response = await fetch(voteURL, {cache:"no-store",headers:{Accept:"application/json"}});
         const payload = await response.json().catch(() => ({}));
         if (!response.ok) {
-          voteStatus.textContent = response.status === 503
-            ? "Votes partagés indisponibles : configure Redis/Upstash dans Vercel."
-            : "Impossible de charger les votes.";
+          localVoteMode = true;
+          renderVotes(readLocalVote());
+          voteStatus.textContent = "Mode local activé : " + localVoteMessage;
           return;
         }
         renderVotes(payload);
         voteStatus.textContent = payload?.voted
           ? "Ton vote est enregistré. Tu peux changer de choix."
           : "Choisis une équipe pour enregistrer ton vote.";
-      } catch (_) { voteStatus.textContent = "Connexion aux votes indisponible."; }
+      } catch (_) {
+        localVoteMode = true;
+        renderVotes(readLocalVote());
+        voteStatus.textContent = "Mode local activé : " + localVoteMessage;
+      }
     };
     voteButtons.forEach(button => button.addEventListener("click", async () => {
+      const team = button.dataset.bfVote;
+      if (localVoteMode) {
+        applyLocalVote(team);
+        return;
+      }
       voteButtons.forEach(item => item.disabled = true);
       voteStatus.textContent = "Enregistrement du vote…";
       try {
         const response = await fetch(voteURL, {
           method:"POST",cache:"no-store",
           headers:{"Content-Type":"application/json",Accept:"application/json"},
-          body:JSON.stringify({type:"vote",team:button.dataset.bfVote,match:matchKey})
+          body:JSON.stringify({type:"vote",team,match:matchKey})
         });
         const payload = await response.json().catch(() => ({}));
         if (!response.ok) {
-          voteStatus.textContent = response.status === 503
-            ? "Votes partagés indisponibles : configure Redis/Upstash dans Vercel."
-            : (payload.message || "Le vote n’a pas pu être enregistré.");
+          if (response.status === 429) {
+            voteStatus.textContent = payload.message || "Attends un peu avant de voter à nouveau.";
+          } else {
+            applyLocalVote(team);
+          }
           return;
         }
         renderVotes(payload);
         voteStatus.textContent = "Vote enregistré. Tu peux changer ton choix.";
-      } catch (_) { voteStatus.textContent = "Erreur de connexion pendant le vote."; }
-      finally { voteButtons.forEach(item => item.disabled = false); }
+      } catch (_) {
+        applyLocalVote(team);
+      } finally {
+        voteButtons.forEach(item => item.disabled = false);
+      }
     }));
     loadVotes();
 
@@ -6315,47 +6364,111 @@ function bfSameFixtureMetadata(candidate,expected,requireDate=false) {
     content.appendChild(extras);
 
     const api = "/api/community?match=" + encodeURIComponent(matchKey);
+    const localCommentsKey = "bf:local-comments:" + matchKey;
+    let localCommentsMode = false;
     const form = comments.querySelector("form");
     const status = form.querySelector('[role="status"]');
     const list = comments.querySelector(".bfmd-match-comment-list");
+    const readLocalComments = () => {
+      try {
+        const value = JSON.parse(localStorage.getItem(localCommentsKey) || "[]");
+        return Array.isArray(value) ? value.filter(item => item && typeof item.message === "string") : [];
+      } catch (_) { return []; }
+    };
+    const renderComments = rows => {
+      list.innerHTML = rows.length ? rows.map(item => {
+        const date = item.createdAt ? new Date(item.createdAt) : null;
+        const dateText = date && !Number.isNaN(date.getTime())
+          ? date.toLocaleString("fr-FR",{dateStyle:"medium",timeStyle:"short"}) : "";
+        return '<article style="padding:12px;border:1px solid rgba(148,163,184,.2);border-radius:11px;margin:8px 0;overflow-wrap:anywhere"><strong>' +
+          esc(item.author || "Supporter") + '</strong><small style="float:right;opacity:.7">' + esc(dateText) +
+          '</small><p style="white-space:pre-wrap;line-height:1.55;margin:7px 0 0">' + esc(item.message || "") + '</p></article>';
+      }).join("") : '<div class="bfmd-empty">Pas encore de commentaire pour ce match. Lance la discussion !</div>';
+    };
+    const saveLocalComment = (author, message) => {
+      const rows = readLocalComments();
+      rows.unshift({id:"local-" + Date.now() + "-" + Math.random().toString(36).slice(2,7),author,message,createdAt:new Date().toISOString()});
+      try {
+        localStorage.setItem(localCommentsKey, JSON.stringify(rows.slice(0,50)));
+        localCommentsMode = true;
+        return true;
+      } catch (_) {
+        localCommentsMode = true;
+        return false;
+      }
+    };
+    const localCommentMessage = "Commentaire sauvegardé sur cet appareil uniquement ; le partage entre visiteurs nécessite un stockage commun.";
     async function load() {
+      if (localCommentsMode) {
+        renderComments(readLocalComments());
+        return;
+      }
       try {
         const response = await fetch(api,{cache:"no-store",headers:{Accept:"application/json"}});
         const data = await response.json().catch(()=>({}));
         if (!response.ok) {
-          list.innerHTML = '<div class="bfmd-empty">Les commentaires partagés ne sont pas encore activés sur le serveur.</div>';
-          if (response.status === 503) status.textContent = "Stockage partagé à configurer dans Vercel.";
+          localCommentsMode = true;
+          renderComments(readLocalComments());
+          status.textContent = "Mode local activé : " + localCommentMessage;
           return;
         }
-        const rows = Array.isArray(data.comments) ? data.comments : [];
-        list.innerHTML = rows.length ? rows.map(item => {
-          const date = item.createdAt ? new Date(item.createdAt) : null;
-          const dateText = date && !Number.isNaN(date.getTime()) ? date.toLocaleString("fr-FR",{dateStyle:"medium",timeStyle:"short"}) : "";
-          return '<article style="padding:12px;border:1px solid rgba(148,163,184,.2);border-radius:11px;margin:8px 0;overflow-wrap:anywhere"><strong>' + esc(item.author || "Supporter") + '</strong><small style="float:right;opacity:.7">' + esc(dateText) + '</small><p style="white-space:pre-wrap;line-height:1.55;margin:7px 0 0">' + esc(item.message || "") + '</p></article>';
-        }).join("") : '<div class="bfmd-empty">Pas encore de commentaire pour ce match. Lance la discussion !</div>';
-      } catch (_) { list.innerHTML = '<div class="bfmd-empty">Impossible de charger les commentaires.</div>'; }
+        renderComments(Array.isArray(data.comments) ? data.comments : []);
+      } catch (_) {
+        localCommentsMode = true;
+        renderComments(readLocalComments());
+        status.textContent = "Mode local activé : " + localCommentMessage;
+      }
     }
     form.addEventListener("submit", async event => {
       event.preventDefault();
       const author = String(form.elements.author.value || "").trim();
       const message = String(form.elements.message.value || "").trim();
       const button = form.querySelector("button");
-      if (author.length < 2 || message.length < 3) { status.textContent = "Vérifie le pseudo et le commentaire."; return; }
-      button.disabled = true; status.textContent = "Publication…";
+      if (author.length < 2 || message.length < 3) {
+        status.textContent = "Vérifie le pseudo et le commentaire.";
+        return;
+      }
+      button.disabled = true;
+      status.textContent = "Publication…";
+      const localSave = async () => {
+        const saved = saveLocalComment(author, message);
+        if (saved) {
+          form.elements.message.value = "";
+          renderComments(readLocalComments());
+          status.textContent = localCommentMessage;
+        } else {
+          status.textContent = "Le navigateur n’a pas permis de sauvegarder ce commentaire localement.";
+        }
+      };
       try {
-        const response = await fetch(api,{method:"POST",cache:"no-store",headers:{"Content-Type":"application/json",Accept:"application/json"},body:JSON.stringify({author,message,match:matchKey})});
-        const data = await response.json().catch(()=>({}));
-        if (!response.ok) {
-          status.textContent = response.status === 503
-            ? "Les commentaires partagés ne sont pas configurés dans Vercel (Redis/Upstash)."
-            : response.status === 429
-              ? (data.message || "Attends un peu avant de republier.")
-              : (data.message || data.error || "Publication impossible. Réessaie.");
+        if (localCommentsMode) {
+          await localSave();
           return;
         }
-        form.elements.message.value = ""; status.textContent = "Commentaire publié."; await load();
-      } catch (_) { status.textContent = "Erreur de connexion."; }
-      finally { button.disabled = false; }
+        const response = await fetch(api,{
+          method:"POST",cache:"no-store",
+          headers:{"Content-Type":"application/json",Accept:"application/json"},
+          body:JSON.stringify({author,message,match:matchKey})
+        });
+        const data = await response.json().catch(()=>({}));
+        if (!response.ok) {
+          if (response.status === 429) {
+            status.textContent = data.message || "Attends un peu avant de republier.";
+          } else if (response.status === 400 && data.error === "invalid_comment") {
+            status.textContent = data.message || "Vérifie le pseudo et le commentaire.";
+          } else {
+            await localSave();
+          }
+          return;
+        }
+        form.elements.message.value = "";
+        status.textContent = "Commentaire publié.";
+        await load();
+      } catch (_) {
+        await localSave();
+      } finally {
+        button.disabled = false;
+      }
     });
     load();
     const navSections = Array.from(content.querySelectorAll(".bfmd-section,.bf-new-safe-section"));
