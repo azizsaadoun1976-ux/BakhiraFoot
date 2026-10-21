@@ -143,6 +143,9 @@
   }
 
   async function checkSiteAccess() {
+    // Keep Contact reachable so a suspended visitor can request a review.
+    const path = String(window.location.pathname || "").toLowerCase();
+    if (path.endsWith("/contact.html") || path === "/contact" || path.endsWith("/contact")) return;
     try {
       await getJSON(API + "?status=1");
     } catch (error) {
