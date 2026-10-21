@@ -2798,6 +2798,47 @@ ${esc(String(playerName(player) || "P").split(/\s+/).map(part => part[0] || "").
   /* =========================================================
      RENDER DETAILS
      ========================================================= */
+  function bfNewMatchMetaText(value, depth = 0) {
+    if (value === null || value === undefined || depth > 4) return "";
+    if (typeof value === "string" || typeof value === "number") return String(value).trim();
+    if (Array.isArray(value)) {
+      return [...new Set(value.map(item => bfNewMatchMetaText(item, depth + 1)).filter(Boolean))].join(" · ");
+    }
+    if (typeof value !== "object") return "";
+    const direct = first(
+      value.name, value.displayName, value.display_name, value.fullName, value.full_name,
+      value.shortName, value.short_name, value.label, value.title, value.channelName,
+      value.channel_name, value.networkName, value.network_name, value.officialName,
+      value.official_name, value.value?.name, value.value?.text
+    );
+    if (direct !== null && direct !== undefined && typeof direct !== "object" && String(direct).trim()) return String(direct).trim();
+    for (const key of ["names", "items", "officials", "channels", "broadcasters", "commentators", "staff", "main", "referee"]) {
+      const textValue = bfNewMatchMetaText(value[key], depth + 1);
+      if (textValue) return textValue;
+    }
+    return "";
+  }
+
+  function bfNewFindMatchMeta(details, aliases) {
+    const normalizeKey = value => String(value).toLowerCase().replace(/[^a-z0-9]/g, "");
+    const targets = new Set(aliases.map(normalizeKey));
+    const roots = [
+      details, details?.fixture, details?.match, details?.metadata, details?.media,
+      details?.broadcast, details?.broadcasts, details?.tv, details?.coverage,
+      details?.officials, details?.matchOfficials, details?.match_officials,
+      details?.data, details?.response, details?.result
+    ].filter(value => value && typeof value === "object" && !Array.isArray(value));
+    for (const root of roots) {
+      for (const [key, value] of Object.entries(root)) {
+        if (targets.has(normalizeKey(key))) {
+          const textValue = bfNewMatchMetaText(value);
+          if (textValue) return textValue;
+        }
+      }
+    }
+    return "";
+  }
+
   function renderDetails(
     details,
     source
@@ -2875,15 +2916,35 @@ ${esc(String(playerName(player) || "P").split(/\s+/).map(part => part[0] || "").
         "MATCH"
       );
 
-    const date =
-      first(
-        details?.fixture
-          ?.date,
+    const date = first(
+      details?.fixture?.date, details?.date, details?.time, ""
+    );
 
-        details?.date,
+    const venue = first(
+      bfNewFindMatchMeta(details, ["venue", "stadium", "ground", "arena", "stadiumName", "venueName"]),
+      details?.fixture?.venue?.name, details?.fixture?.venue?.displayName,
+      typeof details?.fixture?.venue === "string" ? details.fixture.venue : null,
+      typeof details?.venue === "string" ? details.venue : null, ""
+    );
 
-        ""
-      );
+    const referee = first(
+      bfNewFindMatchMeta(details, ["referee", "mainReferee", "matchReferee", "refereeName", "official"]),
+      details?.fixture?.referee?.name,
+      typeof details?.fixture?.referee === "string" ? details.fixture.referee : null,
+      details?.referee?.name,
+      typeof details?.referee === "string" ? details.referee : null, ""
+    );
+
+    const broadcastChannel = bfNewFindMatchMeta(details, [
+      "tvChannel", "tv_channel", "channel", "channels", "broadcaster", "broadcasters",
+      "broadcast", "broadcasts", "network", "networks", "television", "coverage"
+    ]);
+
+    const commentator = bfNewFindMatchMeta(details, [
+      "commentator", "commentators", "commentatorName", "commentator_name",
+      "tvCommentator", "tv_commentator", "matchCommentator", "match_commentator",
+      "announcer", "announcers", "commentaryTeam", "commentary_team"
+    ]);
 
     const providerText =
       source ===
@@ -3008,79 +3069,14 @@ ${esc(String(playerName(player) || "P").split(/\s+/).map(part => part[0] || "").
       </div>
 
 
-      <div
-        class="bf-new-safe-info"
-      >
-
-        ${
-          date
-
-            ? `
-
-              <span>
-                ${esc(
-                  new Date(
-                    date
-                  ).toLocaleString(
-                    "fr-FR"
-                  )
-                )}
-              </span>
-
-            `
-
-            : ""
-        }
-
-
-        ${
-          details?.fixture
-            ?.venue
-
-            ? `
-
-              <span>
-                ${esc(
-
-                  typeof
-                    details
-                      .fixture
-                      .venue ===
-                    "object"
-
-                    ? first(
-                        details
-                          .fixture
-                          .venue
-                          ?.name,
-
-                        details
-                          .fixture
-                          .venue
-                          ?.displayName,
-
-                        ""
-                      )
-
-                    : details
-                        .fixture
-                        .venue
-
-                )}
-              </span>
-
-            `
-
-            : ""
-        }
-
-
-        <span>
-          ${providerText}
-        </span>
-
+      <div class="bf-new-safe-info">
+        ${date ? '<span>📅 ' + esc(new Date(date).toLocaleString("fr-FR")) + '</span>' : ''}
+        <span>🏟️ ${esc(venue || "Stade non communiqué")}</span>
+        <span>👨‍⚖️ ${esc(referee || "Arbitre non communiqué")}</span>
+        <span>📺 ${esc(broadcastChannel || "Chaîne non confirmée")}</span>
+        <span>🎙️ ${esc(commentator || "Commentateur non annoncé")}</span>
+        <span>${providerText}</span>
       </div>
-
 
       <div
         class="bf-new-safe-section"
