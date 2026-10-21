@@ -2809,9 +2809,19 @@ ${esc(String(playerName(player) || "P").split(/\s+/).map(part => part[0] || "").
     });
   }
 
-  function renderMvp(homeLineup, awayLineup) {
+  function selectPitchMvp(homeLineup, awayLineup, details) {
+    const all = [...homeLineup.players, ...awayLineup.players];
+    const official = all.find(player => playerIsOfficialMvp(player) || playerIsNamedMvp(player, details));
+    if (official) return { player: official, official: true };
+    const best = all.map(player => ({ player, rating: playerRating(player) }))
+      .filter(item => item.rating !== null && item.rating >= 0 && item.rating <= 10)
+      .sort((a, b) => b.rating - a.rating)[0];
+    return best ? { player: best.player, official: false } : null;
+  }
+
+  function renderMvp(homeLineup, awayLineup, details) {
     const all=[...homeLineup.players,...awayLineup.players];
-    const official=all.find(player=>playerIsOfficialMvp(player));
+    const official=all.find(player=>playerIsOfficialMvp(player) || playerIsNamedMvp(player, details));
     if(official){
       const photo=playerPhoto(official), rating=playerRating(official);
       return '<div class="bf-new-safe-mvp">' +
