@@ -16,10 +16,10 @@ Le module de commentaires utilise une base Redis partagée via l'API REST Upstas
 
 - Les 100 commentaires les plus récents sont partagés entre les visiteurs.
 - Le pseudo et le commentaire sont affichés publiquement.
-- Les commentaires contenant des insultes/propos obscènes détectés sont refusés; une empreinte SHA-256 de l'adresse IP du réseau est utilisée pour conserver la suspension et limiter les publications.
+- Les commentaires contenant des insultes ou des propos familiers restent autorisés. Une empreinte SHA-256 de l'adresse IP du réseau est utilisée uniquement pour limiter les publications répétées.
 - Une publication est limitée à une par réseau toutes les 20 secondes.
 - Si le stockage n'est pas configuré, l'espace communautaire affiche un message d'indisponibilité et le reste du site continue de fonctionner.
 
 ## Limite importante
 
-Le blocage d'accès après une suspension est affiché par community.js sur les pages qui chargent ce script et dépend du même réseau/IP. Ce n'est pas une barrière serveur absolue: un changement de réseau ou la désactivation de JavaScript peut la contourner. Pour une interdiction réellement impossible à contourner, il faut une authentification et un contrôle d'accès côté serveur/edge pour toutes les routes du site.
+Le système actuel n'applique pas de suspension automatique pour des mots insultants. Une limite de fréquence de publication reste active pour éviter le spam. Pour ajouter ultérieurement une vraie modération, elle devra être activée séparément et expliquée aux visiteurs.
