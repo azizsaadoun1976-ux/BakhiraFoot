@@ -949,25 +949,40 @@ function bfAssignFormationRoles(players, formation, readPosition) {
      ========================================================= */
 
   function getEvents(details) {
-    const keys = ["events", "incidents", "plays", "injuries", "cards", "goals"];
-    const roots = [details, details?.data, details?.match, details?.fixture, details?.event, details?.result, details?.response]
-      .filter(value => value && typeof value === "object");
+    const eventKeys = new Set(["events", "incidents", "plays", "injuries", "cards", "goals", "timeline", "matchevents", "matchincidents", "matchtimeline"]);
+    const queue = [{ value: details, depth: 0 }];
+    const visited = new Set();
     const combined = [];
-    const seen = new Set();
-    for (const root of roots) {
-      for (const key of keys) {
-        const list = Array.isArray(root?.[key]) ? root[key] : [];
-        for (const event of list) {
-          if (!event || typeof event !== "object") continue;
-          const signature = [
-            event?.minute ?? event?.elapsed ?? event?.time?.elapsed,
-            typeof event?.type === "object" ? event?.type?.name : event?.type,
-            event?.player?.name || event?.player_name || event?.athlete?.displayName || event?.name,
-            event?.detail || event?.text || event?.description
-          ].filter(value => value !== null && value !== undefined && value !== "").join("|");
-          const identity = String(first(event?.id, event?.event_id, event?.incidentId, signature || JSON.stringify(event)));
-          if (!seen.has(identity)) { seen.add(identity); combined.push(event); }
-        }
+    const seenEvents = new Set();
+    const addEvent = event => {
+      if (!event || typeof event !== "object" || Array.isArray(event)) return;
+      const time = first(event.minute, event.elapsed, event.time?.elapsed, event.time?.minute, event.time);
+      const type = first(event.type?.name, event.type?.text, event.type?.slug, event.type, event.eventType, event.event_type, event.incidentType);
+      const personValue = first(event.player, event.scorer, event.athlete, event.actor, event.person, event.injury?.player, event.card?.player, event.participants?.[0]?.athlete, event.participants?.[0]?.player, event.participants?.[0], event.players?.[0]);
+      const player = eventPersonName(personValue);
+      const detail = first(event.detail?.name, event.detail?.text, event.detail, event.description?.text, event.description, event.text, event.commentary, event.shortText, event.longText);
+      const id = first(event.id, event.event_id, event.eventId, event.incidentId, event.incident_id);
+      const signature = [time, type, player, detail].filter(v => v !== null && v !== undefined && v !== "").map(String).join("|") || JSON.stringify(event);
+      const identity = id !== null && id !== undefined && String(id) !== "" ? "id:" + String(id) : "sig:" + signature;
+      if (seenEvents.has(identity)) return;
+      seenEvents.add(identity);
+      combined.push(event);
+    };
+    while (queue.length && visited.size < 2000) {
+      const item = queue.shift();
+      const current = item?.value;
+      if (!current || typeof current !== "object" || visited.has(current) || item.depth > 6) continue;
+      visited.add(current);
+      if (Array.isArray(current)) {
+        if (item.depth < 6) current.forEach(value => {
+          if (value && typeof value === "object") queue.push({ value, depth: item.depth + 1 });
+        });
+        continue;
+      }
+      for (const [key, value] of Object.entries(current)) {
+        const normalizedKey = String(key).toLowerCase().replace(/[^a-z0-9]/g, "");
+        if (eventKeys.has(normalizedKey) && Array.isArray(value)) value.forEach(addEvent);
+        if (value && typeof value === "object" && item.depth < 6) queue.push({ value, depth: item.depth + 1 });
       }
     }
     return combined;
