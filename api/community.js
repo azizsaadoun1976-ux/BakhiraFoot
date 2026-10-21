@@ -129,17 +129,9 @@ module.exports = async function community(req, res) {
     return send(res, 400, { error: "visitor_identity_unavailable" });
   }
 
-  const banKey = "bf:community:ban:" + hash;
   try {
-    const banned = await redisCommand("GET", banKey);
-    if (banned) {
-      return send(res, 403, {
-        banned: true,
-        error: "community_access_banned",
-        message: "Access has been suspended for this network due to abusive language."
-      });
-    }
-
+    // Comments are intentionally open: abusive words do not trigger a site ban.
+    // The status endpoint remains for compatibility with older community.js builds.
     if (req.method === "GET") {
       if (String(req.query?.status || "") === "1") {
         return send(res, 200, { banned: false });
@@ -169,15 +161,6 @@ module.exports = async function community(req, res) {
       return send(res, 400, {
         error: "invalid_comment",
         message: "Ajoute un pseudo (2 caractères minimum) et un commentaire (3 caractères minimum)."
-      });
-    }
-
-    if (hasProfanity(author) || hasProfanity(message)) {
-      await redisCommand("SET", banKey, "1");
-      return send(res, 403, {
-        banned: true,
-        error: "abusive_language",
-        message: "Commentaire insultant détecté. L'accès au site est suspendu pour ce réseau."
       });
     }
 
