@@ -351,8 +351,18 @@ module.exports = async function matchEventEnrichment(req, res) {
       ),
       venue: findMeta(root, ["venue", "stadium", "ground", "arena", "venueName", "stadiumName"]),
       referee: findMeta(root, ["referee", "mainReferee", "matchReferee", "refereeName"]),
-      broadcastChannel: findMeta(root, ["tvChannel", "tv_channel", "channel", "channels", "broadcaster", "broadcasters", "broadcast", "broadcasts", "network", "networks", "television"]),
-      commentator: findMeta(root, ["commentator", "commentators", "commentatorName", "tvCommentator", "matchCommentator", "announcer", "announcers", "commentaryTeam"])
+      broadcastChannel: findMeta(root, [
+        "tvChannel", "tv_channel", "tvChannels", "tv_channels", "tvStation", "tvStations",
+        "channel", "channels", "channelName", "channel_name", "broadcaster", "broadcasters",
+        "broadcasterName", "broadcastName", "broadcastChannel", "broadcast_channel",
+        "broadcast", "broadcasts", "network", "networks", "television", "media", "coverage"
+      ]),
+      commentator: findMeta(root, [
+        "commentator", "commentators", "commentatorName", "commentator_name",
+        "tvCommentator", "tv_commentator", "matchCommentator", "match_commentator",
+        "liveCommentator", "broadcastCommentator", "announcer", "announcers",
+        "commentaryTeam", "commentary_team", "presenter", "presenters", "caster"
+      ])
     };
 
     // SportScore can omit venue/referee on otherwise well-known fixtures.
