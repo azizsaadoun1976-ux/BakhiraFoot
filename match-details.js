@@ -6143,6 +6143,87 @@ function bfSameFixtureMetadata(candidate,expected,requireDate=false) {
     content.querySelector(".bfmd-match-comments")?.remove();
     content.querySelector(".bfmd-match-center-extras")?.remove();
     content.querySelector(".bfmd-match-vote")?.remove();
+    const matchKey = String(matchIdentifier || "").slice(0,120);
+    const homeName = String(teams?.home?.name || "").trim();
+    const awayName = String(teams?.away?.name || "").trim();
+    const voteSection = document.createElement("section");
+    voteSection.className = "bfmd-section bfmd-match-vote";
+    voteSection.innerHTML =
+      '<div class="bfmd-title">🗳️ Qui va gagner ?</div>' +
+      '<p class="bfmd-extra-copy">Vote pour l’équipe que tu vois gagner ce match. Tu peux changer ton choix.</p>' +
+      '<div class="bfmd-vote-options">' +
+      '<button type="button" class="bfmd-vote-option" data-bf-vote="home" aria-pressed="false">' +
+      (teams?.home?.logo ? '<img src="' + esc(teams.home.logo) + '" alt="" loading="lazy">' : '<span class="bfmd-vote-mark">⚽</span>') +
+      '<span class="bfmd-vote-team">' + esc(homeName || "Domicile") + '</span><strong data-bf-vote-count="home">—</strong></button>' +
+      '<button type="button" class="bfmd-vote-option" data-bf-vote="away" aria-pressed="false">' +
+      (teams?.away?.logo ? '<img src="' + esc(teams.away.logo) + '" alt="" loading="lazy">' : '<span class="bfmd-vote-mark">⚽</span>') +
+      '<span class="bfmd-vote-team">' + esc(awayName || "Extérieur") + '</span><strong data-bf-vote-count="away">—</strong></button></div>' +
+      '<div class="bfmd-vote-bar" aria-hidden="true"><span data-bf-vote-bar="home"></span><span data-bf-vote-bar="away"></span></div>' +
+      '<div class="bfmd-vote-status" role="status">Chargement des votes…</div>';
+    const metaAnchor = content.querySelector(".bfmd-info") || content.querySelector(".bfmd-header") ||
+      content.querySelector(".bf-new-safe-info") || content.querySelector(".bf-new-safe-head") || content.firstChild;
+    if (metaAnchor) metaAnchor.insertAdjacentElement("afterend", voteSection);
+    else content.appendChild(voteSection);
+
+    const voteStatus = voteSection.querySelector(".bfmd-vote-status");
+    const voteButtons = Array.from(voteSection.querySelectorAll("[data-bf-vote]"));
+    const renderVotes = payload => {
+      const votes = payload?.votes || {};
+      const homeVotes = Math.max(0, Number(votes.home) || 0);
+      const awayVotes = Math.max(0, Number(votes.away) || 0);
+      const total = homeVotes + awayVotes;
+      const homePct = total ? Math.round(homeVotes * 100 / total) : 0;
+      const awayPct = total ? 100 - homePct : 0;
+      voteSection.querySelector('[data-bf-vote-count="home"]').textContent = homeVotes + " · " + homePct + "%";
+      voteSection.querySelector('[data-bf-vote-count="away"]').textContent = awayVotes + " · " + awayPct + "%";
+      voteSection.querySelector('[data-bf-vote-bar="home"]').style.width = homePct + "%";
+      voteSection.querySelector('[data-bf-vote-bar="away"]').style.width = awayPct + "%";
+      voteButtons.forEach(button => {
+        const selected = payload?.voted === button.dataset.bfVote;
+        button.classList.toggle("bfmd-vote-option--selected", selected);
+        button.setAttribute("aria-pressed", selected ? "true" : "false");
+      });
+    };
+    const voteURL = "/api/community?match=" + encodeURIComponent(matchKey) + "&vote=1";
+    const loadVotes = async () => {
+      try {
+        const response = await fetch(voteURL, {cache:"no-store",headers:{Accept:"application/json"}});
+        const payload = await response.json().catch(() => ({}));
+        if (!response.ok) {
+          voteStatus.textContent = response.status === 503
+            ? "Votes partagés indisponibles : configure Redis/Upstash dans Vercel."
+            : "Impossible de charger les votes.";
+          return;
+        }
+        renderVotes(payload);
+        voteStatus.textContent = payload?.voted
+          ? "Ton vote est enregistré. Tu peux changer de choix."
+          : "Choisis une équipe pour enregistrer ton vote.";
+      } catch (_) { voteStatus.textContent = "Connexion aux votes indisponible."; }
+    };
+    voteButtons.forEach(button => button.addEventListener("click", async () => {
+      voteButtons.forEach(item => item.disabled = true);
+      voteStatus.textContent = "Enregistrement du vote…";
+      try {
+        const response = await fetch(voteURL, {
+          method:"POST",cache:"no-store",
+          headers:{"Content-Type":"application/json",Accept:"application/json"},
+          body:JSON.stringify({type:"vote",team:button.dataset.bfVote,match:matchKey})
+        });
+        const payload = await response.json().catch(() => ({}));
+        if (!response.ok) {
+          voteStatus.textContent = response.status === 503
+            ? "Votes partagés indisponibles : configure Redis/Upstash dans Vercel."
+            : (payload.message || "Le vote n’a pas pu être enregistré.");
+          return;
+        }
+        renderVotes(payload);
+        voteStatus.textContent = "Vote enregistré. Tu peux changer ton choix.";
+      } catch (_) { voteStatus.textContent = "Erreur de connexion pendant le vote."; }
+      finally { voteButtons.forEach(item => item.disabled = false); }
+    }));
+    loadVotes();
+
     const comments = document.createElement("section");
     comments.className = "bfmd-section bfmd-match-comments";
     comments.innerHTML = '<div class="bfmd-title">💬 Commentaires de cette rencontre</div>' +
@@ -6850,7 +6931,7 @@ const response =
 )}
       `;
 
-      setupMatchCenterNavigation(value, teams, competition);
+      setupMatchCenterNavigation(value, teams, competition, date);
 
     }
     catch (error) {
