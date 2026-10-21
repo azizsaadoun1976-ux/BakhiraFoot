@@ -4182,6 +4182,16 @@ function normalizeEvent(event, index) {
     const visited = new Set();
     const raw = [];
     const rawSeen = new Set();
+    const looksLikeEvent = event => {
+      if (!event || typeof event !== "object" || Array.isArray(event)) return false;
+      const has = key => Object.prototype.hasOwnProperty.call(event, key);
+      return [
+        "event_type", "eventType", "incidentType", "goal", "scorer", "goal_scorer",
+        "goalScorer", "injury", "card", "player_in", "playerIn", "player_out", "playerOut"
+      ].some(has) || (
+        has("type") && ["player","athlete","actor","scorer","minute","elapsed","time","detail","description","text","comments"].some(has)
+      );
+    };
     const pushEvent = event => {
       if (!event || typeof event !== "object" || Array.isArray(event)) return;
       const id = first(event.id, event.event_id, event.eventId, event.incidentId, event.incident_id);
@@ -4194,6 +4204,20 @@ function normalizeEvent(event, index) {
       if (rawSeen.has(key)) return;
       rawSeen.add(key);
       raw.push(event);
+    };
+    const collectEventContainer = (value, depth = 0) => {
+      if (!value || typeof value !== "object" || depth > 4) return;
+      if (Array.isArray(value)) {
+        value.forEach(item => {
+          if (looksLikeEvent(item)) pushEvent(item);
+          else collectEventContainer(item, depth + 1);
+        });
+        return;
+      }
+      if (looksLikeEvent(value)) pushEvent(value);
+      for (const child of Object.values(value)) {
+        if (child && typeof child === "object") collectEventContainer(child, depth + 1);
+      }
     };
     while (queue.length && visited.size < 2000) {
       const item = queue.shift();
@@ -4208,7 +4232,7 @@ function normalizeEvent(event, index) {
       }
       for (const [key, value] of Object.entries(current)) {
         const normalizedKey = String(key).toLowerCase().replace(/[^a-z0-9]/g, "");
-        if (eventKeys.has(normalizedKey) && Array.isArray(value)) value.forEach(pushEvent);
+        if (eventKeys.has(normalizedKey)) collectEventContainer(value);
         if (value && typeof value === "object" && item.depth < 6) queue.push({ value, depth: item.depth + 1 });
       }
     }
