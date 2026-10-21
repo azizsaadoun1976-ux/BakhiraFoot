@@ -4321,23 +4321,31 @@ function normalizeEvent(event, index) {
     player, player?.player, player?.raw, player?.raw?.player,
     player?.statistics, player?.stats, player?.performance
   ].filter(value => value && typeof value === "object");
-  const isMvpValue = (value, depth = 0) => {
-    if (value === true || value === 1) return true;
-    if (typeof value === "string") return /\bmvp\b|man of the match|player of the match|player of the game|best player/i.test(value.trim());
-    if (!value || typeof value !== "object" || depth > 3) return false;
-    if (Array.isArray(value)) return value.some(item => isMvpValue(item, depth + 1));
-    return Object.entries(value).some(([key, item]) =>
-      (/^(mvp|ismanofthematch|playerofthematch|playerofmatch|award|awards|title|name|label|description)$/i.test(String(key).replace(/[^a-z]/gi, "")) &&
-        isMvpValue(item, depth + 1)) || isMvpValue(item, depth + 1)
-    );
+  const isMvpText = value => typeof value === "string" &&
+    /\bmvp\b|man of the match|player of the match|player of the game|best player/i.test(value.trim());
+  const isMvpAward = (value, depth = 0) => {
+    if (!value || typeof value !== "object" || depth > 4) return isMvpText(value);
+    if (Array.isArray(value)) return value.some(item => isMvpAward(item, depth + 1));
+    for (const [key, item] of Object.entries(value)) {
+      const normalizedKey = String(key).toLowerCase().replace(/[^a-z0-9]/g, "");
+      if (["mvp","manofthematch","playerofthematch","playerofmatch","playerofthegame","bestplayer"].includes(normalizedKey)) {
+        if (item === true || item === 1 || isMvpText(item) || isMvpAward(item, depth + 1)) return true;
+      }
+      if (["name","title","label","description","award","awards","type","value"].includes(normalizedKey) &&
+          isMvpAward(item, depth + 1)) return true;
+    }
+    return false;
   };
-  return sources.some(source => [
-    source.mvp, source.is_mvp, source.isMvp, source.isMVP,
-    source.man_of_the_match, source.manOfTheMatch,
-    source.player_of_match, source.playerOfMatch,
-    source.player_of_the_match, source.playerOfTheMatch,
-    source.award, source.awards
-  ].some(value => isMvpValue(value)));
+  return sources.some(source => {
+    const explicitFlags = [
+      source.mvp, source.is_mvp, source.isMvp, source.isMVP,
+      source.man_of_the_match, source.manOfTheMatch,
+      source.player_of_match, source.playerOfMatch,
+      source.player_of_the_match, source.playerOfTheMatch
+    ];
+    return explicitFlags.some(value => value === true || value === 1 || isMvpText(value)) ||
+      isMvpAward(source.award) || isMvpAward(source.awards);
+  });
  }
 
  function findExplicitMvp(details) {
