@@ -3795,31 +3795,20 @@ function pitchPositions(lineup, side) {
     );
   }
 
-  function getEventPlayer(
-    event
-  ) {
-    return first(
-      eventObjectName(
-        event?.player
-      ),
-      eventObjectName(
-        event?.scorer
-      ),
-      eventObjectName(
-        event?.goal_scorer
-      ),
-      eventObjectName(
-        event?.goal?.player
-      ),
-      eventObjectName(
-        event?.actor
-      ),
-      event?.player_name,
-      event?.playerName,
-      event?.scorer_name,
-      event?.name,
-      ""
-    );
+  function getEventPlayer(event) {
+    const candidates = [
+      event?.player, event?.scorer, event?.goalScorer, event?.goal_scorer,
+      event?.goal?.player, event?.goal?.scorer, event?.athlete, event?.actor,
+      event?.injury?.player, event?.injury?.athlete, event?.injuredPlayer, event?.injured_player,
+      event?.card?.player, event?.relatedPlayer, event?.related_player,
+      event?.participant, event?.person,
+      event?.participants?.[0]?.athlete, event?.participants?.[0]?.player, event?.participants?.[0],
+      event?.players?.[0]?.athlete, event?.players?.[0]?.player, event?.players?.[0],
+      event?.player_name, event?.playerName, event?.scorer_name, event?.scorerName,
+      event?.name
+    ];
+    const person = candidates.map(eventPersonName).find(Boolean);
+    return first(person, event?.player_name, event?.playerName, event?.scorer_name, event?.scorerName, event?.name, "");
   }
 
   function eventPersonName(value) {
@@ -3966,25 +3955,33 @@ function pitchPositions(lineup, side) {
   }
 
 function normalizeEvent(event, index) {
-  const rawType =
-    first(
-      event?.type,
-      event?.event_type,
-      event?.incidentType,
-      event?.kind,
-      ""
-    );
+  const rawType = first(
+    event?.type?.name, event?.type?.text, event?.type?.label, event?.type?.slug,
+    typeof event?.type === "string" || typeof event?.type === "number" ? event.type : null,
+    event?.event_type?.name, event?.event_type?.text, event?.event_type?.label,
+    typeof event?.event_type === "string" ? event.event_type : null,
+    event?.incidentType?.name, event?.incidentType?.text,
+    typeof event?.incidentType === "string" ? event.incidentType : null,
+    event?.kind?.name, event?.kind?.text, typeof event?.kind === "string" ? event.kind : null,
+    event?.incident?.type?.name, event?.incident?.type,
+    event?.goal?.type?.name, event?.goal?.type,
+    ""
+  );
 
-  const rawDetail =
-    first(
-      event?.detail,
-      event?.description,
-      event?.goalDescription,
-      event?.cardDescription,
-      event?.incidentClass,
-      event?.reason,
-      ""
-    );
+  const rawDetail = first(
+    event?.detail?.name, event?.detail?.text, event?.detail?.description,
+    typeof event?.detail === "string" || typeof event?.detail === "number" ? event.detail : null,
+    event?.description?.text, event?.description?.label,
+    typeof event?.description === "string" ? event.description : null,
+    event?.goalDescription, event?.goal_description,
+    event?.cardDescription, event?.incidentClass?.name, event?.incidentClass,
+    event?.reason?.name, event?.reason,
+    event?.text, event?.shortText, event?.longText, event?.commentary,
+    event?.injury?.type?.name, event?.injury?.type,
+    event?.card?.type?.name, event?.card?.type,
+    event?.goal?.detail, event?.goal?.description,
+    ""
+  );
 
   const type =
     norm(rawType);
@@ -4094,17 +4091,18 @@ function normalizeEvent(event, index) {
       event?.goalType, event?.goal_type, event?.goal?.type,
       event?.goal?.detail, event?.goal?.description
     ].filter(value => value !== null && value !== undefined).join(" ")).replace(/[_-]+/g, " ");
+    const truthyEventFlag = value => value === true || value === 1 ||
+      /^(true|1|yes|y)$/i.test(String(value ?? "").trim());
     const ownGoalFlag = [
-      event?.own_goal, event?.ownGoal, event?.is_own_goal,
-      event?.isOwnGoal, event?.goal?.own_goal, event?.goal?.ownGoal
-    ].some(value => value === true || value === 1 || value === "true");
+      event?.own_goal, event?.ownGoal, event?.is_own_goal, event?.isOwnGoal,
+      event?.goal?.own_goal, event?.goal?.ownGoal, event?.goal?.isOwnGoal,
+      event?.goal?.is_own_goal, event?.goal?.ownGoal?.value
+    ].some(truthyEventFlag);
     const penaltyFlag = [
       event?.is_penalty, event?.isPenalty, event?.penalty_goal,
       event?.penaltyGoal, event?.goal?.penalty, event?.goal?.is_penalty,
-      event?.goal?.isPenalty,
-      event?.penalty,
-      event?.isPenalty
-    ].some(value => value === true || value === 1 || value === "true");
+      event?.goal?.isPenalty, event?.penalty, event?.goal?.isPenalty?.value
+    ].some(truthyEventFlag);
     if (
       ownGoalFlag ||
       /\bown goal\b|\bauto[- ]?goal\b|\bautogoal\b|\bbut contre son camp\b|\bcontre son camp\b|\bautobut\b|\bcsc\b/.test(goalDescriptor)
@@ -4141,8 +4139,18 @@ function normalizeEvent(event, index) {
   const name =
     getEventPlayer(event);
 
-  const assist =
-    getEventAssist(event);
+  const assist = getEventAssist(event);
+  const eventDescriptor = norm([
+    rawType, rawDetail, event?.text, event?.shortText, event?.longText,
+    event?.commentary, event?.reason?.name, event?.reason,
+    event?.injury?.type?.name, event?.injury?.type
+  ].filter(value => value !== null && value !== undefined).join(" "));
+  const hasInjury = /injur|hurt|medical|bless|lesion/.test(eventDescriptor);
+  const injuryName = first(
+    eventPersonName(event?.injury?.player), eventPersonName(event?.injury?.athlete),
+    eventPersonName(event?.injuredPlayer), eventPersonName(event?.injured_player),
+    eventPersonName(event?.injured), kind === "injury" ? name : ""
+  );
 
   return {
     index,
@@ -4155,37 +4163,56 @@ function normalizeEvent(event, index) {
     extra,
     name,
     assist,
+    hasInjury,
+    injuryName,
     playerIn: getSubIn(event),
     playerOut: getSubOut(event),
     teamId: getEventTeamId(event),
     teamName: getEventTeamName(event),
-    side: norm(
-      first(
-        event?.side,
-        event?.team_side,
-        ""
-      )
-    )
+    side: norm(first(event?.side, event?.team_side, ""))
   };
 }
 
-  function getEvents(
-    details
-  ) {
-    const raw =
-      first(
-        details?.events,
-        details?.timeline,
-        details?.incidents,
-        details?.match_events,
-        []
-      );
-
-    return arr(
-      raw
-    ).map(
-      normalizeEvent
-    );
+  function getEvents(details) {
+    const eventKeys = new Set([
+      "events", "timeline", "incidents", "matchevents", "plays",
+      "injuries", "cards", "goals", "matchincidents", "matchtimeline"
+    ]);
+    const queue = [{ value: details, depth: 0 }];
+    const visited = new Set();
+    const raw = [];
+    const rawSeen = new Set();
+    const pushEvent = event => {
+      if (!event || typeof event !== "object" || Array.isArray(event)) return;
+      const id = first(event.id, event.event_id, event.eventId, event.incidentId, event.incident_id);
+      const time = first(event.minute, event.elapsed, event.time?.elapsed, event.time?.minute, event.time);
+      const eventTypeValue = first(event.type?.name, event.type?.text, event.type?.slug, event.type, event.event_type?.name, event.event_type, event.incidentType?.name, event.incidentType);
+      const eventPlayerValue = getEventPlayer(event);
+      const eventTextValue = first(event.detail?.name, event.detail?.text, event.detail, event.description?.text, event.description, event.text, event.commentary, event.shortText);
+      const signature = [time, eventTypeValue, eventPlayerValue, eventTextValue].filter(v => v !== undefined && v !== null && v !== "").map(String).join("|") || JSON.stringify(event);
+      const key = id !== null && id !== undefined && String(id) !== "" ? "id:" + String(id) : "sig:" + signature;
+      if (rawSeen.has(key)) return;
+      rawSeen.add(key);
+      raw.push(event);
+    };
+    while (queue.length && visited.size < 2000) {
+      const item = queue.shift();
+      const current = item?.value;
+      if (!current || typeof current !== "object" || visited.has(current) || item.depth > 6) continue;
+      visited.add(current);
+      if (Array.isArray(current)) {
+        if (item.depth < 6) current.forEach(value => {
+          if (value && typeof value === "object") queue.push({ value, depth: item.depth + 1 });
+        });
+        continue;
+      }
+      for (const [key, value] of Object.entries(current)) {
+        const normalizedKey = String(key).toLowerCase().replace(/[^a-z0-9]/g, "");
+        if (eventKeys.has(normalizedKey) && Array.isArray(value)) value.forEach(pushEvent);
+        if (value && typeof value === "object" && item.depth < 6) queue.push({ value, depth: item.depth + 1 });
+      }
+    }
+    return raw.map(normalizeEvent);
   }
 
   /* =========================================================
@@ -4226,8 +4253,8 @@ function normalizeEvent(event, index) {
         const player = data(event.name);
         if (player) player.red++;
       }
-      if (event.kind === "injury") {
-        const player = data(event.name);
+      if (event.kind === "injury" || (event.hasInjury && event.injuryName)) {
+        const player = data(event.injuryName || event.name);
         if (player) player.injury++;
       }
       if (event.kind === "substitution") {
@@ -4292,18 +4319,61 @@ function normalizeEvent(event, index) {
  function playerIsOfficialMvp(player) {
   const sources = [
     player, player?.player, player?.raw, player?.raw?.player,
-    player?.statistics, player?.stats
+    player?.statistics, player?.stats, player?.performance
   ].filter(value => value && typeof value === "object");
+  const isMvpValue = (value, depth = 0) => {
+    if (value === true || value === 1) return true;
+    if (typeof value === "string") return /\bmvp\b|man of the match|player of the match|player of the game|best player/i.test(value.trim());
+    if (!value || typeof value !== "object" || depth > 3) return false;
+    if (Array.isArray(value)) return value.some(item => isMvpValue(item, depth + 1));
+    return Object.entries(value).some(([key, item]) =>
+      (/^(mvp|ismanofthematch|playerofthematch|playerofmatch|award|awards|title|name|label|description)$/i.test(String(key).replace(/[^a-z]/gi, "")) &&
+        isMvpValue(item, depth + 1)) || isMvpValue(item, depth + 1)
+    );
+  };
   return sources.some(source => [
     source.mvp, source.is_mvp, source.isMvp, source.isMVP,
     source.man_of_the_match, source.manOfTheMatch,
     source.player_of_match, source.playerOfMatch,
     source.player_of_the_match, source.playerOfTheMatch,
     source.award, source.awards
-  ].some(value => value === true || (
-    typeof value === "string" &&
-    /^(mvp|man of the match|player of the match|player of the game)$/i.test(value.trim())
-  )));
+  ].some(value => isMvpValue(value)));
+ }
+
+ function findExplicitMvp(details) {
+  const keys = new Set([
+    "mvp", "playermatch", "playerofmatch", "playerofthematch",
+    "manofthematch", "bestplayer", "playerofthegame", "matchwinner"
+  ]);
+  const directRoots = [details, details?.data, details?.match, details?.fixture, details?.result, details?.response];
+  for (const root of directRoots) {
+    if (!root || typeof root !== "object" || Array.isArray(root)) continue;
+    for (const [key, value] of Object.entries(root)) {
+      if (keys.has(String(key).toLowerCase().replace(/[^a-z0-9]/g, "")) &&
+          value !== null && value !== undefined && value !== "" && value !== false) return value;
+    }
+  }
+  const queue = [{value:details,depth:0}], seen = new Set();
+  while (queue.length && seen.size < 1500) {
+    const item = queue.shift(), value = item?.value;
+    if (!value || typeof value !== "object" || seen.has(value) || item.depth > 6) continue;
+    seen.add(value);
+    if (Array.isArray(value)) {
+      value.forEach(child => { if (child && typeof child === "object") queue.push({value:child,depth:item.depth+1}); });
+      continue;
+    }
+    for (const [key, child] of Object.entries(value)) {
+      const normalizedKey = String(key).toLowerCase().replace(/[^a-z0-9]/g, "");
+      if (keys.has(normalizedKey) && child !== null && child !== undefined && child !== "" && child !== false) {
+        if (child === true || child === 1) {
+          const namedPlayer = first(value.player, value.athlete, value.name, value.player_name, value.playerName);
+          if (namedPlayer) return namedPlayer;
+        } else return child;
+      }
+      if (child && typeof child === "object" && item.depth < 6) queue.push({value:child,depth:item.depth+1});
+    }
+  }
+  return null;
  }
 
  function playerBadges(player, statsMap) {
@@ -4689,26 +4759,25 @@ function normalizeEvent(event, index) {
   ========================================================= */
 
   function performanceIcon(kind) {
-    const labels = {
-      goal: "⚽",
-      penalty: "🎯",
-      own: "↗",
-      assist: "👟",
-      injury: "✚",
-      yellow: "",
-      red: "",
-      subIn: "↗",
-      subOut: "↙",
-      substitution: "⇄",
-      mvp: "🏆",
-      rating: "★",
-      var: "VAR",
-      missed: "×"
-    };
     if (kind === "yellow" || kind === "red") {
       return '<span class="bfmd-performance-glyph-card bfmd-performance-glyph-card--' + esc(kind) + '" aria-hidden="true"></span>';
     }
-    return '<span class="bfmd-performance-glyph bfmd-performance-glyph--' + esc(kind) + '" aria-hidden="true">' + (labels[kind] || "•") + '</span>';
+    const drawings = {
+      goal: '<circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.8"/><path d="M9 8.5 12 6.8l3 1.7v3.4l-3 1.8-3-1.8zM9 8.5 6.7 10M15 8.5l2.3 1.5M9 11.9l-1.6 3M15 11.9l1.6 3M12 15.4v3.3" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linejoin="round"/>',
+      penalty: '<circle cx="12" cy="12" r="8.5" stroke="currentColor" stroke-width="1.8"/><circle cx="12" cy="12" r="4.5" stroke="currentColor" stroke-width="1.6"/><circle cx="12" cy="12" r="1.3" fill="currentColor"/>',
+      own: '<path d="M6 18 18 6M9 6h9v9" stroke="currentColor" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"/><path d="M5 5v5M5 5h5" stroke="currentColor" stroke-width="1.7" fill="none"/>',
+      assist: '<circle cx="6" cy="18" r="2.2" fill="currentColor"/><path d="M8 16 17.5 6.5M11 6.5h6.5V13" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>',
+      injury: '<path d="M10 3h4v7h7v4h-7v7h-4v-7H3v-4h7z" fill="currentColor"/>',
+      subIn: '<path d="M4 12h15M13 5l7 7-7 7" stroke="currentColor" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>',
+      subOut: '<path d="M20 12H5M11 5l-7 7 7 7" stroke="currentColor" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>',
+      substitution: '<path d="M4 7h14l-3-3M20 17H6l3 3" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>',
+      mvp: '<path d="m12 2.8 2.8 5.7 6.3.9-4.6 4.5 1.1 6.3-5.6-3-5.6 3 1.1-6.3L3 9.4l6.3-.9z" fill="currentColor"/>',
+      rating: '<path d="m12 2.8 2.8 5.7 6.3.9-4.6 4.5 1.1 6.3-5.6-3-5.6 3 1.1-6.3L3 9.4l6.3-.9z" fill="currentColor"/>',
+      var: '<path d="M4 5h16v14H4z" stroke="currentColor" stroke-width="1.7" fill="none"/><path d="m8 9 4 6 4-6" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round"/>',
+      missed: '<path d="m6 6 12 12M18 6 6 18" stroke="currentColor" stroke-width="2.5" fill="none" stroke-linecap="round"/>'
+    };
+    return '<svg class="bfmd-vector-icon" viewBox="0 0 24 24" width="14" height="14" fill="none" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' +
+      (drawings[kind] || '<circle cx="12" cy="12" r="8" stroke="currentColor" stroke-width="2"/>') + '</svg>';
   }
 
     function eventIcon(event) {
@@ -6067,10 +6136,10 @@ const response =
         eventStatsMap(
           events
         );
-      const explicitMvp = first(details?.player_of_match, details?.playerOfMatch, details?.man_of_the_match, details?.manOfTheMatch, details?.mvp, details?.best_player);
+      const explicitMvp = findExplicitMvp(details);
       const explicitMvpName = typeof explicitMvp === "string"
         ? explicitMvp
-        : first(explicitMvp?.name, explicitMvp?.player?.name, explicitMvp?.player_name, "");
+        : first(eventPersonName(explicitMvp), explicitMvp?.name, explicitMvp?.player?.name, explicitMvp?.player_name, "");
       if (explicitMvpName) statsMap.mvpKey = playerKey(explicitMvpName);
 
       console.log(
