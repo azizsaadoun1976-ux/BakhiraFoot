@@ -950,19 +950,24 @@ function bfAssignFormationRoles(players, formation, readPosition) {
 
   function getEvents(details) {
     const keys = ["events", "incidents", "plays", "injuries", "cards", "goals"];
+    const roots = [details, details?.data, details?.match, details?.fixture, details?.event, details?.result, details?.response]
+      .filter(value => value && typeof value === "object");
     const combined = [];
     const seen = new Set();
-    for (const key of keys) {
-      const list = Array.isArray(details?.[key]) ? details[key] : [];
-      for (const event of list) {
-        const signature = [
-          event?.minute ?? event?.elapsed ?? event?.time?.elapsed,
-          typeof event?.type === "object" ? event?.type?.name : event?.type,
-          event?.player?.name || event?.player_name || event?.athlete?.displayName || event?.name,
-          event?.detail || event?.text
-        ].filter(value => value !== null && value !== undefined && value !== "").join("|");
-        const identity = String(first(event?.id, event?.event_id, event?.incidentId, signature || JSON.stringify(event)));
-        if (!seen.has(identity)) { seen.add(identity); combined.push(event); }
+    for (const root of roots) {
+      for (const key of keys) {
+        const list = Array.isArray(root?.[key]) ? root[key] : [];
+        for (const event of list) {
+          if (!event || typeof event !== "object") continue;
+          const signature = [
+            event?.minute ?? event?.elapsed ?? event?.time?.elapsed,
+            typeof event?.type === "object" ? event?.type?.name : event?.type,
+            event?.player?.name || event?.player_name || event?.athlete?.displayName || event?.name,
+            event?.detail || event?.text || event?.description
+          ].filter(value => value !== null && value !== undefined && value !== "").join("|");
+          const identity = String(first(event?.id, event?.event_id, event?.incidentId, signature || JSON.stringify(event)));
+          if (!seen.has(identity)) { seen.add(identity); combined.push(event); }
+        }
       }
     }
     return combined;
@@ -1909,6 +1914,30 @@ function bfAssignFormationRoles(players, formation, readPosition) {
         #bfMatchDetailsModal .bfmd-chip { min-width:18px!important; height:18px!important; min-height:18px!important; padding:1px 3px!important; }
       }
 
+      /* SofaScore-inspired player performance marks: event icons sit below each name. */
+      .bf-new-safe-player { width:clamp(76px,7.2vw,96px); }
+      .bf-new-safe-pitch-events {
+        position:relative!important; top:auto!important; right:auto!important; left:auto!important;
+        z-index:8!important; display:flex!important; flex-direction:row!important;
+        align-items:center!important; justify-content:center!important; flex-wrap:wrap!important;
+        width:100%!important; max-width:92px!important; min-height:0!important;
+        margin:3px 0 0!important; padding:0!important; gap:3px!important;
+        overflow:visible!important; background:transparent!important;
+      }
+      .bf-new-safe-event-badge {
+        min-width:19px!important; width:19px!important; height:19px!important;
+        min-height:19px!important; padding:2px!important; border-radius:6px!important;
+      }
+      .bf-new-safe-event-badge svg { display:block!important; width:13px!important; height:13px!important; }
+      .bf-new-safe-event-count { min-width:9px!important; height:10px!important; font-size:7px!important; }
+      .bf-new-safe-player-rate { top:-7px!important; left:-9px!important; }
+      .bf-new-safe-mvp-chip { top:-7px!important; right:-9px!important; left:auto!important; }
+      @media(max-width:700px) {
+        .bf-new-safe-player { width:clamp(68px,16vw,90px)!important; }
+        .bf-new-safe-pitch-events { max-width:88px!important; gap:2px!important; }
+        .bf-new-safe-event-badge { min-width:17px!important; width:17px!important; height:17px!important; min-height:17px!important; }
+        .bf-new-safe-event-badge svg { width:12px!important; height:12px!important; }
+      }
 
     `;
 
@@ -2237,7 +2266,7 @@ ${esc(String(playerName(player) || "P").split(/\s+/).map(part => part[0] || "").
                     
                     <div class="bf-new-safe-player-name">${esc(playerName(player))}</div>
                     <div class="bf-new-safe-pitch-events">${playerEventBadges(player, details)}</div>
-                    ${playerIsOfficialMvp(player) ? '<span class="bf-new-safe-mvp-chip" title="Joueur du match" aria-label="Joueur du match">' + playerPerformanceIcon("mvp") + '</span>' : ""}
+                    ${(playerIsOfficialMvp(player) || playerIsNamedMvp(player, details)) ? '<span class="bf-new-safe-mvp-chip" title="Joueur du match" aria-label="Joueur du match">' + playerPerformanceIcon("mvp") + '</span>' : ""}
                     ${rating !== null ? '<span class="bf-new-safe-player-rate" title="Note du joueur ' + esc(Number(rating).toFixed(1)) + '/10" aria-label="Note du joueur ' + esc(Number(rating).toFixed(1)) + ' sur 10"><span class="bf-new-safe-rating-star" aria-hidden="true">★</span><span>' + esc(Number(rating).toFixed(1)) + '</span></span>' : ""}
 
                   </div>
@@ -2540,7 +2569,8 @@ ${esc(String(playerName(player) || "P").split(/\s+/).map(part => part[0] || "").
       const type = eventType(event);
       const primary = [
         event?.player, event?.scorer, event?.goalScorer, event?.goal_scorer,
-        event?.goal?.player, event?.athlete, event?.actor,
+        event?.goal?.player, event?.athlete, event?.actor, event?.injury?.player, event?.card?.player,
+        event?.relatedPlayer, event?.related_player, event?.participant, event?.person,
         event?.player_name, event?.playerName, event?.scorer_name,
         event?.participants?.[0]?.athlete, event?.participants?.[0]?.player,
         event?.participants?.[0], event?.players?.[0]
@@ -2551,12 +2581,16 @@ ${esc(String(playerName(player) || "P").split(/\s+/).map(part => part[0] || "").
           event?.goalType, event?.goal_type, event?.detail, event?.text,
           event?.description, event?.commentary, event?.goalDescription
         ].filter(Boolean).join(" "));
-        const ownGoal = event?.ownGoal === true || event?.own_goal === true ||
-          event?.isOwnGoal === true || event?.is_own_goal === true ||
-          /own goal|but contre son camp|autogoal|csc/.test(detailsText);
-        const penalty = event?.isPenalty === true || event?.is_penalty === true ||
-          event?.penalty === true || event?.penaltyGoal === true ||
-          /penalt|tir au but/.test(detailsText);
+        const truthyFlag = value => value === true || value === 1 || /^(true|1|yes)$/i.test(String(value ?? "").trim());
+        const ownGoal = [
+          event?.ownGoal, event?.own_goal, event?.isOwnGoal, event?.is_own_goal,
+          event?.goal?.ownGoal, event?.goal?.own_goal, event?.goal?.isOwnGoal, event?.goal?.is_own_goal
+        ].some(truthyFlag) ||
+          /own[ _-]?goal|but contre son camp|contre son camp|autogoal|auto[ _-]?goal|autobut|\bcsc\b/.test(detailsText);
+        const penalty = [
+          event?.isPenalty, event?.is_penalty, event?.penalty, event?.penaltyGoal,
+          event?.penalty_goal, event?.goal?.penalty, event?.goal?.isPenalty, event?.goal?.is_penalty
+        ].some(truthyFlag) || /penalt|tir au but/.test(detailsText);
         if (ownGoal) counts.ownGoals += 1;
         else if (penalty) counts.penalties += 1;
         else counts.goals += 1;
@@ -2612,6 +2646,22 @@ ${esc(String(playerName(player) || "P").split(/\s+/).map(part => part[0] || "").
     add("subOut",counts.subOut,"Sortie du terrain");
     if (!counts.subIn && !counts.subOut) add("sub",counts.subs,"Remplacements");
     return badges.join("");
+  }
+
+    function playerIsNamedMvp(player, details) {
+    const candidates = [
+      details?.player_of_match, details?.playerOfMatch,
+      details?.man_of_the_match, details?.manOfTheMatch,
+      details?.mvp, details?.best_player, details?.bestPlayer,
+      details?.data?.player_of_match, details?.data?.playerOfMatch,
+      details?.data?.man_of_the_match, details?.data?.manOfTheMatch,
+      details?.match?.player_of_match, details?.match?.playerOfMatch
+    ].filter(value => value !== null && value !== undefined && value !== "");
+    return candidates.some(candidate => {
+      if (samePerson(candidate, player)) return true;
+      const name = eventPersonName(candidate);
+      return !!name && norm(name) === norm(playerName(player));
+    });
   }
 
     function playerIsOfficialMvp(player) {
