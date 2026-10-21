@@ -1217,7 +1217,53 @@
       #bfMatchDetailsModal .bfmd-combined-team strong { overflow-wrap:anywhere; }
       #bfMatchDetailsModal .bfmd-combined-team em { padding:3px 6px; border-radius:6px; background:rgba(127,127,127,.13); font-size:10px; font-style:normal; }
       #bfMatchDetailsModal .bfmd-combined-vs { font-size:10px; font-weight:950; opacity:.55; }
-      #bfMatchDetailsModal .bfmd-pitch--combined { aspect-ratio:.78; min-height:430px; }
+      #bfMatchDetailsModal .bfmd-pitch--combined { height:clamp(360px,42vw,510px); min-height:360px; max-height:510px; aspect-ratio:auto; }
+      #bfMatchDetailsModal .bfmd-combined-player { width:clamp(74px,7vw,100px); cursor:pointer; pointer-events:auto; outline-offset:2px; }
+      #bfMatchDetailsModal .bfmd-combined-player .bfmd-photo-wrap,#bfMatchDetailsModal .bfmd-combined-player .bfmd-number-only { width:clamp(29px,2.8vw,42px); height:clamp(29px,2.8vw,42px); }
+      #bfMatchDetailsModal .bfmd-combined-player .bfmd-name { max-width:100px; font-size:clamp(8px,.72vw,10px); padding:3px 5px; line-height:1.15; }
+      #bfMatchDetailsModal .bfmd-combined-player--active .bfmd-name { background:#087f5b; color:#fff; }
+      #bfMatchDetailsModal .bfmd-selected-player-panel:not([hidden]) { display:block; margin:10px 12px; padding:13px; border:1px solid rgba(11,155,105,.35); border-radius:14px; background:rgba(11,155,105,.08); }
+      #bfMatchDetailsModal .bfmd-selected-player-inner { display:flex; align-items:center; gap:13px; }
+      #bfMatchDetailsModal .bfmd-selected-player-photo { width:62px; height:62px; flex:0 0 62px; border-radius:50%; object-fit:cover; background:#dce7e2; }
+      #bfMatchDetailsModal .bfmd-selected-player-photo--fallback { display:grid; place-items:center; font-size:28px; }
+      #bfMatchDetailsModal .bfmd-selected-player-copy { min-width:0; }
+      #bfMatchDetailsModal .bfmd-selected-player-copy strong { display:block; font-size:15px; font-weight:950; }
+      #bfMatchDetailsModal .bfmd-selected-player-copy>span { display:block; margin-top:4px; font-size:11px; opacity:.7; }
+      #bfMatchDetailsModal .bfmd-selected-player-copy p { margin:7px 0; font-size:12px; line-height:1.5; }
+      #bfMatchDetailsModal .bfmd-selected-player-events { display:flex; flex-wrap:wrap; gap:4px; }
+      #bfMatchDetailsModal .bfmd-player-statistics-details>summary { cursor:pointer; list-style:none; }
+      #bfMatchDetailsModal .bfmd-player-statistics-details>summary::-webkit-details-marker { display:none; }
+      #bfMatchDetailsModal .bfmd-player-statistics-details>summary:after { content:"＋"; float:right; opacity:.6; }
+      #bfMatchDetailsModal .bfmd-player-statistics-details[open]>summary:after { content:"−"; }
+      #bfMatchDetailsModal .bfmd-vote-options { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; }
+      #bfMatchDetailsModal .bfmd-vote-option { display:grid; grid-template-columns:36px minmax(0,1fr); gap:4px 9px; align-items:center; width:100%; min-width:0; padding:12px; text-align:left; border:1px solid rgba(127,127,127,.22); border-radius:14px; background:rgba(127,127,127,.06); color:inherit; cursor:pointer; }
+      #bfMatchDetailsModal .bfmd-vote-option img,#bfMatchDetailsModal .bfmd-vote-mark { grid-row:span 2; width:34px; height:34px; object-fit:contain; display:grid; place-items:center; }
+      #bfMatchDetailsModal .bfmd-vote-team { min-width:0; overflow-wrap:anywhere; font-size:12px; font-weight:900; }
+      #bfMatchDetailsModal .bfmd-vote-option strong { font-size:10px; opacity:.7; }
+      #bfMatchDetailsModal .bfmd-vote-option--selected { border-color:#0b9b69; box-shadow:0 0 0 2px rgba(11,155,105,.12); background:rgba(11,155,105,.1); }
+      #bfMatchDetailsModal .bfmd-vote-bar { display:flex; gap:3px; overflow:hidden; height:7px; margin-top:12px; border-radius:99px; background:rgba(127,127,127,.1); }
+      #bfMatchDetailsModal .bfmd-vote-bar span { width:0; display:block; transition:width .2s; }
+      #bfMatchDetailsModal [data-bf-vote-bar="home"] { background:#0b9b69; }
+      #bfMatchDetailsModal [data-bf-vote-bar="away"] { background:#3b82f6; }
+      #bfMatchDetailsModal .bfmd-vote-status { margin-top:8px; font-size:11px; opacity:.7; }
+      #bfMatchDetailsModal .bfmd-h2h-row { padding:11px 0; border-bottom:1px solid rgba(127,127,127,.15); }
+      #bfMatchDetailsModal .bfmd-h2h-row>small { display:block; margin-bottom:7px; font-size:10px; opacity:.6; }
+      #bfMatchDetailsModal .bfmd-h2h-row>div { display:grid; grid-template-columns:minmax(0,1fr) auto minmax(0,1fr); gap:8px; align-items:center; font-size:12px; }
+      #bfMatchDetailsModal .bfmd-h2h-row>div strong:last-child { text-align:right; }
+      #bfMatchDetailsModal .bfmd-h2h-row>div b { padding:5px 8px; border-radius:8px; background:rgba(127,127,127,.1); white-space:nowrap; }
+      #bfMatchDetailsModal .bfmd-standings-scroll { max-width:100%; overflow-x:auto; }
+      #bfMatchDetailsModal .bfmd-mini-table { width:100%; border-collapse:collapse; font-size:11px; }
+      #bfMatchDetailsModal .bfmd-mini-table th,#bfMatchDetailsModal .bfmd-mini-table td { padding:8px 6px; border-bottom:1px solid rgba(127,127,127,.12); text-align:center; white-space:nowrap; }
+      #bfMatchDetailsModal .bfmd-mini-table th:nth-child(2),#bfMatchDetailsModal .bfmd-mini-table td:nth-child(2) { text-align:left; }
+      #bfMatchDetailsModal .bfmd-mini-team { display:flex; gap:6px; align-items:center; min-width:100px; }
+      #bfMatchDetailsModal .bfmd-mini-team img { width:19px; height:19px; object-fit:contain; }
+      @media(max-width:650px) {
+        #bfMatchDetailsModal .bfmd-pitch--combined { height:370px; min-height:370px; }
+        #bfMatchDetailsModal .bfmd-combined-player { width:clamp(58px,14vw,72px); }
+        #bfMatchDetailsModal .bfmd-combined-player .bfmd-name { max-width:68px; font-size:7px; }
+        #bfMatchDetailsModal .bfmd-combined-player .bfmd-photo-wrap,#bfMatchDetailsModal .bfmd-combined-player .bfmd-number-only { width:27px; height:27px; }
+        #bfMatchDetailsModal .bfmd-vote-options { grid-template-columns:minmax(0,1fr); }
+      }
       #bfMatchDetailsModal .bfmd-combined-player { width:clamp(54px,7vw,82px); gap:1px; }
       #bfMatchDetailsModal .bfmd-combined-player .bfmd-photo-wrap,#bfMatchDetailsModal .bfmd-combined-player .bfmd-number-only { width:clamp(20px,2vw,30px); height:clamp(20px,2vw,30px); }
       #bfMatchDetailsModal .bfmd-combined-player .bfmd-name { max-width:82px; font-size:clamp(6px,.58vw,8px); padding:2px; }
@@ -1242,6 +1288,36 @@
       #bfMatchDetailsModal .bfmd-news-card strong { display:block; font-size:12px; line-height:1.45; }
       #bfMatchDetailsModal .bfmd-news-card small { display:block; margin-top:6px; font-size:10px; opacity:.65; }
       #bfMatchDetailsModal .bfmd-news-card:hover { border-color:#0b9b69; }
+      #bf-new-match-safe-modal .bfmd-section { margin-top:22px; padding-top:18px; border-top:1px solid rgba(127,127,127,.16); }
+      #bf-new-match-safe-modal .bfmd-title { margin:0 0 13px; font-size:16px; font-weight:950; }
+      #bf-new-match-safe-modal .bfmd-extra-copy { margin:-4px 0 14px; font-size:12px; line-height:1.6; opacity:.72; }
+      #bf-new-match-safe-modal .bfmd-extra-button { display:inline-flex; align-items:center; justify-content:center; gap:8px; max-width:100%; border:0; border-radius:11px; padding:11px 15px; background:#087f5b; color:#fff; font-size:12px; font-weight:900; text-decoration:none; cursor:pointer; }
+      #bf-new-match-safe-modal .bfmd-vote-options { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); gap:12px; }
+      #bf-new-match-safe-modal .bfmd-vote-option { display:grid; grid-template-columns:36px minmax(0,1fr); gap:4px 9px; align-items:center; padding:12px; border:1px solid rgba(127,127,127,.22); border-radius:14px; background:rgba(127,127,127,.06); color:inherit; cursor:pointer; }
+      #bf-new-match-safe-modal .bfmd-vote-option img,#bf-new-match-safe-modal .bfmd-vote-mark { grid-row:span 2; width:34px; height:34px; object-fit:contain; display:grid; place-items:center; }
+      #bf-new-match-safe-modal .bfmd-vote-team { font-size:12px; font-weight:900; overflow-wrap:anywhere; }
+      #bf-new-match-safe-modal .bfmd-vote-option strong { font-size:10px; opacity:.7; }
+      #bf-new-match-safe-modal .bfmd-vote-option--selected { border-color:#0b9b69; background:rgba(11,155,105,.1); }
+      #bf-new-match-safe-modal .bfmd-vote-bar { display:flex; gap:3px; height:7px; margin-top:12px; overflow:hidden; border-radius:99px; }
+      #bf-new-match-safe-modal .bfmd-vote-bar span { display:block; width:0; }
+      #bf-new-match-safe-modal [data-bf-vote-bar="home"] { background:#0b9b69; }
+      #bf-new-match-safe-modal [data-bf-vote-bar="away"] { background:#3b82f6; }
+      #bf-new-match-safe-modal .bfmd-vote-status { margin-top:8px; font-size:11px; opacity:.7; }
+      #bf-new-match-safe-modal .bfmd-h2h-row { padding:11px 0; border-bottom:1px solid rgba(127,127,127,.15); }
+      #bf-new-match-safe-modal .bfmd-h2h-row>small { display:block; margin-bottom:7px; font-size:10px; opacity:.65; }
+      #bf-new-match-safe-modal .bfmd-h2h-row>div { display:grid; grid-template-columns:minmax(0,1fr) auto minmax(0,1fr); gap:8px; align-items:center; font-size:12px; }
+      #bf-new-match-safe-modal .bfmd-h2h-row>div b { white-space:nowrap; }
+      #bf-new-match-safe-modal .bfmd-standings-scroll { max-width:100%; overflow-x:auto; }
+      #bf-new-match-safe-modal .bfmd-mini-table { width:100%; border-collapse:collapse; font-size:11px; }
+      #bf-new-match-safe-modal .bfmd-mini-table th,#bf-new-match-safe-modal .bfmd-mini-table td { padding:8px 6px; border-bottom:1px solid rgba(127,127,127,.12); text-align:center; white-space:nowrap; }
+      #bf-new-match-safe-modal .bfmd-mini-table th:nth-child(2),#bf-new-match-safe-modal .bfmd-mini-table td:nth-child(2) { text-align:left; }
+      #bf-new-match-safe-modal .bfmd-mini-team { display:flex; gap:6px; align-items:center; min-width:100px; }
+      #bf-new-match-safe-modal .bfmd-mini-team img { width:19px; height:19px; object-fit:contain; }
+      #bf-new-match-safe-modal .bfmd-news-card { display:grid; grid-template-columns:88px minmax(0,1fr); gap:12px; align-items:center; margin:8px 0; padding:10px; border:1px solid rgba(127,127,127,.18); border-radius:12px; text-decoration:none; color:inherit; }
+      #bf-new-match-safe-modal .bfmd-news-card img,#bf-new-match-safe-modal .bfmd-news-card-mark { display:flex; width:88px; height:62px; align-items:center; justify-content:center; object-fit:cover; border-radius:8px; background:rgba(127,127,127,.12); font-weight:950; }
+      #bf-new-match-safe-modal .bfmd-news-card strong { display:block; font-size:12px; line-height:1.45; }
+      #bf-new-match-safe-modal .bfmd-news-card small { display:block; margin-top:6px; font-size:10px; opacity:.65; }
+      @media(max-width:650px) { #bf-new-match-safe-modal .bfmd-vote-options { grid-template-columns:minmax(0,1fr); } }
       @media(max-width:650px) {
         #bfMatchDetailsModal .bfmd-pitch--combined { min-height:370px; }
         #bfMatchDetailsModal .bfmd-combined-player { width:55px; }
@@ -4545,16 +4621,35 @@ function normalizeEvent(event, index) {
 
   function renderCombinedPitch(homeLineup, awayLineup, statsMap) {
     const markings = '<div class="bfmd-border"></div><div class="bfmd-half"></div><div class="bfmd-circle"></div><div class="bfmd-center-dot"></div><div class="bfmd-box-line top"></div><div class="bfmd-box-line bottom"></div><div class="bfmd-goal-box top"></div><div class="bfmd-goal-box bottom"></div><div class="bfmd-penalty-spot top"></div><div class="bfmd-penalty-spot bottom"></div>';
+    const playerDetail = player => {
+      const stats = statsMap.get(playerKey(player)) || {};
+      const rating = getPlayerRating(player);
+      const name = getPlayerName(player) || "Joueur";
+      const photo = getPlayerPhoto(player);
+      const summary = [];
+      if (rating !== null && rating !== undefined && rating !== "") summary.push("Note " + Number(rating).toFixed(1) + "/10");
+      if (stats.goals) summary.push("Buts " + stats.goals);
+      if (stats.assists) summary.push("Passes décisives " + stats.assists);
+      if (stats.yellow) summary.push("Cartons jaunes " + stats.yellow);
+      if (stats.red) summary.push("Cartons rouges " + stats.red);
+      if (stats.in) summary.push("Entrées " + stats.in);
+      if (stats.out) summary.push("Sorties " + stats.out);
+      if (stats.injury) summary.push("Blessure signalée");
+      return '<template class="bfmd-player-detail-template"><div class="bfmd-selected-player-inner">' +
+        (photo ? '<img class="bfmd-selected-player-photo" src="' + esc(photo) + '" alt="" loading="lazy">' : '<span class="bfmd-selected-player-photo bfmd-selected-player-photo--fallback">⚽</span>') +
+        '<div class="bfmd-selected-player-copy"><strong>' + esc(name) + '</strong><span>' + esc(getPlayerPosition(player) || "Position non communiquée") + ' · #' + esc(getPlayerNumber(player)) + '</span>' +
+        '<p>' + esc(summary.length ? summary.join(" · ") : "Aucune statistique individuelle fournie pour ce joueur.") + '</p>' +
+        '<div class="bfmd-selected-player-events">' + playerBadges(player, statsMap) + '</div></div></div></template>';
+    };
     const placeTeam = (lineup, side) => {
       const positions = pitchPositions(lineup, side);
       if (!positions.length) return '<div class="bfmd-combined-empty bfmd-combined-empty--' + side + '">' + esc(lineup?.team?.name || "Équipe") + ' · positions non disponibles</div>';
       return positions.map(item => {
         const player = item.player;
         const y = side === "home" ? 5 + item.y * 0.43 : 57 + item.y * 0.38;
-        return '<div class="bfmd-player bfmd-combined-player bfmd-combined-player--' + side + '" style="left:' + item.x + '%;top:' + Math.max(5,Math.min(95,y)) + '%" title="' + esc(getPlayerName(player)) + '">' +
+        return '<div role="button" tabindex="0" aria-expanded="false" data-bf-player-toggle="1" class="bfmd-player bfmd-combined-player bfmd-combined-player--' + side + '" style="left:' + item.x + '%;top:' + Math.max(5,Math.min(95,y)) + '%" title="Cliquer pour afficher les détails de ' + esc(getPlayerName(player)) + '">' +
           playerAvatar(player) + '<div class="bfmd-name">' + esc(getPlayerName(player)) + '</div>' +
-          (getPlayerPosition(player) ? '<div class="bfmd-role">' + esc(getPlayerPosition(player)) + '</div>' : '') +
-          playerBadges(player, statsMap) + '</div>';
+          playerDetail(player) + '</div>';
       }).join("");
     };
     const teamHead = (lineup, fallback) => '<div class="bfmd-combined-team"><span>' +
@@ -4563,7 +4658,7 @@ function normalizeEvent(event, index) {
     return '<div class="bfmd-combined-pitch-card"><div class="bfmd-combined-head">' +
       teamHead(homeLineup,"Domicile") + '<span class="bfmd-combined-vs">VS</span>' + teamHead(awayLineup,"Extérieur") +
       '</div><div class="bfmd-pitch bfmd-pitch--combined">' + markings + placeTeam(homeLineup,"home") + placeTeam(awayLineup,"away") +
-      '</div><div class="bfmd-combined-caption"><span>DOMICILE · DEMI-TERRAIN HAUT</span><span>EXTÉRIEUR · DEMI-TERRAIN BAS</span></div>' +
+      '</div><div class="bfmd-selected-player-panel" hidden></div><div class="bfmd-combined-caption"><span>DOMICILE · DEMI-TERRAIN HAUT</span><span>EXTÉRIEUR · DEMI-TERRAIN BAS</span><small>Clique sur un joueur pour ouvrir sa fiche</small></div>' +
       '<div class="bfmd-combined-benches"><div><h4>' + esc(homeLineup?.team?.name || "Domicile") + ' · Banc</h4>' + renderBenchPerformance(homeLineup,statsMap) + '</div><div><h4>' + esc(awayLineup?.team?.name || "Extérieur") + ' · Banc</h4>' + renderBenchPerformance(awayLineup,statsMap) + '</div></div></div>';
   }
 
@@ -6014,11 +6109,40 @@ function bfSameFixtureMetadata(candidate,expected,requireDate=false) {
   }
 
 
-  function setupMatchCenterNavigation(matchIdentifier, teams, competition) {
-    const content = document.getElementById("bfmdContent");
+  function setupMatchCenterNavigation(matchIdentifier, teams, competition, matchDate, rootElement = null) {
+    const content = rootElement || document.getElementById("bfmdContent");
     if (!content) return;
+    if (content.dataset.bfPlayerDetailEvents !== "1") {
+      content.dataset.bfPlayerDetailEvents = "1";
+      const togglePlayer = target => {
+        const player = target?.closest?.(".bfmd-combined-player");
+        if (!player || !content.contains(player)) return;
+        const pitchCard = player.closest(".bfmd-combined-pitch-card");
+        const panel = pitchCard?.querySelector(".bfmd-selected-player-panel");
+        const template = player.querySelector("template.bfmd-player-detail-template");
+        if (!panel || !template) return;
+        const isOpen = player.getAttribute("aria-expanded") === "true";
+        pitchCard.querySelectorAll(".bfmd-combined-player[aria-expanded='true']").forEach(other => {
+          other.setAttribute("aria-expanded","false");
+          other.classList.remove("bfmd-combined-player--active");
+        });
+        if (isOpen) { panel.hidden = true; panel.innerHTML = ""; return; }
+        player.setAttribute("aria-expanded","true");
+        player.classList.add("bfmd-combined-player--active");
+        panel.innerHTML = template.innerHTML;
+        panel.hidden = false;
+      };
+      content.addEventListener("click", event => togglePlayer(event.target));
+      content.addEventListener("keydown", event => {
+        if ((event.key === "Enter" || event.key === " ") && event.target?.closest?.(".bfmd-combined-player")) {
+          event.preventDefault(); togglePlayer(event.target);
+        }
+      });
+    }
     content.querySelector(".bfmd-center-nav")?.remove();
     content.querySelector(".bfmd-match-comments")?.remove();
+    content.querySelector(".bfmd-match-center-extras")?.remove();
+    content.querySelector(".bfmd-match-vote")?.remove();
     const comments = document.createElement("section");
     comments.className = "bfmd-section bfmd-match-comments";
     comments.innerHTML = '<div class="bfmd-title">💬 Commentaires de cette rencontre</div>' +
@@ -6033,43 +6157,21 @@ function bfSameFixtureMetadata(candidate,expected,requireDate=false) {
     const extras = document.createElement("div");
     extras.className = "bfmd-match-center-extras";
     const competitionName = String(competition || "").trim();
-    const homeName = String(teams?.home?.name || "").trim();
-    const awayName = String(teams?.away?.name || "").trim();
-    const highlightQuery = [homeName, awayName, competitionName, "highlights"].filter(Boolean).join(" ");
-    const highlightUrl = "https://www.youtube.com/results?search_query=" + encodeURIComponent(highlightQuery);
+    const highlightURL = "https://www.youtube.com/results?search_query=" + encodeURIComponent([homeName,awayName,competitionName,"highlights"].filter(Boolean).join(" "));
     extras.innerHTML =
-      '<section class="bfmd-section bfmd-linked-recent"><div class="bfmd-title">🕘 Derniers matchs des deux équipes</div>' +
-      '<p class="bfmd-extra-copy">Ouvre l’historique et recherche les résultats précédents de chaque équipe.</p>' +
-      '<div class="bfmd-recent-team-actions"><button type="button" class="bfmd-extra-button" data-bf-history-team="home">Historique · ' + esc(homeName || "Domicile") + '</button>' +
-      '<button type="button" class="bfmd-extra-button" data-bf-history-team="away">Historique · ' + esc(awayName || "Extérieur") + '</button></div></section>' +
-      '<section class="bfmd-section bfmd-linked-standings"><div class="bfmd-title">🏆 Classement de la compétition</div>' +
-      '<p class="bfmd-extra-copy">Consulte le classement de ' + esc(competitionName || "cette compétition") + ' depuis les données de BakhiraFoot.</p>' +
-      '<button type="button" class="bfmd-extra-button bfmd-open-standings">Ouvrir le classement ↗</button></section>' +
+      '<section class="bfmd-section bfmd-linked-recent"><div class="bfmd-title">🕘 Dernières confrontations directes</div>' +
+      '<p class="bfmd-extra-copy">' + esc(homeName || "Domicile") + ' – ' + esc(awayName || "Extérieur") + '</p>' +
+      '<div class="bfmd-h2h-list"><div class="bfmd-empty">Recherche des anciennes confrontations…</div></div></section>' +
+      '<section class="bfmd-section bfmd-linked-standings"><div class="bfmd-title">🏆 Classement de ' + esc(competitionName || "la compétition") + '</div>' +
+      '<div class="bfmd-standings-table"><div class="bfmd-empty">Chargement du classement…</div></div>' +
+      '<button type="button" class="bfmd-extra-button bfmd-open-standings">Ouvrir le classement complet ↗</button></section>' +
       '<section class="bfmd-section bfmd-linked-highlights"><div class="bfmd-title">🎬 Highlights & résumés vidéo</div>' +
       '<p class="bfmd-extra-copy">Recherche les résumés liés à ' + esc(homeName || "l’équipe à domicile") + ' – ' + esc(awayName || "l’équipe visiteuse") + '.</p>' +
-      '<a class="bfmd-extra-button" href="' + esc(highlightUrl) + '" target="_blank" rel="noopener noreferrer">Voir les vidéos du match ↗</a></section>' +
+      '<a class="bfmd-extra-button" href="' + esc(highlightURL) + '" target="_blank" rel="noopener noreferrer">Voir les vidéos du match ↗</a></section>' +
       '<section class="bfmd-section bfmd-linked-news"><div class="bfmd-title">📰 Actualités liées au match</div>' +
-      '<p class="bfmd-extra-copy">Recherche des articles qui mentionnent les équipes ou la compétition.</p>' +
+      '<p class="bfmd-extra-copy">Articles liés aux équipes et à leur compétition.</p>' +
       '<div class="bfmd-linked-news-list"><div class="bfmd-empty">Chargement des actualités…</div></div></section>';
     content.appendChild(extras);
-
-    extras.querySelectorAll("[data-bf-history-team]").forEach(button => {
-      button.addEventListener("click", () => {
-        const teamName = button.dataset.bfHistoryTeam === "home" ? homeName : awayName;
-        const historyButton = document.getElementById("bf-history-open");
-        const historyModal = document.getElementById("bfMatchDetailsModal");
-        if (historyModal) historyModal.style.display = "none";
-        document.body.style.overflow = "";
-        if (historyButton) historyButton.click();
-        window.setTimeout(() => {
-          const input = document.getElementById("bfh-team");
-          if (input) {
-            input.value = teamName;
-            input.focus();
-          }
-        }, 180);
-      });
-    });
 
     const standingsButton = extras.querySelector(".bfmd-open-standings");
     standingsButton.addEventListener("click", () => {
@@ -6077,30 +6179,59 @@ function bfSameFixtureMetadata(candidate,expected,requireDate=false) {
         window.openBakhiraCompetitionStandings(competitionName);
       } else if (typeof window.go === "function") {
         window.go("leagues");
-      } else {
-        status.textContent = "Le classement est indisponible pour cette compétition.";
       }
     });
 
+    const h2hList = extras.querySelector(".bfmd-h2h-list");
+    const standingsList = extras.querySelector(".bfmd-standings-table");
+    const matchCenterURL = "/api/match-center?home=" + encodeURIComponent(homeName) +
+      "&away=" + encodeURIComponent(awayName) + "&competition=" + encodeURIComponent(competitionName) +
+      "&date=" + encodeURIComponent(String(matchDate || ""));
+    fetch(matchCenterURL, {cache:"no-store",headers:{Accept:"application/json"}})
+      .then(response => response.ok ? response.json() : Promise.reject(new Error("match_center_unavailable")))
+      .then(payload => {
+        const h2h = Array.isArray(payload.headToHead) ? payload.headToHead : [];
+        h2hList.innerHTML = h2h.length ? h2h.map(item => {
+          const date = item.date && !Number.isNaN(Date.parse(item.date))
+            ? new Date(item.date).toLocaleDateString("fr-FR",{day:"2-digit",month:"short",year:"numeric"}) : "Date inconnue";
+          return '<article class="bfmd-h2h-row"><small>' + esc(date) + (item.competition ? ' · ' + esc(item.competition) : '') + '</small>' +
+            '<div><strong>' + esc(item.home || "Domicile") + '</strong><b>' + esc(item.score || "—") + '</b><strong>' + esc(item.away || "Extérieur") + '</strong></div></article>';
+        }).join("") : '<div class="bfmd-empty">Aucune confrontation directe récente disponible pour ces équipes.</div>';
+
+        const table = payload.standings || {};
+        const rows = Array.isArray(table.rows) ? table.rows : [];
+        standingsList.innerHTML = rows.length
+          ? '<div class="bfmd-standings-scroll"><table class="bfmd-mini-table"><thead><tr><th>#</th><th>Équipe</th><th>MJ</th><th>V</th><th>N</th><th>D</th><th>Pts</th></tr></thead><tbody>' +
+            rows.map(row => '<tr><td>' + esc(row.rank || "—") + '</td><td><span class="bfmd-mini-team">' +
+              (row.logo ? '<img src="' + esc(row.logo) + '" alt="" loading="lazy">' : '') + '<span>' + esc(row.team || "Équipe") + '</span></span></td>' +
+              '<td>' + esc(row.played || "—") + '</td><td>' + esc(row.won || "—") + '</td><td>' + esc(row.drawn || "—") + '</td><td>' + esc(row.lost || "—") + '</td><td><strong>' + esc(row.points || "—") + '</strong></td></tr>').join("") +
+            '</tbody></table></div>'
+          : '<div class="bfmd-empty">Le classement n’est pas disponible pour cette compétition depuis la source actuelle.</div>';
+      })
+      .catch(() => {
+        h2hList.innerHTML = '<div class="bfmd-empty">Les confrontations ne sont pas disponibles pour le moment.</div>';
+        standingsList.innerHTML = '<div class="bfmd-empty">Le classement n’est pas disponible pour le moment.</div>';
+      });
+
     const newsList = extras.querySelector(".bfmd-linked-news-list");
-    fetch("/api/news", { cache:"no-store", headers:{Accept:"application/json"} })
+    fetch("/api/news", {cache:"no-store",headers:{Accept:"application/json"}})
       .then(response => response.ok ? response.json() : Promise.reject(new Error("news_unavailable")))
       .then(payload => {
         const articles = Array.isArray(payload.articles) ? payload.articles : [];
         const tokens = [homeName, awayName, competitionName].map(value => value.toLocaleLowerCase()).filter(value => value.length >= 3);
         const related = articles.filter(article => {
-          const text = (String(article.title || "") + " " + String(article.description || "")).toLocaleLowerCase();
-          return tokens.some(token => text.includes(token));
+          const articleText = (String(article.title || "") + " " + String(article.description || "")).toLocaleLowerCase();
+          return tokens.some(token => articleText.includes(token));
         }).slice(0, 4);
         newsList.innerHTML = related.length ? related.map(article =>
           '<a class="bfmd-news-card" href="' + esc(article.url || "#") + '" target="_blank" rel="noopener noreferrer">' +
           (article.image ? '<img src="' + esc(article.image) + '" alt="" loading="lazy">' : '<span class="bfmd-news-card-mark">BF</span>') +
           '<span><strong>' + esc(article.title || "Actualité football") + '</strong><small>' + esc(article.source || "Source football") + '</small></span></a>'
-        ).join("") : '<div class="bfmd-empty">Aucune actualité directement liée aux deux équipes ou à cette compétition pour le moment.</div>';
+        ).join("") : '<div class="bfmd-empty">Aucune actualité directement liée aux équipes ou à la compétition pour le moment.</div>';
       })
       .catch(() => { newsList.innerHTML = '<div class="bfmd-empty">Les actualités ne sont pas disponibles pour le moment.</div>'; });
+    content.appendChild(extras);
 
-    const matchKey = String(matchIdentifier || "").slice(0,120);
     const api = "/api/community?match=" + encodeURIComponent(matchKey);
     const form = comments.querySelector("form");
     const status = form.querySelector('[role="status"]');
@@ -6483,7 +6614,7 @@ const response =
         "commentator", "commentators", "commentatorName", "commentator_name",
         "tvCommentator", "tv_commentator", "matchCommentator", "match_commentator",
         "liveCommentator", "broadcastCommentator", "announcer", "announcers",
-        "commentaryTeam", "commentary_team", "presenter", "presenters", "caster"
+        "commentaryTeam", "commentary_team", "presenter", "presenters", "caster", "beINCommentator", "beinCommentator", "beINCommentators", "beinSportsCommentator", "commentatorBein", "bein_sports_commentator"
       ]);
 
       /* =====================================================
@@ -6658,15 +6789,13 @@ const response =
 
         </div>
 
-        ${date || venue || referee || broadcastChannel || commentator
-          ? '<div class="bfmd-info">' +
+        '<div class="bfmd-info">' +
             (date ? '<span>📅 ' + esc(date) + '</span>' : '') +
-            (venue ? '<span>🏟️ ' + esc(venue) + '</span>' : '') +
-            (referee ? '<span>👨‍⚖️ ' + esc(referee) + '</span>' : '') +
-            (broadcastChannel ? '<span>📺 ' + esc(broadcastChannel) + '</span>' : '') +
-            (commentator ? '<span>🎙️ ' + esc(commentator) + '</span>' : '') +
+            '<span>🏟️ Stade : ' + esc(venue || "Non communiqué") + '</span>' +
+            '<span>👨‍⚖️ Arbitre : ' + esc(referee || "Non communiqué") + '</span>' +
+            '<span>📺 Chaîne : ' + esc(broadcastChannel || "Non communiquée") + '</span>' +
+            '<span>🎙️ Commentateur : ' + esc(commentator || "Non communiqué") + '</span>' +
           '</div>'
-          : ''}
 
         ${renderMatchStatistics(details)}
 
@@ -6679,14 +6808,14 @@ const response =
           <div class="bfmd-pitches bfmd-pitches--performance">
             ${renderCombinedPitch(homeLineup, awayLineup, statsMap)}
           </div>
-          <div class="bfmd-section bfmd-player-statistics">
-            <div class="bfmd-title">📊 Statistiques des joueurs</div>
-            <p class="bfmd-player-stats-intro">Notes, buts, passes décisives, cartons et remplacements fournis pour cette rencontre.</p>
+          <details class="bfmd-section bfmd-player-statistics bfmd-player-statistics-details">
+            <summary class="bfmd-title">📊 Statistiques des joueurs · ouvrir</summary>
+            <p class="bfmd-player-stats-intro">Clique sur un joueur sur le terrain pour afficher ses détails, ou ouvre cette liste complète.</p>
             <div class="bfmd-player-stats-grid">
               <div class="bfmd-player-stats-team"><h3>${esc(homeLineup.team.name || teams.home.name)}</h3>${renderPlayerColumn(homeLineup, statsMap)}</div>
               <div class="bfmd-player-stats-team"><h3>${esc(awayLineup.team.name || teams.away.name)}</h3>${renderPlayerColumn(awayLineup, statsMap)}</div>
             </div>
-          </div>
+          </details>
           <div class="bfmd-pitch-legend">
             <span class="bfmd-chip bfmd-chip--goal" title="But"><span>But</span>${performanceIcon("goal")}</span>
             <span class="bfmd-chip bfmd-chip--assist" title="Passe décisive"><span>Passe décisive</span>${performanceIcon("assist")}</span>
@@ -6780,6 +6909,8 @@ const response =
   /* =========================================================
      MATCH DETAILS GLOBAL CONTROL
   ========================================================= */
+
+  window.bfSetupMatchCenter = setupMatchCenterNavigation;
 
   window.bfOpenMatchDetails = openDetails;
 
