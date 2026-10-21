@@ -142,7 +142,8 @@ module.exports = async function community(req, res) {
       if (String(req.query?.status || "") === "1") {
         return send(res, 200, { banned: false });
       }
-      const key = matchCommentsKey(req.query?.match);\n      const records = await redisCommand("LRANGE", key, "0", "99");
+      const key = matchCommentsKey(req.query?.match);
+      const records = await redisCommand("LRANGE", key, "0", "99");
       const comments = [];
       for (const item of Array.isArray(records) ? records : []) {
         try {
@@ -170,7 +171,8 @@ module.exports = async function community(req, res) {
       });
     }
 
-    const rateKey = "bf:community:rate:" + hash;
+    const commentKey = matchCommentsKey(body.match || req.query?.match);
+    const rateKey = "bf:community:rate:" + hash + ":" + commentKey.split(":").slice(-1)[0];
     const rate = await redisCommand("SET", rateKey, "1", "NX", "EX", "20");
     if (rate !== "OK") {
       return send(res, 429, {
@@ -185,8 +187,8 @@ module.exports = async function community(req, res) {
       message,
       createdAt: new Date().toISOString()
     };
-    await redisCommand("LPUSH", COMMENTS_KEY, JSON.stringify(comment));
-    await redisCommand("LTRIM", COMMENTS_KEY, "0", "99");
+    await redisCommand("LPUSH", commentKey, JSON.stringify(comment));
+    await redisCommand("LTRIM", commentKey, "0", "99");
     return send(res, 201, { banned: false, comment });
   } catch (error) {
     console.error("BAKHIRAFOOT community error:", error?.code || error?.message || error);
