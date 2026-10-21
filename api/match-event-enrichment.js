@@ -42,9 +42,9 @@ function labelText(value, depth = 0) {
   return "";
 }
 
-async function getJSON(url) {
+async function getJSON(url, timeoutMs = 14000) {
   const controller = new AbortController();
-  const timeout = setTimeout(() => controller.abort(), 14000);
+  const timeout = setTimeout(() => controller.abort(), timeoutMs);
   try {
     const host = new URL(url).hostname.toLowerCase();
     const headers = {
@@ -169,7 +169,7 @@ async function getSofaJSON(path) {
   let lastError = null;
   for (const host of hosts) {
     try {
-      return await getJSON(host + path);
+      return await getJSON(host + path, 1800);
     } catch (error) {
       lastError = error;
     }
@@ -187,7 +187,9 @@ async function lookupSofaScoreMetadata(root) {
   const baseDate = asCalendarDate(rawDate);
   if (!homeName || !awayName || !baseDate) return {};
 
-  const dates = [baseDate, shiftCalendarDate(baseDate, -1), shiftCalendarDate(baseDate, 1)];
+  // Check the exact date and, for UTC/local-time boundary cases, the prior date.
+  // Short timeouts keep metadata enrichment from holding up the working match view.
+  const dates = [baseDate, shiftCalendarDate(baseDate, -1)];
   for (const date of dates) {
     let calendar;
     try {
