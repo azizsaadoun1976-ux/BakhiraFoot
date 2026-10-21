@@ -915,10 +915,20 @@ async function sofaDetails(
       ].filter(Boolean).join(" "));
       return /referee|matchofficial|mainofficial|centerreferee|centrereferee/.test(role);
     }) || (rawOfficials.length === 1 ? rawOfficials[0] : null);
+    function officialName(value) {
+      if (typeof value === "string" || typeof value === "number") return String(value).trim();
+      if (!value || typeof value !== "object") return "";
+      return first(
+        metaText(value.athlete),
+        metaText(value.person),
+        value.fullName, value.displayName, value.full_name, value.display_name,
+        value.name, metaText(value.official), metaText(value)
+      ) || "";
+    }
     const referee = first(
       metaText(competition?.referee),
       metaText(competition?.mainReferee),
-      metaText(refereeCandidate),
+      officialName(refereeCandidate),
       typeof competition?.referee === "string" ? competition.referee : null
     );
 
