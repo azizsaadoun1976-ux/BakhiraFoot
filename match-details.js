@@ -6434,10 +6434,10 @@ const response =
         ${date || venue || referee || broadcastChannel || commentator
           ? '<div class="bfmd-info">' +
             (date ? '<span>📅 ' + esc(date) + '</span>' : '') +
-            '<span>🏟️ ' + esc(venue || "Stade non communiqué") + '</span>' +
-            '<span>👨‍⚖️ ' + esc(referee || "Arbitre non communiqué") + '</span>' +
-            '<span>📺 ' + esc(broadcastChannel || "Chaîne non confirmée") + '</span>' +
-            '<span>🎙️ ' + esc(commentator || "Commentateur non annoncé") + '</span>' +
+            (venue ? '<span>🏟️ ' + esc(venue) + '</span>' : '') +
+            (referee ? '<span>👨‍⚖️ ' + esc(referee) + '</span>' : '') +
+            (broadcastChannel ? '<span>📺 ' + esc(broadcastChannel) + '</span>' : '') +
+            (commentator ? '<span>🎙️ ' + esc(commentator) + '</span>' : '') +
           '</div>'
           : ''}
 
