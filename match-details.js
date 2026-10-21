@@ -6112,6 +6112,7 @@ function bfSameFixtureMetadata(candidate,expected,requireDate=false) {
   function setupMatchCenterNavigation(matchIdentifier, teams, competition, matchDate, rootElement = null) {
     const content = rootElement || document.getElementById("bfmdContent");
     if (!content) return;
+    addStyles();
     if (content.dataset.bfPlayerDetailEvents !== "1") {
       content.dataset.bfPlayerDetailEvents = "1";
       const togglePlayer = target => {
@@ -6357,20 +6358,21 @@ function bfSameFixtureMetadata(candidate,expected,requireDate=false) {
       finally { button.disabled = false; }
     });
     load();
-    const navSections = Array.from(content.querySelectorAll(".bfmd-section"));
+    const navSections = Array.from(content.querySelectorAll(".bfmd-section,.bf-new-safe-section"));
     if (navSections.length) {
       const nav = document.createElement("nav");
       nav.className = "bfmd-center-nav";
       nav.setAttribute("aria-label", "Navigation du centre de match");
       nav.style.cssText = "display:flex;gap:7px;overflow-x:auto;padding:12px 0 4px;margin:14px 0 6px;position:sticky;top:0;z-index:20;background:var(--card,#fff)";
       navSections.forEach((section,index) => {
-        const title = String(section.querySelector(".bfmd-title")?.textContent || "").trim();
+        const title = String(section.querySelector(".bfmd-title,.bf-new-safe-title")?.textContent || "").trim();
         const lower = title.toLowerCase();
         let label = title || ("Section " + (index + 1));
         if (/statistiques du match/.test(lower)) label = "Stats";
-        else if (/statistiques des joueurs/.test(lower)) label = "Joueurs";
+        else if (/statistiques des joueurs|joueurs/.test(lower)) label = "Joueurs";
         else if (/composition|performance|terrain/.test(lower)) label = "Compos";
         else if (/événements|evenements|résumé/.test(lower)) label = "Résumé";
+        else if (/mvp|meilleure note/.test(lower)) label = "Joueur clé";
         else if (/commentaires/.test(lower)) label = "Commentaires";
         const button = document.createElement("button");
         button.type = "button";
@@ -6379,7 +6381,7 @@ function bfSameFixtureMetadata(candidate,expected,requireDate=false) {
         button.addEventListener("click",() => section.scrollIntoView({behavior:"smooth",block:"start"}));
         nav.appendChild(button);
       });
-      const header = content.querySelector(".bfmd-header");
+      const header = content.querySelector(".bfmd-header,.bf-new-safe-head");
       if (header) header.insertAdjacentElement("afterend",nav);
       else content.insertBefore(nav,content.firstChild);
     }
