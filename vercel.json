@@ -10,6 +10,10 @@
       "dest": "/api/news.js"
     },
     {
+      "src": "/api/community$",
+      "dest": "/api/community.js"
+    },
+    {
       "src": "/api/(.*)",
       "dest": "/api/index.js"
     }
