@@ -178,8 +178,8 @@ async function getSofaJSON(path) {
 }
 
 async function lookupSofaScoreMetadata(root) {
-  const homeName = findMeta(root, ["homeTeam", "home_team", "homeTeamName", "home_team_name", "homeName", "localTeam"]);
-  const awayName = findMeta(root, ["awayTeam", "away_team", "awayTeamName", "away_team_name", "awayName", "visitorTeam"]);
+  const homeName = findMeta(root, ["homeTeam", "home_team", "homeTeamName", "home_team_name", "homeName", "localTeam", "home"]);
+  const awayName = findMeta(root, ["awayTeam", "away_team", "awayTeamName", "away_team_name", "awayName", "visitorTeam", "away"]);
   const rawDate = scalarByKeys(root, [
     "date", "matchDate", "startDate", "kickoff", "kickoffTime", "startTime",
     "datetime", "dateTime", "startTimestamp", "timestamp"
