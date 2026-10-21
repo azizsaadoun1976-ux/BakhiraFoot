@@ -363,13 +363,13 @@ module.exports = async function matchEventEnrichment(req, res) {
         "commentator", "commentators", "commentatorName", "commentator_name",
         "tvCommentator", "tv_commentator", "matchCommentator", "match_commentator",
         "liveCommentator", "broadcastCommentator", "announcer", "announcers",
-        "commentaryTeam", "commentary_team", "presenter", "presenters", "caster", "beINCommentator", "beinCommentator", "beINCommentators", "beinSportsCommentator", "commentatorBein", "bein_sports_commentator"
+        "commentaryTeam", "commentary_team", "presenter", "presenters", "caster", "beINCommentator", "beinCommentator", "beINCommentators", "beinSportsCommentator", "commentatorBein", "bein_sports_commentator", "tvCommentaryPerson", "commentaryPerson", "commentaryName", "narrator"
       ])
     };
 
     // SportScore can omit venue/referee on otherwise well-known fixtures.
     // Look up the exact same teams on the same date before displaying metadata.
-    if (!metadata.venue || !metadata.referee) {
+    if (!metadata.venue || !metadata.referee || !metadata.broadcastChannel || !metadata.commentator) {
       try {
         const fallback = await lookupSofaScoreMetadata(root);
         if (!metadata.venue && fallback.venue) metadata.venue = fallback.venue;
