@@ -38,7 +38,7 @@
       : "Consultez l’article original pour lire les informations complètes et les détails.";
     const imageUrl = /^https?:\/\//i.test(String(article.image || "")) ? article.image : "";
     return `
-      <article class="bf-real-news-card" data-category="${esc(category)}">
+      <article class="bf-real-news-card" data-bf-original-title="${esc(article.title)}" data-bf-original-description="${esc(description)}" data-category="${esc(category)}">
         <a class="bf-news-image-wrap ${imageUrl ? "" : "no-image"}" href="${esc(article.url)}" target="_blank" rel="noopener noreferrer" tabindex="-1" aria-hidden="true">${imageUrl ? `<img class="bf-news-image" src="${esc(imageUrl)}" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.remove();this.parentElement.classList.add('no-image')">` : ""}<span class="bf-news-image-mark">BAKHIR<span>A</span>FOOT</span></a>
         <div class="bf-news-card-content">
         <div class="bf-real-news-top">
@@ -46,11 +46,14 @@
           ${date ? `<time>${esc(date)}</time>` : ""}
         </div>
         <div class="bf-real-news-number">${String(index + 1).padStart(2, "0")}</div>
-        <h3><a href="${esc(article.url)}" target="_blank" rel="noopener noreferrer">${esc(article.title)}</a></h3>
-        <p>${esc(description)}</p>
+        <h3><a data-bf-news-title href="${esc(article.url)}" target="_blank" rel="noopener noreferrer">${esc(article.title)}</a></h3>
+        <p data-bf-news-description>${esc(description)}</p>
         <div class="bf-real-news-bottom">
           <span>Source : <strong>${esc(source)}</strong></span>
-          <a href="${esc(article.url)}" target="_blank" rel="noopener noreferrer" aria-label="Lire l’article original">Lire l’article ↗</a>
+          <div class="bf-news-actions">
+            <button type="button" class="bf-news-translate" data-news-translate data-bf-no-translate>Traduire</button>
+            <a href="${esc(article.url)}" target="_blank" rel="noopener noreferrer" aria-label="Lire l’article original">Lire l’article ↗</a>
+          </div>
         </div>
         </div>
       </article>`;
@@ -102,6 +105,109 @@
     const news = document.getElementById("newsGrid");
     if (news) { news.innerHTML = note + categoryControls(articles) + fullCards + sourceHtml; news.dataset.newsLoaded = "true"; }
   }
+
+
+  function currentNewsLanguage() {
+    const lang = window.BakhiraFootLanguage?.get?.() || document.documentElement.lang || "fr";
+    return ["fr", "en", "ar"].includes(lang) ? lang : "fr";
+  }
+
+  function newsTranslateLabel(language, state) {
+    const labels = {
+      fr: { translate: "Traduire", original: "Voir l’original", loading: "Traduction…" },
+      en: { translate: "Translate", original: "Show original", loading: "Translating…" },
+      ar: { translate: "ترجمة", original: "عرض الأصل", loading: "جارٍ الترجمة…" }
+    };
+    return (labels[language] || labels.fr)[state] || labels.fr.translate;
+  }
+
+  async function translateNewsText(value, language) {
+    const url = "https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=" +
+      encodeURIComponent(language) + "&dt=t&q=" + encodeURIComponent(String(value || "").slice(0, 1800));
+    const response = await fetch(url, { mode: "cors", credentials: "omit", cache: "no-store" });
+    if (!response.ok) throw new Error("Translation HTTP " + response.status);
+    const data = await response.json();
+    const translated = Array.isArray(data?.[0])
+      ? data[0].map(part => Array.isArray(part) ? String(part[0] || "") : "").join("")
+      : "";
+    if (!translated.trim()) throw new Error("Empty translation");
+    return translated;
+  }
+
+  function resetNewsTranslation(card) {
+    if (!card) return;
+    const title = card.querySelector("[data-bf-news-title]");
+    const description = card.querySelector("[data-bf-news-description]");
+    const button = card.querySelector("[data-news-translate]");
+    if (title) title.textContent = card.dataset.bfOriginalTitle || title.textContent;
+    if (description) description.textContent = card.dataset.bfOriginalDescription || description.textContent;
+    if (button) {
+      button.dataset.translated = "false";
+      button.disabled = false;
+      button.textContent = newsTranslateLabel(currentNewsLanguage(), "translate");
+    }
+    delete card.dataset.bfTranslatedLang;
+  }
+
+  document.addEventListener("click", async event => {
+    const button = event.target.closest("[data-news-translate]");
+    if (!button) return;
+    event.preventDefault();
+    event.stopPropagation();
+
+    const card = button.closest(".bf-real-news-card");
+    if (!card) return;
+
+    if (button.dataset.translated === "true") {
+      resetNewsTranslation(card);
+      return;
+    }
+
+    const title = card.querySelector("[data-bf-news-title]");
+    const description = card.querySelector("[data-bf-news-description]");
+    const originalTitle = card.dataset.bfOriginalTitle || title?.textContent || "";
+    const originalDescription = card.dataset.bfOriginalDescription || description?.textContent || "";
+    const language = currentNewsLanguage();
+
+    button.disabled = true;
+    button.textContent = newsTranslateLabel(language, "loading");
+
+    try {
+      const translatedParts = await Promise.all([
+        translateNewsText(originalTitle, language),
+        translateNewsText(originalDescription, language)
+      ]);
+      if (title) title.textContent = translatedParts[0];
+      if (description) description.textContent = translatedParts[1];
+      button.dataset.translated = "true";
+      button.disabled = false;
+      button.textContent = newsTranslateLabel(language, "original");
+      card.dataset.bfTranslatedLang = language;
+    } catch (error) {
+      console.warn("BAKHIRAFOOT NEWS TRANSLATION:", error);
+      button.disabled = false;
+      button.textContent = language === "ar"
+        ? "تعذرت الترجمة"
+        : language === "en"
+          ? "Translation unavailable"
+          : "Traduction indisponible";
+      window.setTimeout(() => {
+        if (button.isConnected && button.dataset.translated !== "true") {
+          button.textContent = newsTranslateLabel(currentNewsLanguage(), "translate");
+        }
+      }, 3000);
+    }
+  });
+
+  document.addEventListener("bakhirafoot:languagechange", () => {
+    document.querySelectorAll(".bf-real-news-card").forEach(card => {
+      if (card.dataset.translated === "true" || card.dataset.bfTranslatedLang) resetNewsTranslation(card);
+      else {
+        const button = card.querySelector("[data-news-translate]");
+        if (button) button.textContent = newsTranslateLabel(currentNewsLanguage(), "translate");
+      }
+    });
+  });
 
   document.addEventListener("click", event => {
     const button = event.target.closest("[data-news-filter]");
@@ -216,6 +322,10 @@
     .bf-real-news-card p{display:-webkit-box;-webkit-line-clamp:4;-webkit-box-orient:vertical;overflow:hidden;margin:0 0 16px!important;color:#9db1c1!important;font-size:12px!important;line-height:1.7!important}
     .bf-real-news-bottom{margin-top:auto;padding-top:12px;border-top:1px solid #22384a}
     #newsGrid .bf-news-filters{grid-column:1/-1}
+    .bf-news-actions{display:flex;align-items:center;justify-content:flex-end;gap:10px;flex-wrap:wrap}
+    .bf-news-translate{border:1px solid #2d6d54;border-radius:7px;background:#102b23;color:#9bf0c9;padding:6px 9px;font:inherit;font-size:10px;font-weight:900;cursor:pointer;white-space:nowrap}
+    .bf-news-translate:hover{background:#164333;border-color:#49c999}
+    .bf-news-translate:disabled{opacity:.65;cursor:wait}
     .bf-real-news-card[hidden]{display:none!important}
     @media(max-width:900px){#homeNews.cards,#newsGrid.cards{grid-template-columns:repeat(2,minmax(0,1fr))}.bf-news-image-wrap{height:155px}}
     @media(max-width:600px){#homeNews.cards,#newsGrid.cards{grid-template-columns:1fr;gap:12px}.bf-news-image-wrap{height:195px}}
