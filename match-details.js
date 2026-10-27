@@ -1435,7 +1435,7 @@
       }
 
       /* Match-centre polish: theme-aware tabs and performance markers beside each player. */
-      #bfMatchDetailsModal .bfmd-header .bfmd-info { width:100%; justify-content:flex-start; margin-top:16px; padding-top:13px; border-top:1px solid rgba(148,163,184,.22); }
+      #bfMatchDetailsModal .bfmd-header .bfmd-info { width:100%; grid-column:1/-1; flex:0 0 100%; justify-content:flex-start; margin-top:16px; padding-top:13px; border-top:1px solid rgba(148,163,184,.22); }
       #bfMatchDetailsModal .bfmd-center-nav { background:transparent; border-bottom:1px solid rgba(127,127,127,.13); }
       #bfMatchDetailsModal .bfmd-combined-player { overflow:visible; }
       #bfMatchDetailsModal .bfmd-combined-player .bfmd-event-mini { position:absolute; top:10px; left:calc(100% - 1px); right:auto; transform:none; z-index:14; display:flex; flex-direction:column; align-items:center; justify-content:flex-start; gap:3px; width:20px; max-width:20px; min-height:0; margin:0; padding:0; background:transparent; border:0; border-radius:0; overflow:visible; }
