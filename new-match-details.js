@@ -2462,7 +2462,7 @@ ${esc(String(playerName(player) || "P").split(/\s+/).map(part => part[0] || "").
     return '<div class="bf-new-safe-combined-wrap"><div class="bf-new-safe-combined-head">' +
       head(homeLineup,home,"Domicile") + '<span class="bf-new-safe-combined-vs">VS</span>' + head(awayLineup,away,"Extérieur") +
       '</div><div class="bf-new-safe-combined-pitch">' + markings + renderTeam(homeLineup,home,"home") + renderTeam(awayLineup,away,"away") +
-      '</div><div class="bf-new-safe-player-detail-panel" hidden></div><div class="bf-new-safe-combined-caption"><span>Domicile · moitié haute</span><span>Extérieur · moitié basse</span><small>Clique sur un joueur pour ouvrir sa fiche</small></div></div>';
+      '</div><div class="bf-new-safe-player-detail-panel" hidden></div><div class="bf-new-safe-combined-caption"><span>DOMICILE · CÔTÉ GAUCHE</span><span>EXTÉRIEUR · CÔTÉ DROIT</span><small>Clique sur un joueur pour ouvrir sa fiche</small></div></div>';
   }
 
   /* =========================================================
