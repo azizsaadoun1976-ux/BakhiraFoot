@@ -4731,7 +4731,7 @@ function normalizeEvent(event, index) {
     return '<div class="bfmd-combined-pitch-card"><div class="bfmd-combined-head">' +
       teamHead(homeLineup,"Domicile") + '<span class="bfmd-combined-vs">VS</span>' + teamHead(awayLineup,"Extérieur") +
       '</div><div class="bfmd-pitch bfmd-pitch--combined">' + markings + placeTeam(homeLineup,"home") + placeTeam(awayLineup,"away") +
-      '</div><div class="bfmd-selected-player-panel" hidden></div><div class="bfmd-combined-caption"><span>DOMICILE · DEMI-TERRAIN HAUT</span><span>EXTÉRIEUR · DEMI-TERRAIN BAS</span><small>Clique sur un joueur pour ouvrir sa fiche</small></div>' +
+      '</div><div class="bfmd-selected-player-panel" hidden></div><div class="bfmd-combined-caption"><span>DOMICILE · CÔTÉ GAUCHE</span><span>EXTÉRIEUR · CÔTÉ DROIT</span><small>Clique sur un joueur pour ouvrir sa fiche</small></div>' +
       '<div class="bfmd-combined-benches"><div><h4>' + esc(homeLineup?.team?.name || "Domicile") + ' · Banc</h4>' + renderBenchPerformance(homeLineup,statsMap) + '</div><div><h4>' + esc(awayLineup?.team?.name || "Extérieur") + ' · Banc</h4>' + renderBenchPerformance(awayLineup,statsMap) + '</div></div></div>';
   }
 
