@@ -6522,6 +6522,7 @@ function bfSameFixtureMetadata(candidate,expected,requireDate=false) {
     const headingMatches = regex => allSections.filter(section => regex.test(getSectionTitle(section).toLowerCase()));
     const tabDefinitions = [
       {key:"result",label:"Résultat",find:()=>[]},
+      {key:"info",label:"Infos du match",find:()=>Array.from(content.querySelectorAll(".bfmd-info,.bf-new-safe-info"))},
       {key:"summary",label:"Résumé",find:()=>headingMatches(/événements|evenements|résumé/).slice(0,1)},
       {key:"lineup",label:"Compos & terrain",find:()=> {
         const explicit = content.querySelector(".bfmd-match-analysis");
@@ -6555,12 +6556,14 @@ function bfSameFixtureMetadata(candidate,expected,requireDate=false) {
       if (!definition) return;
       const selectable = allSections.filter(section => !isHeaderSection(section));
       selectable.forEach(section => { section.style.display = "none"; });
+      const infoRows = Array.from(content.querySelectorAll(".bfmd-info,.bf-new-safe-info"));
+      infoRows.forEach(row => { row.style.display = key === "info" ? "flex" : "none"; });
       content.querySelectorAll(".bfmd-pitches,.bfmd-pitch-legend,.bfmd-tactics-caption,.bfmd-match-analysis > .bfmd-title")
         .forEach(node => { node.style.display = ""; });
       const targets = definition.find();
       const reveal = target => {
         if (!target || !content.contains(target)) return;
-        target.style.display = "block";
+        target.style.display = target.matches(".bfmd-info,.bf-new-safe-info") ? "flex" : "block";
         if (target.tagName === "DETAILS") target.open = true;
         let parent = target.parentElement;
         while (parent && parent !== content) {
@@ -7090,13 +7093,13 @@ const response =
 
         </div>
 
-        '<div class="bfmd-info">' +
-            (date ? '<span>📅 ' + esc(date) + '</span>' : '') +
-            '<span data-bf-meta="venue">🏟️ Stade : ' + esc(venue || "Non communiqué") + '</span>' +
-            '<span data-bf-meta="referee">👨‍⚖️ Arbitre : ' + esc(referee || "Non communiqué") + '</span>' +
-            '<span data-bf-meta="channel">📺 Chaîne : ' + esc(broadcastChannel || "Non communiquée") + '</span>' +
-            '<span data-bf-meta="commentator">🎙️ Commentateur : ' + esc(commentator || "Non communiqué") + '</span>' +
-          '</div>'
+        <div class="bfmd-info">
+          ${date ? '<span>📅 ' + esc(date) + '</span>' : ''}
+          <span data-bf-meta="venue">🏟️ Stade : ${esc(venue || "Non communiqué")}</span>
+          <span data-bf-meta="referee">👨‍⚖️ Arbitre : ${esc(referee || "Non communiqué")}</span>
+          <span data-bf-meta="channel">📺 Chaîne : ${esc(broadcastChannel || "Non communiquée")}</span>
+          <span data-bf-meta="commentator">🎙️ Commentateur : ${esc(commentator || "Non communiqué")}</span>
+        </div>
 
         ${renderMatchStatistics(details)}
 
