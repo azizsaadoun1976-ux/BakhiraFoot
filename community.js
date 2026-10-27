@@ -70,7 +70,7 @@
 
     const localCommentsKey = "bf:local-comments:general";
     let localCommentsMode = false;
-    const localOnlyMessage = "Commentaire sauvegardé sur cet appareil uniquement. Pour le partager avec tous les visiteurs, il faut connecter un stockage commun à Vercel.";
+    const localOnlyMessage = "Commentaire enregistré sur cet appareil.";
     function readLocalComments() {
       try {
         const value = JSON.parse(localStorage.getItem(localCommentsKey) || "[]");
@@ -109,7 +109,7 @@
           localCommentsMode = true;
           renderComments(readLocalComments());
           if (count) count.textContent = readLocalComments().length + " commentaire(s) · local";
-          setStatus("Mode local activé. Les nouveaux commentaires resteront sur cet appareil tant que le stockage partagé n’est pas configuré.");
+          setStatus("");
           return;
         }
         renderComments(data.comments || []);
@@ -118,7 +118,7 @@
         localCommentsMode = true;
         renderComments(readLocalComments());
         if (count) count.textContent = readLocalComments().length + " commentaire(s) · local";
-        setStatus("Mode local activé. Les nouveaux commentaires resteront sur cet appareil tant que le stockage partagé n’est pas configuré.");
+        setStatus("");
       }
     }
 
