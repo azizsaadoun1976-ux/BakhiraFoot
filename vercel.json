@@ -2,6 +2,10 @@
   "version": 2,
   "routes": [
     {
+      "src": "/ads\\.txt$",
+      "dest": "/api/ads-txt.js"
+    },
+    {
       "src": "/api/historical-players$",
       "dest": "/api/historical-players.js"
     },
