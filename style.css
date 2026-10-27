@@ -14915,3 +14915,23 @@ body.dark #scoreList .bf-score-pro-score.live { background:#123e2d; color:#94f2c
   #scoreList .bf-score-pro-score { gap:5px; padding:6px; font-size:15px; }
   #scoreList .bf-score-pro-details { grid-column:2; justify-content:flex-end; margin-top:-4px; }
 }
+
+/* BakhiraFoot editorial pages and restrained AdSense placement */
+.bf-article-meta{margin:8px 0 22px!important;color:var(--bf-muted,#6b7785);font-size:12px;line-height:1.6}
+.bf-article-meta time{font-variant-numeric:tabular-nums}
+.bf-article-table-wrap{width:100%;overflow-x:auto;margin:18px 0}
+.bf-article-table{width:100%;border-collapse:collapse;font-size:13px;line-height:1.55}
+.bf-article-table th,.bf-article-table td{padding:10px 12px;border:1px solid #dce4eb;text-align:left;vertical-align:top}
+.bf-article-table th{background:#eff4f7;font-weight:800}
+.bf-article-table tr:nth-child(even) td{background:#f8fafc}
+.bf-source-list li{margin:7px 0}
+.bf-content-ad{width:min(970px,calc(100% - 24px));margin:26px auto 30px;padding:9px 10px 12px;border:1px solid var(--bf-border,#dce4eb);border-radius:10px;background:var(--bf-surface,#f8fafc);color:var(--bf-muted,#65758a);text-align:center;box-sizing:border-box}
+.bf-content-ad-label{display:block;margin:0 0 7px;font-size:10px;line-height:1.2;font-weight:700;letter-spacing:.06em;text-transform:uppercase}
+.bf-content-ad ins.adsbygoogle{display:block!important;width:100%!important;max-width:970px!important;min-height:80px;margin-inline:auto}
+.bf-content-ad:has(ins.adsbygoogle[data-ad-status="unfilled"]){display:none!important}
+body.dark .bf-article-meta{color:#9aaabd}
+body.dark .bf-article-table th{background:#172638;color:#e7eef8}
+body.dark .bf-article-table td{border-color:#304155;color:#dbe6f2}
+body.dark .bf-article-table tr:nth-child(even) td{background:#101d2c}
+body.dark .bf-content-ad{background:#0d1b29;border-color:#22364a;color:#91a5b8}
+@media(max-width:700px){.bf-article-table{font-size:11px}.bf-article-table th,.bf-article-table td{padding:8px}.bf-content-ad{width:calc(100% - 16px);margin:18px auto;padding:5px}.bf-content-ad ins.adsbygoogle{min-height:70px}}
