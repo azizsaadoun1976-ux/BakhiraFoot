@@ -2426,16 +2426,31 @@ ${esc(String(playerName(player) || "P").split(/\s+/).map(part => part[0] || "").
         return '<div class="bf-new-safe-combined-empty bf-new-safe-combined-empty--' + side + '">' +
           esc(team.name || "Équipe") + ' · composition ou positions indisponibles</div>';
       }
-      return positions.map(item => {
+      let orientedPositions = positions;
+      const keepers = positions.filter(item => /goalkeeper|goalie|\bgk\b|gardien|portier|portero|guardameta/i.test(String(playerPosition(item.player) || "")));
+      const keeperAverage = keepers.length ? keepers.reduce((sum,item)=>sum+item.y,0)/keepers.length : null;
+      if (keeperAverage !== null && ((side === "home" && keeperAverage > 50) || (side === "away" && keeperAverage < 50))) {
+        orientedPositions = positions.map(item => ({...item,y:100-item.y}));
+      }
+      return orientedPositions.map(item => {
         const player = item.player;
         const y = side === "home" ? 5 + item.y * 0.43 : 57 + item.y * 0.38;
         const photo = playerPhoto(player);
-        return '<div class="bf-new-safe-combined-player" role="button" tabindex="0" aria-expanded="false" data-bf-new-player="1" ' +
+        const rating = playerRating(player);
+        const badges = playerEventBadges(player, details);
+        const isMvp = playerIsOfficialMvp(player) || playerIsNamedMvp(player, details) ||
+          (pitchMvp && samePerson(pitchMvp.player, player));
+        const performanceSide = item.x < 50 ? "right" : "left";
+        const performance = badges +
+          (rating !== null ? '<span class="bf-new-safe-player-rate ' + ratingToneClass(rating) + '" title="Note du joueur">' + esc(Number(rating).toFixed(1)) + '</span>' : '') +
+          (isMvp ? '<span class="bf-new-safe-mvp-chip" title="Joueur du match">⭐</span>' : '');
+        return '<div class="bf-new-safe-combined-player bf-new-safe-combined-player--perf-' + performanceSide + '" role="button" tabindex="0" aria-expanded="false" data-bf-new-player="1" ' +
           'style="left:' + item.x + '%;top:' + Math.max(5,Math.min(95,y)) + '%" title="Cliquer pour afficher ' + esc(playerName(player)) + '">' +
           (photo ? '<img src="' + esc(photo) + '" alt="" loading="lazy">' :
             '<span class="bf-new-safe-combined-avatar">' + esc(String(playerName(player) || "P").split(/\s+/).map(part=>part[0]||"").join("").slice(0,2).toUpperCase()) + '</span>') +
           '<span class="bf-new-safe-combined-shirt">' + esc(playerNumber(player)) + '</span>' +
           '<span class="bf-new-safe-combined-name">' + esc(playerName(player) || "Joueur") + '</span>' +
+          '<span class="bf-new-safe-combined-performance">' + performance + '</span>' +
           detailTemplate(player, team, side) + '</div>';
       }).join("");
     };
@@ -3753,6 +3768,41 @@ function bfSameFixtureMetadata(candidate,expected,requireDate=false) {
         </small>
 
       </div>
+
+      /* Professional combined pitch: player performance beside each card. */
+      #bf-new-match-safe-modal .bf-new-safe-combined-player { overflow:visible; }
+      #bf-new-match-safe-modal .bf-new-safe-combined-performance { position:absolute; top:10px; left:calc(100% - 1px); right:auto; z-index:15; display:flex; flex-direction:column; align-items:center; gap:3px; width:20px; max-width:20px; overflow:visible; }
+      #bf-new-match-safe-modal .bf-new-safe-combined-player--perf-left .bf-new-safe-combined-performance { left:auto; right:calc(100% - 1px); }
+      #bf-new-match-safe-modal .bf-new-safe-combined-performance .bf-new-safe-event-badge,
+      #bf-new-match-safe-modal .bf-new-safe-combined-performance .bf-new-safe-player-rate,
+      #bf-new-match-safe-modal .bf-new-safe-combined-performance .bf-new-safe-mvp-chip { display:inline-flex; align-items:center; justify-content:center; min-width:15px; min-height:14px; padding:2px; border-radius:4px; box-shadow:0 2px 5px rgba(0,0,0,.25); font-size:7px; line-height:1; }
+      #bf-new-match-safe-modal .bf-new-safe-combined-performance .bf-new-safe-player-rate { background:#f8fafc; color:#122033; font-weight:950; }
+      #bf-new-match-safe-modal .bf-new-safe-combined-performance .bf-new-safe-mvp-chip { background:#facc15; color:#422006; }
+      #bf-new-match-safe-modal .bf-new-safe-head .bf-new-safe-info { width:100%; justify-content:flex-start; margin-top:15px; padding-top:13px; border-top:1px solid rgba(148,163,184,.22); }
+      #bf-new-match-safe-modal .bfmd-center-nav { background:transparent; border-bottom:1px solid rgba(127,127,127,.13); }
+      body.dark #bf-new-match-safe-modal .bf-new-safe-box { color:#edf4ff; background:#0b1422; border:1px solid rgba(148,176,211,.2); }
+      body.dark #bf-new-match-safe-modal .bf-new-safe-section,
+      body.dark #bf-new-match-safe-modal .bfmd-section { color:#edf4ff; background:linear-gradient(145deg,rgba(19,34,54,.94),rgba(12,23,38,.96)); border-color:rgba(157,181,211,.18); }
+      body.dark #bf-new-match-safe-modal .bf-new-safe-title,
+      body.dark #bf-new-match-safe-modal .bf-new-safe-team,
+      body.dark #bf-new-match-safe-modal .bf-new-safe-score { color:#f3f7ff; }
+      body.dark #bf-new-match-safe-modal .bf-new-safe-info span { color:#d9e7fa; background:#132238; border-color:rgba(157,181,211,.18); }
+      body.dark #bf-new-match-safe-modal .bfmd-center-nav button { color:#edf4ff; }
+      body:not(.dark) #bf-new-match-safe-modal .bf-new-safe-box { color:#172033; background:#f7f9fc; border:1px solid #d9e2ee; }
+      body:not(.dark) #bf-new-match-safe-modal .bf-new-safe-section,
+      body:not(.dark) #bf-new-match-safe-modal .bfmd-section { color:#172033; background:linear-gradient(145deg,#fff,#f7f9fc); border-color:#d8e2ed; }
+      body:not(.dark) #bf-new-match-safe-modal .bf-new-safe-title,
+      body:not(.dark) #bf-new-match-safe-modal .bf-new-safe-team { color:#172033; }
+      body:not(.dark) #bf-new-match-safe-modal .bf-new-safe-score { color:#101828; }
+      body:not(.dark) #bf-new-match-safe-modal .bf-new-safe-info span { color:#334155; background:#edf2f7; border-color:#d6e0eb; }
+      body:not(.dark) #bf-new-match-safe-modal .bfmd-center-nav { background:rgba(247,249,252,.96); }
+      body:not(.dark) #bf-new-match-safe-modal .bfmd-center-nav button { color:#27364b; }
+      @media(max-width:650px) {
+        #bf-new-match-safe-modal .bf-new-safe-combined-performance { top:8px; width:16px; max-width:16px; gap:2px; }
+        #bf-new-match-safe-modal .bf-new-safe-combined-performance .bf-new-safe-event-badge,
+        #bf-new-match-safe-modal .bf-new-safe-combined-performance .bf-new-safe-player-rate,
+        #bf-new-match-safe-modal .bf-new-safe-combined-performance .bf-new-safe-mvp-chip { min-width:12px; min-height:12px; padding:1px; font-size:6px; }
+      }
 
     `;
 
