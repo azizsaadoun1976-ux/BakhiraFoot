@@ -953,3 +953,23 @@ html[dir=rtl] .bf-language-choice-arrow{transform:rotate(180deg)}
   .ad-top{width:calc(100% - 16px);min-height:82px;margin:8px auto 10px;padding:3px 6px;}
   .ad-top ins.adsbygoogle{min-height:70px;}
 }
+
+/* Editorial guide strip — original learning content surfaced on the homepage */
+.bf-editorial-guide{margin:26px 0 30px;padding:clamp(16px,2.4vw,26px);border:1px solid var(--bf-line,#22364a);border-radius:16px;background:linear-gradient(150deg,var(--bf-panel,#0d1b29),var(--bf-panel2,#122437))}
+.bf-editorial-guide-head{display:flex;align-items:flex-end;justify-content:space-between;gap:18px;margin-bottom:16px}
+.bf-editorial-guide-kicker{display:block;margin-bottom:8px;color:var(--bf-green,#39e6a5);font-size:10px;font-weight:900;letter-spacing:.13em}
+.bf-editorial-guide-head h2{margin:0 0 8px;font-size:clamp(20px,2.4vw,28px);line-height:1.2;letter-spacing:-.025em}
+.bf-editorial-guide-head p{max-width:720px;margin:0;color:var(--bf-muted,#91a5b8);font-size:13px;line-height:1.65}
+.bf-editorial-guide-all{flex:0 0 auto;color:var(--bf-green,#39e6a5);font-size:12px;font-weight:850;text-decoration:none}
+.bf-editorial-guide-grid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}
+.bf-editorial-guide-card{display:flex;flex-direction:column;min-width:0;padding:17px;border:1px solid var(--bf-line,#22364a);border-radius:12px;background:rgba(4,12,21,.24)}
+.bf-editorial-guide-number{font-size:9px;font-weight:900;letter-spacing:.1em;color:var(--bf-green,#39e6a5)}
+.bf-editorial-guide-card h3{margin:12px 0 8px;font-size:16px;line-height:1.35}
+.bf-editorial-guide-card p{margin:0;color:var(--bf-muted,#91a5b8);font-size:12px;line-height:1.7}
+.bf-editorial-guide-card>a{display:inline-flex;align-items:center;gap:7px;margin-top:auto;padding-top:16px;color:var(--bf-green,#39e6a5);font-size:12px;font-weight:850;text-decoration:none}
+.bf-editorial-guide-card>a:hover,.bf-editorial-guide-all:hover{text-decoration:underline;text-underline-offset:3px}
+body:not(.dark) .bf-editorial-guide{background:linear-gradient(150deg,#fff,#f4f8fb);border-color:#dbe4eb}
+body:not(.dark) .bf-editorial-guide-card{background:#fff;border-color:#dbe4eb}
+body:not(.dark) .bf-editorial-guide-head p,body:not(.dark) .bf-editorial-guide-card p{color:#65758a}
+body:not(.dark) .bf-editorial-guide-head h2,body:not(.dark) .bf-editorial-guide-card h3{color:#102036}
+@media(max-width:800px){.bf-editorial-guide-head{align-items:flex-start;flex-direction:column}.bf-editorial-guide-grid{grid-template-columns:1fr}.bf-editorial-guide-card{padding:15px}.bf-editorial-guide-card h3{margin-top:8px}}
