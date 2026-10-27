@@ -10270,13 +10270,30 @@ function initSearch() {
       addTeam(getAway(match));
     });
 
+    // Add teams already visible in standings, scorers and match cards.
+    document.querySelectorAll(
+      ".ss-club-info strong, .bf-score-pro-team strong, .bf-score-team strong, .bf-match-team .bf-team-name, .bf-ko-team strong, [data-bf-team-name]"
+    ).forEach(node => {
+      const name = String(node.getAttribute("data-bf-team-name") || node.textContent || "").trim();
+      if (name && name.length < 70) addTeam(name, "", false);
+    });
+
+    const relevance = value => {
+      const candidate = key(value);
+      if (candidate === q) return 0;
+      if (candidate.startsWith(q)) return 1;
+      if (candidate.includes(q)) return 2;
+      return 3;
+    };
+
     const matchingTeams =
       Array.from(teamMap.values())
         .filter(team =>
           key(team.name).includes(q) ||
           key(team.country).includes(q)
         )
-        .slice(0, 5)
+        .sort((a, b) => relevance(a.name) - relevance(b.name))
+        .slice(0, 6)
         .map(team =>
           resultButton(
             "team",
@@ -10343,13 +10360,38 @@ function initSearch() {
           )
         );
 
-    /* اللاعبون المتوفرون فعلاً فالبيانات */
+    /* Players from the loaded fixtures plus top-scorer/lineup cards already on screen. */
+    const playerMap = new Map();
+    collectPlayers(matches).forEach(player => {
+      const playerKey = key(player.name);
+      if (playerKey && !playerMap.has(playerKey)) playerMap.set(playerKey, player);
+    });
+
+    document.querySelectorAll(
+      "[data-player-name], [data-bf-player-name], .ss-player-name, .bfmd-player-name, .bf-new-safe-player-name, .bf-new-safe-name, .bf-pitch-name"
+    ).forEach(node => {
+      const holder = node.closest("[data-player-name], [data-bf-player-name]");
+      const name = String(
+        node.getAttribute("data-player-name") ||
+        node.getAttribute("data-bf-player-name") ||
+        holder?.getAttribute("data-player-name") ||
+        holder?.getAttribute("data-bf-player-name") ||
+        node.textContent || ""
+      ).trim();
+      const playerKey = key(name);
+      if (!playerKey || name.length > 70 || playerKey.length < 2) return;
+      if (!playerMap.has(playerKey)) playerMap.set(playerKey, { name, matchIndex: null });
+    });
+
     const matchingPlayers =
-      collectPlayers(matches)
+      Array.from(playerMap.values())
         .filter(player => key(player.name).includes(q))
-        .slice(0, 5)
+        .sort((a, b) => relevance(a.name) - relevance(b.name))
+        .slice(0, 6)
         .map(player => {
-          const match = matches[player.matchIndex];
+          const match = Number.isInteger(player.matchIndex)
+            ? matches[player.matchIndex]
+            : null;
 
           return resultButton(
             "player",
@@ -10458,32 +10500,36 @@ function initSearch() {
     const type = button.dataset.searchType;
     const value = button.dataset.searchValue;
 
-    if (type === "match" || type === "player") {
+    if (type === "match") {
       const matches = getAllMatches();
       const index = Number(button.dataset.matchIndex);
-
       openSearchMatch(matches[index]);
       return;
     }
 
-    if (
-      type === "team" &&
-      button.dataset.staticTeam === "true"
-    ) {
-      input.value = value;
-
-      go("teams");
-
-      document
-        .querySelectorAll("#teamGrid .card")
-        .forEach(card => {
-          card.style.display =
-            key(card.textContent).includes(key(value))
-              ? ""
-              : "none";
-        });
-
+    if (type === "player") {
       panel.style.display = "none";
+      input.blur();
+      if (window.BakhiraFootEntities?.openPlayer) {
+        window.BakhiraFootEntities.openPlayer(value, {
+          subtitle: button.querySelector("small")?.textContent || ""
+        });
+      } else {
+        const matches = getAllMatches();
+        openSearchMatch(matches[Number(button.dataset.matchIndex)]);
+      }
+      return;
+    }
+
+    if (type === "team") {
+      panel.style.display = "none";
+      input.blur();
+      if (window.BakhiraFootEntities?.openTeam) {
+        window.BakhiraFootEntities.openTeam(value);
+      } else {
+        input.value = value;
+        runSearch();
+      }
       return;
     }
 
@@ -10613,7 +10659,6 @@ document.addEventListener(
 
     renderHome();
     renderLeagues();
-    renderTeams();
     renderNews();
 
     startLiveRefresh();
