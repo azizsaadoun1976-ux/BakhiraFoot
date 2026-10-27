@@ -3778,7 +3778,7 @@ function bfSameFixtureMetadata(candidate,expected,requireDate=false) {
       #bf-new-match-safe-modal .bf-new-safe-combined-performance .bf-new-safe-mvp-chip { display:inline-flex; align-items:center; justify-content:center; min-width:15px; min-height:14px; padding:2px; border-radius:4px; box-shadow:0 2px 5px rgba(0,0,0,.25); font-size:7px; line-height:1; }
       #bf-new-match-safe-modal .bf-new-safe-combined-performance .bf-new-safe-player-rate { background:#f8fafc; color:#122033; font-weight:950; }
       #bf-new-match-safe-modal .bf-new-safe-combined-performance .bf-new-safe-mvp-chip { background:#facc15; color:#422006; }
-      #bf-new-match-safe-modal .bf-new-safe-head .bf-new-safe-info { width:100%; justify-content:flex-start; margin-top:15px; padding-top:13px; border-top:1px solid rgba(148,163,184,.22); }
+      #bf-new-match-safe-modal .bf-new-safe-head .bf-new-safe-info { width:100%; grid-column:1/-1; flex:0 0 100%; justify-content:flex-start; margin-top:15px; padding-top:13px; border-top:1px solid rgba(148,163,184,.22); }
       #bf-new-match-safe-modal .bfmd-center-nav { background:transparent; border-bottom:1px solid rgba(127,127,127,.13); }
       body.dark #bf-new-match-safe-modal .bf-new-safe-box { color:#edf4ff; background:#0b1422; border:1px solid rgba(148,176,211,.2); }
       body.dark #bf-new-match-safe-modal .bf-new-safe-section,
