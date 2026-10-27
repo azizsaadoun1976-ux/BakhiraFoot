@@ -1435,7 +1435,7 @@
       }
 
       /* Match-centre polish: theme-aware tabs and performance markers beside each player. */
-      #bfMatchDetailsModal .bfmd-header .bfmd-info { width:100%; grid-column:1/-1; flex:0 0 100%; justify-content:flex-start; margin-top:16px; padding-top:13px; border-top:1px solid rgba(148,163,184,.22); }
+      #bfMatchDetailsModal .bfmd-header .bfmd-info { width:100%; grid-column:1/-1; flex:0 0 100%; justify-content:flex-start; margin-top:16px; padding-top:13px; border-top:1px solid var(--bfmd-divider,rgba(148,163,184,.22)); }
       #bfMatchDetailsModal .bfmd-center-nav { background:transparent; border-bottom:1px solid rgba(127,127,127,.13); }
       #bfMatchDetailsModal .bfmd-combined-player { overflow:visible; }
       #bfMatchDetailsModal .bfmd-combined-player .bfmd-event-mini { position:absolute; top:10px; left:calc(100% - 1px); right:auto; transform:none; z-index:14; display:flex; flex-direction:column; align-items:center; justify-content:flex-start; gap:3px; width:20px; max-width:20px; min-height:0; margin:0; padding:0; background:transparent; border:0; border-radius:0; overflow:visible; }
@@ -1443,7 +1443,7 @@
       #bfMatchDetailsModal .bfmd-combined-player .bfmd-event-mini .bfmd-chip { min-width:16px; min-height:15px; padding:2px 3px; border-radius:5px; box-shadow:0 2px 5px rgba(0,0,0,.25); }
       #bfMatchDetailsModal .bfmd-combined-player .bfmd-event-mini .bfmd-chip-rating-number { font-size:7px; }
       body:not(.dark) #bfMatchDetailsModal .bfmd-box { color:#172033; background:#f7f9fc; border-color:#d9e2ee; }
-      body:not(.dark) #bfMatchDetailsModal .bfmd-header { color:#172033; background:linear-gradient(125deg,#ffffff,#edf3f9); border-color:#d8e2ed; }
+      body:not(.dark) #bfMatchDetailsModal .bfmd-header { color:#172033; background:linear-gradient(125deg,#ffffff,#edf3f9); border-color:#d8e2ed; } body:not(.dark) #bfMatchDetailsModal .bfmd-header .bfmd-info { border-top-color:#d8e2ed!important; }
       body:not(.dark) #bfMatchDetailsModal .bfmd-header .bfmd-team,
       body:not(.dark) #bfMatchDetailsModal .bfmd-title,
       body:not(.dark) #bfMatchDetailsModal .bfmd-combined-team strong { color:#172033; }
