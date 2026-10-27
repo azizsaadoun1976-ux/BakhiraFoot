@@ -422,9 +422,82 @@ function statValue(entry, aliases) {
   return "—";
 }
 
-async function loadStandings(competition, date) {
+async function loadSofaScoreStandings(homeName, awayName, requestedDate) {
+  if (!homeName || !awayName) return {rows:[]};
+  try {
+    const homeTeam = await findSofaTeam(homeName);
+    if (!homeTeam) return {rows:[]};
+    const [lastResult,nextResult] = await Promise.allSettled([
+      sofaJSON("/team/" + encodeURIComponent(homeTeam.id) + "/events/last/0"),
+      sofaJSON("/team/" + encodeURIComponent(homeTeam.id) + "/events/next/0")
+    ]);
+    const events = [];
+    for (const result of [lastResult,nextResult]) {
+      if (result.status === "fulfilled" && Array.isArray(result.value?.events)) events.push(...result.value.events);
+    }
+    const expected = Date.parse(String(requestedDate || ""));
+    const candidates = events.filter(event => {
+      const h=event?.homeTeam?.name||"", a=event?.awayTeam?.name||"";
+      return (sameTeam(h,homeName)&&sameTeam(a,awayName)) || (sameTeam(h,awayName)&&sameTeam(a,homeName));
+    }).map(event=>{
+      const time = Date.parse(eventTime(event)||"");
+      return {event,delta:Number.isFinite(expected)&&Number.isFinite(time)?Math.abs(expected-time):Number.POSITIVE_INFINITY};
+    }).filter(item=>!Number.isFinite(item.delta)||item.delta<=72*60*60*1000).sort((a,b)=>a.delta-b.delta);
+    const fixture = candidates[0]?.event;
+    const tournament = fixture?.tournament?.uniqueTournament || fixture?.uniqueTournament ||
+      fixture?.tournament || null;
+    const tournamentId = tournament?.id;
+    if (!tournamentId) return {rows:[]};
+
+    let seasonId = fixture?.season?.id || fixture?.seasonId || fixture?.season_id || null;
+    let seasonLabel = fixture?.season?.name || "";
+    if (!seasonId) {
+      const seasonPayload = await sofaJSON("/unique-tournament/" + encodeURIComponent(tournamentId) + "/seasons");
+      const seasons = Array.isArray(seasonPayload?.seasons) ? seasonPayload.seasons : [];
+      const year = String(new Date(Number.isFinite(expected)?expected:Date.now()).getUTCFullYear());
+      const shortYear = year.slice(-2);
+      const matched = seasons.find(item => String(item.year||item.name||"").includes(year) ||
+        String(item.year||item.name||"").includes(shortYear + "/" + String(Number(shortYear)+1).padStart(2,"0")));
+      const selected = matched || seasons[0];
+      seasonId = selected?.id || null;
+      seasonLabel = selected?.name || selected?.year || "";
+    }
+    if (!seasonId) return {rows:[]};
+    const payload = await sofaJSON("/unique-tournament/" + encodeURIComponent(tournamentId) +
+      "/season/" + encodeURIComponent(seasonId) + "/standings/total");
+    const groups = Array.isArray(payload?.standings) ? payload.standings : [];
+    const rows = groups.flatMap(group => Array.isArray(group?.rows) ? group.rows : []);
+    const unique = new Map();
+    for (const row of rows) {
+      const team = row?.team || {};
+      const name = team.name || team.shortName || team.short_name;
+      if (!name) continue;
+      unique.set(String(team.id || name), {
+        rank: String(row.position ?? row.rank ?? unique.size+1),
+        team: name,
+        logo: team.id ? "https://www.sofascore.com/api/v1/team/" + encodeURIComponent(team.id) + "/image" : "",
+        played: String(row.matches ?? row.played ?? "—"),
+        won: String(row.wins ?? row.won ?? "—"),
+        drawn: String(row.draws ?? row.drawn ?? "—"),
+        lost: String(row.losses ?? row.lost ?? "—"),
+        points: String(row.points ?? "—"),
+        differential: (row.scoresFor != null && row.scoresAgainst != null)
+          ? String(Number(row.scoresFor)-Number(row.scoresAgainst)) : "—"
+      });
+    }
+    return {
+      league: tournament?.name || fixture?.tournament?.name || "",
+      season: seasonLabel,
+      rows: [...unique.values()].sort((a,b)=>Number(a.rank)-Number(b.rank)).slice(0,32)
+    };
+  } catch (_) {
+    return {rows:[]};
+  }
+}
+
+async function loadStandings(competition, date, home, away) {
   const codeEntry = ESPN_CODES.find(([pattern]) => pattern.test(competition));
-  if (!codeEntry) return { league: competition, rows: [] };
+  if (!codeEntry) return loadSofaScoreStandings(home, away, date);
   const rawDate = String(date || "");
   const parsedYear = Number(rawDate.slice(0, 4));
   const month = Number(rawDate.slice(5, 7));
@@ -458,7 +531,8 @@ async function loadStandings(competition, date) {
       };
     } catch (_) {}
   }
-  return { league: competition, rows: [] };
+  const sofaRows = await loadSofaScoreStandings(home, away, date);
+  return sofaRows.rows?.length ? sofaRows : { league: competition, rows: [] };
 }
 
 async function withDeadline(promise, milliseconds, fallback) {
@@ -486,7 +560,7 @@ module.exports = async function matchCenter(req, res) {
 
   const [sofaH2H, standings, metadataResult] = await Promise.all([
     withDeadline(loadHeadToHead(home, away), 5200, []),
-    withDeadline(loadStandings(competition, date), 5200, { league: competition, rows: [] }),
+    withDeadline(loadStandings(competition, date, home, away), 6500, { league: competition, rows: [] }),
     withDeadline(loadFixtureMetadata(home, away, date, competition), 6800, {metadata:{},headToHead:[]})
   ]);
   const metadata = metadataResult?.metadata || {};
