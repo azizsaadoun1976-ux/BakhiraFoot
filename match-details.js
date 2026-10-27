@@ -1469,6 +1469,35 @@
         #bfMatchDetailsModal .bfmd-combined-player .bfmd-event-mini .bfmd-chip { min-width:13px; min-height:13px; padding:1px 2px; font-size:6px; }
       }
 
+      /* HORIZONTAL BROADCAST PITCH — teams face each other across the width. */
+      #bfMatchDetailsModal .bfmd-pitch--combined { width:min(100%,900px); aspect-ratio:1.48; height:auto; min-height:0; max-height:none; margin:0 auto; overflow:visible; }
+      #bfMatchDetailsModal .bfmd-pitch--combined .bfmd-border { inset:8px; }
+      #bfMatchDetailsModal .bfmd-pitch--combined .bfmd-half { left:50%; right:auto; top:8px; bottom:8px; width:2px; height:auto; }
+      #bfMatchDetailsModal .bfmd-pitch--combined .bfmd-box-line { left:0; right:auto; top:25%; bottom:25%; width:15%; height:auto; }
+      #bfMatchDetailsModal .bfmd-pitch--combined .bfmd-box-line.top { left:8px; right:auto; top:25%; bottom:25%; }
+      #bfMatchDetailsModal .bfmd-pitch--combined .bfmd-box-line.bottom { left:auto; right:8px; top:25%; bottom:25%; }
+      #bfMatchDetailsModal .bfmd-pitch--combined .bfmd-goal-box { left:0; right:auto; top:39%; bottom:auto; width:3%; height:22%; border:1px solid rgba(255,255,255,.78); }
+      #bfMatchDetailsModal .bfmd-pitch--combined .bfmd-goal-box.top { left:0; right:auto; top:39%; bottom:auto; border:1px solid rgba(255,255,255,.78); }
+      #bfMatchDetailsModal .bfmd-pitch--combined .bfmd-goal-box.bottom { left:auto; right:0; top:39%; bottom:auto; border:1px solid rgba(255,255,255,.78); }
+      #bfMatchDetailsModal .bfmd-pitch--combined .bfmd-penalty-spot { left:auto; right:auto; top:50%; bottom:auto; transform:translateY(-50%); }
+      #bfMatchDetailsModal .bfmd-pitch--combined .bfmd-penalty-spot.top { left:20%; right:auto; }
+      #bfMatchDetailsModal .bfmd-pitch--combined .bfmd-penalty-spot.bottom { left:auto; right:20%; }
+      #bfMatchDetailsModal .bfmd-combined-player { width:clamp(52px,6vw,84px); }
+      #bfMatchDetailsModal .bfmd-combined-player .bfmd-photo-wrap,
+      #bfMatchDetailsModal .bfmd-combined-player .bfmd-number-only { width:clamp(24px,2.8vw,38px); height:clamp(24px,2.8vw,38px); }
+      #bfMatchDetailsModal .bfmd-combined-player .bfmd-name { max-width:76px; padding:2px 4px; font-size:clamp(7px,.65vw,9px); }
+      #bfMatchDetailsModal .bfmd-combined-player .bfmd-event-mini { top:-4px; }
+      #bfMatchDetailsModal .bfmd-info i { font-style:normal; }
+      #bfMatchDetailsModal .bfmd-info b { font-weight:850; }
+      @media(max-width:650px) {
+        #bfMatchDetailsModal .bfmd-pitch--combined { width:100%; aspect-ratio:1.12; }
+        #bfMatchDetailsModal .bfmd-combined-player { width:clamp(42px,11vw,58px); }
+        #bfMatchDetailsModal .bfmd-combined-player .bfmd-photo-wrap,
+        #bfMatchDetailsModal .bfmd-combined-player .bfmd-number-only { width:clamp(20px,5.4vw,27px); height:clamp(20px,5.4vw,27px); }
+        #bfMatchDetailsModal .bfmd-combined-player .bfmd-name { max-width:55px; font-size:6.5px; padding:2px; }
+        #bfMatchDetailsModal .bfmd-combined-player .bfmd-event-mini { top:0; width:15px; max-width:15px; }
+      }
+
     `;
 
     document.head.appendChild(style);
@@ -4682,14 +4711,16 @@ function normalizeEvent(event, index) {
       let orientedPositions = positions;
       const keepers = positions.filter(item => /goalkeeper|goalie|\bgk\b|gardien|portier|portero|guardameta/i.test(String(getPlayerPosition(item.player) || "")));
       const keeperAverage = keepers.length ? keepers.reduce((sum,item)=>sum+item.y,0)/keepers.length : null;
+      /* If provider orientation is inconsistent, rotate the entire side, not just its depth. */
       if (keeperAverage !== null && ((side === "home" && keeperAverage > 50) || (side === "away" && keeperAverage < 50))) {
-        orientedPositions = positions.map(item => ({...item,y:100-item.y}));
+        orientedPositions = positions.map(item => ({...item,x:100-item.x,y:100-item.y}));
       }
       return orientedPositions.map(item => {
         const player = item.player;
-        const y = side === "home" ? 5 + item.y * 0.43 : 57 + item.y * 0.38;
-        const performanceSide = item.x < 50 ? "right" : "left";
-        return '<div role="button" tabindex="0" aria-expanded="false" data-bf-player-toggle="1" class="bfmd-player bfmd-combined-player bfmd-combined-player--' + side + ' bfmd-combined-player--perf-' + performanceSide + '" style="left:' + item.x + '%;top:' + Math.max(5,Math.min(95,y)) + '%" title="Cliquer pour afficher les détails de ' + esc(getPlayerName(player)) + '">' +
+        const fieldX = side === "home" ? 5 + item.y * 0.43 : 57 + item.y * 0.38;
+        const fieldY = side === "home" ? 8 + item.x * 0.84 : 92 - item.x * 0.84;
+        const performanceSide = side === "home" ? "right" : "left";
+        return '<div role="button" tabindex="0" aria-expanded="false" data-bf-player-toggle="1" class="bfmd-player bfmd-combined-player bfmd-combined-player--' + side + ' bfmd-combined-player--perf-' + performanceSide + '" style="left:' + Math.max(10,Math.min(90,fieldX)) + '%;top:' + Math.max(10,Math.min(90,fieldY)) + '%" title="Cliquer pour afficher les détails de ' + esc(getPlayerName(player)) + '">' +
           playerAvatar(player) + '<div class="bfmd-name">' + esc(getPlayerName(player)) + '</div>' + playerBadges(player, statsMap) +
           playerDetail(player) + '</div>';
       }).join("");
@@ -6229,7 +6260,8 @@ function bfSameFixtureMetadata(candidate,expected,requireDate=false) {
           Object.entries(values).forEach(([key,value]) => {
             if (!value) return;
             const node = content.querySelector('[data-bf-meta="' + key + '"]');
-            if (node && /Non communiqué/i.test(node.textContent)) node.textContent = labels[key](value);
+            const valueNode = node?.querySelector('[data-bf-meta-value="' + key + '"]');
+            if (valueNode && /Non communiqué/i.test(valueNode.textContent)) valueNode.textContent = String(value);
           });
         }).catch(() => {});
     }
@@ -6405,7 +6437,8 @@ function bfSameFixtureMetadata(candidate,expected,requireDate=false) {
         Object.entries(metadataValues).forEach(([key,value]) => {
           if (!value) return;
           const node = content.querySelector('[data-bf-meta="' + key + '"]');
-          if (node && /Non communiqué/i.test(node.textContent)) node.textContent = metadataLabels[key](value);
+          const valueNode = node?.querySelector('[data-bf-meta-value="' + key + '"]');
+          if (valueNode && /Non communiqué/i.test(valueNode.textContent)) valueNode.textContent = String(value);
         });
         const h2h = Array.isArray(payload.headToHead) ? payload.headToHead : [];
         h2hList.innerHTML = h2h.length ? h2h.map(item => {
@@ -7143,10 +7176,10 @@ const response =
 
         <div class="bfmd-info">
           ${date ? '<span>📅 ' + esc(date) + '</span>' : ''}
-          <span data-bf-meta="venue">🏟️ Stade : ${esc(venue || "Non communiqué")}</span>
-          <span data-bf-meta="referee">👨‍⚖️ Arbitre : ${esc(referee || "Non communiqué")}</span>
-          <span data-bf-meta="channel">📺 Chaîne : ${esc(broadcastChannel || "Non communiquée")}</span>
-          <span data-bf-meta="commentator">🎙️ Commentateur : ${esc(commentator || "Non communiqué")}</span>
+          <span data-bf-meta="venue"><b>🏟️ Stade :</b> <i data-bf-meta-value="venue">${esc(venue || "Non communiqué")}</i></span>
+          <span data-bf-meta="referee"><b>👨‍⚖️ Arbitre :</b> <i data-bf-meta-value="referee">${esc(referee || "Non communiqué")}</i></span>
+          <span data-bf-meta="channel"><b>📺 Chaîne :</b> <i data-bf-meta-value="channel">${esc(broadcastChannel || "Non communiquée")}</i></span>
+          <span data-bf-meta="commentator"><b>🎙️ Commentateur :</b> <i data-bf-meta-value="commentator">${esc(commentator || "Non communiqué")}</i></span>
         </div>
 
         ${renderMatchStatistics(details)}
