@@ -3223,14 +3223,14 @@ ${esc(String(playerName(player) || "P").split(/\s+/).map(part => part[0] || "").
       </div>
 
 
-      '<div class="bf-new-safe-info">' +
-          (date ? '<span>📅 ' + esc(new Date(date).toLocaleString("fr-FR")) + '</span>' : '') +
-          '<span data-bf-meta="venue">🏟️ Stade : ' + esc(venue || "Non communiqué") + '</span>' +
-          '<span data-bf-meta="referee">👨‍⚖️ Arbitre : ' + esc(referee || "Non communiqué") + '</span>' +
-          '<span data-bf-meta="channel">📺 Chaîne : ' + esc(broadcastChannel || "Non communiquée") + '</span>' +
-          '<span data-bf-meta="commentator">🎙️ Commentateur : ' + esc(commentator || "Non communiqué") + '</span>' +
-          (providerText ? '<span>' + providerText + '</span>' : '') +
-        '</div>'
+      <div class="bf-new-safe-info">
+        ${date ? '<span>📅 ' + esc(new Date(date).toLocaleString("fr-FR")) + '</span>' : ''}
+        <span data-bf-meta="venue">🏟️ Stade : ${esc(venue || "Non communiqué")}</span>
+        <span data-bf-meta="referee">👨‍⚖️ Arbitre : ${esc(referee || "Non communiqué")}</span>
+        <span data-bf-meta="channel">📺 Chaîne : ${esc(broadcastChannel || "Non communiquée")}</span>
+        <span data-bf-meta="commentator">🎙️ Commentateur : ${esc(commentator || "Non communiqué")}</span>
+        ${providerText ? '<span>' + esc(providerText) + '</span>' : ''}
+      </div>
 
       <div
         class="bf-new-safe-section"
