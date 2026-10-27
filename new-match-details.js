@@ -2403,7 +2403,7 @@ ${esc(String(playerName(player) || "P").split(/\s+/).map(part => part[0] || "").
   }
 
   function renderCombinedPitch(homeLineup, home, awayLineup, away, details, pitchMvp) {
-    const markings = '<div class="bf-new-safe-combined-border"></div><div class="bf-new-safe-combined-half"></div><div class="bf-new-safe-combined-circle"></div><div class="bf-new-safe-combined-dot"></div><div class="bf-new-safe-combined-box bf-new-safe-combined-box--top"></div><div class="bf-new-safe-combined-box bf-new-safe-combined-box--bottom"></div>';
+    const markings = '<div class="bf-new-safe-combined-border"></div><div class="bf-new-safe-combined-half"></div><div class="bf-new-safe-combined-circle"></div><div class="bf-new-safe-combined-dot"></div><div class="bf-new-safe-combined-box bf-new-safe-combined-box--top"></div><div class="bf-new-safe-combined-box bf-new-safe-combined-box--bottom"></div><div class="bf-new-safe-combined-goal bf-new-safe-combined-goal--left"></div><div class="bf-new-safe-combined-goal bf-new-safe-combined-goal--right"></div><div class="bf-new-safe-combined-spot bf-new-safe-combined-spot--left"></div><div class="bf-new-safe-combined-spot bf-new-safe-combined-spot--right"></div>';
     const detailTemplate = (player, team, side) => {
       const photo = playerPhoto(player);
       const rating = playerRating(player);
@@ -2429,23 +2429,25 @@ ${esc(String(playerName(player) || "P").split(/\s+/).map(part => part[0] || "").
       let orientedPositions = positions;
       const keepers = positions.filter(item => /goalkeeper|goalie|\bgk\b|gardien|portier|portero|guardameta/i.test(String(playerPosition(item.player) || "")));
       const keeperAverage = keepers.length ? keepers.reduce((sum,item)=>sum+item.y,0)/keepers.length : null;
+      /* When a provider reverses the visitors, rotate the full formation in both axes. */
       if (keeperAverage !== null && ((side === "home" && keeperAverage > 50) || (side === "away" && keeperAverage < 50))) {
-        orientedPositions = positions.map(item => ({...item,y:100-item.y}));
+        orientedPositions = positions.map(item => ({...item,x:100-item.x,y:100-item.y}));
       }
       return orientedPositions.map(item => {
         const player = item.player;
-        const y = side === "home" ? 5 + item.y * 0.43 : 57 + item.y * 0.38;
+        const fieldX = side === "home" ? 5 + item.y * 0.43 : 57 + item.y * 0.38;
+        const fieldY = side === "home" ? 8 + item.x * 0.84 : 92 - item.x * 0.84;
         const photo = playerPhoto(player);
         const rating = playerRating(player);
         const badges = playerEventBadges(player, details);
         const isMvp = playerIsOfficialMvp(player) || playerIsNamedMvp(player, details) ||
           (pitchMvp && samePerson(pitchMvp.player, player));
-        const performanceSide = item.x < 50 ? "right" : "left";
+        const performanceSide = side === "home" ? "right" : "left";
         const performance = badges +
           (rating !== null ? '<span class="bf-new-safe-player-rate ' + ratingToneClass(rating) + '" title="Note du joueur">' + esc(Number(rating).toFixed(1)) + '</span>' : '') +
           (isMvp ? '<span class="bf-new-safe-mvp-chip" title="Joueur du match">⭐</span>' : '');
         return '<div class="bf-new-safe-combined-player bf-new-safe-combined-player--perf-' + performanceSide + '" role="button" tabindex="0" aria-expanded="false" data-bf-new-player="1" ' +
-          'style="left:' + item.x + '%;top:' + Math.max(5,Math.min(95,y)) + '%" title="Cliquer pour afficher ' + esc(playerName(player)) + '">' +
+          'style="left:' + Math.max(10,Math.min(90,fieldX)) + '%;top:' + Math.max(10,Math.min(90,fieldY)) + '%" title="Cliquer pour afficher ' + esc(playerName(player)) + '">' +
           (photo ? '<img src="' + esc(photo) + '" alt="" loading="lazy">' :
             '<span class="bf-new-safe-combined-avatar">' + esc(String(playerName(player) || "P").split(/\s+/).map(part=>part[0]||"").join("").slice(0,2).toUpperCase()) + '</span>') +
           '<span class="bf-new-safe-combined-shirt">' + esc(playerNumber(player)) + '</span>' +
@@ -3240,10 +3242,10 @@ ${esc(String(playerName(player) || "P").split(/\s+/).map(part => part[0] || "").
 
       <div class="bf-new-safe-info">
         ${date ? '<span>📅 ' + esc(new Date(date).toLocaleString("fr-FR")) + '</span>' : ''}
-        <span data-bf-meta="venue">🏟️ Stade : ${esc(venue || "Non communiqué")}</span>
-        <span data-bf-meta="referee">👨‍⚖️ Arbitre : ${esc(referee || "Non communiqué")}</span>
-        <span data-bf-meta="channel">📺 Chaîne : ${esc(broadcastChannel || "Non communiquée")}</span>
-        <span data-bf-meta="commentator">🎙️ Commentateur : ${esc(commentator || "Non communiqué")}</span>
+        <span data-bf-meta="venue"><b>🏟️ Stade :</b> <i data-bf-meta-value="venue">${esc(venue || "Non communiqué")}</i></span>
+        <span data-bf-meta="referee"><b>👨‍⚖️ Arbitre :</b> <i data-bf-meta-value="referee">${esc(referee || "Non communiqué")}</i></span>
+        <span data-bf-meta="channel"><b>📺 Chaîne :</b> <i data-bf-meta-value="channel">${esc(broadcastChannel || "Non communiquée")}</i></span>
+        <span data-bf-meta="commentator"><b>🎙️ Commentateur :</b> <i data-bf-meta-value="commentator">${esc(commentator || "Non communiqué")}</i></span>
         ${providerText ? '<span>' + esc(providerText) + '</span>' : ''}
       </div>
 
@@ -3802,6 +3804,35 @@ function bfSameFixtureMetadata(candidate,expected,requireDate=false) {
         #bf-new-match-safe-modal .bf-new-safe-combined-performance .bf-new-safe-event-badge,
         #bf-new-match-safe-modal .bf-new-safe-combined-performance .bf-new-safe-player-rate,
         #bf-new-match-safe-modal .bf-new-safe-combined-performance .bf-new-safe-mvp-chip { min-width:12px; min-height:12px; padding:1px; font-size:6px; }
+      }
+
+      /* Landscape pitch: home occupies the left half, away the right half. */
+      #bf-new-match-safe-modal .bf-new-safe-combined-pitch { width:min(100%,900px); aspect-ratio:1.48; height:auto; min-height:0; max-height:none; margin:0 auto; overflow:visible; }
+      #bf-new-match-safe-modal .bf-new-safe-combined-pitch .bf-new-safe-combined-half { left:50%; right:auto; top:8px; bottom:8px; width:2px; height:auto; }
+      #bf-new-match-safe-modal .bf-new-safe-combined-pitch .bf-new-safe-combined-box { left:0; right:auto; top:25%; bottom:25%; width:15%; height:auto; }
+      #bf-new-match-safe-modal .bf-new-safe-combined-pitch .bf-new-safe-combined-box--top { left:8px; right:auto; top:25%; bottom:25%; }
+      #bf-new-match-safe-modal .bf-new-safe-combined-pitch .bf-new-safe-combined-box--bottom { left:auto; right:8px; top:25%; bottom:25%; }
+      #bf-new-match-safe-modal .bf-new-safe-combined-goal { position:absolute; top:39%; width:3%; height:22%; border:1px solid rgba(255,255,255,.85); pointer-events:none; }
+      #bf-new-match-safe-modal .bf-new-safe-combined-goal--left { left:0; border-left:0; }
+      #bf-new-match-safe-modal .bf-new-safe-combined-goal--right { right:0; border-right:0; }
+      #bf-new-match-safe-modal .bf-new-safe-combined-spot { position:absolute; top:calc(50% - 2px); width:4px; height:4px; border-radius:50%; background:#fff; }
+      #bf-new-match-safe-modal .bf-new-safe-combined-spot--left { left:20%; }
+      #bf-new-match-safe-modal .bf-new-safe-combined-spot--right { right:20%; }
+      #bf-new-match-safe-modal .bf-new-safe-combined-player { width:clamp(52px,6vw,84px); }
+      #bf-new-match-safe-modal .bf-new-safe-combined-player img,
+      #bf-new-match-safe-modal .bf-new-safe-combined-avatar { width:clamp(24px,2.8vw,38px); height:clamp(24px,2.8vw,38px); }
+      #bf-new-match-safe-modal .bf-new-safe-combined-name { max-width:76px; font-size:clamp(7px,.65vw,9px); padding:2px 4px; }
+      #bf-new-match-safe-modal .bf-new-safe-combined-performance { top:0; }
+      #bf-new-match-safe-modal .bf-new-safe-combined-info i { font-style:normal; }
+      #bf-new-match-safe-modal .bf-new-safe-info i { font-style:normal; }
+      #bf-new-match-safe-modal .bf-new-safe-info b { font-weight:850; }
+      @media(max-width:650px) {
+        #bf-new-match-safe-modal .bf-new-safe-combined-pitch { width:100%; aspect-ratio:1.12; }
+        #bf-new-match-safe-modal .bf-new-safe-combined-player { width:clamp(42px,11vw,58px); }
+        #bf-new-match-safe-modal .bf-new-safe-combined-player img,
+        #bf-new-match-safe-modal .bf-new-safe-combined-avatar { width:clamp(20px,5.4vw,27px); height:clamp(20px,5.4vw,27px); }
+        #bf-new-match-safe-modal .bf-new-safe-combined-name { max-width:55px; font-size:6.5px; padding:2px; }
+        #bf-new-match-safe-modal .bf-new-safe-combined-performance { top:0; width:15px; max-width:15px; }
       }
 
     `;
