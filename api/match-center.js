@@ -166,7 +166,7 @@ function metadataText(value, depth = 0) {
   if (typeof value === "string" || typeof value === "number") return String(value).trim();
   if (Array.isArray(value)) return value.map(item => metadataText(item, depth + 1)).filter(Boolean).join(" · ");
   if (typeof value !== "object") return "";
-  for (const key of ["name","displayName","display_name","fullName","full_name","shortName","short_name","label","title","channelName","channel_name","officialName","official_name","value"]) {
+  for (const key of ["name","displayName","display_name","fullName","full_name","shortName","short_name","label","title","channelName","channel_name","officialName","official_name","names","items","officials","broadcasters","channels","crew","person","value"]) {
     const candidate = value[key];
     if (candidate !== undefined && candidate !== null && candidate !== value) {
       const text = metadataText(candidate, depth + 1);
@@ -374,17 +374,6 @@ async function loadFixtureMetadata(homeName, awayName, requestedDate, competitio
             commentator:findMetadataValue(root,["commentator","commentators","commentatorName","tvCommentator","matchCommentator","liveCommentator","broadcastCommentator","announcer","announcers","commentaryTeam","presenter","caster","beINCommentator","beinSportsCommentator"])
           };
           for(const key of ["venue","referee","broadcastChannel","commentator"]) if(!metadata[key]&&fallback[key]) metadata[key]=fallback[key];
-          if(!headToHead.length) {
-            headToHead=[{
-              id:String(candidate.id),
-              date:eventTime(candidate),
-              home:candidate.homeTeam?.name||"",
-              away:candidate.awayTeam?.name||"",
-              score:eventScore(candidate),
-              competition:candidate?.tournament?.name||candidate?.uniqueTournament?.name||"",
-              status:candidate?.status?.description||""
-            }];
-          }
         }
       }
     } catch (_) {}
