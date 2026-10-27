@@ -322,7 +322,10 @@ async function loadESPNMatchBundle(homeName, awayName, competition, requestedDat
     "https://site.web.api.espn.com/apis/site/v2/sports/soccer/" + encodeURIComponent(league) + "/summary?event=" + encodeURIComponent(fixture.id)
   ];
   for (const url of summaryPaths) {
-    try { summary = await fetchJSON(url,2400); if (summary && typeof summary==="object") break; } catch (_) {}
+    try {
+      summary = await fetchJSON(url,2400);
+      if (summary && typeof summary === "object" && Object.keys(summary).length) break;
+    } catch (_) {}
   }
   const root = {event:fixture,summary,...(summary?.gameInfo && typeof summary.gameInfo==="object" ? summary.gameInfo : {})};
   const metadata = {
@@ -340,7 +343,7 @@ async function loadFixtureMetadata(homeName, awayName, requestedDate, competitio
   let metadata = {...(espn.metadata || {})};
   let headToHead = Array.isArray(espn.headToHead) ? espn.headToHead : [];
 
-  if (!metadata.venue || !metadata.referee || !metadata.broadcastChannel || !metadata.commentator || !headToHead.length) {
+  if (!metadata.venue && !metadata.referee && !metadata.broadcastChannel && !metadata.commentator) {
     try {
       const homeTeam = await findSofaTeam(homeName);
       if (homeTeam) {
