@@ -6261,7 +6261,7 @@ function bfSameFixtureMetadata(candidate,expected,requireDate=false) {
             if (!value) return;
             const node = content.querySelector('[data-bf-meta="' + key + '"]');
             const valueNode = node?.querySelector('[data-bf-meta-value="' + key + '"]');
-            if (valueNode && /Non communiqué/i.test(valueNode.textContent)) valueNode.textContent = String(value);
+            if (valueNode && /^(?:Non communiqu[ée]|Not provided|غير متوفر(?:ة)?)$/i.test(valueNode.textContent.trim())) valueNode.textContent = String(value);
           });
         }).catch(() => {});
     }
@@ -6438,7 +6438,7 @@ function bfSameFixtureMetadata(candidate,expected,requireDate=false) {
           if (!value) return;
           const node = content.querySelector('[data-bf-meta="' + key + '"]');
           const valueNode = node?.querySelector('[data-bf-meta-value="' + key + '"]');
-          if (valueNode && /Non communiqué/i.test(valueNode.textContent)) valueNode.textContent = String(value);
+          if (valueNode && /^(?:Non communiqu[ée]|Not provided|غير متوفر(?:ة)?)$/i.test(valueNode.textContent.trim())) valueNode.textContent = String(value);
         });
         const h2h = Array.isArray(payload.headToHead) ? payload.headToHead : [];
         h2hList.innerHTML = h2h.length ? h2h.map(item => {
