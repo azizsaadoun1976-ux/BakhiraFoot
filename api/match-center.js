@@ -201,44 +201,195 @@ function findMetadataValue(root, aliases) {
   return "";
 }
 
-async function loadFixtureMetadata(homeName, awayName, requestedDate) {
-  if (!homeName || !awayName) return {};
-  const searchResult = await Promise.allSettled([findSofaTeam(homeName)]);
-  const homeTeam = searchResult[0].status === "fulfilled" ? searchResult[0].value : null;
-  if (!homeTeam) return {};
-  const [lastResult,nextResult] = await Promise.allSettled([
-    sofaJSON("/team/" + encodeURIComponent(homeTeam.id) + "/events/last/0"),
-    sofaJSON("/team/" + encodeURIComponent(homeTeam.id) + "/events/next/0")
-  ]);
-  const events = [];
-  for (const result of [lastResult,nextResult]) {
-    if (result.status !== "fulfilled") continue;
-    const values = result.value?.events;
-    if (Array.isArray(values)) events.push(...values);
+function getESPNCode(competition) {
+  const match = ESPN_CODES.find(([pattern]) => pattern.test(String(competition || "")));
+  return match ? match[1] : "";
+}
+
+function dateStamp(value) {
+  const parsed = Date.parse(String(value || ""));
+  if (!Number.isFinite(parsed)) return new Date().toISOString().slice(0,10).replace(/-/g,"");
+  const date = new Date(parsed);
+  return date.getUTCFullYear().toString() +
+    String(date.getUTCMonth()+1).padStart(2,"0") +
+    String(date.getUTCDate()).padStart(2,"0");
+}
+
+function moveDateStamp(stamp, offset) {
+  const year = Number(stamp.slice(0,4)), month = Number(stamp.slice(4,6)), day = Number(stamp.slice(6,8));
+  const date = new Date(Date.UTC(year,month-1,day+offset));
+  return date.getUTCFullYear().toString() + String(date.getUTCMonth()+1).padStart(2,"0") + String(date.getUTCDate()).padStart(2,"0");
+}
+
+function espnCompetitors(event) {
+  const list = Array.isArray(event?.competitions)
+    ? event.competitions.flatMap(competition => Array.isArray(competition?.competitors) ? competition.competitors : [])
+    : Array.isArray(event?.competitors) ? event.competitors : [];
+  const homeEntry = list.find(item => String(item?.homeAway || "").toLowerCase() === "home") || list[0];
+  const awayEntry = list.find(item => String(item?.homeAway || "").toLowerCase() === "away") || list[1];
+  const name = entry => String(entry?.team?.displayName || entry?.team?.name || entry?.displayName || entry?.name || "").trim();
+  return {home:name(homeEntry),away:name(awayEntry),homeEntry,awayEntry};
+}
+
+function espnEventDate(event) {
+  return event?.date || event?.competitions?.[0]?.date || event?.competitions?.[0]?.startDate || "";
+}
+
+function espnEventScore(event) {
+  const teams = espnCompetitors(event);
+  const score = entry => {
+    const value = entry?.score;
+    if (value && typeof value === "object") return value.displayValue ?? value.value ?? value.current ?? "—";
+    return value ?? "—";
+  };
+  return String(score(teams.homeEntry)) + " - " + String(score(teams.awayEntry));
+}
+
+function espnSeriesEvents(summary, homeName, awayName) {
+  const roots = [];
+  const queue = [{value:summary,depth:0}];
+  const seen = new Set();
+  while (queue.length && seen.size < 2400) {
+    const item = queue.shift();
+    const node = item?.value;
+    if (!node || typeof node !== "object" || seen.has(node) || item.depth > 7) continue;
+    seen.add(node);
+    if (Array.isArray(node)) {
+      for (const child of node) if (child && typeof child === "object") queue.push({value:child,depth:item.depth+1});
+      continue;
+    }
+    for (const [key,value] of Object.entries(node)) {
+      if (/(seasonseries|headtohead|head2head|previousmeetings|previousmatches|seriesgames)/i.test(key) && value && typeof value === "object") roots.push(value);
+      if (value && typeof value === "object" && item.depth < 7) queue.push({value,depth:item.depth+1});
+    }
   }
-  const expectedTimestamp = Date.parse(String(requestedDate || ""));
-  const candidates = events.filter(event => {
-    const h = event?.homeTeam?.name || "";
-    const a = event?.awayTeam?.name || "";
-    return (sameTeam(h,homeName) && sameTeam(a,awayName)) ||
-      (sameTeam(h,awayName) && sameTeam(a,homeName));
+  const candidates = [];
+  const visited = new Set();
+  const addCandidate = (value,depth=0) => {
+    if (!value || typeof value !== "object" || visited.has(value) || depth>6 || candidates.length>100) return;
+    visited.add(value);
+    if (Array.isArray(value)) { value.forEach(child => addCandidate(child,depth+1)); return; }
+    const names = espnCompetitors(value);
+    if (names.home && names.away &&
+        ((sameTeam(names.home,homeName)&&sameTeam(names.away,awayName)) ||
+         (sameTeam(names.home,awayName)&&sameTeam(names.away,homeName)))) {
+      const date = espnEventDate(value);
+      candidates.push({
+        id:String(value.id || [names.home,names.away,date].join("|")),
+        date:eventTime({date}),
+        home:names.home,
+        away:names.away,
+        score:espnEventScore(value),
+        competition:value?.league?.name || value?.competitions?.[0]?.name || "",
+        status:value?.status?.type?.description || value?.status?.description || ""
+      });
+    }
+    for (const child of Object.values(value)) if (child && typeof child === "object") addCandidate(child,depth+1);
+  };
+  roots.forEach(root => addCandidate(root));
+  const unique = new Map();
+  candidates.forEach(item=>unique.set(item.id,item));
+  return [...unique.values()].sort((a,b)=>(Date.parse(b.date)||0)-(Date.parse(a.date)||0)).slice(0,8);
+}
+
+async function loadESPNMatchBundle(homeName, awayName, competition, requestedDate) {
+  const league = getESPNCode(competition);
+  if (!league || !homeName || !awayName) return {metadata:{},headToHead:[]};
+  const stamp = dateStamp(requestedDate);
+  const dates = [...new Set([moveDateStamp(stamp,-1),stamp,moveDateStamp(stamp,1)])];
+  const scoreboardResults = await Promise.allSettled(dates.map(date =>
+    fetchJSON("https://site.api.espn.com/apis/site/v2/sports/soccer/" +
+      encodeURIComponent(league) + "/scoreboard?dates=" + date, 3500)
+  ));
+  const events = [];
+  for (const result of scoreboardResults) {
+    if (result.status === "fulfilled" && Array.isArray(result.value?.events)) events.push(...result.value.events);
+  }
+  const expectedTime = Date.parse(String(requestedDate || ""));
+  const matches = events.filter(event => {
+    const pair = espnCompetitors(event);
+    return (sameTeam(pair.home,homeName)&&sameTeam(pair.away,awayName)) ||
+      (sameTeam(pair.home,awayName)&&sameTeam(pair.away,homeName));
   }).map(event => {
-    const dateValue = eventTime(event);
-    const timestamp = dateValue ? Date.parse(dateValue) : NaN;
-    return {event,delta:Number.isFinite(expectedTimestamp)&&Number.isFinite(timestamp)?Math.abs(expectedTimestamp-timestamp):Number.POSITIVE_INFINITY};
-  }).filter(item => !Number.isFinite(item.delta) || item.delta <= 72 * 60 * 60 * 1000)
-    .sort((a,b) => a.delta-b.delta);
-  const candidate = candidates[0]?.event;
-  if (!candidate?.id) return {};
-  let detail = {};
-  try { detail = await sofaJSON("/event/" + encodeURIComponent(candidate.id)); } catch (_) {}
-  const root = {event:candidate,detail,...(detail?.event && typeof detail.event === "object" ? detail.event : {})};
-  return {
+    const time = Date.parse(espnEventDate(event) || "");
+    return {event,delta:Number.isFinite(expectedTime)&&Number.isFinite(time)?Math.abs(expectedTime-time):Number.POSITIVE_INFINITY};
+  }).filter(item => !Number.isFinite(item.delta) || item.delta <= 48*60*60*1000)
+    .sort((a,b)=>a.delta-b.delta);
+  const fixture = matches[0]?.event;
+  if (!fixture?.id) return {metadata:{},headToHead:[]};
+
+  let summary = {};
+  const summaryPaths = [
+    "https://site.api.espn.com/apis/site/v2/sports/soccer/" + encodeURIComponent(league) + "/summary?event=" + encodeURIComponent(fixture.id),
+    "https://site.web.api.espn.com/apis/site/v2/sports/soccer/" + encodeURIComponent(league) + "/summary?event=" + encodeURIComponent(fixture.id)
+  ];
+  for (const url of summaryPaths) {
+    try { summary = await fetchJSON(url,3500); if (summary && typeof summary==="object") break; } catch (_) {}
+  }
+  const root = {event:fixture,summary,...(summary?.gameInfo && typeof summary.gameInfo==="object" ? summary.gameInfo : {})};
+  const metadata = {
     venue: findMetadataValue(root, ["venue","stadium","ground","arena","venueName","stadiumName","groundName"]),
-    referee: findMetadataValue(root, ["referee","mainReferee","matchReferee","refereeName","official","mainOfficial"]),
-    broadcastChannel: findMetadataValue(root, ["tvChannel","tvChannels","tvStation","broadcastChannel","broadcastName","channel","channels","channelName","broadcaster","broadcasters","network","television","beIN","beinSports","beINConnect"]),
+    referee: findMetadataValue(root, ["referee","referees","official","officials","mainOfficial","matchReferee","refereeName"]),
+    broadcastChannel: findMetadataValue(root, ["tvChannel","tvChannels","tvStation","broadcastChannel","broadcastName","broadcast","broadcasts","channel","channels","channelName","broadcaster","broadcasters","network","networks","television","beIN","beinSports","beINConnect"]),
     commentator: findMetadataValue(root, ["commentator","commentators","commentatorName","tvCommentator","matchCommentator","liveCommentator","broadcastCommentator","announcer","announcers","commentaryTeam","presenter","caster","beINCommentator","beinSportsCommentator"])
   };
+  return {metadata,headToHead:espnSeriesEvents(summary,homeName,awayName)};
+}
+
+async function loadFixtureMetadata(homeName, awayName, requestedDate, competition) {
+  if (!homeName || !awayName) return {metadata:{},headToHead:[]};
+  const espn = await loadESPNMatchBundle(homeName,awayName,competition,requestedDate);
+  let metadata = {...(espn.metadata || {})};
+  let headToHead = Array.isArray(espn.headToHead) ? espn.headToHead : [];
+
+  if (!metadata.venue || !metadata.referee || !metadata.broadcastChannel || !metadata.commentator || !headToHead.length) {
+    try {
+      const homeTeam = await findSofaTeam(homeName);
+      if (homeTeam) {
+        const [lastResult,nextResult] = await Promise.allSettled([
+          sofaJSON("/team/" + encodeURIComponent(homeTeam.id) + "/events/last/0"),
+          sofaJSON("/team/" + encodeURIComponent(homeTeam.id) + "/events/next/0")
+        ]);
+        const events = [];
+        for (const result of [lastResult,nextResult]) {
+          if (result.status === "fulfilled" && Array.isArray(result.value?.events)) events.push(...result.value.events);
+        }
+        const expectedTimestamp = Date.parse(String(requestedDate || ""));
+        const candidates = events.filter(event => {
+          const h=event?.homeTeam?.name||"", a=event?.awayTeam?.name||"";
+          return (sameTeam(h,homeName)&&sameTeam(a,awayName)) || (sameTeam(h,awayName)&&sameTeam(a,homeName));
+        }).map(event => {
+          const dateValue=eventTime(event), timestamp=dateValue?Date.parse(dateValue):NaN;
+          return {event,delta:Number.isFinite(expectedTimestamp)&&Number.isFinite(timestamp)?Math.abs(expectedTimestamp-timestamp):Number.POSITIVE_INFINITY};
+        }).filter(item=>!Number.isFinite(item.delta)||item.delta<=72*60*60*1000).sort((a,b)=>a.delta-b.delta);
+        const candidate=candidates[0]?.event;
+        if (candidate?.id) {
+          let detail={};
+          try{detail=await sofaJSON("/event/"+encodeURIComponent(candidate.id));}catch(_){}
+          const root={event:candidate,detail,...(detail?.event&&typeof detail.event==="object"?detail.event:{})};
+          const fallback = {
+            venue:findMetadataValue(root,["venue","stadium","ground","arena","venueName","stadiumName","groundName"]),
+            referee:findMetadataValue(root,["referee","referees","official","officials","mainReferee","matchReferee","refereeName"]),
+            broadcastChannel:findMetadataValue(root,["tvChannel","tvChannels","tvStation","broadcastChannel","broadcastName","broadcast","broadcasts","channel","channels","channelName","broadcaster","broadcasters","network","television","beIN","beinSports","beINConnect"]),
+            commentator:findMetadataValue(root,["commentator","commentators","commentatorName","tvCommentator","matchCommentator","liveCommentator","broadcastCommentator","announcer","announcers","commentaryTeam","presenter","caster","beINCommentator","beinSportsCommentator"])
+          };
+          for(const key of ["venue","referee","broadcastChannel","commentator"]) if(!metadata[key]&&fallback[key]) metadata[key]=fallback[key];
+          if(!headToHead.length) {
+            headToHead=[{
+              id:String(candidate.id),
+              date:eventTime(candidate),
+              home:candidate.homeTeam?.name||"",
+              away:candidate.awayTeam?.name||"",
+              score:eventScore(candidate),
+              competition:candidate?.tournament?.name||candidate?.uniqueTournament?.name||"",
+              status:candidate?.status?.description||""
+            }];
+          }
+        }
+      }
+    } catch (_) {}
+  }
+  return {metadata,headToHead};
 }
 
 function collectEntries(root) {
@@ -344,19 +495,21 @@ module.exports = async function matchCenter(req, res) {
   const date = String(req.query?.date || "").trim().slice(0, 30);
   if (!home || !away) return send(res, 400, { error: "home_and_away_required" });
 
-  const [headToHead, standings, metadataResult] = await Promise.all([
+  const [sofaH2H, standings, metadataResult] = await Promise.all([
     withDeadline(loadHeadToHead(home, away), 5200, []),
     withDeadline(loadStandings(competition, date), 5200, { league: competition, rows: [] }),
-    withDeadline(loadFixtureMetadata(home, away, date), 3500, {})
+    withDeadline(loadFixtureMetadata(home, away, date, competition), 6800, {metadata:{},headToHead:[]})
   ]);
-  const metadata = metadataResult || {};
+  const metadata = metadataResult?.metadata || {};
+  const enrichedH2H = Array.isArray(metadataResult?.headToHead) ? metadataResult.headToHead : [];
+  const headToHead = sofaH2H.length ? sofaH2H : enrichedH2H;
   return send(res, 200, {
     headToHead,
     standings,
     metadata,
     availability: {
       headToHead: headToHead.length > 0,
-      standings: standings.rows.length > 0,
+      standings: Array.isArray(standings?.rows) && standings.rows.length > 0,
       metadata: !!(metadata.venue || metadata.referee || metadata.broadcastChannel || metadata.commentator)
     }
   });
