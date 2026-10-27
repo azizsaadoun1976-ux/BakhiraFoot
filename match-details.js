@@ -6623,10 +6623,22 @@ function bfSameFixtureMetadata(candidate,expected,requireDate=false) {
     viewHint.textContent = "Choisis une rubrique pour afficher ses détails.";
     viewHint.style.cssText = "padding:10px 12px;margin:4px 0 12px;border:1px solid rgba(127,127,127,.18);border-radius:10px;font-size:12px;opacity:.78";
     nav.appendChild(viewHint);
+    let activeTabKey = "";
+    const uiLanguage = () => window.BakhiraFootLanguage?.get?.() || document.documentElement.lang || "fr";
+    const translateLabel = label => window.BakhiraFootLanguage?.t?.(label) || label;
+    const setOverviewHint = () => {
+      const lang = uiLanguage();
+      viewHint.textContent = lang === "en"
+        ? "The score and match information stay visible. Choose a section to view details."
+        : lang === "ar"
+          ? "ستبقى النتيجة ومعلومات المباراة ظاهرة. اختر قسماً لعرض التفاصيل."
+          : "Le score et les informations du match restent visibles. Choisis une rubrique pour consulter les détails.";
+    };
 
     const activateTab = key => {
       const definition = tabDefinitions.find(tab => tab.key === key);
       if (!definition) return;
+      activeTabKey = key;
       const selectable = allSections.filter(section => !isHeaderSection(section));
       selectable.forEach(section => { section.style.display = "none"; });
       const infoRows = Array.from(content.querySelectorAll(".bfmd-info,.bf-new-safe-info"));
@@ -6649,9 +6661,19 @@ function bfSameFixtureMetadata(candidate,expected,requireDate=false) {
         content.querySelectorAll(".bfmd-pitches,.bfmd-pitch-legend,.bfmd-tactics-caption,.bfmd-match-analysis > .bfmd-title")
           .forEach(node => { node.style.display = "none"; });
       }
+      const lang = uiLanguage();
+      const label = translateLabel(definition.label);
       viewHint.textContent = targets.length
-        ? "Rubrique sélectionnée : " + definition.label + ". Choisis une autre rubrique dans le menu pour changer l’affichage."
-        : "Les données de « " + definition.label + " » ne sont pas disponibles pour ce match.";
+        ? lang === "en"
+          ? "Selected section: " + label + ". Choose another section to change the view."
+          : lang === "ar"
+            ? "القسم المحدد: " + label + ". اختر قسماً آخر من القائمة لتغيير العرض."
+            : "Rubrique sélectionnée : " + label + ". Choisis une autre rubrique dans le menu pour changer l’affichage."
+        : lang === "en"
+          ? "Data for “" + label + "” is not available for this match."
+          : lang === "ar"
+            ? "البيانات الخاصة بقسم «" + label + "» غير متاحة لهذه المباراة."
+            : "Les données de « " + label + " » ne sont pas disponibles pour ce match.";
       nav.querySelectorAll("button[data-bf-match-tab]").forEach(button => {
         const active = button.dataset.bfMatchTab === key;
         button.setAttribute("aria-pressed", active ? "true" : "false");
@@ -6685,8 +6707,16 @@ function bfSameFixtureMetadata(candidate,expected,requireDate=false) {
       button.style.color = "inherit";
       button.style.borderColor = "rgba(148,163,184,.24)";
     });
-    viewHint.textContent = "Le score et les informations du match restent visibles. Choisis une rubrique pour consulter les détails.";
+    activeTabKey = "";
+    setOverviewHint();
     content.dataset.bfActiveMatchTab = "";
+    if (content._bfLanguageRefresh) document.removeEventListener("bakhirafoot:languagechange", content._bfLanguageRefresh);
+    content._bfLanguageRefresh = () => {
+      if (!content.isConnected) return;
+      if (activeTabKey) activateTab(activeTabKey);
+      else setOverviewHint();
+    };
+    document.addEventListener("bakhirafoot:languagechange", content._bfLanguageRefresh);
   }
 
   async function openDetails(
