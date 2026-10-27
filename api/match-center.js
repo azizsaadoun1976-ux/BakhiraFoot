@@ -93,12 +93,10 @@ function selectSofaTeam(payload, desiredName) {
 }
 
 async function sofaJSON(path) {
-  let lastError;
-  for (const host of SOFA_HOSTS) {
-    try { return await fetchJSON(host + path, 6500); }
-    catch (error) { lastError = error; }
-  }
-  throw lastError || new Error("SofaScore unavailable");
+  const results = await Promise.allSettled(SOFA_HOSTS.map(host => fetchJSON(host + path, 1800)));
+  for (const result of results) if (result.status === "fulfilled") return result.value;
+  const last = results.find(result => result.status === "rejected");
+  throw last?.reason || new Error("SofaScore unavailable");
 }
 
 async function findSofaTeam(name) {
@@ -299,7 +297,7 @@ async function loadESPNMatchBundle(homeName, awayName, competition, requestedDat
   const dates = [...new Set([moveDateStamp(stamp,-1),stamp,moveDateStamp(stamp,1)])];
   const scoreboardResults = await Promise.allSettled(dates.map(date =>
     fetchJSON("https://site.api.espn.com/apis/site/v2/sports/soccer/" +
-      encodeURIComponent(league) + "/scoreboard?dates=" + date, 3500)
+      encodeURIComponent(league) + "/scoreboard?dates=" + date, 2400)
   ));
   const events = [];
   for (const result of scoreboardResults) {
@@ -324,7 +322,7 @@ async function loadESPNMatchBundle(homeName, awayName, competition, requestedDat
     "https://site.web.api.espn.com/apis/site/v2/sports/soccer/" + encodeURIComponent(league) + "/summary?event=" + encodeURIComponent(fixture.id)
   ];
   for (const url of summaryPaths) {
-    try { summary = await fetchJSON(url,3500); if (summary && typeof summary==="object") break; } catch (_) {}
+    try { summary = await fetchJSON(url,2400); if (summary && typeof summary==="object") break; } catch (_) {}
   }
   const root = {event:fixture,summary,...(summary?.gameInfo && typeof summary.gameInfo==="object" ? summary.gameInfo : {})};
   const metadata = {
@@ -496,23 +494,23 @@ async function loadSofaScoreStandings(homeName, awayName, requestedDate) {
 }
 
 async function loadStandings(competition, date, home, away) {
-  const codeEntry = ESPN_CODES.find(([pattern]) => pattern.test(competition));
-  if (!codeEntry) return loadSofaScoreStandings(home, away, date);
-  const rawDate = String(date || "");
-  const parsedYear = Number(rawDate.slice(0, 4));
-  const month = Number(rawDate.slice(5, 7));
-  const calendarCompetition = /world cup|european championship|euro|africa cup of nations|afcon|asian cup|copa america|nations league/i.test(competition);
-  const currentYear = Number.isInteger(parsedYear) && parsedYear >= 2000
-    ? (calendarCompetition ? parsedYear : (month >= 7 ? parsedYear : parsedYear - 1))
-    : new Date().getUTCFullYear();
-  const urls = [
-    "https://site.api.espn.com/apis/v2/sports/soccer/" + encodeURIComponent(codeEntry[1]) + "/standings?season=" + currentYear,
-    "https://site.web.api.espn.com/apis/v2/sports/soccer/" + encodeURIComponent(codeEntry[1]) + "/standings?season=" + currentYear
-  ];
-  for (const url of urls) {
-    try {
-      const payload = await fetchJSON(url, 6500);
-      const entries = collectEntries(payload);
+  const codeEntry = ESPN_CODES.find(([pattern]) => pattern.test(String(competition || "")));
+  if (codeEntry) {
+    const rawDate = String(date || "");
+    const parsedYear = Number(rawDate.slice(0, 4));
+    const month = Number(rawDate.slice(5, 7));
+    const calendarCompetition = /world cup|european championship|euro|africa cup of nations|afcon|asian cup|copa america|nations league/i.test(competition);
+    const currentYear = Number.isInteger(parsedYear) && parsedYear >= 2000
+      ? (calendarCompetition ? parsedYear : (month >= 7 ? parsedYear : parsedYear - 1))
+      : new Date().getUTCFullYear();
+    const urls = [
+      "https://site.api.espn.com/apis/v2/sports/soccer/" + encodeURIComponent(codeEntry[1]) + "/standings?season=" + currentYear,
+      "https://site.web.api.espn.com/apis/v2/sports/soccer/" + encodeURIComponent(codeEntry[1]) + "/standings?season=" + currentYear
+    ];
+    const responses = await Promise.allSettled(urls.map(url => fetchJSON(url,2400)));
+    for (const result of responses) {
+      if (result.status !== "fulfilled") continue;
+      const entries = collectEntries(result.value);
       if (!entries.length) continue;
       return {
         league: competition,
@@ -527,9 +525,9 @@ async function loadStandings(competition, date, home, away) {
           lost: statValue(entry, ["losses", "loss"]),
           points: statValue(entry, ["points", "pts"]),
           differential: statValue(entry, ["pointdifferential", "differential", "goal difference"])
-        })).sort((a,b) => Number(a.rank) - Number(b.rank)).slice(0, 24)
+        })).sort((a,b) => Number(a.rank) - Number(b.rank)).slice(0, 32)
       };
-    } catch (_) {}
+    }
   }
   const sofaRows = await loadSofaScoreStandings(home, away, date);
   return sofaRows.rows?.length ? sofaRows : { league: competition, rows: [] };
@@ -559,9 +557,9 @@ module.exports = async function matchCenter(req, res) {
   if (!home || !away) return send(res, 400, { error: "home_and_away_required" });
 
   const [sofaH2H, standings, metadataResult] = await Promise.all([
-    withDeadline(loadHeadToHead(home, away), 5200, []),
-    withDeadline(loadStandings(competition, date, home, away), 6500, { league: competition, rows: [] }),
-    withDeadline(loadFixtureMetadata(home, away, date, competition), 6800, {metadata:{},headToHead:[]})
+    withDeadline(loadHeadToHead(home, away), 5000, []),
+    withDeadline(loadStandings(competition, date, home, away), 8000, { league: competition, rows: [] }),
+    withDeadline(loadFixtureMetadata(home, away, date, competition), 8000, {metadata:{},headToHead:[]})
   ]);
   const metadata = metadataResult?.metadata || {};
   const enrichedH2H = Array.isArray(metadataResult?.headToHead) ? metadataResult.headToHead : [];
