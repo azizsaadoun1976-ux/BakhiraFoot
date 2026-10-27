@@ -1434,6 +1434,41 @@
         #bfMatchDetailsModal .bfmd-event-mini { max-width:112px; }
       }
 
+      /* Match-centre polish: theme-aware tabs and performance markers beside each player. */
+      #bfMatchDetailsModal .bfmd-header .bfmd-info { width:100%; justify-content:flex-start; margin-top:16px; padding-top:13px; border-top:1px solid rgba(148,163,184,.22); }
+      #bfMatchDetailsModal .bfmd-center-nav { background:transparent; border-bottom:1px solid rgba(127,127,127,.13); }
+      #bfMatchDetailsModal .bfmd-combined-player { overflow:visible; }
+      #bfMatchDetailsModal .bfmd-combined-player .bfmd-event-mini { position:absolute; top:10px; left:calc(100% - 1px); right:auto; transform:none; z-index:14; display:flex; flex-direction:column; align-items:center; justify-content:flex-start; gap:3px; width:20px; max-width:20px; min-height:0; margin:0; padding:0; background:transparent; border:0; border-radius:0; overflow:visible; }
+      #bfMatchDetailsModal .bfmd-combined-player--perf-left .bfmd-event-mini { left:auto; right:calc(100% - 1px); }
+      #bfMatchDetailsModal .bfmd-combined-player .bfmd-event-mini .bfmd-chip { min-width:16px; min-height:15px; padding:2px 3px; border-radius:5px; box-shadow:0 2px 5px rgba(0,0,0,.25); }
+      #bfMatchDetailsModal .bfmd-combined-player .bfmd-event-mini .bfmd-chip-rating-number { font-size:7px; }
+      body:not(.dark) #bfMatchDetailsModal .bfmd-box { color:#172033; background:#f7f9fc; border-color:#d9e2ee; }
+      body:not(.dark) #bfMatchDetailsModal .bfmd-header { color:#172033; background:linear-gradient(125deg,#ffffff,#edf3f9); border-color:#d8e2ed; }
+      body:not(.dark) #bfMatchDetailsModal .bfmd-header .bfmd-team,
+      body:not(.dark) #bfMatchDetailsModal .bfmd-title,
+      body:not(.dark) #bfMatchDetailsModal .bfmd-combined-team strong { color:#172033; }
+      body:not(.dark) #bfMatchDetailsModal .bfmd-league,
+      body:not(.dark) #bfMatchDetailsModal .bfmd-status,
+      body:not(.dark) #bfMatchDetailsModal .bfmd-extra-copy { color:#526176; }
+      body:not(.dark) #bfMatchDetailsModal .bfmd-score { color:#101828; }
+      body:not(.dark) #bfMatchDetailsModal .bfmd-info span { color:#334155; background:#edf2f7; border-color:#d6e0eb; }
+      body:not(.dark) #bfMatchDetailsModal .bfmd-section { color:#172033; background:linear-gradient(145deg,#ffffff,#f7f9fc); border-color:#d8e2ed; }
+      body:not(.dark) #bfMatchDetailsModal .bfmd-summary-box,
+      body:not(.dark) #bfMatchDetailsModal .bfmd-bench-player,
+      body:not(.dark) #bfMatchDetailsModal .bfmd-performance-player,
+      body:not(.dark) #bfMatchDetailsModal .bfmd-selected-player-panel { color:#172033; background:#ffffff; border-color:#dce4ed; }
+      body:not(.dark) #bfMatchDetailsModal .bfmd-view-hint { color:#526176; background:#f1f5f9; border-color:#d6e0eb; }
+      body:not(.dark) #bfMatchDetailsModal .bfmd-center-nav { background:rgba(247,249,252,.96); border-color:#e0e6ee; }
+      body:not(.dark) #bfMatchDetailsModal .bfmd-center-nav button { color:#27364b; }
+      body:not(.dark) #bfMatchDetailsModal .bfmd-vote-option { color:#172033; background:#ffffff; border-color:#d6e0eb; }
+      body:not(.dark) #bfMatchDetailsModal .bfmd-mini-table th,
+      body:not(.dark) #bfMatchDetailsModal .bfmd-mini-table td { color:#263348; border-color:#dce4ed; }
+      body:not(.dark) #bfMatchDetailsModal .bfmd-h2h-row { border-color:#dce4ed; }
+      @media(max-width:650px) {
+        #bfMatchDetailsModal .bfmd-combined-player .bfmd-event-mini { top:8px; width:16px; max-width:16px; gap:2px; }
+        #bfMatchDetailsModal .bfmd-combined-player .bfmd-event-mini .bfmd-chip { min-width:13px; min-height:13px; padding:1px 2px; font-size:6px; }
+      }
+
     `;
 
     document.head.appendChild(style);
@@ -4644,11 +4679,18 @@ function normalizeEvent(event, index) {
     const placeTeam = (lineup, side) => {
       const positions = pitchPositions(lineup, side);
       if (!positions.length) return '<div class="bfmd-combined-empty bfmd-combined-empty--' + side + '">' + esc(lineup?.team?.name || "Équipe") + ' · positions non disponibles</div>';
-      return positions.map(item => {
+      let orientedPositions = positions;
+      const keepers = positions.filter(item => /goalkeeper|goalie|\bgk\b|gardien|portier|portero|guardameta/i.test(String(getPlayerPosition(item.player) || "")));
+      const keeperAverage = keepers.length ? keepers.reduce((sum,item)=>sum+item.y,0)/keepers.length : null;
+      if (keeperAverage !== null && ((side === "home" && keeperAverage > 50) || (side === "away" && keeperAverage < 50))) {
+        orientedPositions = positions.map(item => ({...item,y:100-item.y}));
+      }
+      return orientedPositions.map(item => {
         const player = item.player;
         const y = side === "home" ? 5 + item.y * 0.43 : 57 + item.y * 0.38;
-        return '<div role="button" tabindex="0" aria-expanded="false" data-bf-player-toggle="1" class="bfmd-player bfmd-combined-player bfmd-combined-player--' + side + '" style="left:' + item.x + '%;top:' + Math.max(5,Math.min(95,y)) + '%" title="Cliquer pour afficher les détails de ' + esc(getPlayerName(player)) + '">' +
-          playerAvatar(player) + '<div class="bfmd-name">' + esc(getPlayerName(player)) + '</div>' +
+        const performanceSide = item.x < 50 ? "right" : "left";
+        return '<div role="button" tabindex="0" aria-expanded="false" data-bf-player-toggle="1" class="bfmd-player bfmd-combined-player bfmd-combined-player--' + side + ' bfmd-combined-player--perf-' + performanceSide + '" style="left:' + item.x + '%;top:' + Math.max(5,Math.min(95,y)) + '%" title="Cliquer pour afficher les détails de ' + esc(getPlayerName(player)) + '">' +
+          playerAvatar(player) + '<div class="bfmd-name">' + esc(getPlayerName(player)) + '</div>' + playerBadges(player, statsMap) +
           playerDetail(player) + '</div>';
       }).join("");
     };
@@ -6239,7 +6281,7 @@ function bfSameFixtureMetadata(candidate,expected,requireDate=false) {
       }
       return saved;
     };
-    const localVoteMessage = "Vote enregistré sur cet appareil uniquement ; il n’est pas partagé avec les autres visiteurs.";
+    const localVoteMessage = "Vote enregistré sur cet appareil.";
     const applyLocalVote = team => {
       localVoteMode = true;
       const local = saveLocalVote(team);
@@ -6254,7 +6296,7 @@ function bfSameFixtureMetadata(candidate,expected,requireDate=false) {
         if (!response.ok) {
           localVoteMode = true;
           renderVotes(readLocalVote());
-          voteStatus.textContent = "Mode local activé : " + localVoteMessage;
+          voteStatus.textContent = "";
           return;
         }
         renderVotes(payload);
@@ -6264,7 +6306,7 @@ function bfSameFixtureMetadata(candidate,expected,requireDate=false) {
       } catch (_) {
         localVoteMode = true;
         renderVotes(readLocalVote());
-        voteStatus.textContent = "Mode local activé : " + localVoteMessage;
+        voteStatus.textContent = "";
       }
     };
     voteButtons.forEach(button => button.addEventListener("click", async () => {
@@ -6441,7 +6483,7 @@ function bfSameFixtureMetadata(candidate,expected,requireDate=false) {
         return false;
       }
     };
-    const localCommentMessage = "Commentaire sauvegardé sur cet appareil uniquement ; le partage entre visiteurs nécessite un stockage commun.";
+    const localCommentMessage = "Commentaire enregistré sur cet appareil.";
     async function load() {
       if (localCommentsMode) {
         renderComments(readLocalComments());
@@ -6453,14 +6495,14 @@ function bfSameFixtureMetadata(candidate,expected,requireDate=false) {
         if (!response.ok) {
           localCommentsMode = true;
           renderComments(readLocalComments());
-          status.textContent = "Mode local activé : " + localCommentMessage;
+          status.textContent = "";
           return;
         }
         renderComments(Array.isArray(data.comments) ? data.comments : []);
       } catch (_) {
         localCommentsMode = true;
         renderComments(readLocalComments());
-        status.textContent = "Mode local activé : " + localCommentMessage;
+        status.textContent = "";
       }
     }
     form.addEventListener("submit", async event => {
@@ -6521,8 +6563,6 @@ function bfSameFixtureMetadata(candidate,expected,requireDate=false) {
     const allSections = Array.from(content.querySelectorAll(sectionSelector));
     const headingMatches = regex => allSections.filter(section => regex.test(getSectionTitle(section).toLowerCase()));
     const tabDefinitions = [
-      {key:"result",label:"Résultat",find:()=>[]},
-      {key:"info",label:"Infos du match",find:()=>Array.from(content.querySelectorAll(".bfmd-info,.bf-new-safe-info"))},
       {key:"summary",label:"Résumé",find:()=>headingMatches(/événements|evenements|résumé/).slice(0,1)},
       {key:"lineup",label:"Compos & terrain",find:()=> {
         const explicit = content.querySelector(".bfmd-match-analysis");
@@ -6544,7 +6584,7 @@ function bfSameFixtureMetadata(candidate,expected,requireDate=false) {
     const nav = document.createElement("nav");
     nav.className = "bfmd-center-nav";
     nav.setAttribute("aria-label", "Choisir une rubrique des détails du match");
-    nav.style.cssText = "display:flex;gap:7px;overflow-x:auto;padding:12px 0 8px;margin:14px 0 8px;position:sticky;top:0;z-index:20;background:var(--card,#fff)";
+    nav.style.cssText = "display:flex;gap:8px;overflow-x:auto;padding:12px 10px 9px;margin:14px 0 8px;position:sticky;top:0;z-index:20;background:transparent;scrollbar-width:thin";
     const viewHint = document.createElement("div");
     viewHint.className = "bfmd-view-hint";
     viewHint.textContent = "Choisis une rubrique pour afficher ses détails.";
@@ -6557,13 +6597,13 @@ function bfSameFixtureMetadata(candidate,expected,requireDate=false) {
       const selectable = allSections.filter(section => !isHeaderSection(section));
       selectable.forEach(section => { section.style.display = "none"; });
       const infoRows = Array.from(content.querySelectorAll(".bfmd-info,.bf-new-safe-info"));
-      infoRows.forEach(row => { row.style.display = key === "info" ? "flex" : "none"; });
+      infoRows.forEach(row => { row.style.display = "flex"; });
       content.querySelectorAll(".bfmd-pitches,.bfmd-pitch-legend,.bfmd-tactics-caption,.bfmd-match-analysis > .bfmd-title")
         .forEach(node => { node.style.display = ""; });
       const targets = definition.find();
       const reveal = target => {
         if (!target || !content.contains(target)) return;
-        target.style.display = target.matches(".bfmd-info,.bf-new-safe-info") ? "flex" : "block";
+        target.style.display = "block";
         if (target.tagName === "DETAILS") target.open = true;
         let parent = target.parentElement;
         while (parent && parent !== content) {
@@ -6576,11 +6616,9 @@ function bfSameFixtureMetadata(candidate,expected,requireDate=false) {
         content.querySelectorAll(".bfmd-pitches,.bfmd-pitch-legend,.bfmd-tactics-caption,.bfmd-match-analysis > .bfmd-title")
           .forEach(node => { node.style.display = "none"; });
       }
-      viewHint.textContent = key === "result"
-        ? "Résultat du match affiché en haut. Choisis une rubrique pour ouvrir ses détails."
-        : targets.length
-          ? "Rubrique sélectionnée : " + definition.label + ". Choisis une autre rubrique dans le menu pour changer l’affichage."
-          : "Les données de « " + definition.label + " » ne sont pas disponibles pour ce match.";
+      viewHint.textContent = targets.length
+        ? "Rubrique sélectionnée : " + definition.label + ". Choisis une autre rubrique dans le menu pour changer l’affichage."
+        : "Les données de « " + definition.label + " » ne sont pas disponibles pour ce match.";
       nav.querySelectorAll("button[data-bf-match-tab]").forEach(button => {
         const active = button.dataset.bfMatchTab === key;
         button.setAttribute("aria-pressed", active ? "true" : "false");
@@ -6601,11 +6639,21 @@ function bfSameFixtureMetadata(candidate,expected,requireDate=false) {
       nav.appendChild(button);
     });
     const hero = content.querySelector(".bfmd-header,.bf-new-safe-head");
+    const topInfo = content.querySelector(".bfmd-info,.bf-new-safe-info");
+    if (hero && topInfo && !hero.contains(topInfo)) hero.appendChild(topInfo);
     if (hero) hero.insertAdjacentElement("afterend",nav);
     else content.insertBefore(nav,content.firstChild);
     nav.insertAdjacentElement("afterend",viewHint);
     allSections.filter(section => !isHeaderSection(section)).forEach(section => { section.style.display = "none"; });
-    activateTab("result");
+    content.querySelectorAll(".bfmd-info,.bf-new-safe-info").forEach(row => { row.style.display = "flex"; });
+    nav.querySelectorAll("button[data-bf-match-tab]").forEach(button => {
+      button.setAttribute("aria-pressed","false");
+      button.style.background = "rgba(127,127,127,.10)";
+      button.style.color = "inherit";
+      button.style.borderColor = "rgba(148,163,184,.24)";
+    });
+    viewHint.textContent = "Le score et les informations du match restent visibles. Choisis une rubrique pour consulter les détails.";
+    content.dataset.bfActiveMatchTab = "";
   }
 
   async function openDetails(
