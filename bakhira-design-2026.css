@@ -973,3 +973,165 @@ body:not(.dark) .bf-editorial-guide-card{background:#fff;border-color:#dbe4eb}
 body:not(.dark) .bf-editorial-guide-head p,body:not(.dark) .bf-editorial-guide-card p{color:#65758a}
 body:not(.dark) .bf-editorial-guide-head h2,body:not(.dark) .bf-editorial-guide-card h3{color:#102036}
 @media(max-width:800px){.bf-editorial-guide-head{align-items:flex-start;flex-direction:column}.bf-editorial-guide-grid{grid-template-columns:1fr}.bf-editorial-guide-card{padding:15px}.bf-editorial-guide-card h3{margin-top:8px}}
+
+
+/* ===== CINEMATIC MATCHDAY REDESIGN — 28 OCT 2026 ===== */
+:root{
+  --bf-bg:#030812;
+  --bf-panel:#080f1b;
+  --bf-panel2:#0d1929;
+  --bf-line:#1d2a3d;
+  --bf-text:#f5f7fb;
+  --bf-muted:#9eacbf;
+  --bf-green:#1684ff;
+}
+body,html{background:#030812!important}
+body>header{
+  background:rgba(3,8,18,.96)!important;
+  border-bottom:1px solid rgba(130,160,200,.16)!important;
+  box-shadow:0 8px 32px #0008!important;
+  backdrop-filter:blur(18px);
+}
+body>header nav button.active,
+body>header nav button:hover,
+body>header nav a:hover{
+  color:#42baff!important;
+  background:rgba(20,100,210,.10)!important;
+  border-color:transparent!important;
+}
+body>header nav button.active{box-shadow:inset 0 -3px #1684ff!important}
+body>header #theme,
+body>header #search,
+body>header .bf-language-switcher{
+  background:#080f1b!important;border-color:#25334a!important;color:#f4f7fb!important;
+}
+.ad-top{margin-top:10px!important}
+.layout{
+  width:100%!important;max-width:1540px!important;
+  padding:12px clamp(10px,2.2vw,30px) 48px!important;
+}
+#home .bf-matchday-hero{
+  position:relative!important;isolation:isolate!important;
+  display:flex!important;align-items:center!important;
+  min-height:clamp(540px,49vw,710px)!important;
+  margin:0 0 18px!important;
+  padding:clamp(26px,4vw,64px)!important;
+  overflow:hidden!important;border:1px solid #26354a!important;
+  border-radius:18px!important;
+  background-color:#050b16!important;
+  background-image:
+    linear-gradient(90deg,rgba(2,7,16,.97) 0%,rgba(2,7,16,.88) 27%,rgba(2,7,16,.58) 46%,rgba(2,7,16,.12) 72%,rgba(2,7,16,.22) 100%),
+    linear-gradient(0deg,rgba(2,7,16,.85) 0%,transparent 32%,rgba(2,7,16,.08) 100%),
+    url("https://thehardtackle.com/wp-content/uploads/2015/06/04787121-1024x633.jpg")!important;
+  background-position:center,center,58% 42%!important;
+  background-size:cover,cover,cover!important;
+  box-shadow:0 28px 70px #0008!important;
+}
+#home .bf-matchday-hero:before{
+  content:"";position:absolute;z-index:-1;inset:0;pointer-events:none;
+  background:radial-gradient(ellipse at 72% 42%,rgba(36,132,255,.13),transparent 34%),
+    linear-gradient(110deg,transparent 40%,rgba(2,7,16,.12) 65%,rgba(2,7,16,.44) 100%);
+}
+#home .bf-matchday-ambient{position:absolute!important;inset:0!important;z-index:-1!important;background:linear-gradient(90deg,#03081225,#03081200 65%)!important;pointer-events:none}
+#home .bf-matchday-copy{
+  position:relative!important;z-index:2!important;
+  width:min(610px,60%)!important;max-width:610px!important;
+  padding:10px 0!important;
+}
+#home .bf-matchday-kicker{color:#b5c5d9!important;letter-spacing:.18em!important;font-size:10px!important}
+#home .bf-matchday-live-dot{background:#1684ff!important;box-shadow:0 0 14px #1684ff!important}
+#home .bf-matchday-brandline{display:none!important}
+#home .bf-matchday-eyebrow{
+  margin:0 0 12px!important;color:#c1ccdc!important;
+  font-size:11px!important;letter-spacing:.2em!important;font-weight:800!important;
+}
+#home .bf-matchday-copy h1{
+  margin:0 0 18px!important;color:#f7f9ff!important;
+  font-size:clamp(42px,6vw,78px)!important;line-height:.98!important;
+  font-weight:950!important;letter-spacing:-.065em!important;
+  text-shadow:0 4px 28px #0009!important;
+}
+#home .bf-matchday-copy h1 em{
+  color:#1684ff!important;font-style:normal!important;
+}
+#home .bf-matchday-intro{
+  max-width:490px!important;margin:0 0 25px!important;
+  color:#d0d9e6!important;font-size:clamp(14px,1.25vw,17px)!important;
+  line-height:1.75!important;text-shadow:0 2px 12px #000!important;
+}
+#home .bf-matchday-actions{display:flex!important;flex-wrap:wrap!important;gap:10px!important}
+#home .bf-matchday-actions button{
+  min-height:48px!important;padding:13px 19px!important;border-radius:9px!important;
+  font-size:13px!important;font-weight:850!important;transition:transform .2s,background .2s!important;
+}
+#home .bf-matchday-primary{
+  color:#fff!important;background:linear-gradient(110deg,#0868f5,#168cff)!important;
+  border:1px solid #238dff!important;box-shadow:0 10px 30px #0876ff40!important;
+}
+#home .bf-matchday-primary:hover{transform:translateY(-2px)!important;box-shadow:0 14px 36px #0876ff55!important}
+#home .bf-matchday-secondary{
+  color:#f4f7fb!important;background:rgba(5,12,24,.55)!important;
+  border:1px solid #ffffff42!important;backdrop-filter:blur(10px)!important;
+}
+#home .bf-matchday-trustline{margin-top:30px!important;color:#c0cbd9!important;font-size:10px!important;letter-spacing:.12em!important}
+#home .bf-matchday-live-pill{border-color:#1e78f4!important;background:#0b2450!important;color:#9ccaff!important}
+#home .bf-matchday-live-pill i{background:#1684ff!important}
+#home .bf-matchday-art{display:none!important}
+#home .bf-matchday-hero:after{
+  content:"PLUS QU’UN SPORT  /  UNE HISTOIRE";
+  position:absolute;top:28px;right:28px;z-index:2;
+  padding:17px 19px 17px 22px;max-width:230px;
+  border:1px solid #ffffff27;border-left:3px solid #1684ff;
+  border-radius:11px;background:rgba(3,9,19,.65);
+  color:#e1e9f4;font-size:10px;font-weight:800;letter-spacing:.16em;line-height:1.8;
+  backdrop-filter:blur(14px);box-shadow:0 10px 35px #0003;
+}
+#home .home-shortcuts{display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:10px!important;margin:0 0 30px!important}
+#home .home-shortcut{
+  background:linear-gradient(135deg,#0b1625,#080e19)!important;
+  border:1px solid #1e2c40!important;border-radius:12px!important;
+}
+#home .home-shortcut:hover{border-color:#176bd0!important;background:#0b1728!important}
+#home .home-shortcut-icon{background:#0b2450!important;color:#58a8ff!important;border-color:#1a4b87!important}
+#home .home-shortcut-copy small{color:#5ba7ff!important}
+#home .home-live-section,#home .bf-editorial-guide{
+  background:#070e19!important;border-color:#1d2a3d!important;border-radius:15px!important;
+}
+#home .section-kicker,#home .bf-editorial-guide-kicker{color:#5ba7ff!important}
+#home .home-live-more,#home .head button{background:#0b1b30!important;border:1px solid #1d3c61!important;color:#8fc5ff!important}
+#home .home-live-matches .match-card,#home .home-live-matches>div{
+  border-color:#1e2c40!important;
+}
+@media(max-width:900px){
+  #home .bf-matchday-hero{min-height:560px!important;background-position:center,center,62% center!important}
+  #home .bf-matchday-copy{width:min(620px,82%)!important}
+  #home .bf-matchday-hero:after{top:16px;right:16px;max-width:180px;font-size:8px;padding:10px 12px 10px 14px}
+}
+@media(max-width:620px){
+  body>header{gap:8px!important;padding:9px 10px!important;flex-wrap:wrap!important}
+  body>header .logo img{width:126px!important}
+  body>header nav{order:3;flex-basis:100%;height:auto!important}
+  body>header nav button,body>header nav a{padding:7px 9px!important;font-size:11px!important}
+  body>header .tools{gap:4px!important}
+  body>header #search{width:34px!important;min-width:34px!important;padding:8px!important}
+  body>header #search:focus{width:165px!important}
+  .layout{padding:8px 9px 32px!important}
+  #home .bf-matchday-hero{
+    min-height:610px!important;align-items:flex-end!important;
+    padding:25px 20px 26px!important;border-radius:13px!important;
+    background-image:
+      linear-gradient(0deg,rgba(2,7,16,.98) 0%,rgba(2,7,16,.84) 42%,rgba(2,7,16,.26) 100%),
+      linear-gradient(90deg,rgba(2,7,16,.35),rgba(2,7,16,.05)),
+      url("https://thehardtackle.com/wp-content/uploads/2015/06/04787121-1024x633.jpg")!important;
+    background-position:center,center,58% top!important;background-size:cover,cover,auto 78%!important;background-repeat:no-repeat!important;
+  }
+  #home .bf-matchday-copy{width:100%!important;padding-top:180px!important}
+  #home .bf-matchday-kicker{font-size:8px!important;letter-spacing:.12em!important}
+  #home .bf-matchday-copy h1{font-size:clamp(40px,12vw,58px)!important}
+  #home .bf-matchday-intro{font-size:13px!important;line-height:1.65!important}
+  #home .bf-matchday-actions{display:grid!important;grid-template-columns:1fr!important}
+  #home .bf-matchday-actions button{width:100%!important}
+  #home .bf-matchday-trustline{margin-top:20px!important;flex-wrap:wrap!important}
+  #home .bf-matchday-hero:after{top:12px;right:12px;max-width:150px;font-size:7px;padding:8px 9px 8px 11px}
+  #home .home-shortcuts{grid-template-columns:1fr!important}
+}
