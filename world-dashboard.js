@@ -5,7 +5,7 @@
   const esc=v=>String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
   const norm=v=>String(v||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase().replace(/[^a-z0-9]+/g," ").trim();
   const first=(...v)=>v.find(x=>x!==undefined&&x!==null&&x!=="")??"";
-  let dayMatches=[],liveMatches=[],all=[],liveTimer=null,dayTimer=null;
+  let dayMatches=[],liveMatches=[],upcomingMatches=[],all=[],liveTimer=null,dayTimer=null,futureTimer=null;
   const FAV_KEY="bakhirafoot-world-favorites-v1";
   function call(name,m,fallback=""){try{return typeof window[name]==="function"?window[name](m):fallback}catch(_){return fallback}}
   function unpack(data){try{if(typeof normalizeMatches==="function"){const n=normalizeMatches(data);if(Array.isArray(n))return n}}catch(_){}if(Array.isArray(data))return data;for(const k of ["response","matches","fixtures","results","data"]){if(Array.isArray(data?.[k]))return data[k];if(Array.isArray(data?.[k]?.response))return data[k].response}return[]}
@@ -61,9 +61,9 @@
   function teamRow(t,canFav){const fav=favs().some(n=>norm(n)===norm(t.name));return '<div class="bf-world-club-row"><button type="button" class="bf-world-team-button" data-bf-team-name="'+esc(t.name)+'" data-bf-team-logo="'+esc(t.logo)+'">'+logoHtml(t.logo,"bf-world-team-logo")+'<span class="bf-world-team-label">'+esc(t.name)+'</span></button>'+(canFav?'<button type="button" class="bf-world-fav-toggle '+(fav?"is-fav":"")+'" data-bf-favorite="'+esc(t.name)+'" aria-label="'+(fav?"Retirer des favoris":"Ajouter aux favoris")+'" title="'+(fav?"Retirer des favoris":"Ajouter aux favoris")+'">'+(fav?"★":"☆")+'</button>':"")+'</div>'}
   function renderLeft(){
     const c=$("#bfWorldCompetitions"),f=$("#bfWorldFavorites");if(!c||!f)return;
-    const comps=new Map();all.forEach(m=>{const n=competition(m),k=norm(n);if(!k)return;if(!comps.has(k))comps.set(k,{name:n,count:0,live:0});comps.get(k).count++;if(isLiveMatch(m))comps.get(k).live++});
+    const comps=new Map();all.forEach(m=>{const n=competition(m),k=norm(n);if(!k)return;if(!comps.has(k))comps.set(k,{name:n,count:0,live:0,logo:String(first(m?.league?.logo,m?.competition?.logo,m?.league_logo,m?.competition_logo,m?.leagueLogo,""))});const comp=comps.get(k);if(!comp.logo)comp.logo=String(first(m?.league?.logo,m?.competition?.logo,m?.league_logo,m?.competition_logo,m?.leagueLogo,""));comp.count++;if(isLiveMatch(m))comp.live++});
     const list=Array.from(comps.values()).sort((a,b)=>b.live-a.live||b.count-a.count).slice(0,10);
-    c.innerHTML=list.length?list.map(x=>'<div class="bf-world-comp-row"><button type="button" class="bf-world-comp" data-bf-world-competition="'+esc(x.name)+'"><span class="bf-world-comp-logo">'+(x.live?"🟢":"🏆")+'</span><span class="bf-world-comp-label">'+esc(x.name)+'</span></button><span class="bf-world-comp-count">'+(x.live?x.live+" LIVE":x.count)+'</span></div>').join(""):'<div class="bf-world-empty">Aucune compétition trouvée dans les matchs chargés.</div>';
+    c.innerHTML=list.length?list.map(x=>'<div class="bf-world-comp-row"><button type="button" class="bf-world-comp" data-bf-world-competition="'+esc(x.name)+'"><span class="bf-world-comp-logo">'+(x.logo&&/^https?:\/\//i.test(x.logo)?'<img src="'+esc(x.logo)+'" alt="" loading="lazy" onerror="this.style.display=\'none\'">' :(x.live?"🟢":"🏆"))+'</span><span class="bf-world-comp-label">'+esc(x.name)+'</span></button><span class="bf-world-comp-count">'+(x.live?x.live+" LIVE":x.count)+'</span></div>').join(""):'<div class="bf-world-empty">Aucune compétition trouvée dans les matchs chargés.</div>';
     const ts=teamList(),saved=favs(),chosen=saved.map(n=>ts.find(t=>norm(t.name)===norm(n))||{name:n,logo:""}).slice(0,10);
     f.innerHTML=chosen.length?chosen.map(t=>teamRow(t,true)).join(""):'<div class="bf-world-empty">Pas encore de favoris. Appuyez sur ☆ à côté d’un club pour l’enregistrer ici.</div>';
     const clubTarget=$("#bfWorldClubs");if(clubTarget)clubTarget.innerHTML=ts.slice(0,10).map(t=>teamRow(t,true)).join("")||'<div class="bf-world-empty">Aucun club trouvé dans les matchs chargés.</div>';
@@ -106,9 +106,10 @@
     if(f)f.innerHTML=m?featuredMarkup(m):'<div class="bf-world-featured-head"><span class="bf-world-featured-label">⚡ MATCH CENTER</span><span class="bf-world-featured-meta">Football mondial</span></div><div class="bf-world-empty">Aucune rencontre trouvée dans les données de cette journée. Consultez Scores pour changer de date.</div>';
     renderLeft();renderRight();copyStandings();
   }
-  async function updateDay(){try{const date=new Date().toISOString().slice(0,10),result=await fetchMatches("date="+encodeURIComponent(date));if(result.length)dayMatches=result;all=merge();render()}catch(e){console.warn("BakhiraFoot dashboard date:",e);if(!all.length)render()}}
+  async function updateDay(){try{const date=new Date().toISOString().slice(0,10),result=await fetchMatches("date="+encodeURIComponent(date));dayMatches=result;all=merge();render()}catch(e){console.warn("BakhiraFoot dashboard date:",e);if(!all.length)render()}}
+  async function updateUpcoming(){try{const date=new Date();date.setDate(date.getDate()+1);const result=await fetchMatches("date="+encodeURIComponent(date.toISOString().slice(0,10)));upcomingMatches=result;all=merge();render()}catch(e){console.warn("BakhiraFoot dashboard upcoming:",e)}}
   async function updateLive(){try{const result=await fetchMatches("live=all");if(result.length)liveMatches=result;all=merge();render()}catch(e){console.warn("BakhiraFoot dashboard live:",e)}}
-  function merge(){const map=new Map();[...dayMatches,...liveMatches].forEach(m=>{if(!m)return;const k=identity(m),old=map.get(k);if(!old||isLiveMatch(m)||score(m,"home")!=="—")map.set(k,m)});return Array.from(map.values())}
+  function merge(){const map=new Map();[...dayMatches,...liveMatches,...upcomingMatches].forEach(m=>{if(!m)return;const k=identity(m),old=map.get(k);if(!old||isLiveMatch(m)||score(m,"home")!=="—")map.set(k,m)});return Array.from(map.values())}
   function go(page){if(typeof window.go==="function")window.go(page);else $('nav [data-page="'+page+'"]')?.click()}
   document.addEventListener("click",e=>{
     const t=e.target instanceof Element?e.target:null;if(!t)return;
@@ -119,9 +120,10 @@
   });
   function start(){
     const home=$("#home");if(!home)return;
-    createShell();updateDay();updateLive();
+    createShell();updateDay();updateLive();updateUpcoming();
     if(liveTimer)clearInterval(liveTimer);liveTimer=setInterval(()=>{if($("#home")?.classList.contains("active")){updateLive();if(typeof window.renderHomeMatches==="function")window.renderHomeMatches()}},30000);
     if(dayTimer)clearInterval(dayTimer);dayTimer=setInterval(()=>{if($("#home")?.classList.contains("active"))updateDay()},120000);
+    if(futureTimer)clearInterval(futureTimer);futureTimer=setInterval(()=>{if($("#home")?.classList.contains("active"))updateUpcoming()},300000);
     const source=$("#realStandings");if(source&&typeof MutationObserver!=="undefined")new MutationObserver(()=>copyStandings()).observe(source,{childList:true,subtree:true});
   }
   if(document.readyState==="loading")document.addEventListener("DOMContentLoaded",start,{once:true});else start();
