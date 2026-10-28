@@ -1,0 +1,71 @@
+/* BakhiraFoot Pro global polish — 2026-10-28
+   Removes the old slogan panel and sharpens live/search/news/profile surfaces.
+   Existing match APIs and rendering scripts remain unchanged. */
+:root{
+  --bf-pro-bg:#050d13;--bf-pro-panel:#091720;--bf-pro-line:rgba(52,215,164,.24);
+  --bf-pro-green:#35e6a4;--bf-pro-muted:#91a9b8;
+}
+html,body{background:var(--bf-pro-bg)!important}
+body>header{position:sticky!important;top:0!important;z-index:10000!important;backdrop-filter:blur(18px);background:rgba(3,12,17,.94)!important;border-bottom:1px solid var(--bf-pro-line)!important}
+body>header .logo img{object-fit:contain}
+body>header nav button{transition:background .18s ease,color .18s ease,border-color .18s ease}
+body>header nav button:hover,body>header nav button.active{color:var(--bf-pro-green)!important}
+body>header #search{border-radius:999px!important;background:#06131c!important;border-color:#1c5660!important;min-height:38px!important}
+.ad-top{margin-top:8px!important}
+.layout{gap:14px!important}
+.page{min-width:0}
+#home .bf-matchday-hero{display:none!important}
+#home .home-shortcuts{margin-top:10px!important;margin-bottom:18px!important;gap:10px!important}
+#home .home-shortcut{border:1px solid var(--bf-pro-line)!important;border-radius:13px!important;background:linear-gradient(145deg,#0d202a,#07121b)!important;transition:transform .18s ease,border-color .18s ease,box-shadow .18s ease!important}
+#home .home-shortcut:hover{transform:translateY(-2px);border-color:rgba(53,230,164,.7)!important;box-shadow:0 12px 32px #0004!important}
+#home .home-live-section,#home .home-news-heading,#home #homeNews,#home .bf-editorial-guide,#home #bfCommunity,
+#scores,#leagues,#news{scroll-margin-top:84px}
+.home-live-heading,.home-news-heading,.head{gap:12px}
+.home-live-matches{gap:9px!important}
+.home-live-matches>*,#homeMatches .match-card,#homeMatches .bf-match-card{border-color:var(--bf-pro-line)!important}
+#homeNews,.cards,#newsGrid{gap:13px!important}
+.bf-real-news-card{position:relative;overflow:hidden;border:1px solid rgba(55,214,163,.22)!important;border-radius:14px!important;background:linear-gradient(150deg,#0b1b25,#07121a)!important;transition:transform .2s ease,border-color .2s ease,box-shadow .2s ease!important}
+.bf-real-news-card:hover{transform:translateY(-2px);border-color:rgba(55,214,163,.58)!important;box-shadow:0 14px 34px #0005!important}
+.bf-news-image-wrap{display:block;overflow:hidden;background:#0b202a!important}
+.bf-news-image{width:100%;height:100%;object-fit:cover;transition:transform .35s ease}
+.bf-real-news-card:hover .bf-news-image{transform:scale(1.035)}
+.bf-news-card-content{min-width:0}
+.bf-real-news-card h3{line-height:1.42!important;overflow-wrap:anywhere}
+.bf-real-news-card h3 a{color:#f2f8fb!important;text-decoration:none!important}
+.bf-real-news-card h3 a:hover{color:var(--bf-pro-green)!important}
+.bf-real-news-card p{color:#a9bdc9!important;line-height:1.65!important}
+.bf-news-actions{display:flex;align-items:center;flex-wrap:wrap;gap:8px}
+.bf-news-translate{cursor:pointer!important;border:1px solid rgba(53,230,164,.4)!important;border-radius:8px!important;background:#0b2a25!important;color:#78efbd!important;padding:7px 10px!important;font-size:11px!important;font-weight:850!important}
+.bf-news-translate:hover{background:#104235!important}
+#bfSearchResults{z-index:2147482000!important;overflow-x:hidden!important;overscroll-behavior:contain}
+#bfSearchResults .bf-search-title{font-weight:900!important;letter-spacing:.13em!important}
+#bfSearchResults .bf-search-result{cursor:pointer!important}
+#bfSearchResults .bf-search-result:focus-visible{outline:2px solid var(--bf-pro-green)!important;outline-offset:1px}
+.bf-score-pro-team,.bf-score-team,.bf-match-team,.bf-ko-team,.ss-club,.ss-player-team,.bfmd-column-title,.bfmd-team-name,[data-bf-team-name],
+[data-bf-team-side],[data-bf-player-name],.bf-pitch-name,.ss-player-name,.bfmd-player-name,.bf-new-safe-player-name,.bf-new-safe-name{cursor:pointer!important}
+.bf-score-pro-team:hover,.bf-score-team:hover,.bf-match-team:hover,.bf-ko-team:hover,.ss-club:hover,
+.bfmd-column-title:hover,.bfmd-team-name:hover,[data-bf-team-side]:hover{filter:brightness(1.16)}
+.bf-pitch-name:hover,.ss-player-name:hover,.bfmd-player-name:hover,.bf-new-safe-player-name:hover,.bf-new-safe-name:hover{color:#4debb0!important;text-decoration:underline;text-underline-offset:3px}
+#bf-entity-modal{z-index:2147483000!important}
+#bf-entity-modal .bf-ed{box-shadow:0 28px 100px rgba(0,0,0,.65)!important}
+#bf-entity-modal .bf-efix{transition:border-color .15s ease,background .15s ease}
+#bf-entity-modal .bf-efix:hover{border-color:rgba(53,230,164,.55)!important;background:#102535!important}
+#bf-entity-modal .bf-elogo,#bf-entity-modal .bf-ephoto{object-fit:contain}
+#bf-entity-modal .bf-ephoto{object-fit:cover}
+#bf-entity-modal .bf-etitle{letter-spacing:-.025em}
+#bf-entity-modal .bf-estat strong{font-variant-numeric:tabular-nums}
+@media(min-width:1100px){
+  #home .home-shortcuts{grid-template-columns:repeat(3,minmax(0,1fr))}
+  #home .home-live-matches{grid-template-columns:repeat(3,minmax(0,1fr))}
+}
+@media(max-width:760px){
+  body>header{position:relative!important}
+  body>header nav{max-width:100%;overflow-x:auto;scrollbar-width:none}
+  body>header nav::-webkit-scrollbar{display:none}
+  body>header .tools{gap:5px!important}
+  body>header #search{width:min(46vw,220px)!important;min-width:105px!important}
+  #home .home-shortcuts{grid-template-columns:1fr!important}
+  .bf-real-news-card{min-width:0}
+  #bfSearchResults{right:-4px!important;width:min(540px,calc(100vw - 18px))!important;max-height:68vh!important}
+}
+@media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;transition:none!important;animation:none!important}}
