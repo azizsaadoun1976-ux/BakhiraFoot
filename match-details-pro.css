@@ -76,3 +76,10 @@
 #bf-new-match-safe-modal .bf-new-safe-combined-caption{padding:7px!important;font-size:8px!important}
 }
 @media(prefers-reduced-motion:reduce){#bfMatchDetailsModal *,#bf-new-match-safe-modal *{scroll-behavior:auto!important;transition:none!important}}
+
+
+/* Match header information always spans beneath both clubs and the score. */
+#bfMatchDetailsModal .bfmd-header>.bfmd-info,
+#bf-new-match-safe-modal .bf-new-safe-head>.bf-new-safe-info{grid-column:1/-1!important;width:100%!important;min-width:0!important;margin:0!important}
+#bfMatchDetailsModal .bfmd-team,#bf-new-match-safe-modal .bf-new-safe-team{position:relative!important}
+#bfMatchDetailsModal .bfmd-team:focus-visible,#bf-new-match-safe-modal .bf-new-safe-team:focus-visible{outline:2px solid #59eeb6!important;outline-offset:3px!important;border-radius:10px!important}
