@@ -69,3 +69,14 @@ body>header #search{border-radius:999px!important;background:#06131c!important;b
   #bfSearchResults{right:-4px!important;width:min(540px,calc(100vw - 18px))!important;max-height:68vh!important}
 }
 @media(prefers-reduced-motion:reduce){*,*::before,*::after{scroll-behavior:auto!important;transition:none!important;animation:none!important}}
+
+
+/* World dashboard small components and responsive refinements */
+#home .bf-world-shortcuts{display:grid;gap:3px}
+#home .bf-world-count{display:inline-flex;padding:4px 6px;border:1px solid rgba(255,82,107,.24);border-radius:6px;background:#301a22;color:#ff8d9d;font-size:8px;font-weight:950;white-space:nowrap}
+#home .bf-world-event-logo{width:16px;height:16px;flex:0 0 16px;object-fit:contain}
+#home .bf-world-event-team .bf-world-team-fallback{width:16px;height:16px;flex-basis:16px;font-size:11px}
+#home .bf-world-featured-scoreline{padding:2px 5px;border:0;border-radius:7px;background:transparent;color:inherit;cursor:pointer}
+#home .bf-world-featured-scoreline:hover{background:rgba(53,230,164,.09);color:#79f0bd}
+#home .bf-world-main>.home-live-section .bf-score-card-footer{font-size:9px!important}
+@media(max-width:760px){#home .bf-world-dashboard{display:flex!important;flex-direction:column}#home .bf-world-main{order:1;width:100%}#home .bf-world-rail-left{order:2;width:100%}#home .bf-world-rail-right{order:3;width:100%}}
