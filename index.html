@@ -61,9 +61,8 @@
   }
   </script>
   <link rel="stylesheet" href="/bakhira-design-2026.css?v=20261028-03">
-  <link rel="stylesheet" href="/bakhira-pro-global.css?v=20261028-04">
+  <link rel="stylesheet" href="/bakhira-pro-global.css?v=20261028-03">
   <link rel="stylesheet" href="/match-details-pro.css?v=20261028-02">
-  <link rel="stylesheet" href="/homepage-world-2026.css?v=20261028-01">
 </head>
 
 <body>
@@ -77,7 +76,6 @@
       <button class="active" data-page="home">Accueil</button>
       <button data-page="scores">Scores</button>
       <button data-page="leagues">Compétitions</button>
-      <button type="button" data-bf-nav-teams>Équipes</button>
       <button data-page="news">Actualités</button>
       <a href="articles.html" style="color:#aeb9c1;text-decoration:none;padding:12px;font-weight:800;">Articles</a>
     </nav>
@@ -89,105 +87,7 @@
     </div>
   </header>
 
-<div class="layout">
-
-<!-- ================= MAIN CONTENT ================= -->
-    <main>
-
-      <!-- ================= HOME ================= -->
-      <section id="home" class="page active">
-  <div class="bf-world-layout" id="bfWorldLayout">
-    <aside class="bf-home-sidebar bf-home-sidebar-left" aria-label="Navigation football">
-      <section class="bf-home-widget bf-home-competitions">
-        <div class="bf-home-widget-head"><h2>COMPÉTITIONS</h2><button type="button" class="bf-home-link" data-bf-home-go="leagues">Tout voir ↗</button></div>
-        <div id="bfHomeCompetitionList" class="bf-home-list"><div class="bf-home-empty">Chargement des compétitions…</div></div>
-      </section>
-      <section class="bf-home-widget">
-        <div class="bf-home-widget-head"><h2>ÉQUIPES FAVORITES</h2><span class="bf-home-muted">Choisissez ☆</span></div>
-        <div id="bfHomeFavorites" class="bf-home-list"><div class="bf-home-empty">Ajoutez vos clubs favoris depuis les matchs.</div></div>
-      </section>
-      <section class="bf-home-widget bf-home-left-news">
-        <div class="bf-home-widget-head"><h2>ACTUALITÉS</h2><button type="button" class="bf-home-link" data-bf-home-go="news">Plus ↗</button></div>
-        <div id="bfHomeLeadNews"><div class="bf-home-empty">Chargement des actualités…</div></div>
-      </section>
-      <section class="bf-home-widget">
-        <div class="bf-home-widget-head"><h2>CLASSEMENTS</h2><button type="button" class="bf-home-link" data-bf-home-go="leagues">Tout voir ↗</button></div>
-        <div id="bfHomeStandings" class="bf-home-standings"><div class="bf-home-empty">Les classements vérifiés apparaîtront ici dès qu’ils sont chargés.</div></div>
-      </section>
-    </aside>
-
-    <div class="bf-home-center">
-      <section id="bfHomeHero" class="bf-home-hero" aria-label="Actualité à la une">
-        <div class="bf-home-hero-shade"></div>
-        <div class="bf-home-hero-copy">
-          <span class="bf-home-hero-kicker">À LA UNE · BAKHIRAFOOT</span>
-          <h1>Le football mondial,<br><em>en direct.</em></h1>
-          <p>Scores, résultats, compositions et actualités du football marocain et international.</p>
-          <button type="button" class="bf-home-primary" data-bf-home-go="scores">Suivre les matchs <span>→</span></button>
-        </div>
-        <div class="bf-home-hero-bottom"><span>BOTOLA · EUROPE · MONDE</span><span>BAKHIRAFOOT PRO</span></div>
-      </section>
-
-      <section class="bf-home-widget bf-home-live-strip">
-        <div class="bf-home-widget-head"><h2><i class="bf-home-live-dot"></i> MATCHS EN DIRECT & DU JOUR</h2><button type="button" class="bf-home-link" data-bf-home-go="scores">Voir tous les matchs →</button></div>
-        <div id="homeMatches" class="home-live-matches" aria-live="polite"><div class="bf-home-empty">Chargement des matchs…</div></div>
-      </section>
-
-      <div class="bf-home-mid-grid">
-        <section class="bf-home-widget bf-home-scores-widget">
-          <div class="bf-home-widget-head"><h2>Scores</h2><button type="button" class="bf-home-link" data-bf-home-go="scores">Tous les scores →</button></div>
-          <div class="bf-home-score-filters" role="group" aria-label="Filtrer les résultats">
-            <button type="button" class="active" data-bf-home-filter="all">Aujourd’hui</button>
-            <button type="button" data-bf-home-filter="live">En cours</button>
-            <button type="button" data-bf-home-filter="upcoming">À venir</button>
-          </div>
-          <div id="bfHomeScores" class="bf-home-score-list"><div class="bf-home-empty">Chargement des scores…</div></div>
-        </section>
-        <section class="bf-home-widget bf-home-featured-widget">
-          <div class="bf-home-widget-head"><h2>Match du jour</h2><span class="bf-home-muted" id="bfHomeFeaturedMeta">Rencontre à suivre</span></div>
-          <div id="bfHomeFeaturedMatch" class="bf-home-featured-match"><div class="bf-home-empty">Sélection du match à la une…</div></div>
-          <div class="bf-home-feature-tabs" role="group" aria-label="Sections du match">
-            <button type="button" class="active" data-bf-open-match-tab="summary">Résumé</button>
-            <button type="button" data-bf-open-match-tab="stats">Stats</button>
-            <button type="button" data-bf-open-match-tab="lineup">Compos</button>
-            <button type="button" data-bf-open-match-tab="players">Stats joueurs</button>
-          </div>
-          <div id="bfHomePitch" class="bf-home-pitch"><div class="bf-home-pitch-placeholder"><span class="bf-home-pitch-ball">⚽</span><strong>Terrain tactique</strong><span>Les positions et photos officielles s’affichent si la source les fournit.</span></div></div>
-          <button type="button" id="bfHomeOpenMatch" class="bf-home-match-details" disabled>Voir tous les détails du match ↗</button>
-        </section>
-      </div>
-
-      <div class="bf-home-bottom-grid">
-        <section class="bf-home-widget"><div class="bf-home-widget-head"><h2>Classements</h2><button type="button" class="bf-home-link" data-bf-home-go="leagues">Voir tout ↗</button></div><div id="bfHomeStandingsBottom" class="bf-home-standings"><div class="bf-home-empty">Aucun classement chargé pour le moment.</div></div></section>
-        <section class="bf-home-widget"><div class="bf-home-widget-head"><h2>Meilleurs buteurs</h2><button type="button" class="bf-home-link" data-bf-home-go="leagues">Voir tout ↗</button></div><div id="bfHomeScorers" class="bf-home-leaders"><div class="bf-home-empty">Les buteurs officiels apparaîtront avec les données de la compétition.</div></div></section>
-        <section class="bf-home-widget"><div class="bf-home-widget-head"><h2>Meilleurs passeurs</h2><button type="button" class="bf-home-link" data-bf-home-go="leagues">Voir tout ↗</button></div><div id="bfHomeAssists" class="bf-home-leaders"><div class="bf-home-empty">Les passeurs officiels apparaîtront avec les données disponibles.</div></div></section>
-        <section class="bf-home-widget bf-home-news-bottom"><div class="bf-home-widget-head"><h2>News & Analyses</h2><button type="button" class="bf-home-link" data-bf-home-go="news">Tout voir ↗</button></div><div class="head home-news-heading"><div><span class="section-kicker">À LA UNE</span><h2>Actualités du football</h2></div><button type="button" data-bf-home-go="news">Toutes les news →</button></div><div id="homeNews" class="cards"></div></section>
-      </div>
-    </div>
-
-    <aside class="bf-home-sidebar bf-home-sidebar-right" aria-label="Centre des événements">
-      <section class="bf-home-widget">
-        <div class="bf-home-widget-head"><h2>ÉVÉNEMENTS EN DIRECT</h2><button type="button" class="bf-home-link" data-bf-home-go="scores">Voir tous ↗</button></div>
-        <div class="bf-home-right-tabs" role="group" aria-label="Matchs du centre">
-          <button type="button" class="active" data-bf-right-filter="live">🔴 Live <span id="bfHomeLiveCount">—</span></button>
-          <button type="button" data-bf-right-filter="upcoming">⏱ Programme</button>
-        </div>
-        <div id="bfHomeRightEvents" class="bf-home-right-events"><div class="bf-home-empty">Recherche des matchs…</div></div>
-      </section>
-      <section class="bf-home-widget">
-        <div class="bf-home-widget-head"><h2>PROCHAINS MATCHS</h2><button type="button" class="bf-home-link" data-bf-home-go="scores">Tout voir ↗</button></div>
-        <div id="bfHomeUpcoming" class="bf-home-right-events"><div class="bf-home-empty">Chargement du programme…</div></div>
-      </section>
-      <section class="bf-home-promo">
-        <div class="bf-home-promo-ball" aria-hidden="true">⚽</div>
-        <span class="bf-home-promo-kicker">BAKHIRAFOOT PRO</span>
-        <h2>Le football,<br>partout avec vous.</h2>
-        <p>Retrouvez les scores, les matchs et les actualités dans un seul espace.</p>
-        <button type="button" data-bf-home-go="scores">Explorer les matchs →</button>
-      </section>
-      <section id="bfHomeAdSlot" class="bf-home-widget bf-home-ad-slot">
-        <div class="bf-home-widget-head"><h2>PUBLICITÉ</h2></div>
-        <!-- Annonce AdSense responsive -->
+<!-- Annonce AdSense responsive -->
 <div class="ad-top">
   <ins class="adsbygoogle"
        style="display:block"
@@ -200,12 +100,52 @@
     (adsbygoogle = window.adsbygoogle || []).push({});
   </script>
 </div>
-      </section>
-    </aside>
-  </div>
+  <div class="layout">
 
-  <div class="bf-home-below-dashboard">
-    <section class="bf-editorial-guide" aria-labelledby="bf-editorial-guide-title">
+<!-- ================= MAIN CONTENT ================= -->
+    <main>
+
+      <!-- ================= HOME ================= -->
+      <section id="home" class="page active">
+        <section class="home-shortcuts" aria-label="Accès rapide">
+          <button type="button" class="home-shortcut home-shortcut--live" onclick="go('scores')">
+            <span class="home-shortcut-icon" aria-hidden="true">↗</span>
+            <span class="home-shortcut-copy"><small>CENTRE LIVE</small><strong>Scores en direct</strong><span>Tous les matchs et résultats</span></span>
+            <span class="home-shortcut-arrow" aria-hidden="true">→</span>
+          </button>
+          <button type="button" class="home-shortcut home-shortcut--competitions" onclick="go('leagues')">
+            <span class="home-shortcut-icon" aria-hidden="true">♜</span>
+            <span class="home-shortcut-copy"><small>TOURNOIS & LIGUES</small><strong>Compétitions</strong><span>Classements et qualifications</span></span>
+            <span class="home-shortcut-arrow" aria-hidden="true">→</span>
+          </button>
+          <button type="button" class="home-shortcut home-shortcut--news" onclick="go('news')">
+            <span class="home-shortcut-icon" aria-hidden="true">▤</span>
+            <span class="home-shortcut-copy"><small>À LA UNE</small><strong>Actualités football</strong><span>Les dernières infos du football</span></span>
+            <span class="home-shortcut-arrow" aria-hidden="true">→</span>
+          </button>
+        </section>
+
+        <!-- MATCHS DU JOUR : script.js gère l'affichage via l'API du site -->
+        <section class="home-live-section" aria-labelledby="home-live-title">
+          <div class="home-live-heading">
+            <div><span class="section-kicker">CENTRE DE MATCHS</span>
+              <h2 id="home-live-title">Matchs du jour</h2>
+              <p>Le programme du jour, les scores en direct et les horaires des rencontres.</p>
+            </div>
+            <button type="button" class="home-live-more" onclick="go('scores')">Tous les matchs <span aria-hidden="true">→</span></button>
+          </div>
+          <div id="homeMatches" class="home-live-matches" aria-live="polite">
+            <div class="home-live-loading">Chargement des matchs…</div>
+          </div>
+        </section>
+        <!-- ACTUALITÉS -->
+        <div class="head home-news-heading">
+          <div><span class="section-kicker">À LA UNE</span><h2>Actualités du football</h2></div>
+          <button type="button" onclick="go('news')">Toutes les news <span aria-hidden="true">→</span></button>
+        </div>
+        <div id="homeNews" class="cards"></div>
+
+        <section class="bf-editorial-guide" aria-labelledby="bf-editorial-guide-title">
           <div class="bf-editorial-guide-head">
             <div>
               <span class="bf-editorial-guide-kicker">GUIDES & ANALYSES</span>
@@ -235,7 +175,9 @@
             </article>
           </div>
         </section>
-    <section id="bfCommunity" class="bf-community" aria-labelledby="bfCommunityTitle">
+
+
+        <section id="bfCommunity" class="bf-community" aria-labelledby="bfCommunityTitle">
           <div class="bf-community-head">
             <div>
               <span class="bf-community-eyebrow">BAKHIRAFOOT COMMUNITY</span>
@@ -250,10 +192,9 @@
             </div>
           </div>
         </section>
-  </div>
-</section>
+      </section>
 
-<!-- ================= SCORES ================= -->
+      <!-- ================= SCORES ================= -->
       <section id="scores" class="page">
         <div class="scores-header">
           <div class="scores-header-text">
@@ -381,6 +322,5 @@
   <script src="community.js?v=20261027-08"></script>
   <script src="language.js?v=20261028-01"></script>
   <script src="entity-details.js?v=20261028-08"></script>
-  <script src="homepage-world-2026.js?v=20261028-01"></script>
 </body>
 </html>
