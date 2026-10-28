@@ -10486,6 +10486,11 @@ function initSearch() {
   });
 
   input.addEventListener("keydown", event => {
+    if (event.key === "Enter") {
+      const firstResult = panel.querySelector("[data-search-type]");
+      if (firstResult) { event.preventDefault(); firstResult.click(); }
+      return;
+    }
     if (event.key === "Escape") {
       panel.style.display = "none";
       input.blur();
@@ -10505,6 +10510,17 @@ function initSearch() {
       const matches = getAllMatches();
       const index = Number(button.dataset.matchIndex);
       openSearchMatch(matches[index]);
+      return;
+    }
+
+    if (type === "competition") {
+      panel.style.display = "none";
+      input.blur();
+      if (typeof window.openBakhiraCompetitionStandings === "function") {
+        window.openBakhiraCompetitionStandings(value);
+      } else if (typeof window.go === "function") {
+        window.go("leagues");
+      }
       return;
     }
 
