@@ -14935,3 +14935,55 @@ body.dark .bf-article-table td{border-color:#304155;color:#dbe6f2}
 body.dark .bf-article-table tr:nth-child(even) td{background:#101d2c}
 body.dark .bf-content-ad{background:#0d1b29;border-color:#22364a;color:#91a5b8}
 @media(max-width:700px){.bf-article-table{font-size:11px}.bf-article-table th,.bf-article-table td{padding:8px}.bf-content-ad{width:calc(100% - 16px);margin:18px auto;padding:5px}.bf-content-ad ins.adsbygoogle{min-height:70px}}
+
+/* Production-visible dark aesthetic + clickable team/player profile */
+:root{--bf-bg:#050914;--bf-panel:#0a1220;--bf-panel2:#101c2d;--bf-line:#25334a;--bf-text:#f3f6fc;--bf-muted:#98a8be;--bf-green:#1684ff}
+html,body{background:#050914!important;color:#f3f6fc}
+body>header{background:rgba(4,9,19,.97)!important;border-bottom:1px solid #25334a!important}
+body>header nav button.active,body>header nav button:hover,body>header nav a:hover{background:#0c1d35!important;color:#69b5ff!important;border-color:#1b477b!important}
+body>header nav button.active{box-shadow:inset 0 -2px #1684ff!important}
+body>header #search,body>header #theme,body>header .bf-language-switcher{background:#0a1322!important;border-color:#2b3a52!important;color:#f4f7fc!important}
+#home .bf-matchday-hero{min-height:clamp(500px,48vw,680px)!important;border:1px solid #26354b!important;border-radius:16px!important;background-color:#040914!important;background-image:linear-gradient(90deg,rgba(3,8,18,.96) 0%,rgba(3,8,18,.84) 34%,rgba(3,8,18,.35) 64%,rgba(3,8,18,.2) 100%),linear-gradient(0deg,rgba(3,8,18,.7),transparent 45%),url("https://images.unsplash.com/photo-1522778119026-d647f0596c20?auto=format&fit=crop&w=1800&q=85")!important;background-position:center!important;background-size:cover!important;box-shadow:0 25px 65px #0008!important}
+#home .bf-matchday-copy{width:min(650px,70%)!important}
+#home .bf-matchday-copy h1{font-size:clamp(42px,6vw,78px)!important;line-height:.99!important;color:#f7f9ff!important}
+#home .bf-matchday-copy h1 em{color:#1684ff!important}
+#home .bf-matchday-intro{color:#d4deeb!important}
+#home .bf-matchday-primary{background:linear-gradient(110deg,#0968f5,#168cff)!important;color:white!important;border-color:#168cff!important}
+#home .bf-matchday-secondary{background:#07101dcc!important;color:#fff!important;border:1px solid #ffffff55!important}
+#home .bf-matchday-art{display:none!important}
+#home .bf-matchday-hero:after{content:"FOOTBALL · LIVE · STORIES";position:absolute;right:24px;top:24px;padding:13px 16px;border:1px solid #ffffff35;border-left:3px solid #1684ff;border-radius:9px;background:#030812a8;color:#e5edf8;font-size:10px;font-weight:900;letter-spacing:.15em;backdrop-filter:blur(12px)}
+#home .home-shortcuts{grid-template-columns:repeat(3,minmax(0,1fr))!important;gap:12px!important}
+#home .home-shortcut,#home .home-live-section,#home .bf-editorial-guide{background:#080f1b!important;border-color:#202e43!important}
+#home .home-shortcut-icon{background:#0b2448!important;color:#6bb8ff!important;border-color:#1b4a83!important}
+#home .home-shortcut-copy small,#home .section-kicker,#home .bf-editorial-guide-kicker{color:#65b3ff!important}
+.bf-score-card-team[role="button"],.bf-player-row[role="button"],.bf-pitch-player[role="button"],.bf-details-team{cursor:pointer!important;transition:background .16s,border-color .16s,transform .16s}
+.bf-score-card-team[role="button"]:hover,.bf-player-row[role="button"]:hover{background:#11233a!important;outline:1px solid #287bd4!important}
+.bf-pitch-player[role="button"]:hover{filter:brightness(1.25);transform:scale(1.05);z-index:30}
+.bf-details-team:hover{filter:brightness(1.2)}
+#bfEntityProfileModal{display:none;position:fixed;inset:0;z-index:100000}
+#bfEntityProfileModal.is-open{display:block}
+.bf-entity-backdrop{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;padding:18px;background:#01040bd9;backdrop-filter:blur(9px)}
+.bf-entity-panel{position:relative;width:min(680px,100%);max-height:min(86vh,900px);overflow:auto;padding:28px;border:1px solid #293c56;border-radius:18px;background:linear-gradient(145deg,#0c1728,#060b14);box-shadow:0 28px 100px #000b;color:#f5f8fc}
+.bf-entity-close{position:sticky;float:right;top:0;width:36px;height:36px;border:1px solid #2b3d56;border-radius:10px;background:#111e30;color:white;font-size:24px;cursor:pointer}
+.bf-entity-kicker{margin:4px 0 20px;color:#69b5ff;font-size:10px;font-weight:900;letter-spacing:.2em}
+.bf-entity-team-head,.bf-entity-player-head{display:flex;align-items:center;gap:17px;margin:0 0 25px}
+.bf-entity-team-head img{width:76px;height:76px;object-fit:contain;padding:9px;border:1px solid #293b54;border-radius:15px;background:#0a1423}
+.bf-entity-placeholder,.bf-entity-player-avatar{display:grid;place-items:center;width:76px;height:76px;border:1px solid #293b54;border-radius:15px;background:#0b1b31;color:#75baff;font-size:25px;font-weight:900}
+.bf-entity-team-head h2,.bf-entity-player-head h2{margin:0 0 5px;font-size:clamp(23px,4vw,32px);font-weight:950;letter-spacing:-.04em}
+.bf-entity-team-head p,.bf-entity-player-head p,.bf-entity-note{margin:0;color:#9eafc5;font-size:13px;line-height:1.7}
+.bf-entity-stat-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:9px;margin:20px 0 28px}
+.bf-entity-stat-grid>div{padding:14px;border:1px solid #23334a;border-radius:11px;background:#0a1422}
+.bf-entity-stat-grid small{display:block;margin-bottom:8px;color:#91a4bc;font-size:10px}
+.bf-entity-stat-grid strong{font-size:21px;font-weight:900;color:#f7f9ff}
+.bf-entity-panel h3{margin:20px 0 12px;font-size:17px}
+.bf-entity-match-list{display:grid;gap:8px}
+.bf-entity-match{display:grid;grid-template-columns:1fr auto;gap:6px 12px;width:100%;padding:13px;text-align:left;border:1px solid #22334a;border-radius:10px;background:#0a1422;color:#f5f8fc;cursor:pointer}
+.bf-entity-match:hover{border-color:#2478d0;background:#0d1d32}
+.bf-entity-match-league{grid-column:1/-1;color:#8eadd1;font-size:10px}
+.bf-entity-match-teams{font-size:12px;font-weight:800}
+.bf-entity-match-teams b{color:#69b5ff}
+.bf-entity-match small{color:#98a9be;text-align:right}
+.bf-entity-empty{padding:16px;border:1px dashed #2a3b53;border-radius:10px;color:#9aabc0;line-height:1.7}
+.bf-entity-note{padding:14px;border:1px solid #26374f;border-radius:10px;background:#0a1422}
+body.bf-profile-open{overflow:hidden}
+@media(max-width:700px){#home .bf-matchday-hero{min-height:600px!important;align-items:flex-end!important;padding:24px 19px!important;background-image:linear-gradient(0deg,rgba(3,8,18,.98),rgba(3,8,18,.65) 48%,rgba(3,8,18,.05)),url("https://images.unsplash.com/photo-1522778119026-d647f0596c20?auto=format&fit=crop&w=1000&q=80")!important;background-position:center!important;background-size:cover!important}#home .bf-matchday-copy{width:100%!important;padding-top:170px!important}#home .bf-matchday-copy h1{font-size:clamp(40px,12vw,58px)!important}#home .home-shortcuts{grid-template-columns:1fr!important}.bf-entity-panel{padding:19px}.bf-entity-stat-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.bf-entity-team-head img,.bf-entity-placeholder,.bf-entity-player-avatar{width:60px;height:60px}}
