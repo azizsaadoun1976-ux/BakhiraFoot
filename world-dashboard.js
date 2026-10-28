@@ -33,7 +33,8 @@
     const favorites=document.createElement("div");favorites.id="bfWorldFavorites";favorites.className="bf-world-fav-list";favorites.append(empty("Choisissez les clubs à suivre avec ☆."));
     const shortcuts=document.createElement("div");shortcuts.className="bf-world-shortcuts";
     shortcuts.innerHTML='<button type="button" class="bf-world-comp" data-bf-world-go="scores">◉ <span class="bf-world-comp-label">Tous les scores</span> →</button><button type="button" class="bf-world-comp" data-bf-world-go="leagues">▤ <span class="bf-world-comp-label">Classements</span> →</button><button type="button" class="bf-world-comp" data-bf-world-go="news">▣ <span class="bf-world-comp-label">Actualités</span> →</button>';
-    left.append(makeWidget("FOOTBALL MONDIAL","Compétitions",comps,"leagues"),makeWidget("PERSONNALISÉ","Mes favoris",favorites,""),makeWidget("RACCOURCI","Explorer",shortcuts,""));
+    const clubs=document.createElement("div");clubs.id="bfWorldClubs";clubs.className="bf-world-club-list";clubs.append(empty("Chargement des clubs…"));
+    left.append(makeWidget("FOOTBALL MONDIAL","Compétitions",comps,"leagues"),makeWidget("CLUBS À SUIVRE","Clubs du jour",clubs,""),makeWidget("PERSONNALISÉ","Mes favoris",favorites,""),makeWidget("RACCOURCI","Explorer",shortcuts,""));
     const center=document.createElement("div");center.className="bf-world-main";center.id="bfWorldMain";
     const featured=document.createElement("section");featured.className="bf-world-featured";featured.id="bfWorldFeatured";featured.setAttribute("aria-live","polite");featured.append(empty("Chargement des rencontres…"));center.append(featured);
     const right=document.createElement("aside");right.className="bf-world-rail bf-world-rail-right";right.setAttribute("aria-label","Matchs en direct et à venir");
@@ -65,6 +66,7 @@
     c.innerHTML=list.length?list.map(x=>'<div class="bf-world-comp-row"><button type="button" class="bf-world-comp" data-bf-world-competition="'+esc(x.name)+'"><span class="bf-world-comp-logo">'+(x.live?"🟢":"🏆")+'</span><span class="bf-world-comp-label">'+esc(x.name)+'</span></button><span class="bf-world-comp-count">'+(x.live?x.live+" LIVE":x.count)+'</span></div>').join(""):'<div class="bf-world-empty">Aucune compétition trouvée dans les matchs chargés.</div>';
     const ts=teamList(),saved=favs(),chosen=saved.map(n=>ts.find(t=>norm(t.name)===norm(n))||{name:n,logo:""}).slice(0,10);
     f.innerHTML=chosen.length?chosen.map(t=>teamRow(t,true)).join(""):'<div class="bf-world-empty">Pas encore de favoris. Appuyez sur ☆ à côté d’un club pour l’enregistrer ici.</div>';
+    const clubTarget=$("#bfWorldClubs");if(clubTarget)clubTarget.innerHTML=ts.slice(0,10).map(t=>teamRow(t,true)).join("")||'<div class="bf-world-empty">Aucun club trouvé dans les matchs chargés.</div>';
   }
   function featuredCrest(match,side){const src=crest(match,side);return src&&/^https?:\/\//i.test(src)?'<img class="bf-world-featured-crest" src="'+esc(src)+'" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.style.display=\'none\';this.nextElementSibling.hidden=false"><span class="bf-world-featured-fallback" hidden>⚽</span>':'<span class="bf-world-featured-fallback">'+esc(src||"⚽")+'</span>'}
   function featuredMarkup(m){
