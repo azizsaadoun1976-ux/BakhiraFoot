@@ -1135,3 +1135,128 @@ body>header .bf-language-switcher{
   #home .bf-matchday-hero:after{top:12px;right:12px;max-width:150px;font-size:7px;padding:8px 9px 8px 11px}
   #home .home-shortcuts{grid-template-columns:1fr!important}
 }
+
+
+/* BAKHIRAFOOT MATCH CENTRE — green broadcast theme, wider pitch */
+:root{
+  --bf-green:#28df91;
+  --bf-bg:#050d15;
+  --bf-panel:#0a1721;
+  --bf-panel2:#10251e;
+  --bf-line:#1d3a30;
+}
+body,html{background:#050d15!important;color:#f3f8f5!important}
+body>header{background:#050d15!important;border-bottom-color:#18362b!important}
+body>header nav button.active,body>header nav button:hover,body>header nav a:hover{background:#103326!important;border-color:#1b6246!important;color:#a5ffd0!important}
+body>header nav button.active{box-shadow:inset 0 -3px #28df91!important}
+body>header #theme,body>header .tools button{background:#10231d!important;border-color:#24503c!important}
+.layout>aside{background:#08150f!important;border-color:#1b3b2c!important}
+.layout>aside .filter.active,.layout>aside .filter:hover{background:#103b29!important;border-color:#2b8759!important;color:#a5ffd0!important}
+button,.btn,.home-live-more,.bf-score-competition.active{accent-color:#28df91}
+.bf-score-card-score,.bf-score-pro-score,.bf-score-match-score{color:#e9fff3!important}
+.bf-score-competition.active,.bf-score-competition:hover{background:#103b29!important;border-color:#2b8759!important;color:#a5ffd0!important}
+.bf-score-card-status.live,.bf-live,.live-badge{color:#ff6879!important}
+.bf-score-card-team strong,.bf-score-pro-team-name{color:#f2fff8!important}
+.bf-score-card:hover,.bf-score-pro-match:hover{border-color:#32865b!important}
+footer{background:#050d15!important;border-top:1px solid #1b3b2c!important;color:#9cb8a9!important}
+footer a:hover{color:#a5ffd0!important}
+
+/* Larger match-detail modal: wider center pitch and roomier team details */
+#bf-new-match-safe-modal .bf-new-safe-box{
+  width:min(1680px,calc(100vw - 28px))!important;
+  max-width:1680px!important;
+  max-height:97vh!important;
+  padding:clamp(14px,2vw,30px)!important;
+  overflow:auto!important;
+  background:radial-gradient(ellipse at 50% 0%,#123326 0%,#08140f 42%,#050d15 100%)!important;
+  border:1px solid #285440!important;
+  box-shadow:0 30px 100px #000b!important;
+}
+#bf-new-match-safe-modal .bf-new-safe-head{
+  background:linear-gradient(120deg,#123b2b,#0c2119 55%,#10251e)!important;
+  border-color:#285440!important;
+}
+#bf-new-match-safe-modal .bf-new-safe-pitches{
+  grid-template-columns:minmax(0,1fr)!important;
+  gap:16px!important;
+}
+#bf-new-match-safe-modal .bf-new-safe-pitch-wrap{
+  width:100%!important;
+  max-width:none!important;
+  padding:12px!important;
+  background:#091b12!important;
+  border-color:#285440!important;
+}
+#bf-new-match-safe-modal .bf-new-safe-combined-pitch{
+  width:min(100%,1120px)!important;
+  max-width:1120px!important;
+  aspect-ratio:1.48!important;
+  height:auto!important;
+  min-height:0!important;
+  max-height:none!important;
+  margin:10px auto 0!important;
+  border:2px solid #c9f5d8!important;
+  border-radius:10px!important;
+  background:repeating-linear-gradient(90deg,#126139 0%,#126139 10%,#197346 10%,#197346 20%)!important;
+  box-shadow:0 10px 32px #0005,inset 0 0 0 1px #ffffff20!important;
+}
+#bf-new-match-safe-modal .bf-new-safe-pitch{
+  width:100%!important;
+  max-width:1120px!important;
+  aspect-ratio:1.48!important;
+  height:auto!important;
+  min-height:0!important;
+  margin:10px auto 0!important;
+  background:repeating-linear-gradient(90deg,#126139 0%,#126139 10%,#197346 10%,#197346 20%)!important;
+  border:2px solid #c9f5d8!important;
+  border-radius:10px!important;
+}
+#bf-new-match-safe-modal .bf-new-safe-player{width:clamp(66px,6.5vw,104px)!important}
+#bf-new-match-safe-modal .bf-new-safe-player img,
+#bf-new-match-safe-modal .bf-new-safe-avatar{width:clamp(27px,3vw,42px)!important;height:clamp(27px,3vw,42px)!important}
+#bf-new-match-safe-modal .bf-new-safe-player-name{max-width:104px!important;font-size:clamp(7px,.72vw,10px)!important}
+#bf-new-match-safe-modal .bf-new-safe-shirt{border-color:#8ff0bc!important;background:linear-gradient(145deg,#f4fff8,#a9f3c8)!important;color:#06452a!important}
+#bf-new-match-safe-modal .bf-new-safe-section,
+#bf-new-match-safe-modal .bf-new-safe-pitch-wrap,
+#bf-new-match-safe-modal .bf-new-safe-stat,
+#bf-new-match-safe-modal .bf-new-safe-player-card{
+  border-color:#234b37!important;
+}
+#bf-new-match-safe-modal .bf-new-safe-title{color:#a7ffd0!important}
+#bf-new-match-safe-modal .bf-new-safe-stat-home{background:linear-gradient(90deg,#16804c,#42e69a)!important}
+#bf-new-match-safe-modal .bf-new-safe-stat-away{background:linear-gradient(90deg,#f36b7d,#ff9b8e)!important}
+
+/* Legacy match modal receives the same greener pitch and larger field */
+#bfMatchDetailsModal .bfmd-box{
+  width:min(1680px,calc(100vw - 28px))!important;
+  max-width:1680px!important;
+  max-height:97vh!important;
+  background:radial-gradient(ellipse at 50% 0%,#123326 0%,#08140f 42%,#050d15 100%)!important;
+  border-color:#285440!important;
+}
+#bfMatchDetailsModal .bfmd-header{background:linear-gradient(120deg,#123b2b,#0c2119 55%,#10251e)!important;border-color:#285440!important}
+#bfMatchDetailsModal .bfmd-pitches{grid-template-columns:minmax(0,1fr)!important;gap:16px!important}
+#bfMatchDetailsModal .bfmd-pitch-card{background:#091b12!important;border-color:#285440!important}
+#bfMatchDetailsModal .bfmd-pitch{
+  width:100%!important;
+  max-width:1120px!important;
+  aspect-ratio:1.48!important;
+  height:auto!important;
+  min-height:0!important;
+  margin:10px auto 0!important;
+  background:repeating-linear-gradient(90deg,#126139 0%,#126139 10%,#197346 10%,#197346 20%)!important;
+  border:2px solid #c9f5d8!important;
+  border-radius:10px!important;
+}
+#bfMatchDetailsModal .bfmd-pitch-head{background:#102a1d!important;border-color:#285440!important}
+#bfMatchDetailsModal .bfmd-section{background:linear-gradient(145deg,#0e2118,#08140f)!important;border-color:#234b37!important}
+#bfMatchDetailsModal .bfmd-title{color:#a7ffd0!important}
+@media(max-width:700px){
+  #bf-new-match-safe-modal .bf-new-safe-box{width:calc(100vw - 12px)!important;padding:10px 7px!important}
+  #bf-new-match-safe-modal .bf-new-safe-combined-pitch,
+  #bf-new-match-safe-modal .bf-new-safe-pitch,
+  #bfMatchDetailsModal .bfmd-pitch{aspect-ratio:.9!important}
+  #bf-new-match-safe-modal .bf-new-safe-player{width:62px!important}
+  #bf-new-match-safe-modal .bf-new-safe-player-name{max-width:64px!important;font-size:6px!important}
+  #bfMatchDetailsModal .bfmd-box{width:calc(100vw - 12px)!important;padding:10px!important}
+}
