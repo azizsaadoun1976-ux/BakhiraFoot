@@ -1282,9 +1282,7 @@ onclick="
         class="bf-score-card-body"
       >
 
-        <div
-          class="bf-score-card-team home"
-        >
+        <div class="bf-score-card-team home" data-bf-team-side="home" role="button" tabindex="0" aria-label="Voir la fiche de ${escapeHTML(home)}">
 
           ${
             homeLogo
@@ -6199,7 +6197,14 @@ function renderPlayerRow(
     playerData?.minutes;
 
   return `
-    <div class="bf-player-row">
+    <div class="bf-player-row" role="button" tabindex="0"
+      data-bf-player-name="${escapeHTML(playerData?.name || "Joueur")}"
+      data-bf-player-number="${escapeHTML(playerData?.number ?? "-")}"
+      data-bf-player-position="${escapeHTML(playerData?.position || "")}"
+      data-bf-player-minutes="${escapeHTML(playerData?.minutes ?? "")}"
+      data-bf-player-rating="${escapeHTML(playerData?.rating ?? "")}"
+      data-bf-player-goals="${escapeHTML(playerData?.goals ?? 0)}"
+      data-bf-player-assists="${escapeHTML(playerData?.assists ?? 0)}">
 
       <div class="bf-player-number">
         ${escapeHTML(number)}
@@ -6264,7 +6269,7 @@ function renderPitchPlayer(playerData, x, y) {
   add("RC", numberOrZero(playerData?.red) > 0, "red");
   add("INJ", numberOrZero(playerData?.injury) > 0, "injury");
   add(playerData?.mvpEstimated ? "MVP*" : "MVP", playerData?.mvp === true, "mvp");
-  return '<div class="bf-pitch-player" style="left:' + x + '%;top:' + y + '%;" title="' + escapeHTML(playerData?.name || "") + '">' +
+  return '<div class="bf-pitch-player" role="button" tabindex="0" data-bf-player-name="' + escapeHTML(playerData?.name || "Joueur") + '" data-bf-player-number="' + escapeHTML(playerData?.number ?? "?") + '" data-bf-player-position="' + escapeHTML(playerData?.position || "") + '" data-bf-player-rating="' + escapeHTML(playerData?.rating ?? "") + '" data-bf-player-goals="' + escapeHTML(playerData?.goals ?? 0) + '" data-bf-player-assists="' + escapeHTML(playerData?.assists ?? 0) + '" style="left:' + x + '%;top:' + y + '%;" title="' + escapeHTML(playerData?.name || "") + '">' +
     '<div class="bf-pitch-role">' + escapeHTML(playerData?.position || "—") + '</div>' +
     '<div class="bf-pitch-identity"><span class="bf-shirt">' + escapeHTML(playerData?.number ?? "?") + '</span><span class="bf-pitch-name">' + escapeHTML(shortPlayerName(playerData?.name)) + '</span></div>' +
     (badges.length ? '<div class="bf-pitch-markers">' + badges.join("") + '</div>' : "") +
@@ -10679,3 +10684,21 @@ document.addEventListener("click", function (event) {
     window.go("leagues");
   }
 }, true);
+
+/* BakhiraFoot interactive entity cards */
+(function(){
+ if(window.__bfEntityProfilesReady)return;window.__bfEntityProfilesReady=true;
+ const esc=v=>String(v??"").replace(/[&<>"']/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;","'":"&#39;"}[c]));
+ function modal(){let m=document.getElementById("bfEntityProfileModal");if(m)return m;m=document.createElement("div");m.id="bfEntityProfileModal";m.innerHTML='<div class="bf-entity-backdrop"><section class="bf-entity-panel" role="dialog" aria-modal="true"><button class="bf-entity-close" type="button" aria-label="Fermer">×</button><div class="bf-entity-content"></div></section></div>';document.body.appendChild(m);m.addEventListener("click",e=>{if(e.target===m||e.target.classList.contains("bf-entity-backdrop")||e.target.closest(".bf-entity-close"))close();else e.stopPropagation()});document.addEventListener("keydown",e=>{if(e.key==="Escape")close()});return m}
+ function close(){const m=document.getElementById("bfEntityProfileModal");if(m)m.classList.remove("is-open");document.body.classList.remove("bf-profile-open")}
+ function show(html){const m=modal();m.querySelector(".bf-entity-content").innerHTML=html;m.classList.add("is-open");document.body.classList.add("bf-profile-open")}
+ window.openBakhiraTeamProfile=function(name,logo){name=String(name||"").trim();if(!name)return;const key=normalizeText(name);const matches=(currentMatches||[]).filter(m=>normalizeText(getHome(m))===key||normalizeText(getAway(m))===key).slice(0,10);const cards=matches.map(m=>{const home=getHome(m),away=getAway(m),idx=currentMatches.indexOf(m),date=m?.fixture?.date||m?.date||"";return '<button type="button" class="bf-entity-match" data-bf-profile-match="'+idx+'"><span class="bf-entity-match-league">'+esc(getLeague(m))+' · '+esc(date?new Date(date).toLocaleDateString("fr-FR"):"")+'</span><span class="bf-entity-match-teams">'+esc(home)+' <b>'+esc(getHomeScore(m))+' – '+esc(getAwayScore(m))+'</b> '+esc(away)+'</span><small>'+esc(statusLabel(m))+'</small></button>'}).join("");show('<div class="bf-entity-kicker">BAKHIRAFOOT / CLUB</div><div class="bf-entity-team-head">'+(logo?'<img src="'+esc(logo)+'" alt="">':'<span class="bf-entity-placeholder">⚽</span>')+'<div><h2>'+esc(name)+'</h2><p>Fiche équipe · données disponibles sur le site</p></div></div><div class="bf-entity-stat-grid"><div><small>Matchs chargés</small><strong>'+matches.length+'</strong></div><div><small>État</small><strong>En direct</strong></div></div><h3>Matchs de cette équipe</h3><div class="bf-entity-match-list">'+(cards||'<p class="bf-entity-empty">Aucun autre match de cette équipe n’est chargé actuellement. Les données manquantes ne sont pas inventées.</p>')+'</div>')}
+ window.openBakhiraPlayerProfile=function(p){p=p||{};show('<div class="bf-entity-kicker">BAKHIRAFOOT / JOUEUR</div><div class="bf-entity-player-head"><div class="bf-entity-player-avatar">'+esc(p.number||"⚽")+'</div><div><h2>'+esc(p.name||"Joueur")+'</h2><p>'+esc(p.position||"Poste non communiqué")+'</p></div></div><div class="bf-entity-stat-grid"><div><small>Note du match</small><strong>'+esc(p.rating||"—")+'</strong></div><div><small>Minutes jouées</small><strong>'+esc(p.minutes?p.minutes+" min":"—")+'</strong></div><div><small>Buts</small><strong>'+esc(p.goals??"0")+'</strong></div><div><small>Passes décisives</small><strong>'+esc(p.assists??"0")+'</strong></div></div><p class="bf-entity-note">Statistiques affichées uniquement si elles sont présentes dans les données du match.</p>')}
+ document.addEventListener("click",function(e){
+  const mt=e.target.closest("[data-bf-profile-match]");if(mt){const i=Number(mt.dataset.bfProfileMatch);close();if(Number.isInteger(i)&&i>=0)openMatchDetails(i);return}
+  const team=e.target.closest("[data-bf-team-side]");if(team){e.preventDefault();e.stopPropagation();const card=team.closest("[data-match-index]"),i=Number(card?.dataset.matchIndex),m=Number.isInteger(i)?currentMatches[i]:null,side=team.dataset.bfTeamSide;window.openBakhiraTeamProfile(m?(side==="away"?getAway(m):getHome(m)):"",m?(side==="away"?getAwayLogo(m):getHomeLogo(m)):"");return}
+  const dt=e.target.closest(".bf-details-team");if(dt){e.preventDefault();e.stopPropagation();window.openBakhiraTeamProfile(dt.querySelector(".bf-details-team-name")?.textContent?.trim()||dt.querySelector("img")?.alt||"",dt.querySelector("img")?.src||"");return}
+  const pl=e.target.closest("[data-bf-player-name]");if(pl){e.preventDefault();e.stopPropagation();window.openBakhiraPlayerProfile({name:pl.dataset.bfPlayerName,number:pl.dataset.bfPlayerNumber,position:pl.dataset.bfPlayerPosition,minutes:pl.dataset.bfPlayerMinutes,rating:pl.dataset.bfPlayerRating,goals:pl.dataset.bfPlayerGoals,assists:pl.dataset.bfPlayerAssists})}
+ },true);
+ document.addEventListener("keydown",e=>{if(e.key!=="Enter"&&e.key!==" ")return;const el=e.target.closest?.('[data-bf-team-side],[data-bf-player-name]');if(el){e.preventDefault();el.click()}});
+})();
