@@ -15,7 +15,7 @@
   function competition(m){return String(first(call("getLeague",m,""),m?.league?.name,m?.league_name,m?.competition?.name,m?.competition,"Football"))}
   function dateOf(m){return first(m?.fixture?.date,m?.date,m?.start_time,m?.kickoff,m?.utcDate,"")}
   function dateObj(m){const d=new Date(dateOf(m));return Number.isNaN(d.getTime())?null:d}
-  function isLiveMatch(m){try{if(typeof window.isLive==="function"&&window.isLiveMatch(m?.status,m?.status_text))return true}catch(_){}const s=String(first(m?.status?.short,m?.status?.long,m?.status_text,m?.status,"")).toLowerCase();return /\b(live|1h|2h|ht|et|pen|playing|in play|en direct)\b/.test(s)}
+  function isLiveMatch(m){try{if(typeof window.isLive==="function"&&window.isLive(m?.status,m?.status_text))return true}catch(_){}const s=String(first(m?.status?.short,m?.status?.long,m?.status_text,m?.status,"")).toLowerCase();return /\b(live|1h|2h|ht|et|pen|playing|in play|en direct)\b/.test(s)}
   function status(m){if(isLiveMatch(m))return"En direct";const s=String(first(m?.status?.short,m?.status?.long,m?.status_text,m?.status,"")).toLowerCase();if(/\b(ft|aet|finished|ended|full time|termine|terminé)\b/.test(s))return"Terminé";const d=dateObj(m);return d&&d.getTime()>Date.now()?"À venir":s||"Match"}
   function time(m){const d=dateObj(m);return d?new Intl.DateTimeFormat("fr-FR",{hour:"2-digit",minute:"2-digit"}).format(d):"—"}
   function dateLabel(m){const d=dateObj(m);if(!d)return"Date non précisée";if(d.toDateString()===new Date().toDateString())return"Aujourd’hui · "+time(m);return new Intl.DateTimeFormat("fr-FR",{day:"2-digit",month:"short",hour:"2-digit",minute:"2-digit"}).format(d)}
@@ -118,7 +118,7 @@
   function start(){
     const home=$("#home");if(!home)return;
     createShell();updateDay();updateLive();
-    if(liveTimer)clearInterval(liveTimer);liveTimer=setInterval(()=>{if($("#home")?.classList.contains("active"))updateLive()},45000);
+    if(liveTimer)clearInterval(liveTimer);liveTimer=setInterval(()=>{if($("#home")?.classList.contains("active")){updateLive();if(typeof window.renderHomeMatches==="function")window.renderHomeMatches()}},30000);
     if(dayTimer)clearInterval(dayTimer);dayTimer=setInterval(()=>{if($("#home")?.classList.contains("active"))updateDay()},120000);
     const source=$("#realStandings");if(source&&typeof MutationObserver!=="undefined")new MutationObserver(()=>copyStandings()).observe(source,{childList:true,subtree:true});
   }
