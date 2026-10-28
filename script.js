@@ -1199,9 +1199,7 @@ if (date) {
       data-fixture-id="${escapeHTML(
         fixtureId || ""
       )}"
-onclick="
-  openMatchDetails(${index})
-"   
+${index >= 0 ? `onclick="openMatchDetails(${index})"` : `data-bf-home-match="${escapeHTML(fixtureId || "")}" role="button" tabindex="0"`}
 >
 
       <div
@@ -10682,6 +10680,59 @@ document.addEventListener(
 
   }
 );
+
+
+/* Open homepage matches using the actual fixture, not index -1. */
+function openHomepageMatchCard(card) {
+  const registry = window.__bfHomeMatchRegistry;
+  if (!(registry instanceof Map) || !card) return;
+  const rawId = String(card.getAttribute("data-bf-home-match") || card.getAttribute("data-fixture-id") || "").trim();
+  const wanted = rawId.toLowerCase();
+  const ids = value => [
+    value?.fixture?.upstreamId, value?.upstreamId, value?.fixture?.id,
+    value?.fixture?.slug, value?.slug, value?.id, value?.match_id, value?.fixture_id
+  ].filter(item => item !== null && item !== undefined && String(item).trim())
+    .map(item => String(item).trim().toLowerCase());
+  let match = wanted ? registry.get(wanted) : null;
+  if (!match && wanted) match = Array.from(registry.values()).find(value => ids(value).includes(wanted));
+  if (!match) {
+    if (typeof toast === "function") toast("Les détails de cette rencontre ne sont pas disponibles.");
+    return;
+  }
+  const wantedIds = new Set(ids(match));
+  let list = Array.isArray(currentMatches) ? currentMatches : [];
+  let index = list.findIndex(item => ids(item).some(id => wantedIds.has(id)));
+  if (index < 0) {
+    currentMatches = [...list, match];
+    index = currentMatches.length - 1;
+  } else {
+    list[index] = match;
+    currentMatches = list;
+  }
+  if (typeof openMatchDetails === "function") openMatchDetails(index);
+}
+
+document.addEventListener("click", event => {
+  const target = event.target instanceof Element ? event.target : null;
+  if (!target) return;
+  const card = target.closest("[data-bf-home-match]");
+  if (!card || target.closest("[data-bf-open-standings]")) return;
+  event.preventDefault();
+  event.stopPropagation();
+  event.stopImmediatePropagation();
+  openHomepageMatchCard(card);
+}, true);
+
+document.addEventListener("keydown", event => {
+  if (event.key !== "Enter" && event.key !== " ") return;
+  const target = event.target instanceof Element ? event.target : null;
+  if (!target || target.closest("button,a,input,select,textarea,[contenteditable='true']")) return;
+  const card = target.closest("[data-bf-home-match]");
+  if (!card || target !== card) return;
+  event.preventDefault();
+  openHomepageMatchCard(card);
+}, true);
+
 
 /* Open standings when clicking the league label, not the entire match card. */
 document.addEventListener("click", function (event) {
