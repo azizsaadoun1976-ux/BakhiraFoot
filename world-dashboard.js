@@ -15,8 +15,8 @@
   function competition(m){return String(first(call("getLeague",m,""),m?.league?.name,m?.league_name,m?.competition?.name,m?.competition,"Football"))}
   function dateOf(m){return first(m?.fixture?.date,m?.date,m?.start_time,m?.kickoff,m?.utcDate,"")}
   function dateObj(m){const d=new Date(dateOf(m));return Number.isNaN(d.getTime())?null:d}
-  function isLive(m){try{if(typeof isLive==="function"&&isLive(m?.status,m?.status_text))return true}catch(_){}const s=String(first(m?.status?.short,m?.status?.long,m?.status_text,m?.status,"")).toLowerCase();return /\b(live|1h|2h|ht|et|pen|playing|in play|en direct)\b/.test(s)}
-  function status(m){if(isLive(m))return"En direct";const s=String(first(m?.status?.short,m?.status?.long,m?.status_text,m?.status,"")).toLowerCase();if(/\b(ft|aet|finished|ended|full time|termine|terminé)\b/.test(s))return"Terminé";const d=dateObj(m);return d&&d.getTime()>Date.now()?"À venir":s||"Match"}
+  function isLiveMatch(m){try{if(typeof window.isLive==="function"&&window.isLiveMatch(m?.status,m?.status_text))return true}catch(_){}const s=String(first(m?.status?.short,m?.status?.long,m?.status_text,m?.status,"")).toLowerCase();return /\b(live|1h|2h|ht|et|pen|playing|in play|en direct)\b/.test(s)}
+  function status(m){if(isLiveMatch(m))return"En direct";const s=String(first(m?.status?.short,m?.status?.long,m?.status_text,m?.status,"")).toLowerCase();if(/\b(ft|aet|finished|ended|full time|termine|terminé)\b/.test(s))return"Terminé";const d=dateObj(m);return d&&d.getTime()>Date.now()?"À venir":s||"Match"}
   function time(m){const d=dateObj(m);return d?new Intl.DateTimeFormat("fr-FR",{hour:"2-digit",minute:"2-digit"}).format(d):"—"}
   function dateLabel(m){const d=dateObj(m);if(!d)return"Date non précisée";if(d.toDateString()===new Date().toDateString())return"Aujourd’hui · "+time(m);return new Intl.DateTimeFormat("fr-FR",{day:"2-digit",month:"short",hour:"2-digit",minute:"2-digit"}).format(d)}
   function identity(m){const id=first(m?.fixture?.id,m?.fixture_id,m?.match_id,m?.id,m?.slug,m?.fixture?.slug,"");return id?"id:"+id:[norm(team(m,"home")),norm(team(m,"away")),norm(competition(m)),String(dateOf(m))].join("|")}
@@ -53,14 +53,14 @@
   }
   function teamList(){
     const map=new Map();
-    all.forEach(m=>["home","away"].forEach(s=>{const n=team(m,s),k=norm(n);if(!k||k==="equipe")return;if(!map.has(k))map.set(k,{name:n,logo:crest(m,s),count:0,live:0});const t=map.get(k);t.count++;if(!t.logo)t.logo=crest(m,s);if(isLive(m))t.live++}));
+    all.forEach(m=>["home","away"].forEach(s=>{const n=team(m,s),k=norm(n);if(!k||k==="equipe")return;if(!map.has(k))map.set(k,{name:n,logo:crest(m,s),count:0,live:0});const t=map.get(k);t.count++;if(!t.logo)t.logo=crest(m,s);if(isLiveMatch(m))t.live++}));
     return Array.from(map.values()).sort((a,b)=>b.live-a.live||b.count-a.count||a.name.localeCompare(b.name));
   }
   function logoHtml(src,cls){return src&&/^https?:\/\//i.test(src)?'<img class="'+cls+'" src="'+esc(src)+'" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.style.display=\'none\';this.nextElementSibling.hidden=false"><span class="bf-world-team-fallback" hidden>⚽</span>':'<span class="bf-world-team-fallback">'+esc(src||"⚽")+'</span>'}
   function teamRow(t,canFav){const fav=favs().some(n=>norm(n)===norm(t.name));return '<div class="bf-world-club-row"><button type="button" class="bf-world-team-button" data-bf-team-name="'+esc(t.name)+'" data-bf-team-logo="'+esc(t.logo)+'">'+logoHtml(t.logo,"bf-world-team-logo")+'<span class="bf-world-team-label">'+esc(t.name)+'</span></button>'+(canFav?'<button type="button" class="bf-world-fav-toggle '+(fav?"is-fav":"")+'" data-bf-favorite="'+esc(t.name)+'" aria-label="'+(fav?"Retirer des favoris":"Ajouter aux favoris")+'" title="'+(fav?"Retirer des favoris":"Ajouter aux favoris")+'">'+(fav?"★":"☆")+'</button>':"")+'</div>'}
   function renderLeft(){
     const c=$("#bfWorldCompetitions"),f=$("#bfWorldFavorites");if(!c||!f)return;
-    const comps=new Map();all.forEach(m=>{const n=competition(m),k=norm(n);if(!k)return;if(!comps.has(k))comps.set(k,{name:n,count:0,live:0});comps.get(k).count++;if(isLive(m))comps.get(k).live++});
+    const comps=new Map();all.forEach(m=>{const n=competition(m),k=norm(n);if(!k)return;if(!comps.has(k))comps.set(k,{name:n,count:0,live:0});comps.get(k).count++;if(isLiveMatch(m))comps.get(k).live++});
     const list=Array.from(comps.values()).sort((a,b)=>b.live-a.live||b.count-a.count).slice(0,10);
     c.innerHTML=list.length?list.map(x=>'<div class="bf-world-comp-row"><button type="button" class="bf-world-comp" data-bf-world-competition="'+esc(x.name)+'"><span class="bf-world-comp-logo">'+(x.live?"🟢":"🏆")+'</span><span class="bf-world-comp-label">'+esc(x.name)+'</span></button><span class="bf-world-comp-count">'+(x.live?x.live+" LIVE":x.count)+'</span></div>').join(""):'<div class="bf-world-empty">Aucune compétition trouvée dans les matchs chargés.</div>';
     const ts=teamList(),saved=favs(),chosen=saved.map(n=>ts.find(t=>norm(t.name)===norm(n))||{name:n,logo:""}).slice(0,10);
@@ -68,7 +68,7 @@
   }
   function featuredCrest(match,side){const src=crest(match,side);return src&&/^https?:\/\//i.test(src)?'<img class="bf-world-featured-crest" src="'+esc(src)+'" alt="" loading="lazy" referrerpolicy="no-referrer" onerror="this.style.display=\'none\';this.nextElementSibling.hidden=false"><span class="bf-world-featured-fallback" hidden>⚽</span>':'<span class="bf-world-featured-fallback">'+esc(src||"⚽")+'</span>'}
   function featuredMarkup(m){
-    const h=team(m,"home"),a=team(m,"away"),liveNow=isLive(m);
+    const h=team(m,"home"),a=team(m,"away"),liveNow=isLiveMatch(m);
     return '<div class="bf-world-featured-head"><span class="bf-world-featured-label">'+(liveNow?'<i class="bf-world-live-dot"></i> EN DIRECT':'⚡ À LA UNE')+'</span><span class="bf-world-featured-meta">'+esc(competition(m)+' · '+dateLabel(m))+'</span></div><div class="bf-world-featured-body">'+
       '<button type="button" class="bf-world-featured-team" data-bf-team-name="'+esc(h)+'" data-bf-team-logo="'+esc(crest(m,"home"))+'">'+featuredCrest(m,"home")+'<span class="bf-world-featured-name">'+esc(h)+'</span></button>'+
       '<div class="bf-world-featured-score"><button type="button" class="bf-world-featured-scoreline" data-bf-world-match="'+esc(identity(m))+'" aria-label="Voir les détails du match">'+esc(score(m,"home"))+' : '+esc(score(m,"away"))+'</button><span class="bf-world-featured-status '+(liveNow?"is-live":"")+'">'+esc(status(m))+'</span></div>'+
@@ -76,17 +76,17 @@
   }
   function pickFeatured(){
     if(!all.length)return null;
-    return [...all].sort((a,b)=>{const l=Number(isLive(b))-Number(isLive(a));if(l)return l;const da=dateObj(a)?.getTime()||0,db=dateObj(b)?.getTime()||0;const fa=da>Date.now(),fb=db>Date.now();if(fa!==fb)return fa?-1:1;if(fa)return da-db;return db-da})[0];
+    return [...all].sort((a,b)=>{const l=Number(isLiveMatch(b))-Number(isLiveMatch(a));if(l)return l;const da=dateObj(a)?.getTime()||0,db=dateObj(b)?.getTime()||0;const fa=da>Date.now(),fb=db>Date.now();if(fa!==fb)return fa?-1:1;if(fa)return da-db;return db-da})[0];
   }
   function openMatch(m){
     if(!m)return;
-    try{let arr=Array.isArray(currentMatches)?currentMatches:[];const key=identity(m);let i=arr.findIndex(x=>identity(x)===key);if(i<0){arr.push(m);currentMatches=arr;i=arr.length-1}else if(isLive(m)){arr[i]=m;currentMatches=arr}if(typeof openMatchDetails==="function")openMatchDetails(i);else if(typeof window.openMatchDetails==="function")window.openMatchDetails(i)}catch(e){console.warn("BakhiraFoot match details:",e)}
+    try{let arr=Array.isArray(currentMatches)?currentMatches:[];const key=identity(m);let i=arr.findIndex(x=>identity(x)===key);if(i<0){arr.push(m);currentMatches=arr;i=arr.length-1}else if(isLiveMatch(m)){arr[i]=m;currentMatches=arr}if(typeof openMatchDetails==="function")openMatchDetails(i);else if(typeof window.openMatchDetails==="function")window.openMatchDetails(i)}catch(e){console.warn("BakhiraFoot match details:",e)}
   }
-  function eventCard(m){const h=team(m,"home"),a=team(m,"away"),liveNow=isLive(m),d=dateObj(m);return '<button type="button" class="bf-world-event" data-bf-world-match="'+esc(identity(m))+'"><span class="bf-world-event-date">'+esc(liveNow?"LIVE":time(m))+'<br>'+esc(d?new Intl.DateTimeFormat("fr-FR",{day:"2-digit",month:"short"}).format(d):"")+'</span><span class="bf-world-event-teams"><span class="bf-world-event-team">'+logoHtml(crest(m,"home"),"bf-world-event-logo")+'<span>'+esc(h)+'</span></span><span class="bf-world-event-team">'+logoHtml(crest(m,"away"),"bf-world-event-logo")+'<span>'+esc(a)+'</span></span><span class="bf-world-event-score">'+esc(score(m,"home"))+' : '+esc(score(m,"away"))+' · '+esc(competition(m))+'</span></span></button>'}
+  function eventCard(m){const h=team(m,"home"),a=team(m,"away"),liveNow=isLiveMatch(m),d=dateObj(m);return '<button type="button" class="bf-world-event" data-bf-world-match="'+esc(identity(m))+'"><span class="bf-world-event-date">'+esc(liveNow?"LIVE":time(m))+'<br>'+esc(d?new Intl.DateTimeFormat("fr-FR",{day:"2-digit",month:"short"}).format(d):"")+'</span><span class="bf-world-event-teams"><span class="bf-world-event-team">'+logoHtml(crest(m,"home"),"bf-world-event-logo")+'<span>'+esc(h)+'</span></span><span class="bf-world-event-team">'+logoHtml(crest(m,"away"),"bf-world-event-logo")+'<span>'+esc(a)+'</span></span><span class="bf-world-event-score">'+esc(score(m,"home"))+' : '+esc(score(m,"away"))+' · '+esc(competition(m))+'</span></span></button>'}
   function renderRight(){
     const l=$("#bfWorldLive"),u=$("#bfWorldUpcoming"),count=$("#bfWorldLiveCount");
     const liveList=all.filter(isLive).sort((a,b)=>(dateObj(b)?.getTime()||0)-(dateObj(a)?.getTime()||0));
-    const next=all.filter(m=>{const d=dateObj(m);return d&&d.getTime()>Date.now()&&!isLive(m)}).sort((a,b)=>(dateObj(a)?.getTime()||0)-(dateObj(b)?.getTime()||0));
+    const next=all.filter(m=>{const d=dateObj(m);return d&&d.getTime()>Date.now()&&!isLiveMatch(m)}).sort((a,b)=>(dateObj(a)?.getTime()||0)-(dateObj(b)?.getTime()||0));
     if(count)count.textContent=liveList.length?liveList.length+" LIVE":"0 LIVE";
     if(l)l.innerHTML=liveList.length?liveList.slice(0,5).map(eventCard).join(""):'<div class="bf-world-empty">Aucun match en direct dans les données actuelles.</div>';
     if(u)u.innerHTML=next.length?next.slice(0,5).map(eventCard).join(""):'<div class="bf-world-empty">Aucun prochain match trouvé dans les données chargées.</div>';
@@ -106,7 +106,7 @@
   }
   async function updateDay(){try{const date=new Date().toISOString().slice(0,10),result=await fetchMatches("date="+encodeURIComponent(date));if(result.length)dayMatches=result;all=merge();render()}catch(e){console.warn("BakhiraFoot dashboard date:",e);if(!all.length)render()}}
   async function updateLive(){try{const result=await fetchMatches("live=all");if(result.length)liveMatches=result;all=merge();render()}catch(e){console.warn("BakhiraFoot dashboard live:",e)}}
-  function merge(){const map=new Map();[...dayMatches,...liveMatches].forEach(m=>{if(!m)return;const k=identity(m),old=map.get(k);if(!old||isLive(m)||score(m,"home")!=="—")map.set(k,m)});return Array.from(map.values())}
+  function merge(){const map=new Map();[...dayMatches,...liveMatches].forEach(m=>{if(!m)return;const k=identity(m),old=map.get(k);if(!old||isLiveMatch(m)||score(m,"home")!=="—")map.set(k,m)});return Array.from(map.values())}
   function go(page){if(typeof window.go==="function")window.go(page);else $('nav [data-page="'+page+'"]')?.click()}
   document.addEventListener("click",e=>{
     const t=e.target instanceof Element?e.target:null;if(!t)return;
