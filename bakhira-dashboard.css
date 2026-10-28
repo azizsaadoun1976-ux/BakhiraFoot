@@ -1,0 +1,85 @@
+/* BakhiraFoot Global Match Centre — responsive dashboard */
+#home .bf-world-dashboard{display:grid;grid-template-columns:minmax(174px,205px) minmax(0,1fr) minmax(228px,270px);gap:12px;align-items:start;width:100%;margin:0 0 22px}
+#home .bf-world-rail,#home .bf-world-main{min-width:0}
+#home .bf-world-rail{display:grid;gap:12px;align-content:start}
+#home .bf-world-widget{min-width:0;overflow:hidden;border:1px solid rgba(50,219,165,.22);border-radius:13px;background:linear-gradient(150deg,#0b1a24,#071119);box-shadow:0 9px 25px rgba(0,0,0,.12)}
+#home .bf-world-widget-head{display:flex;align-items:center;justify-content:space-between;gap:8px;padding:12px 12px 10px;border-bottom:1px solid rgba(79,117,139,.18)}
+#home .bf-world-widget-head h2,#home .bf-world-widget-head h3{margin:0!important;color:#eaf4f8!important;font-size:11px!important;font-weight:950!important;letter-spacing:.035em!important;line-height:1.35!important}
+#home .bf-world-kicker{display:block;margin-bottom:4px;color:#43e9ad;font-size:8px;font-weight:950;letter-spacing:.14em}
+#home .bf-world-view-all{padding:0;border:0;background:none;color:#74dfb6;font-size:9px;font-weight:850;cursor:pointer;white-space:nowrap}
+#home .bf-world-widget-body{padding:8px}
+#home .bf-world-empty{padding:11px 9px;color:#8fa7b8;font-size:10px;line-height:1.65}
+#home .bf-world-comp-list,#home .bf-world-club-list,#home .bf-world-fav-list,#home .bf-world-event-list{display:grid;gap:3px}
+#home .bf-world-comp-row,#home .bf-world-club-row,#home .bf-world-fav-row{display:grid;grid-template-columns:minmax(0,1fr) auto;gap:5px;align-items:center}
+#home .bf-world-comp,#home .bf-world-team-button{display:flex;align-items:center;gap:8px;min-width:0;width:100%;padding:8px 6px;border:1px solid transparent;border-radius:8px;background:transparent;color:#d8e4ec;text-align:left;font-size:10px;font-weight:800;cursor:pointer}
+#home .bf-world-comp:hover,#home .bf-world-team-button:hover{border-color:rgba(53,230,164,.3);background:#102b2b;color:#75f0bf}
+#home .bf-world-comp-label,#home .bf-world-team-label{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#home .bf-world-comp-count{color:#91a8b7;font-size:9px;font-variant-numeric:tabular-nums}
+#home .bf-world-comp-logo,#home .bf-world-team-logo{display:flex;align-items:center;justify-content:center;flex:0 0 20px;width:20px;height:20px;object-fit:contain}
+#home .bf-world-comp-logo[src],#home .bf-world-team-logo[src]{border-radius:50%}
+#home .bf-world-team-fallback{display:flex;align-items:center;justify-content:center;flex:0 0 20px;width:20px;height:20px;font-size:14px}
+#home .bf-world-fav-toggle{display:flex;align-items:center;justify-content:center;width:27px;height:29px;border:1px solid transparent;border-radius:7px;background:transparent;color:#7f98a9;font-size:14px;cursor:pointer}
+#home .bf-world-fav-toggle:hover,#home .bf-world-fav-toggle.is-fav{border-color:rgba(53,230,164,.22);background:#0d2922;color:#6df0b9}
+#home .bf-world-featured{position:relative;overflow:hidden;margin:0 0 12px;border:1px solid rgba(53,230,164,.35);border-radius:15px;background:linear-gradient(115deg,#0c1c27,#0a1923 56%,#103326);color:#f5fbfd}
+#home .bf-world-featured:after{position:absolute;inset:0;content:"";pointer-events:none;background:radial-gradient(ellipse at 92% 0%,rgba(53,230,164,.11),transparent 42%);z-index:0}
+#home .bf-world-featured-head{position:relative;z-index:1;display:flex;align-items:center;justify-content:space-between;gap:8px;padding:12px 14px;border-bottom:1px solid rgba(84,127,143,.22)}
+#home .bf-world-featured-label{display:flex;align-items:center;gap:7px;color:#7cebbc;font-size:9px;font-weight:950;letter-spacing:.12em}
+#home .bf-world-live-dot{width:7px;height:7px;border-radius:50%;background:#ff526b;box-shadow:0 0 0 4px rgba(255,82,107,.12)}
+#home .bf-world-featured-meta{color:#97adba;font-size:9px;text-align:right}
+#home .bf-world-featured-body{position:relative;z-index:1;display:grid;grid-template-columns:minmax(0,1fr) 105px minmax(0,1fr);gap:8px;align-items:center;padding:18px 12px 16px}
+#home .bf-world-featured-team{display:flex;flex-direction:column;align-items:center;justify-content:center;gap:8px;min-width:0;padding:4px;border:1px solid transparent;border-radius:10px;background:transparent;color:#f1f7fb;cursor:pointer}
+#home .bf-world-featured-team:hover{border-color:rgba(53,230,164,.3);background:rgba(53,230,164,.05)}
+#home .bf-world-featured-crest{width:clamp(43px,5vw,64px);height:clamp(43px,5vw,64px);object-fit:contain;filter:drop-shadow(0 5px 12px rgba(0,0,0,.3))}
+#home .bf-world-featured-fallback{display:flex;align-items:center;justify-content:center;width:clamp(43px,5vw,64px);height:clamp(43px,5vw,64px);font-size:34px}
+#home .bf-world-featured-name{max-width:100%;overflow:hidden;text-overflow:ellipsis;white-space:nowrap;font-size:clamp(10px,1.1vw,13px);font-weight:900;text-align:center}
+#home .bf-world-featured-score{display:grid;justify-items:center;gap:8px;align-content:center;min-width:0}
+#home .bf-world-featured-scoreline{color:#fff;font-size:clamp(23px,3vw,35px);font-weight:950;letter-spacing:.04em;font-variant-numeric:tabular-nums;white-space:nowrap}
+#home .bf-world-featured-status{padding:5px 9px;border:1px solid rgba(53,230,164,.23);border-radius:999px;background:#0e3026;color:#75f0bf;font-size:9px;font-weight:900}
+#home .bf-world-featured-status.is-live{border-color:rgba(255,82,107,.25);background:#351a24;color:#ff8996}
+#home .bf-world-featured-details{position:relative;z-index:1;display:flex;justify-content:center;flex-wrap:wrap;gap:6px;padding:0 12px 14px;color:#98afbe;font-size:9px}
+#home .bf-world-featured-details span{padding:4px 7px;border:1px solid rgba(84,127,143,.18);border-radius:6px;background:rgba(4,13,20,.22)}
+#home .bf-world-main>.home-shortcuts{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:8px;margin:0 0 12px!important}
+#home .bf-world-main>.home-shortcuts .home-shortcut{min-width:0;min-height:73px;padding:11px!important;border:1px solid rgba(53,230,164,.18)!important;border-radius:11px!important;background:#0b1b25!important}
+#home .bf-world-main>.home-shortcuts .home-shortcut-copy strong{font-size:11px!important}
+#home .bf-world-main>.home-shortcuts .home-shortcut-copy span{font-size:9px!important}
+#home .bf-world-main>.home-live-section{padding:14px!important;margin-bottom:12px!important;border:1px solid rgba(53,230,164,.21)!important;border-radius:13px!important;background:#08151e!important}
+#home .bf-world-main>.home-live-section .home-live-heading{align-items:center!important;margin-bottom:11px!important}
+#home .bf-world-main>.home-live-section .home-live-heading h2{font-size:16px!important}
+#home .bf-world-main>.home-live-section .home-live-heading p{font-size:10px!important}
+#home .bf-world-main>.home-live-section .home-live-matches{grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:8px!important}
+#home .bf-world-main>.home-live-section .bf-score-clean-card{min-height:130px!important;padding:11px!important;border-color:rgba(53,230,164,.2)!important;border-radius:10px!important;background:linear-gradient(150deg,#0d202b,#08151e)!important}
+#home .bf-world-main>.home-live-section .bf-score-card-header{min-height:24px!important}
+#home .bf-world-main>.home-live-section .bf-score-card-league{font-size:9px!important}
+#home .bf-world-main>.home-live-section .bf-score-card-body{gap:5px!important}
+#home .bf-world-main>.home-live-section .bf-score-pro-team strong{font-size:10px!important}
+#home .bf-world-main>.home-live-section .bf-score-pro-score{font-size:19px!important}
+#home .bf-world-main>.home-news-heading{display:flex!important;align-items:center!important;justify-content:space-between!important;margin:18px 0 6px!important;padding:0 2px!important}
+#home .bf-world-main>.home-news-heading h2{font-size:16px!important}
+#home .bf-world-main>#homeNews{margin-bottom:16px!important}
+#home .bf-world-main>.bf-editorial-guide{margin-top:8px!important}
+#home .bf-world-main>#bfCommunity{margin-top:12px!important}
+#home .bf-world-feature-list{display:grid;gap:7px}
+#home .bf-world-event{display:grid;grid-template-columns:36px minmax(0,1fr);gap:8px;align-items:center;width:100%;padding:8px 7px;border:1px solid transparent;border-radius:9px;background:transparent;color:#e0eaf0;text-align:left;cursor:pointer}
+#home .bf-world-event:hover{border-color:rgba(53,230,164,.25);background:#10252d}
+#home .bf-world-event-date{color:#91a8b6;font-size:8px;line-height:1.45;font-variant-numeric:tabular-nums}
+#home .bf-world-event-teams{display:grid;gap:5px;min-width:0}
+#home .bf-world-event-team{display:flex;align-items:center;gap:5px;min-width:0;font-size:9px;font-weight:800}
+#home .bf-world-event-team img{width:16px;height:16px;flex:0 0 16px;object-fit:contain}
+#home .bf-world-event-team span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+#home .bf-world-event-score{margin-top:4px;color:#6feaba;font-size:9px;font-weight:950;font-variant-numeric:tabular-nums}
+#home .bf-world-event-status{display:inline-flex;align-items:center;gap:4px;color:#ff8795;font-size:8px;font-weight:950}
+#home .bf-world-event-status:before{width:5px;height:5px;border-radius:50%;background:#ff526b;content:""}
+#home .bf-world-standings .ss-standing-row{grid-template-columns:20px minmax(0,1fr) 38px!important;gap:6px!important;padding:7px 4px!important;font-size:9px!important;background:transparent!important;border-color:rgba(78,118,139,.16)!important}
+#home .bf-world-standings .ss-standing-row>span:nth-child(n+3):not(.ss-points),#home .bf-world-standings .ss-standing-row .ss-zone-caption{display:none!important}
+#home .bf-world-standings .ss-standing-row .ss-club{gap:5px!important}
+#home .bf-world-standings .ss-standing-row .ss-club img{width:19px!important;height:19px!important}
+#home .bf-world-standings .ss-standing-row .ss-club-info strong{max-width:110px!important;font-size:9px!important}
+#home .bf-world-standings .ss-standing-row .ss-points{font-size:9px!important}
+#home .bf-world-standing-source{max-height:290px;overflow:auto}
+#home .bf-world-standing-source .ss-standing-row{cursor:pointer}
+#home .bf-world-widget .bf-world-view-all:hover{color:#fff;text-decoration:underline}
+#home .bf-world-rail button:focus-visible,#home .bf-world-main button:focus-visible{outline:2px solid #4ceab2;outline-offset:2px}
+@media(min-width:1450px){#home .bf-world-dashboard{grid-template-columns:minmax(185px,220px) minmax(450px,1fr) minmax(245px,285px);gap:14px}}
+@media(max-width:1150px){#home .bf-world-dashboard{grid-template-columns:minmax(160px,195px) minmax(0,1fr)}#home .bf-world-rail-right{grid-column:1/-1;grid-template-columns:repeat(3,minmax(0,1fr));align-items:start}#home .bf-world-rail-right .bf-world-widget{height:100%}}
+@media(max-width:760px){#home .bf-world-dashboard{grid-template-columns:minmax(0,1fr);gap:10px}#home .bf-world-rail-left{grid-template-columns:repeat(2,minmax(0,1fr));align-items:start}#home .bf-world-rail-right{grid-column:auto;grid-template-columns:minmax(0,1fr)}#home .bf-world-featured-body{grid-template-columns:minmax(0,1fr) 80px minmax(0,1fr);padding:13px 7px}#home .bf-world-featured-crest,#home .bf-world-featured-fallback{width:42px;height:42px;flex-basis:42px}#home .bf-world-featured-name{font-size:10px}#home .bf-world-featured-scoreline{font-size:24px}#home .bf-world-main>.home-shortcuts{grid-template-columns:repeat(3,minmax(0,1fr))}#home .bf-world-main>.home-shortcuts .home-shortcut{padding:8px!important}#home .bf-world-main>.home-live-section .home-live-matches{grid-template-columns:minmax(0,1fr)!important}}
+@media(max-width:460px){#home .bf-world-rail-left{grid-template-columns:minmax(0,1fr)}#home .bf-world-main>.home-shortcuts{grid-template-columns:minmax(0,1fr)}#home .bf-world-featured-body{grid-template-columns:minmax(0,1fr) 74px minmax(0,1fr)}#home .bf-world-featured-scoreline{font-size:22px}}
