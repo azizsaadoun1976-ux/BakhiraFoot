@@ -1281,3 +1281,11 @@ body>header>.site-theme{display:inline-flex;align-items:center;justify-content:c
 @media(max-width:920px){
   body>header>.site-theme{grid-area:tools;justify-self:end;margin:0}
 }
+
+/* Editorial directory guide: useful context before the article cards. */
+.article-reading-guide{margin:22px 0 24px;padding:clamp(18px,2.8vw,28px);border:1px solid var(--bf-border);border-radius:18px;background:linear-gradient(145deg,var(--bf-surface),var(--bf-surface-2));box-shadow:var(--bf-shadow)}
+.article-reading-guide h2{margin:0 0 10px;color:var(--bf-ink);font-size:clamp(18px,2.4vw,24px);line-height:1.3}
+.article-reading-guide p{max-width:1000px;margin:8px 0;color:var(--bf-muted);font-size:13px;line-height:1.8}
+.article-reading-guide a{color:var(--bf-green-deep);font-weight:850;text-decoration:underline;text-underline-offset:3px}
+.article-reading-topics{display:flex;flex-wrap:wrap;gap:7px;margin-top:14px}
+.article-reading-topics span{display:inline-flex;align-items:center;gap:5px;padding:7px 10px;border:1px solid var(--bf-border);border-radius:9px;background:var(--bf-surface);color:var(--bf-ink);font-size:11px;font-weight:850}
