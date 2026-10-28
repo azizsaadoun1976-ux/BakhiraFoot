@@ -994,7 +994,7 @@ function statusLabel(match) {
 
 function teamHTML(name, logo) {
   return `
-    <div class="team">
+    <div class="team" data-bf-team-name="${escapeHTML(name)}" data-bf-team-logo="${escapeHTML(logo || "")}" role="button" tabindex="0" aria-label="Voir la fiche de ${escapeHTML(name)}">
       ${
         logo
           ? `
@@ -10692,6 +10692,7 @@ document.addEventListener("click", function (event) {
  window.openBakhiraPlayerProfile=function(p){p=p||{};show('<div class="bf-entity-kicker">BAKHIRAFOOT / JOUEUR</div><div class="bf-entity-player-head"><div class="bf-entity-player-avatar">'+esc(p.number||"⚽")+'</div><div><h2>'+esc(p.name||"Joueur")+'</h2><p>'+esc(p.position||"Poste non communiqué")+'</p></div></div><div class="bf-entity-stat-grid"><div><small>Note du match</small><strong>'+esc(p.rating||"—")+'</strong></div><div><small>Minutes jouées</small><strong>'+esc(p.minutes?p.minutes+" min":"—")+'</strong></div><div><small>Buts</small><strong>'+esc(p.goals??"0")+'</strong></div><div><small>Passes décisives</small><strong>'+esc(p.assists??"0")+'</strong></div></div><p class="bf-entity-note">Statistiques affichées uniquement si elles sont présentes dans les données du match.</p>')}
  document.addEventListener("click",function(e){
   const mt=e.target.closest("[data-bf-profile-match]");if(mt){const i=Number(mt.dataset.bfProfileMatch);close();if(Number.isInteger(i)&&i>=0)openMatchDetails(i);return}
+  const anyTeam=e.target.closest("[data-bf-team-name]");if(anyTeam){e.preventDefault();e.stopPropagation();window.openBakhiraTeamProfile(anyTeam.dataset.bfTeamName,anyTeam.dataset.bfTeamLogo||anyTeam.querySelector("img")?.src||"");return}
   const team=e.target.closest("[data-bf-team-side]");if(team){e.preventDefault();e.stopPropagation();const card=team.closest("[data-match-index]"),i=Number(card?.dataset.matchIndex),m=Number.isInteger(i)?currentMatches[i]:null,side=team.dataset.bfTeamSide;window.openBakhiraTeamProfile(m?(side==="away"?getAway(m):getHome(m)):"",m?(side==="away"?getAwayLogo(m):getHomeLogo(m)):"");return}
   const dt=e.target.closest(".bf-details-team");if(dt){e.preventDefault();e.stopPropagation();window.openBakhiraTeamProfile(dt.querySelector(".bf-details-team-name")?.textContent?.trim()||dt.querySelector("img")?.alt||"",dt.querySelector("img")?.src||"");return}
   const pl=e.target.closest("[data-bf-player-name]");if(pl){e.preventDefault();e.stopPropagation();window.openBakhiraPlayerProfile({name:pl.dataset.bfPlayerName,number:pl.dataset.bfPlayerNumber,position:pl.dataset.bfPlayerPosition,minutes:pl.dataset.bfPlayerMinutes,rating:pl.dataset.bfPlayerRating,goals:pl.dataset.bfPlayerGoals,assists:pl.dataset.bfPlayerAssists})}
