@@ -446,7 +446,13 @@
 
   function attach(args) {
     const content = args?.content;
-    if (!content || content.dataset.bfMatchEnhancementsReady === "1") return;
+    if (!content) return;
+    const matchKey = String(args.key || "");
+    if (content.dataset.bfMatchEnhancementsReady === "1" &&
+        content.dataset.bfMatchEnhancementKey === matchKey &&
+        content.querySelector(".bfmd-center-nav")) return;
+    content.dataset.bfMatchEnhancementsReady = "0";
+    content.dataset.bfMatchEnhancementKey = matchKey;
     style();
 
     const panels = Array.from(content.children).filter(node =>
@@ -507,6 +513,7 @@
     const overviewNode = content.querySelector("#bfmc-overview");
     if (overviewNode) setupVote(content,args,overviewNode);
     content.dataset.bfMatchEnhancementsReady = "1";
+    content.dataset.bfMatchEnhancementKey = matchKey;
     const matchArgs = {...args,key:String(args.key || "")};
     loadContext(content,matchArgs,recentNode,h2hNode,standingsNode);
     loadNews(content,matchArgs,newsNode);
