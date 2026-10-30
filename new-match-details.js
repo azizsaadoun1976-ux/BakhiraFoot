@@ -3935,7 +3935,7 @@ function bfSameFixtureMetadata(candidate,expected,requireDate=false) {
 
   /* Unified global entry: the old script.js modal is never used. */
   function openUnifiedMatchDetails(indexOrId, matchOverride = null, identifierOverride = "") {
-    let index = Number.isInteger(Number(indexOrId)) ? Number(indexOrId) : -1;
+    let index = typeof indexOrId === "number" && Number.isInteger(indexOrId) ? indexOrId : -1;
     let match = matchOverride || (index >= 0 ? getMatch(index) : null);
     let identifier = String(identifierOverride || "").trim();
 
