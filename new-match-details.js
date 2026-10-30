@@ -554,6 +554,17 @@
     return "bf-rating--poor";
   }
 
+  function lineupRatingToneClass(value) {
+    const rating = Number(value);
+    if (!Number.isFinite(rating)) return "bf-lineup-rating--none";
+    if (rating >= 9) return "bf-lineup-rating--elite";
+    if (rating >= 8) return "bf-lineup-rating--very-good";
+    if (rating >= 7) return "bf-lineup-rating--good";
+    if (rating >= 6.5) return "bf-lineup-rating--average";
+    if (rating >= 6) return "bf-lineup-rating--below";
+    return "bf-lineup-rating--poor";
+  }
+
   /* =========================================================
      LINEUP
      ========================================================= */
@@ -2092,6 +2103,83 @@ function bfAssignFormationRoles(players, formation, readPosition) {
         #bf-new-match-safe-modal .bf-new-safe-legend-item small { font-size:8px!important; }
       }
 
+
+      /* Player layout inspired by SofaScore: face, rating, shirt + name, event bubbles */
+      #bf-new-match-safe-modal .bf-new-safe-combined-player {
+        width:clamp(62px,6vw,82px)!important;gap:0!important;
+        overflow:visible!important;isolation:isolate!important;
+      }
+      #bf-new-match-safe-modal .bf-new-safe-combined-player>img,
+      #bf-new-match-safe-modal .bf-new-safe-combined-avatar {
+        width:39px!important;height:39px!important;border:2px solid #fff!important;
+        border-radius:50%!important;object-fit:cover!important;background:#f8fafc!important;
+        box-shadow:0 2px 8px #0005!important;
+      }
+      #bf-new-match-safe-modal .bf-new-safe-combined-rating {
+        position:relative!important;z-index:5!important;display:inline-flex!important;
+        align-items:center!important;justify-content:center!important;min-width:31px!important;
+        height:18px!important;margin-top:-4px!important;padding:1px 4px!important;
+        border:1px solid rgba(255,255,255,.8)!important;border-radius:2px!important;
+        color:#fff!important;font-size:11px!important;line-height:1!important;font-weight:1000!important;
+        font-variant-numeric:tabular-nums!important;box-shadow:0 2px 4px #0003!important;
+      }
+      #bf-new-match-safe-modal .bf-new-safe-combined-rating--poor {background:#dc0c00!important}
+      #bf-new-match-safe-modal .bf-new-safe-combined-rating--below {background:#ed7e07!important}
+      #bf-new-match-safe-modal .bf-new-safe-combined-rating--average {background:#d9af00!important}
+      #bf-new-match-safe-modal .bf-new-safe-combined-rating--good {background:#00c424!important}
+      #bf-new-match-safe-modal .bf-new-safe-combined-rating--very-good {background:#00adc4!important}
+      #bf-new-match-safe-modal .bf-new-safe-combined-rating--elite {background:#374df5!important}
+      #bf-new-match-safe-modal .bf-new-safe-combined-name {
+        display:block!important;max-width:106px!important;margin-top:3px!important;padding:0!important;
+        border:0!important;border-radius:0!important;background:transparent!important;color:#f4f7f8!important;
+        font-size:clamp(8px,.72vw,10px)!important;line-height:1.12!important;font-weight:850!important;
+        text-align:center!important;text-shadow:0 1px 3px #000!important;white-space:normal!important;overflow-wrap:anywhere!important;
+      }
+      #bf-new-match-safe-modal .bf-new-safe-combined-performance {
+        top:-3px!important;left:calc(100% - 3px)!important;right:auto!important;
+        gap:2px!important;width:20px!important;max-width:20px!important;z-index:18!important;
+      }
+      #bf-new-match-safe-modal .bf-new-safe-combined-player--perf-left .bf-new-safe-combined-performance {
+        left:auto!important;right:calc(100% - 3px)!important;
+      }
+      #bf-new-match-safe-modal .bf-new-safe-combined-performance .bf-new-safe-event-badge {
+        display:inline-flex!important;align-items:center!important;justify-content:center!important;
+        width:19px!important;min-width:19px!important;height:19px!important;min-height:19px!important;
+        flex:0 0 19px!important;padding:2px!important;border:1px solid #d7dee4!important;
+        border-radius:50%!important;background:#fff!important;color:#17212b!important;
+        box-shadow:0 2px 5px #0005!important;
+      }
+      #bf-new-match-safe-modal .bf-new-safe-combined-performance .bf-new-safe-event-svg {
+        display:block!important;width:12px!important;height:12px!important;flex:0 0 12px!important;
+      }
+      #bf-new-match-safe-modal .bf-new-safe-combined-performance .bf-new-safe-card-glyph {
+        display:block!important;width:7px!important;height:11px!important;border-radius:1px!important;
+        border:1px solid #344054!important;box-shadow:none!important;
+      }
+      #bf-new-match-safe-modal .bf-new-safe-combined-performance .bf-new-safe-event-badge--goal,
+      #bf-new-match-safe-modal .bf-new-safe-combined-performance .bf-new-safe-event-badge--assist,
+      #bf-new-match-safe-modal .bf-new-safe-combined-performance .bf-new-safe-event-badge--injury,
+      #bf-new-match-safe-modal .bf-new-safe-combined-performance .bf-new-safe-event-badge--mvp,
+      #bf-new-match-safe-modal .bf-new-safe-combined-performance .bf-new-safe-event-badge--subIn,
+      #bf-new-match-safe-modal .bf-new-safe-combined-performance .bf-new-safe-event-badge--subOut,
+      #bf-new-match-safe-modal .bf-new-safe-combined-performance .bf-new-safe-event-badge--sub,
+      #bf-new-match-safe-modal .bf-new-safe-combined-performance .bf-new-safe-event-badge--penalty,
+      #bf-new-match-safe-modal .bf-new-safe-combined-performance .bf-new-safe-event-badge--own {
+        background:#fff!important;color:#17212b!important;
+      }
+      #bf-new-match-safe-modal .bf-new-safe-combined-performance .bf-new-safe-event-badge--injury {color:#dc2626!important}
+      #bf-new-match-safe-modal .bf-new-safe-combined-performance .bf-new-safe-event-badge--mvp {color:#b77900!important}
+      @media(max-width:650px) {
+        #bf-new-match-safe-modal .bf-new-safe-combined-player {width:clamp(48px,11vw,62px)!important}
+        #bf-new-match-safe-modal .bf-new-safe-combined-player>img,
+        #bf-new-match-safe-modal .bf-new-safe-combined-avatar {width:31px!important;height:31px!important}
+        #bf-new-match-safe-modal .bf-new-safe-combined-rating {min-width:28px!important;height:16px!important;font-size:9px!important}
+        #bf-new-match-safe-modal .bf-new-safe-combined-name {max-width:66px!important;font-size:7px!important}
+        #bf-new-match-safe-modal .bf-new-safe-combined-performance {top:-2px!important;width:17px!important;max-width:17px!important;gap:1px!important}
+        #bf-new-match-safe-modal .bf-new-safe-combined-performance .bf-new-safe-event-badge {width:16px!important;min-width:16px!important;height:16px!important;min-height:16px!important;flex-basis:16px!important;padding:1px!important}
+        #bf-new-match-safe-modal .bf-new-safe-combined-performance .bf-new-safe-event-svg {width:10px!important;height:10px!important;flex-basis:10px!important}
+      }
+
     `;
 
     document.head.appendChild(
@@ -2471,15 +2559,21 @@ ${esc(String(playerName(player) || "P").split(/\s+/).map(part => part[0] || "").
         const isMvp = playerIsOfficialMvp(player) || playerIsNamedMvp(player, details) ||
           (pitchMvp && samePerson(pitchMvp.player, player));
         const performanceSide = side === "home" ? "right" : "left";
-        const performance = badges +
-          (rating !== null ? '<span class="bf-new-safe-player-rate ' + ratingToneClass(rating) + '" title="Note du joueur">' + esc(Number(rating).toFixed(1)) + '</span>' : '') +
-          (isMvp ? '<span class="bf-new-safe-mvp-chip" title="Joueur du match">⭐</span>' : '');
+        const ratingMarkup = rating !== null
+          ? '<span class="bf-new-safe-combined-rating ' + lineupRatingToneClass(rating) + '" title="Note du joueur ' + esc(Number(rating).toFixed(1)) + '/10">' + esc(Number(rating).toFixed(1)) + '</span>'
+          : '';
+        const mvpMarkup = isMvp
+          ? '<span class="bf-new-safe-event-badge bf-new-safe-event-badge--mvp" title="Joueur du match" aria-label="Joueur du match">' + playerPerformanceIcon("mvp") + '</span>'
+          : '';
+        const performance = badges + mvpMarkup;
+        const shirt = String(playerNumber(player) ?? "").trim();
+        const playerLabel = (shirt && shirt !== "—" ? shirt + " " : "") + (playerName(player) || "Joueur");
         return '<div class="bf-new-safe-combined-player bf-new-safe-combined-player--perf-' + performanceSide + '" role="button" tabindex="0" aria-expanded="false" data-bf-new-player="1" ' +
           'style="left:' + Math.max(10,Math.min(90,fieldX)) + '%;top:' + Math.max(10,Math.min(90,fieldY)) + '%" title="Cliquer pour afficher ' + esc(playerName(player)) + '">' +
           (photo ? '<img src="' + esc(photo) + '" alt="" loading="lazy">' :
             '<span class="bf-new-safe-combined-avatar">' + esc(String(playerName(player) || "P").split(/\s+/).map(part=>part[0]||"").join("").slice(0,2).toUpperCase()) + '</span>') +
-          '<span class="bf-new-safe-combined-shirt">' + esc(playerNumber(player)) + '</span>' +
-          '<span class="bf-new-safe-combined-name">' + esc(playerName(player) || "Joueur") + '</span>' +
+          ratingMarkup +
+          '<span class="bf-new-safe-combined-name">' + esc(playerLabel) + '</span>' +
           (performance ? '<span class="bf-new-safe-combined-performance" aria-label="Performances de ' + esc(playerName(player)) + '">' + performance + '</span>' : '') +
           detailTemplate(player, team, side) + '</div>';
       }).join("");
