@@ -58,6 +58,17 @@
       #bf-new-match-safe-modal .bfmc-comment-submit button:disabled{opacity:.5;cursor:wait}
       #bf-new-match-safe-modal .bfmc-comment-status{color:#91a9b9;font-size:8px}
       #bf-new-match-safe-modal .bfmc-comment-status.is-error{color:#ff9da7}
+      #bf-new-match-safe-modal .bfmc-vote{display:grid;gap:8px;margin:0 0 12px;padding:11px;border:1px solid rgba(77,151,129,.25);border-radius:9px;background:rgba(9,40,37,.26)}
+      #bf-new-match-safe-modal .bfmc-vote-head{display:flex;justify-content:space-between;gap:8px;align-items:center;color:#dcefe7;font-size:9px;font-weight:900}
+      #bf-new-match-safe-modal .bfmc-vote-buttons{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:7px}
+      #bf-new-match-safe-modal .bfmc-vote-buttons button{padding:8px;border:1px solid rgba(108,160,185,.24);border-radius:7px;background:#102b3b;color:#dbeaf2;font-size:9px;font-weight:850;cursor:pointer}
+      #bf-new-match-safe-modal .bfmc-vote-buttons button[aria-pressed="true"]{border-color:#31b781;background:#0b563e;color:#fff}
+      #bf-new-match-safe-modal .bfmc-vote-results{display:grid;gap:5px}
+      #bf-new-match-safe-modal .bfmc-vote-result{display:grid;grid-template-columns:1fr 36px;gap:8px;align-items:center;color:#a9c0cf;font-size:8px}
+      #bf-new-match-safe-modal .bfmc-vote-track{height:5px;grid-column:1/-1;overflow:hidden;border-radius:5px;background:#1a3341}
+      #bf-new-match-safe-modal .bfmc-vote-track i{display:block;height:100%;background:linear-gradient(90deg,#1a9b69,#5be3a4)}
+      #bf-new-match-safe-modal .bfmc-vote-status{color:#91a9b9;font-size:8px}
+      #bf-new-match-safe-modal .bfmc-vote-status.is-error{color:#ff9da7}
       #bf-new-match-safe-modal .bfmc-comment{margin-top:7px;padding:10px;border:1px solid rgba(103,143,164,.18);border-radius:8px;background:rgba(9,27,40,.76)}
       #bf-new-match-safe-modal .bfmc-comment header{display:flex;justify-content:space-between;gap:8px;flex-wrap:wrap}
       #bf-new-match-safe-modal .bfmc-comment strong{color:#dcebf4;font-size:9px}
@@ -345,6 +356,94 @@
     refresh();
   }
 
+
+  function setupVote(content, args, overviewNode) {
+    const slug = String(args.key || "match").toLowerCase()
+      .replace(/[^a-z0-9_-]+/g,"-").replace(/^-+|-+$/g,"").slice(0,100) || "match";
+    const localKey = "bf:local:match-vote:" + slug;
+    const section = document.createElement("div");
+    section.className = "bfmc-vote";
+    section.innerHTML = '<div class="bfmc-vote-head"><strong>Qui remportera cette rencontre ?</strong><span data-bf-vote-total>0 vote</span></div>' +
+      '<div class="bfmc-vote-buttons"><button type="button" data-bf-vote="home" aria-pressed="false">' + esc(args.home.name) +
+      '</button><button type="button" data-bf-vote="away" aria-pressed="false">' + esc(args.away.name) + '</button></div>' +
+      '<div class="bfmc-vote-results"><div class="bfmc-vote-result"><span>' + esc(args.home.name) + '</span><b data-bf-vote-home>0%</b><div class="bfmc-vote-track"><i data-bf-vote-home-bar style="width:0%"></i></div></div>' +
+      '<div class="bfmc-vote-result"><span>' + esc(args.away.name) + '</span><b data-bf-vote-away>0%</b><div class="bfmc-vote-track"><i data-bf-vote-away-bar style="width:0%"></i></div></div></div>' +
+      '<span class="bfmc-vote-status" data-bf-vote-status role="status" aria-live="polite">Ton pronostic est anonyme.</span>';
+    const heading = overviewNode.querySelector(".bf-new-safe-title");
+    if (heading) heading.insertAdjacentElement("afterend", section);
+    else overviewNode.prepend(section);
+
+    const buttons = Array.from(section.querySelectorAll("[data-bf-vote]"));
+    const status = section.querySelector("[data-bf-vote-status]");
+    const localState = () => {
+      try {
+        const value = JSON.parse(localStorage.getItem(localKey) || "{}");
+        return value && typeof value === "object" ? value : {};
+      } catch (_) { return {}; }
+    };
+    const render = (votes, voted, localOnly) => {
+      const homeVotes = Math.max(0,Number(votes?.home || 0));
+      const awayVotes = Math.max(0,Number(votes?.away || 0));
+      const total = homeVotes + awayVotes;
+      const homePercent = total ? Math.round(homeVotes*100/total) : 0;
+      const awayPercent = total ? 100-homePercent : 0;
+      section.querySelector("[data-bf-vote-total]").textContent = total + (total === 1 ? " vote" : " votes");
+      section.querySelector("[data-bf-vote-home]").textContent = homePercent + "%";
+      section.querySelector("[data-bf-vote-away]").textContent = awayPercent + "%";
+      section.querySelector("[data-bf-vote-home-bar]").style.width = homePercent + "%";
+      section.querySelector("[data-bf-vote-away-bar]").style.width = awayPercent + "%";
+      buttons.forEach(button => button.setAttribute("aria-pressed",button.dataset.bfVote === voted ? "true" : "false"));
+      if (localOnly) {
+        status.textContent = "Pronostic enregistré sur cet appareil uniquement (stockage partagé indisponible).";
+        status.classList.add("is-error");
+      } else {
+        status.textContent = voted ? "Ton pronostic est enregistré. Tu peux le modifier." : "Ton pronostic est anonyme.";
+        status.classList.remove("is-error");
+      }
+    };
+    const refresh = async () => {
+      try {
+        const response = await fetch("/api/community?match="+encodeURIComponent(slug)+"&vote=1",{
+          headers:{Accept:"application/json"},cache:"no-store"
+        });
+        const payload = await response.json().catch(() => ({}));
+        if (!response.ok) throw new Error(payload?.error || "Votes indisponibles");
+        render(payload.votes,payload.voted,false);
+      } catch (_) {
+        const local = localState();
+        const votes = local.votes || {home:0,away:0};
+        render(votes,local.voted || null,true);
+      }
+    };
+    buttons.forEach(button => button.addEventListener("click",async () => {
+      const team = button.dataset.bfVote;
+      buttons.forEach(item => item.disabled = true);
+      try {
+        const response = await fetch("/api/community?match="+encodeURIComponent(slug),{
+          method:"POST",
+          headers:{"Content-Type":"application/json","Accept":"application/json"},
+          body:JSON.stringify({type:"vote",team,match:slug})
+        });
+        const payload = await response.json().catch(() => ({}));
+        if (!response.ok) throw new Error(payload?.message || "Votes partagés indisponibles");
+        render(payload.votes,payload.voted,false);
+      } catch (_) {
+        const local = localState();
+        const votes = local.votes || {home:0,away:0};
+        const previous = local.voted;
+        if (previous !== team) {
+          if (previous === "home" || previous === "away") votes[previous] = Math.max(0,Number(votes[previous]||0)-1);
+          votes[team] = Number(votes[team]||0)+1;
+        }
+        try { localStorage.setItem(localKey,JSON.stringify({votes,voted:team})); } catch (_) {}
+        render(votes,team,true);
+      } finally {
+        buttons.forEach(item => item.disabled = false);
+      }
+    }));
+    refresh();
+  }
+
   function attach(args) {
     const content = args?.content;
     if (!content || content.dataset.bfMatchEnhancementsReady === "1") return;
@@ -405,6 +504,8 @@
     const commentList = commentsRoot.querySelector("[data-bf-comment-list]");
 
     setupTabs(content,nav);
+    const overviewNode = content.querySelector("#bfmc-overview");
+    if (overviewNode) setupVote(content,args,overviewNode);
     content.dataset.bfMatchEnhancementsReady = "1";
     const matchArgs = {...args,key:String(args.key || "")};
     loadContext(content,matchArgs,recentNode,h2hNode,standingsNode);
