@@ -2125,13 +2125,17 @@ function bfAssignFormationRoles(players, formation, readPosition) {
   ) {
 
     if (!getPitchPlayers(lineup, side).length) {
+      const hasConfirmedStarters = Array.isArray(lineup?.starters) && lineup.starters.length > 0;
+      const emptyMessage = hasConfirmedStarters
+        ? "Composition officielle reçue, mais la source ne fournit pas les coordonnées de placement des joueurs."
+        : "Composition officielle non communiquée par la source.";
       return `
         <div class="bf-new-safe-panel">
           <div class="bf-new-safe-pitch-head">
             <span>${esc(team.name)}</span>
             <span>${esc(lineup.formation)}</span>
           </div>
-          <div class="bf-new-safe-empty">Composition officielle indisponible. Aucun joueur n’est placé au hasard sur le terrain.</div>
+          <div class="bf-new-safe-empty">${esc(emptyMessage)} Aucun joueur n’est placé au hasard sur le terrain.</div>
         </div>
       `;
     }
@@ -2279,8 +2283,12 @@ ${esc(String(playerName(player) || "P").split(/\s+/).map(part => part[0] || "").
     const renderTeam = (lineup, team, side) => {
       const positions = getPitchPlayers(lineup, side);
       if (!positions.length) {
+        const hasConfirmedStarters = Array.isArray(lineup?.starters) && lineup.starters.length > 0;
+        const unavailable = hasConfirmedStarters
+          ? "composition reçue · positions de terrain non fournies"
+          : "composition officielle non communiquée";
         return '<div class="bf-new-safe-combined-empty bf-new-safe-combined-empty--' + side + '">' +
-          esc(team.name || "Équipe") + ' · composition ou positions indisponibles</div>';
+          esc(team.name || "Équipe") + ' · ' + esc(unavailable) + '</div>';
       }
       let orientedPositions = positions;
       const keepers = positions.filter(item => /goalkeeper|goalie|\bgk\b|gardien|portier|portero|guardameta/i.test(String(playerPosition(item.player) || "")));
