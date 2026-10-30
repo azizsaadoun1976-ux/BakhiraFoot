@@ -22,10 +22,40 @@ let selectedCompetitionFilterName = "";
 let selectedCompetitionFilterLogo = "";
 let scoreCompetitionGroups = [];
 let scoreStatusFilter = "all";
+let activeScoreLoadRequest = 0;
 
 /* =========================================================
    HELPERS
 ========================================================= */
+
+function bfLocalDateISO(date = new Date()) {
+  const year = date.getFullYear();
+  const month = String(date.getMonth() + 1).padStart(2, "0");
+  const day = String(date.getDate()).padStart(2, "0");
+  return year + "-" + month + "-" + day;
+}
+
+async function bfGetJSON(url, options = {}) {
+  if (window.BFAPI && typeof window.BFAPI.getJSON === "function") {
+    return window.BFAPI.getJSON(url, options);
+  }
+  const response = await fetch(url, {
+    method: "GET",
+    cache: "no-store",
+    headers: { Accept: "application/json", ...(options.headers || {}) },
+    signal: options.signal
+  });
+  const payload = await response.json().catch(() => ({}));
+  if (!response.ok) {
+    const error = new Error(payload?.message || payload?.error || ("HTTP " + response.status));
+    error.status = response.status;
+    error.payload = payload;
+    throw error;
+  }
+  return payload;
+}
+
+
 
 function $(id) {
   return document.getElementById(id);
@@ -2657,6 +2687,7 @@ return `
 
 async function loadLive() {
   const liveElement = $("live");
+  if (currentDate && currentDate !== bfLocalDateISO()) return currentMatches;
 
   const previousCompetition =
     scoreCompetitionGroups[
@@ -2664,16 +2695,7 @@ async function loadLive() {
     ]?.name || "";
 
   try {
-    const response = await fetch(
-      `${API_BASE}/api?live=all`,
-      { cache: "no-store" }
-    );
-
-    if (!response.ok) {
-      throw new Error(`HTTP ${response.status}`);
-    }
-
-    const data = await response.json();
+    const data = await bfGetJSON(API_BASE + "/api?live=all");
     const liveMatches = normalizeMatches(data);
 
     const matches = Array.isArray(currentMatches)
@@ -2868,526 +2890,138 @@ async function loadLive() {
    LOAD MATCHES BY DATE
 ========================================================= */
 
+
 async function loadMatches(date) {
+  const list = $("scoreList");
+  if (!list) return;
 
-  const list =
-    $("scoreList");
+  const requestedDate = String(date || currentDate || bfLocalDateISO()).slice(0, 10);
+  currentDate = requestedDate;
+  const requestId = ++activeScoreLoadRequest;
+  const isToday = requestedDate === bfLocalDateISO();
 
-  if (!list) {
-    return;
+  if (!Array.isArray(currentMatches) || currentMatches.length === 0) {
+    list.innerHTML = emptyCard("Chargement des matchs...");
   }
 
-  currentDate =
-    date ||
-    new Date()
-      .toISOString()
-      .split("T")[0];
+  function teamKey(match) {
+    const home = normalizeText(getHome(match));
+    const away = normalizeText(getAway(match));
+    return home && away && home !== "domicile" && away !== "exterieur"
+      ? home + "__" + away : "";
+  }
 
-if (
-  !Array.isArray(currentMatches) ||
-  currentMatches.length === 0
-) {
-  list.innerHTML =
-    emptyCard(
-      "Chargement des matchs..."
-    );
-}
+  function fixtureKey(match) {
+    const id = getFixtureId(match);
+    return id == null || id === "" ? "" : String(id).trim().toLowerCase();
+  }
+
+  function mergeLiveMatch(base, live) {
+    if (!live) return base;
+    return {
+      ...base,
+      teams: live.teams ?? base.teams,
+      goals: live.goals ?? base.goals,
+      score: live.score ?? base.score,
+      league: live.league ?? base.league,
+      status: live.status ?? base.status,
+      status_text: live.status_text ?? base.status_text,
+      elapsed: live.elapsed ?? base.elapsed,
+      fixture: {
+        ...(base.fixture || {}),
+        ...(live.fixture || {}),
+        status: {
+          ...(base.fixture?.status && typeof base.fixture.status === "object" ? base.fixture.status : {}),
+          ...(live.fixture?.status && typeof live.fixture.status === "object" ? live.fixture.status : {})
+        }
+      }
+    };
+  }
+
   try {
+    const dateData = await bfGetJSON(
+      API_BASE + "/api?date=" + encodeURIComponent(requestedDate)
+    );
+    if (requestId !== activeScoreLoadRequest || currentDate !== requestedDate) return currentMatches;
 
-    const response =
-      await fetch(
-        `${API_BASE}/api?date=${encodeURIComponent(
-          currentDate
-        )}`,
-        {
-          cache: "no-store"
-        }
-      );
+    let matches = normalizeMatches(dateData).slice();
 
-    if (!response.ok) {
-      throw new Error(
-        `HTTP ${response.status}`
-      );
-    }
-
-    const data =
-      await response.json();
-
-    let matches =
-      normalizeMatches(data);
-
-
-    /* =====================================================
-       IMPORTANT :
-       إذا كان اليوم هو اليوم الحالي،
-       نجيب LIVE مباشرة فـأول تحميل.
-    ===================================================== */
-
-    const today =
-      new Date()
-        .toISOString()
-        .split("T")[0];
-
-    if (
-      currentDate === today
-    ) {
-
+    /* The live feed is shared with the periodic updater and is fetched only once per cache window. */
+    if (isToday) {
       try {
+        const liveData = await bfGetJSON(API_BASE + "/api?live=all");
+        if (requestId !== activeScoreLoadRequest || currentDate !== requestedDate) return currentMatches;
+        const liveMatches = normalizeMatches(liveData);
+        const liveById = new Map();
+        const liveByTeams = new Map();
 
-        const liveResponse =
-          await fetch(
-            `${API_BASE}/api?live=all`,
-            {
-              cache: "no-store"
-            }
+        liveMatches.forEach(match => {
+          const id = fixtureKey(match);
+          const teams = teamKey(match);
+          if (id) liveById.set(id, match);
+          if (teams) liveByTeams.set(teams, match);
+        });
+
+        matches = matches.map(match => {
+          const id = fixtureKey(match);
+          const teams = teamKey(match);
+          return mergeLiveMatch(
+            match,
+            (id && liveById.get(id)) || (teams && liveByTeams.get(teams))
           );
-
-        if (
-          liveResponse.ok
-        ) {
-
-          const liveData =
-            await liveResponse.json();
-
-          const liveMatches =
-            normalizeMatches(
-              liveData
-            );
-
-          /*
-           * indexes بالـID
-           */
-
-          const liveById =
-            new Map();
-
-          liveMatches.forEach(
-            live => {
-
-              const id =
-                getFixtureId(
-                  live
-                );
-
-              if (id) {
-                liveById.set(
-                  String(id),
-                  live
-                );
-              }
-
-            }
-          );
-
-
-          /*
-           * indexes باسم الفريقين
-           * كـfallback إلا اختلف الـID
-           */
-
-          const liveByTeams =
-            new Map();
-
-          liveMatches.forEach(
-            live => {
-
-              const home =
-                normalizeText(
-                  getHome(live)
-                );
-
-              const away =
-                normalizeText(
-                  getAway(live)
-                );
-
-              const key =
-                `${home}__${away}`;
-
-              liveByTeams.set(
-                key,
-                live
-              );
-
-            }
-          );
-
-
-          /*
-           * Merge live data
-           */
-
-          matches =
-            matches.map(
-              match => {
-
-                const id =
-                  getFixtureId(
-                    match
-                  );
-
-                           /*
-           * إضافة LIVE اللي ما كانش موجود
-           * أصلاً فـ date endpoint
-           */
-
-          const existingMatches =
-            new Set();
-
-          matches.forEach(
-            match => {
-
-              const id =
-                getFixtureId(
-                  match
-                );
-
-              if (id) {
-                existingMatches.add(
-                  `id:${String(id)}`
-                );
-              }
-
-              const home =
-                normalizeText(
-                  getHome(match)
-                );
-
-              const away =
-                normalizeText(
-                  getAway(match)
-                );
-
-              if (home && away) {
-                existingMatches.add(
-                  `teams:${home}__${away}`
-                );
-              }
-
-            }
-          );
-
-
-          liveMatches.forEach(
-            live => {
-
-              const id =
-                getFixtureId(
-                  live
-                );
-
-              const home =
-                normalizeText(
-                  getHome(live)
-                );
-
-              const away =
-                normalizeText(
-                  getAway(live)
-                );
-
-
-              const existsById =
-                id &&
-                existingMatches.has(
-                  `id:${String(id)}`
-                );
-
-              const existsByTeams =
-                home &&
-                away &&
-                existingMatches.has(
-                  `teams:${home}__${away}`
-                );
-
-
-              if (
-                !existsById &&
-                !existsByTeams
-              ) {
-
-                matches.push(
-                  live
-                );
-
-              }
-
-            }
-          );
-
-                const home =
-                  normalizeText(
-                    getHome(match)
-                  );
-
-                const away =
-                  normalizeText(
-                    getAway(match)
-                  );
-
-                const teamKey =
-                  `${home}__${away}`;
-
-                const live =
-                  (
-                    id &&
-                    liveById.get(
-                      String(id)
-                    )
-                  ) ||
-                  liveByTeams.get(
-                    teamKey
-                  );
-
-
-                if (
-                  !live
-                ) {
-                  return match;
-                }
-
-
-                return {
-                  ...match,
-
-                  teams:
-                    live.teams ||
-                    match.teams,
-
-                  goals:
-                    live.goals ||
-                    match.goals,
-
-                  score:
-                    live.score ||
-                    match.score,
-
-                  league:
-                    live.league ||
-                    match.league,
-
-                  fixture: {
-
-                    ...match.fixture,
-
-                    ...live.fixture,
-
-                    status: {
-
-                      ...match.fixture?.status,
-
-                      ...live.fixture?.status
-
-                    }
-
-                  }
-
-                };
-
-              }
-            );
-                   /* =========================================
-             AJOUT DES LIVE MANQUANTS
-             ========================================= */
-
-          const existingMatchKeys =
-            new Set();
-
-          matches.forEach(match => {
-
-            const id =
-              getFixtureId(match);
-
-            if (id) {
-              existingMatchKeys.add(
-                `id:${String(id)}`
-              );
-            }
-
-            const home =
-              normalizeText(
-                getHome(match)
-              );
-
-            const away =
-              normalizeText(
-                getAway(match)
-              );
-
-            if (home && away) {
-              existingMatchKeys.add(
-                `teams:${home}__${away}`
-              );
-            }
-
-          });
-
-          liveMatches.forEach(live => {
-
-            const id =
-              getFixtureId(live);
-
-            const home =
-              normalizeText(
-                getHome(live)
-              );
-
-            const away =
-              normalizeText(
-                getAway(live)
-              );
-
-            const existsById =
-              id &&
-              existingMatchKeys.has(
-                `id:${String(id)}`
-              );
-
-            const existsByTeams =
-              home &&
-              away &&
-              existingMatchKeys.has(
-                `teams:${home}__${away}`
-              );
-
-            if (
-              !existsById &&
-              !existsByTeams
-            ) {
-
-              matches.push(live);
-
-              if (id) {
-                existingMatchKeys.add(
-                  `id:${String(id)}`
-                );
-              }
-
-              if (home && away) {
-                existingMatchKeys.add(
-                  `teams:${home}__${away}`
-                );
-              }
-
-            }
-
-          });
-        }
-
+        });
+
+        const seenIds = new Set(matches.map(fixtureKey).filter(Boolean));
+        const seenTeams = new Set(matches.map(teamKey).filter(Boolean));
+        liveMatches.forEach(live => {
+          const id = fixtureKey(live);
+          const teams = teamKey(live);
+          if ((id && seenIds.has(id)) || (teams && seenTeams.has(teams))) return;
+          matches.push(live);
+          if (id) seenIds.add(id);
+          if (teams) seenTeams.add(teams);
+        });
+      } catch (liveError) {
+        console.warn("LIVE MERGE:", liveError);
       }
-
-      catch (
-        liveError
-      ) {
-
-        console.warn(
-          "LIVE MERGE:",
-          liveError
-        );
-
-      }
-
     }
 
+    if (requestId !== activeScoreLoadRequest || currentDate !== requestedDate) return currentMatches;
 
-    /*
-     * FILTER
-     */
-
-    if (
-      currentFilter &&
-      currentFilter !== "all"
-    ) {
-
-      matches =
-        matches.filter(
-          match =>
-            normalizeText(
-              getLeague(match)
-            )
-              .includes(
-                normalizeText(
-                  currentFilter
-                )
-              )
-        );
-
+    if (currentFilter && currentFilter !== "all") {
+      const filterKey = normalizeText(currentFilter);
+      matches = matches.filter(match => normalizeText(getLeague(match)).includes(filterKey));
     }
 
-
-    /*
-     * ترتيب نهائي
-     */
-
-    matches =
-      sortMatchesByImportance(
-        matches
-      );
-
-
-    /*
-     * نخزنو نفس الماتشات
-     * اللي غادي يبانوا.
-     */
-
-    currentMatches =
-      matches;
-
+    matches = sortMatchesByImportance(matches);
+    currentMatches = matches;
 
     if (!matches.length) {
       renderScoreCompetitions([]);
-      return;
+      return [];
     }
 
-
-    const previousCompetitionName =
-  scoreCompetitionGroups[
-    selectedCompetitionIndex
-  ]?.name || "";
-
-const previousCompetitionKey =
-  canonicalCompetitionName(
-    previousCompetitionName
-  );
-
-const updatedGroups =
-  buildCompetitionGroups(matches);
-
-const restoredIndex =
-  updatedGroups.findIndex(
-    group =>
-      canonicalCompetitionName(
-        group.name
-      ) === previousCompetitionKey
-  );
-
-selectedCompetitionIndex =
-  restoredIndex >= 0
-    ? restoredIndex
-    : 0;
-
-renderScoreCompetitions(matches);
-
-  }
-
-  catch (error) {
-
-    console.error(
-      "MATCHES ERROR:",
-      error
+    const previousName = scoreCompetitionGroups[selectedCompetitionIndex]?.name || "";
+    const previousKey = canonicalCompetitionName(previousName);
+    const updatedGroups = buildCompetitionGroups(matches);
+    const restoredIndex = updatedGroups.findIndex(group =>
+      canonicalCompetitionName(group.name) === previousKey
     );
+    selectedCompetitionIndex = restoredIndex >= 0 ? restoredIndex : 0;
+    renderScoreCompetitions(matches);
+    return matches;
 
-    list.innerHTML =
-      emptyCard(
-        "Impossible de charger les matchs."
-      );
-
+  } catch (error) {
+    if (requestId !== activeScoreLoadRequest || currentDate !== requestedDate) return currentMatches;
+    console.error("MATCHES ERROR:", error);
+    if (!Array.isArray(currentMatches) || currentMatches.length === 0) {
+      list.innerHTML = emptyCard("Impossible de charger les matchs. Réessayez dans un instant.");
+    } else {
+      console.warn("BakhiraFoot: conservation de la dernière liste de matchs affichée.");
+    }
+    return currentMatches;
   }
-
 }
-/* =========================================================
-   EMPTY CARD
-========================================================= */
 
 function emptyCard(message) {
   return `
@@ -8337,144 +7971,6 @@ function openMatchDetails(index) {
 /* =========================================================
    DATE BAR
 ========================================================= */
-async function getLatestScheduledFixtureDate() {
-  const cacheKey = "bf_latest_schedule_date_v1";
-  const now = Date.now();
-
-  function localISODate(date) {
-    const y = date.getFullYear();
-    const m = String(date.getMonth() + 1).padStart(2, "0");
-    const d = String(date.getDate()).padStart(2, "0");
-    return `${y}-${m}-${d}`;
-  }
-
-  const today = localISODate(new Date());
-
-  // استعمال آخر نتيجة مخزنة لمدة 6 ساعات
-  try {
-    const cached = JSON.parse(
-      localStorage.getItem(cacheKey) || "null"
-    );
-
-    if (
-      cached &&
-      cached.expires > now &&
-      /^\d{4}-\d{2}-\d{2}$/.test(cached.date)
-    ) {
-      return cached.date;
-    }
-  } catch (_) {}
-
-  try {
-    const response = await fetch(
-      "https://api.github.com/repos/openfootball/football.json/git/trees/master?recursive=1"
-    );
-
-    if (!response.ok) {
-      throw new Error(`GitHub HTTP ${response.status}`);
-    }
-
-    const repository = await response.json();
-
-    if (!Array.isArray(repository.tree) || repository.truncated) {
-      throw new Error("Catalogue incomplet");
-    }
-
-    const year = new Date().getFullYear();
-
-    // المواسم الحالية والقريبة فقط، وليس كل الأرشيف القديم
-    const files = repository.tree
-      .filter(file => file.type === "blob")
-      .map(file => {
-        const match = file.path.match(
-          /^(\d{4}(?:-\d{2})?)\/([^/]+)\.json$/i
-        );
-
-        if (!match) return null;
-
-        return {
-          path: file.path,
-          startYear: Number(match[1].slice(0, 4))
-        };
-      })
-      .filter(file =>
-        file &&
-        file.startYear >= year - 1 &&
-        file.startYear <= year + 1
-      );
-
-    if (!files.length) {
-      throw new Error("Aucun fichier de saison disponible");
-    }
-
-    let latestDate = today;
-    let nextIndex = 0;
-    let failed = false;
-
-    // جلب الملفات بالتوازي المحدود لتفادي عدد كبير من الطلبات مرة واحدة
-    const workers = Array.from(
-      { length: Math.min(6, files.length) },
-      async () => {
-        while (nextIndex < files.length) {
-          const file = files[nextIndex++];
-
-          try {
-            const result = await fetch(
-              "https://raw.githubusercontent.com/openfootball/football.json/master/" +
-              file.path
-            );
-
-            if (!result.ok) {
-              throw new Error("Fixture file unavailable");
-            }
-
-            const data = await result.json();
-
-            for (const match of data.matches || []) {
-              const date = String(match.date || "").slice(0, 10);
-
-              if (
-                /^\d{4}-\d{2}-\d{2}$/.test(date) &&
-                date > latestDate
-              ) {
-                latestDate = date;
-              }
-            }
-          } catch (_) {
-            failed = true;
-          }
-        }
-      }
-    );
-
-    await Promise.all(workers);
-
-    // إلا فشل شي ملف، ما نفرضوش حدّاً ناقصاً على المستخدم
-    if (failed) {
-      throw new Error("Certaines données sont indisponibles");
-    }
-
-    try {
-      localStorage.setItem(
-        cacheKey,
-        JSON.stringify({
-          date: latestDate,
-          expires: now + 6 * 60 * 60 * 1000
-        })
-      );
-    } catch (_) {}
-
-    return latestDate;
-  } catch (error) {
-    console.warn(
-      "BAKHIRAFOOT schedule date limit:",
-      error
-    );
-
-    return null;
-  }
-}
-
 function createDateBar() {
   const bar = $("dateBar");
   if (!bar) return;
@@ -8492,8 +7988,8 @@ function createDateBar() {
 
   const today = new Date();
   const todayISO = toISODate(today);
-
- const maxDate = `${today.getFullYear()}-12-31`;
+  const pickerMaxDate = new Date(today);
+  pickerMaxDate.setDate(pickerMaxDate.getDate() + 365);
 
 const initialDate =
   /^\d{4}-\d{2}-\d{2}$/.test(currentDate || "")
@@ -8505,22 +8001,8 @@ const initialDate =
   picker.type = "date";
   picker.id = "bfDatePicker";
   picker.value = initialDate;
-   picker.disabled = true;
-
-getLatestScheduledFixtureDate()
-  .then(latestDate => {
-    if (!latestDate) return;
-
-    picker.max = latestDate;
-
-    if (picker.value > latestDate) {
-      picker.value = latestDate;
-      currentDate = latestDate;
-    }
-  })
-  .finally(() => {
-    picker.disabled = false;
-  });
+  picker.min = "2000-01-01";
+  picker.max = toISODate(pickerMaxDate);
   picker.setAttribute("aria-label", "Choisir une date");
   picker.title = "Choisir la date des matchs";
 
@@ -8959,10 +8441,8 @@ async function renderHomeMatches() {
   const setText = (id, value) => { const node = $(id); if (node) node.textContent = String(value); };
 
   try {
-    const today = new Date().toISOString().split("T")[0];
-    const response = await fetch(API_BASE + "/api?date=" + today, {cache:"no-store"});
-    if (!response.ok) throw new Error("HTTP " + response.status);
-    const data = await response.json();
+    const today = bfLocalDateISO();
+    const data = await bfGetJSON(API_BASE + "/api?date=" + today);
     const matches = sortMatchesByImportance(normalizeMatches(data));
     const statusOf = match => String(getStatus(match) || "").toUpperCase();
     const liveMatches = matches.filter(match =>
@@ -9359,25 +8839,9 @@ function initSearch() {
   /* جلب جميع مباريات التاريخ المختار
      بلا تغيير currentMatches ديال الموقع */
   async function loadSearchMatches() {
-    const date =
-      currentDate ||
-      new Date().toISOString().slice(0, 10);
-
+    const date = currentDate || bfLocalDateISO();
     if (cachedDate === date) return;
-
-    const response = await fetch(
-      `${API_BASE}/api?date=${encodeURIComponent(date)}`,
-      { cache: "no-store" }
-    );
-
-    if (!response.ok) {
-      throw new Error(
-        `Search HTTP ${response.status}`
-      );
-    }
-
-    const data = await response.json();
-
+    const data = await bfGetJSON(API_BASE + "/api?date=" + encodeURIComponent(date));
     searchMatches = normalizeMatches(data);
     cachedDate = date;
   }
@@ -10001,17 +9465,12 @@ document.addEventListener(
       "⚽ BakhiraFoot Pro chargé"
     );
 
-    createMatchModal();
-
     initNavigation();
     initFilters();
     initSearch();
     initTheme();
 
-    currentDate =
-      new Date()
-        .toISOString()
-        .split("T")[0];
+    currentDate = bfLocalDateISO();
 
     createDateBar();
 
