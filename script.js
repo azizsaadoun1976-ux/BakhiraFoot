@@ -8887,92 +8887,179 @@ function renderHomeNews() {
    HOME MATCHES
 ========================================================= */
 
+
+function renderHomeFeaturedMatch(match) {
+  if (!match) {
+    return '<div class="bf-home-featured-empty"><span>⚽</span><strong>Aucune rencontre à mettre en avant</strong><small>Les matchs apparaitront ici dès réception des données officielles.</small></div>';
+  }
+  const nameOf = value => typeof value === "string" ? value :
+    String(value?.name || value?.shortName || value?.displayName || "Équipe");
+  const home = nameOf(getHome(match));
+  const away = nameOf(getAway(match));
+  const homeLogo = getHomeLogo(match);
+  const awayLogo = getAwayLogo(match);
+  const rawLeague = getLeague(match);
+  const league = typeof rawLeague === "string" ? rawLeague : String(rawLeague?.name || "Football");
+  const leagueLogo = getLeagueLogo(match);
+  const fixtureId = String(getFixtureId(match) || "").trim();
+  const status = String(statusLabel(match) || "MATCH");
+  const rawStatus = String(getStatus(match) || "").toUpperCase();
+  const live = /^(LIVE|1H|2H|HT|ET|P|BT)$/.test(rawStatus) || rawStatus.includes("LIVE");
+  const homeScore = getHomeScore(match);
+  const awayScore = getAwayScore(match);
+  const hasScore = String(homeScore) !== "-" && String(awayScore) !== "-" &&
+    homeScore !== null && awayScore !== null && homeScore !== undefined && awayScore !== undefined;
+  const date = match?.fixture?.date || match?.date || match?.time || "";
+  let time = "";
+  if (date) {
+    const parsed = new Date(date);
+    if (!Number.isNaN(parsed.getTime())) time = parsed.toLocaleTimeString("fr-FR", {hour:"2-digit",minute:"2-digit"});
+  }
+
+  const cardAttrs = fixtureId
+    ? ' data-bf-home-match="' + escapeHTML(fixtureId) + '" data-fixture-id="' + escapeHTML(fixtureId) + '" role="button" tabindex="0"'
+    : "";
+  const leagueMark = leagueLogo
+    ? '<img src="' + escapeHTML(leagueLogo) + '" alt="" loading="lazy">'
+    : '<span class="bf-home-featured-trophy">🏆</span>';
+  const homeMark = homeLogo
+    ? '<img src="' + escapeHTML(homeLogo) + '" alt="" loading="lazy">'
+    : '<span class="bf-home-featured-team-fallback">⚽</span>';
+  const awayMark = awayLogo
+    ? '<img src="' + escapeHTML(awayLogo) + '" alt="" loading="lazy">'
+    : '<span class="bf-home-featured-team-fallback">⚽</span>';
+
+  return '<article class="bf-home-featured-card"' + cardAttrs + '>' +
+    '<div class="bf-home-featured-top"><div class="bf-home-featured-league">' + leagueMark +
+      '<span>' + escapeHTML(league) + '</span></div>' +
+      '<span class="bf-home-featured-state ' + (live ? "is-live" : "") + '">' +
+      (live ? "<i></i>" : "") + escapeHTML(status) + '</span></div>' +
+    '<div class="bf-home-featured-body">' +
+      '<div class="bf-home-featured-team">' + homeMark + '<strong>' + escapeHTML(home) +
+        '</strong><small>DOMICILE</small></div>' +
+      '<div class="bf-home-featured-score"><div>' +
+        '<span>' + (hasScore ? escapeHTML(homeScore) : "—") + '</span><em>' +
+        (hasScore ? "—" : "VS") + '</em><span>' + (hasScore ? escapeHTML(awayScore) : "—") +
+        '</span></div><small>' + (!live && time ? escapeHTML(time) : (live ? "SUIVI EN DIRECT" : "RENCONTRE DU JOUR")) + '</small></div>' +
+      '<div class="bf-home-featured-team">' + awayMark + '<strong>' + escapeHTML(away) +
+        '</strong><small>EXTÉRIEUR</small></div></div>' +
+    '<div class="bf-home-featured-footer"><span>' +
+      (live ? '<i class="bf-home-live-pulse"></i> Le match est en cours' : "Centre de match · compositions et statistiques") +
+      '</span><strong>Ouvrir le Match Centre <b>↗</b></strong></div></article>';
+}
+
+
 async function renderHomeMatches() {
-
-  const container =
-    $("homeMatches");
-
+  const container = $("homeMatches");
+  const featuredContainer = $("bfHomeFeatured");
   if (!container) return;
 
   const loadedAt = Number(container.dataset.homeMatchesLoadedAt || 0);
-  if (
-    container.dataset.homeMatchesLoaded === "true" &&
-    Date.now() - loadedAt < 60000
-  ) {
-    return;
-  }
+  if (container.dataset.homeMatchesLoaded === "true" && Date.now() - loadedAt < 60000) return;
+  const setText = (id, value) => { const node = $(id); if (node) node.textContent = String(value); };
 
   try {
+    const today = new Date().toISOString().split("T")[0];
+    const response = await fetch(API_BASE + "/api?date=" + today, {cache:"no-store"});
+    if (!response.ok) throw new Error("HTTP " + response.status);
+    const data = await response.json();
+    const matches = sortMatchesByImportance(normalizeMatches(data));
+    const statusOf = match => String(getStatus(match) || "").toUpperCase();
+    const liveMatches = matches.filter(match =>
+      /^(LIVE|1H|2H|HT|ET|P|BT)$/.test(statusOf(match)) || statusOf(match).includes("LIVE")
+    );
+    const leagueName = match => {
+      const value = getLeague(match);
+      return typeof value === "string" ? value : String(value?.name || "Autres matchs");
+    };
 
-    const today =
-      new Date()
-        .toISOString()
-        .split("T")[0];
-
-    const response =
-      await fetch(
-        `${API_BASE}/api?date=${today}`,
-        {
-          cache: "no-store"
-        }
-      );
-
-    if (!response.ok) {
-      throw new Error(
-        `HTTP ${response.status}`
-      );
-    }
-
-    const data =
-      await response.json();
-
-    const matches =
-      sortMatchesByImportance(
-        normalizeMatches(data)
-      );
+    setText("bfHomeLiveCount", liveMatches.length);
+    setText("bfHomeMatchCount", matches.length);
+    setText("bfHomeLeagueCount", new Set(matches.map(match => normalizeText(leagueName(match))).filter(Boolean)).size);
 
     if (!matches.length) {
-
-      container.innerHTML =
-        emptyCard(
-          "Aucun match aujourd'hui."
-        );
+      if (featuredContainer) featuredContainer.innerHTML =
+        '<div class="bf-home-featured-empty"><span>⚽</span><strong>Aucune rencontre programmée pour le moment</strong><small>Les prochains matchs apparaitront ici dès réception des données officielles.</small></div>';
+      container.innerHTML = '<div class="bf-home-empty"><strong>Aucun match aujourd’hui</strong><span>Consultez les autres dates dans la page Scores.</span></div>';
       container.dataset.homeMatchesLoaded = "true";
       container.dataset.homeMatchesLoadedAt = String(Date.now());
+      window.__bfHomeMatchRegistry = new Map();
       return;
     }
 
-    // Homepage fixtures come from a separate request, so don't bind their clicks
-    // to numeric indexes in currentMatches (the Scores page may have a different order).
-    const homeMatches = matches.slice(0, 8);
-    const registry = new Map();
+    const homeMatches = matches.slice(0, 24);
     const identifierKeys = match => [
-      match?.fixture?.upstreamId, match?.upstreamId, match?.fixture?.id,
-      match?.fixture?.slug, match?.slug, match?.id, match?.match_id, match?.fixture_id
+      match?.fixture?.upstreamId, match?.upstreamId,
+      match?.fixture?.slug, match?.slug,
+      match?.fixture?.id, match?.id, match?.match_id,
+      match?.fixture_id, match?.fixture?.match_id
     ].filter(value => value !== null && value !== undefined && String(value).trim())
       .map(value => String(value).trim().toLowerCase());
-    homeMatches.forEach(match => identifierKeys(match).forEach(key => registry.set(key, match)));
+
+    const registry = new Map();
+    matches.forEach(match => identifierKeys(match).forEach(key => registry.set(key, match)));
     window.__bfHomeMatchRegistry = registry;
 
-    container.innerHTML =
-      homeMatches
-        .map(match => createMatchHTML(match, -1))
-        .join("");
+    const featured = liveMatches[0] || matches[0];
+    if (featuredContainer) featuredContainer.innerHTML = renderHomeFeaturedMatch(featured);
+
+    const groups = new Map();
+    homeMatches.forEach(match => {
+      const name = leagueName(match);
+      const key = normalizeText(name) || "autres-matchs";
+      if (!groups.has(key)) groups.set(key, {name, logo:getLeagueLogo(match), matches:[]});
+      groups.get(key).matches.push(match);
+    });
+
+    container.innerHTML = Array.from(groups.values()).map(group => {
+      const logo = group.logo
+        ? '<img src="' + escapeHTML(group.logo) + '" alt="" loading="lazy">'
+        : "<span>🏆</span>";
+      return '<section class="bf-home-league-group"><header class="bf-home-league-head">' +
+        '<div class="bf-home-league-identity">' + logo +
+          '<div><strong>' + escapeHTML(group.name) + '</strong><small>' +
+          group.matches.length + ' rencontre(s) affichée(s)</small></div></div>' +
+        '<button type="button" class="bf-home-league-open" data-bf-open-standings="' +
+          escapeHTML(group.name) + '">Classement <span>↗</span></button></header>' +
+        '<div class="bf-home-league-matches">' +
+          group.matches.map(match => createMatchHTML(match, -1)).join("") +
+        '</div></section>';
+    }).join("");
+
+    container.querySelectorAll("[data-bf-open-standings]").forEach(button => {
+      button.addEventListener("click", event => {
+        event.preventDefault();
+        event.stopPropagation();
+        const name = button.getAttribute("data-bf-open-standings") || "";
+        if (typeof window.openBakhiraCompetitionStandings === "function") {
+          window.openBakhiraCompetitionStandings(name);
+        } else if (typeof window.go === "function") {
+          window.go("leagues");
+        }
+      });
+    });
+
+    if (matches.length > homeMatches.length) {
+      const more = document.createElement("button");
+      more.type = "button";
+      more.className = "bf-home-more-matches";
+      more.textContent = "Afficher les autres matchs dans Scores ↗";
+      more.addEventListener("click", () => go("scores"));
+      container.appendChild(more);
+    }
 
     container.dataset.homeMatchesLoaded = "true";
     container.dataset.homeMatchesLoadedAt = String(Date.now());
 
   } catch (error) {
-
-    console.error(
-      "HOME MATCH ERROR:",
-      error
-    );
-
-    container.innerHTML =
-      emptyCard(
-        "Impossible de charger les matchs."
-      );
+    console.error("HOME MATCH ERROR:", error);
+    setText("bfHomeLiveCount", "—");
+    setText("bfHomeMatchCount", "—");
+    setText("bfHomeLeagueCount", "—");
+    if (featuredContainer) {
+      featuredContainer.innerHTML = '<div class="bf-home-featured-empty"><span>⚠</span><strong>Le match en vedette n’est pas disponible</strong><small>Réessayez dans un instant.</small></div>';
+    }
+    container.innerHTML = '<div class="bf-home-empty"><strong>Impossible de charger les matchs actuellement</strong><span>Les résultats seront réessayés lors de votre prochaine visite.</span></div>';
   }
 }
 
@@ -9069,7 +9156,6 @@ function renderTables() {
 
 function renderHome() {
   renderHomeMatches();
-  renderTables();
   renderHomeNews();
 }
 
@@ -9973,7 +10059,7 @@ document.addEventListener("click", event => {
   const target = event.target instanceof Element ? event.target : null;
   if (!target) return;
   const card = target.closest("[data-bf-home-match]");
-  if (!card || target.closest("[data-bf-open-standings]")) return;
+  if (!card || target.closest("[data-bf-open-standings], [data-bf-team-side]")) return;
   event.preventDefault();
   event.stopPropagation();
   event.stopImmediatePropagation();
