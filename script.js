@@ -1280,7 +1280,7 @@ ${index >= 0 ? `onclick="openMatchDetails(${index})"` : `data-bf-home-match="${e
         class="bf-score-card-body"
       >
 
-        <div class="bf-score-card-team home" data-bf-team-side="home" role="button" tabindex="0" aria-label="Voir la fiche de ${escapeHTML(home)}">
+        <div class="bf-score-card-team home" data-bf-team-side="home" data-bf-team-name="${escapeHTML(home)}" data-bf-team-logo="${escapeHTML(homeLogo || "")}" role="button" tabindex="0" aria-label="Voir la fiche de ${escapeHTML(home)}">
 
           ${
             homeLogo
@@ -1358,7 +1358,7 @@ ${index >= 0 ? `onclick="openMatchDetails(${index})"` : `data-bf-home-match="${e
         </div>
 
 
-        <div class="bf-score-card-team away" data-bf-team-side="away" role="button" tabindex="0" aria-label="Voir la fiche de ${escapeHTML(away)}">
+        <div class="bf-score-card-team away" data-bf-team-side="away" data-bf-team-name="${escapeHTML(away)}" data-bf-team-logo="${escapeHTML(awayLogo || "")}" role="button" tabindex="0" aria-label="Voir la fiche de ${escapeHTML(away)}">
 
           ${
             awayLogo
