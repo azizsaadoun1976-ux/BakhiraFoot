@@ -1498,6 +1498,41 @@
         #bfMatchDetailsModal .bfmd-combined-player .bfmd-event-mini { top:0; width:15px; max-width:15px; }
       }
 
+
+      /* SofaScore-inspired performance icons beside each player */
+      #bfMatchDetailsModal .bfmd-combined-player { overflow:visible!important; }
+      #bfMatchDetailsModal .bfmd-combined-player .bfmd-event-mini {
+        position:absolute!important;top:0!important;left:calc(100% - 1px)!important;right:auto!important;transform:none!important;
+        z-index:16!important;display:flex!important;flex-direction:column!important;align-items:center!important;
+        justify-content:flex-start!important;gap:3px!important;width:22px!important;max-width:22px!important;
+        min-height:0!important;margin:0!important;padding:0!important;background:transparent!important;
+        border:0!important;border-radius:0!important;overflow:visible!important;pointer-events:none!important;
+      }
+      #bfMatchDetailsModal .bfmd-combined-player--perf-left .bfmd-event-mini { left:auto!important;right:calc(100% - 1px)!important; }
+      #bfMatchDetailsModal .bfmd-combined-player .bfmd-event-mini .bfmd-chip {
+        display:inline-flex!important;align-items:center!important;justify-content:center!important;gap:2px!important;
+        min-width:19px!important;width:19px!important;height:19px!important;min-height:19px!important;padding:2px!important;
+        border:1px solid rgba(255,255,255,.42)!important;border-radius:6px!important;box-shadow:0 2px 7px rgba(0,0,0,.34)!important;
+      }
+      #bfMatchDetailsModal .bfmd-combined-player .bfmd-event-mini .bfmd-vector-icon { width:13px!important;height:13px!important;flex:0 0 13px!important; }
+      #bfMatchDetailsModal .bfmd-combined-player .bfmd-event-mini .bfmd-chip-rating-number { font-size:7px!important; }
+      #bfMatchDetailsModal .bfmd-combined-player .bfmd-event-mini .bfmd-chip--goal { background:linear-gradient(145deg,#087f5b,#065f46)!important;color:#d1fae5!important; }
+      #bfMatchDetailsModal .bfmd-combined-player .bfmd-event-mini .bfmd-chip--assist { background:linear-gradient(145deg,#1d4ed8,#1e40af)!important;color:#dbeafe!important; }
+      #bfMatchDetailsModal .bfmd-combined-player .bfmd-event-mini .bfmd-chip--injury { background:#475569!important;color:#e0f2fe!important; }
+      #bfMatchDetailsModal .bfmd-combined-player .bfmd-event-mini .bfmd-chip--yellow { background:#a16207!important; }
+      #bfMatchDetailsModal .bfmd-combined-player .bfmd-event-mini .bfmd-chip--red { background:#b91c1c!important; }
+      #bfMatchDetailsModal .bfmd-performance-legend { display:flex!important;align-items:center!important;justify-content:center!important;flex-wrap:wrap!important;gap:7px 13px!important;padding:10px 12px 13px!important;border-top:1px solid rgba(100,170,130,.16)!important; }
+      #bfMatchDetailsModal .bfmd-legend-item { display:inline-flex!important;align-items:center!important;gap:5px!important;font-size:9px!important;font-weight:850!important; }
+      #bfMatchDetailsModal .bfmd-legend-item .bfmd-vector-icon { width:13px!important;height:13px!important; }
+      #bfMatchDetailsModal .bfmd-legend-item .bfmd-performance-glyph-card { width:8px!important;height:13px!important; }
+      #bfMatchDetailsModal .bfmd-legend-item small { font-size:9px!important; }
+      @media(max-width:650px) {
+        #bfMatchDetailsModal .bfmd-combined-player .bfmd-event-mini { width:18px!important;max-width:18px!important;gap:2px!important; }
+        #bfMatchDetailsModal .bfmd-combined-player .bfmd-event-mini .bfmd-chip { min-width:17px!important;width:17px!important;height:17px!important;min-height:17px!important;padding:1px!important; }
+        #bfMatchDetailsModal .bfmd-combined-player .bfmd-event-mini .bfmd-vector-icon { width:11px!important;height:11px!important;flex-basis:11px!important; }
+        #bfMatchDetailsModal .bfmd-performance-legend,#bfMatchDetailsModal .bfmd-legend-item small { font-size:8px!important; }
+      }
+
     `;
 
     document.head.appendChild(style);
@@ -4505,7 +4540,9 @@ function normalizeEvent(event, index) {
       teamHead(homeLineup,"Domicile") + '<span class="bfmd-combined-vs">VS</span>' + teamHead(awayLineup,"Extérieur") +
       '</div><div class="bfmd-pitch bfmd-pitch--combined">' + markings + placeTeam(homeLineup,"home") + placeTeam(awayLineup,"away") +
       '</div><div class="bfmd-selected-player-panel" hidden></div><div class="bfmd-combined-caption"><span>DOMICILE · CÔTÉ GAUCHE</span><span>EXTÉRIEUR · CÔTÉ DROIT</span><small>Clique sur un joueur pour ouvrir sa fiche</small></div>' +
-      '<div class="bfmd-combined-benches"><div><h4>' + esc(homeLineup?.team?.name || "Domicile") + ' · Banc</h4>' + renderBenchPerformance(homeLineup,statsMap) + '</div><div><h4>' + esc(awayLineup?.team?.name || "Extérieur") + ' · Banc</h4>' + renderBenchPerformance(awayLineup,statsMap) + '</div></div></div>';
+      '<div class="bfmd-performance-legend" aria-label="Légende des performances">' +
+      [["goal","But"],["assist","Passe D"],["yellow","Jaune"],["red","Rouge"],["injury","Blessure"]].map(([kind,label]) => '<span class="bfmd-legend-item">' + performanceIcon(kind) + '<small>' + label + '</small></span>').join("") +
+      '</div><div class="bfmd-combined-benches"><div><h4>' + esc(homeLineup?.team?.name || "Domicile") + ' · Banc</h4>' + renderBenchPerformance(homeLineup,statsMap) + '</div><div><h4>' + esc(awayLineup?.team?.name || "Extérieur") + ' · Banc</h4>' + renderBenchPerformance(awayLineup,statsMap) + '</div></div></div>';
   }
 
   function renderBenchPerformance(lineup, statsMap) {
