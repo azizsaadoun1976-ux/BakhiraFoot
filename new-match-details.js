@@ -295,17 +295,28 @@
         ?.detailsSlug
     );
 
-    /*
-     * الأولوية
-     * SofaScore
-     * ثم ESPN
-     * ثم TheSportsDB
-     */
+    /* External sources first; plain fixture slugs are SportScore. */
+    if (!sources.length) {
+      const sportScoreSlug = String(first(
+        match?.fixture?.slug,
+        match?.slug,
+        match?.match_slug,
+        match?.fixture?.upstreamId,
+        match?.upstreamId,
+        match?.fixture?.id,
+        match?.id,
+        match?.fixture_id,
+        match?.match_id,
+        ""
+      ) || "").trim();
+      if (sportScoreSlug) sources.push({ source: "sportscore", value: sportScoreSlug });
+    }
 
     const priority = {
       sofascore: 1,
       espn: 2,
-      thesportsdb: 3
+      thesportsdb: 3,
+      sportscore: 4
     };
 
     sources.sort(
@@ -2813,13 +2824,13 @@ ${esc(String(playerName(player) || "P").split(/\s+/).map(part => part[0] || "").
       return '<span class="bf-new-safe-card-glyph bf-new-safe-card-glyph--' + kind + '" aria-hidden="true"></span>';
     }
     const drawings = {
-      goal: '<circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.8"/><path d="M9 8.5 12 6.8l3 1.7v3.4l-3 1.8-3-1.8zM9 8.5 6.7 10M15 8.5l2.3 1.5M9 11.9l-1.6 3M15 11.9l1.6 3M12 15.4v3.3" stroke="currentColor" stroke-width="1.5" fill="none" stroke-linejoin="round"/>',
+      goal: '<circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.7"/><path d="m9.2 7.8 2.8-1.5 2.9 1.5.9 3.2-2.1 2.5h-3.8l-2.1-2.5zM9.2 7.8 6.5 6.9M15 7.8l2.5-.9M7.8 11l-2.6 1.4M16.2 11l2.6 1.4M9.9 13.5l-1.3 3.1M14.1 13.5l1.3 3.1M12 13.5v4.8" stroke="currentColor" stroke-width="1.25" fill="none" stroke-linecap="round" stroke-linejoin="round"/>',
       penalty: '<circle cx="12" cy="12" r="8.5" stroke="currentColor" stroke-width="1.8"/><circle cx="12" cy="12" r="4.5" stroke="currentColor" stroke-width="1.6"/><circle cx="12" cy="12" r="1.3" fill="currentColor"/>',
       own: '<path d="M6 18 18 6M9 6h9v9" stroke="currentColor" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"/><path d="M5 5v5M5 5h5" stroke="currentColor" stroke-width="1.7" fill="none"/>',
-      assist: '<path d="M3.7 14.8c1.3-1.8 2.5-4.6 3.4-6.4.4-.8 1.2-1.1 2-.7l2.1 1.1 3.1-1.1c.8-.3 1.6.1 1.9.9l1.7 4.8c.3.8-.1 1.5-.9 1.8l-6.5 2.4c-.9.3-1.8.1-2.5-.6l-2.1-2.1c-.6-.5-.7-1.1-.2-2.1zM8.5 12.1l2.5 2.3M12 10.7l2.3 2.1" stroke="currentColor" stroke-width="1.7" fill="none" stroke-linecap="round" stroke-linejoin="round"/>',
-      injury: '<path d="M10 4h4v6h6v4h-6v6h-4v-6H4v-4h6z" fill="currentColor"/>',
-      subIn: '<path d="M3.5 8h14m-4-4 4 4-4 4M20.5 16h-14m4-4-4 4 4 4" stroke="currentColor" stroke-width="1.9" fill="none" stroke-linecap="round" stroke-linejoin="round"/>',
-      subOut: '<path d="M3.5 8h14m-4-4 4 4-4 4M20.5 16h-14m4-4-4 4 4 4" stroke="currentColor" stroke-width="1.9" fill="none" stroke-linecap="round" stroke-linejoin="round"/>',
+      assist: '<path d="M4 16.2c1.6-.4 2.5-1.2 3.1-2.8l1.6-4.5c.3-.9 1.1-1.3 2-1l2.6 1 2.9-.8c.8-.2 1.5.2 1.8 1l1.4 3.8-2.4 2.4-5.6 2.2-4.4-.4zM6.2 16.1l11.5-.1M9 12.1l2.2 1.1M12.1 10.9l2.2 1.1" stroke="currentColor" stroke-width="1.55" fill="none" stroke-linecap="round" stroke-linejoin="round"/><path d="m7.7 9.7-2.3-1.2" stroke="currentColor" stroke-width="1.55" stroke-linecap="round"/>',
+      injury: '<path d="M10 3.5h4v6.5h6.5v4H14v6.5h-4V14H3.5v-4H10z" fill="currentColor"/>',
+      subIn: '<path d="M4 7.5h13.5m-4-4 4 4-4 4M20 16.5H6.5m4 4-4-4 4-4" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round"/>',
+      subOut: '<path d="M20 7.5H6.5m4-4-4 4 4 4M4 16.5h13.5m-4 4 4-4-4-4" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round"/>',
       sub: '<path d="M4 7h14l-3-3M20 17H6l3 3" stroke="currentColor" stroke-width="2" fill="none" stroke-linecap="round" stroke-linejoin="round"/>',
       mvp: '<path d="m12 2.8 2.8 5.7 6.3.9-4.6 4.5 1.1 6.3-5.6-3-5.6 3 1.1-6.3L3 9.4l6.3-.9z" fill="currentColor"/>',
       rating: '<path d="m12 2.8 2.8 5.7 6.3.9-4.6 4.5 1.1 6.3-5.6-3-5.6 3 1.1-6.3L3 9.4l6.3-.9z" fill="currentColor"/>'
@@ -3810,6 +3821,36 @@ function bfSameFixtureMetadata(candidate,expected,requireDate=false) {
           throw new Error("Le fournisseur a renvoyé une ancienne rencontre ; ses détails sont ignorés.");
         }
 
+        /* Keep raw events and match officials for SportScore in the unified centre. */
+        if (source.source === "sportscore") {
+          try {
+            const enrichmentResponse = await fetch(
+              "/api/match-event-enrichment?fixture=" + encodeURIComponent(source.value),
+              { cache: "no-store", headers: { Accept: "application/json" } }
+            );
+            const enrichmentPayload = await enrichmentResponse.json().catch(() => ({}));
+            const enrichment = enrichmentPayload?.data || {};
+            if (enrichmentResponse.ok && enrichment && typeof enrichment === "object") {
+              const rawEvents = Array.isArray(enrichment.events) ? enrichment.events : [];
+              const merged = { ...details };
+              if (rawEvents.length) {
+                merged.events = rawEvents;
+                merged.incidents = rawEvents;
+                merged.match_events = rawEvents;
+              }
+              [
+                "player_of_match", "playerOfMatch", "venue", "referee",
+                "broadcastChannel", "commentator"
+              ].forEach(key => {
+                if (!merged[key] && enrichment[key]) merged[key] = enrichment[key];
+              });
+              details = merged;
+            }
+          } catch (enrichmentError) {
+            console.warn("BAKHIRAFOOT: SportScore event enrichment unavailable", enrichmentError);
+          }
+        }
+
         if (!hasOfficialLineupCoordinates(details)) {
           try {
             const homeName = details?.teams?.home?.name || details?.home_team?.name ||
@@ -3907,179 +3948,85 @@ function bfSameFixtureMetadata(candidate,expected,requireDate=false) {
      CLICK INTERCEPTOR
      ========================================================= */
 
-  document.addEventListener(
-    "keydown",
-    function (event) {
-      if (event.key !== "Enter" && event.key !== " ") return;
-      const card = event.target?.closest?.(".match-card, .bf-score-pro-card, .bf-score-professional-match, [data-search-type=\"match\"]");
-      if (!card || card.getAttribute("role") !== "button") return;
-      event.preventDefault();
-      card.click();
-    },
-    true
-  );
 
-  document.addEventListener(
-    "click",
-    async function (
-      event
-    ) {
+  /* Unified global entry: the old script.js modal is never used. */
+  function openUnifiedMatchDetails(indexOrId, matchOverride = null, identifierOverride = "") {
+    let index = Number.isInteger(Number(indexOrId)) ? Number(indexOrId) : -1;
+    let match = matchOverride || (index >= 0 ? getMatch(index) : null);
+    let identifier = String(identifierOverride || "").trim();
 
-      const target =
-        event.target;
+    if (!match && typeof indexOrId === "string" && indexOrId.trim()) {
+      identifier = identifier || indexOrId.trim();
+      const low = identifier.toLowerCase();
+      const provider = low.startsWith("sofa-") ? "sofascore" :
+        low.startsWith("espn-") ? "espn" :
+        low.startsWith("tsdb-") ? "thesportsdb" : "sportscore";
+      match = { provider, id: identifier, slug: identifier, fixture: { id: identifier, slug: identifier } };
+    }
+    if (!match) return false;
+    identifier = identifier || String(
+      match?.fixture?.slug || match?.slug || match?.fixture?.upstreamId ||
+      match?.upstreamId || match?.fixture?.id || match?.id || ""
+    ).trim();
+    return openNewMatch(index, match, identifier);
+  }
 
-      if (
-        !target ||
-        !target.closest
-      ) {
-        return;
-      }
+  window.bfOpenUnifiedMatchDetails = openUnifiedMatchDetails;
+  window.openMatchDetails = openUnifiedMatchDetails;
 
-      const card =
-        target.closest(
-          [
-            ".match-card",
-            ".bf-score-pro-card",
-            ".bf-score-professional-match",
-            '[data-search-type="match"]'
-          ].join(",")
-        );
+  document.addEventListener("keydown", event => {
+    if (event.key !== "Enter" && event.key !== " ") return;
+    const target = event.target?.closest?.(".match-card, .bf-score-pro-card, .bf-score-professional-match, [data-search-type=\"match\"]");
+    if (!target || target.closest("[data-bf-open-standings], [data-bf-team-side], button, a, input")) return;
+    if (target.hasAttribute("data-bf-home-match")) return;
+    event.preventDefault();
+    target.click();
+  }, true);
 
-      if (!card) {
-        return;
-      }
+  document.addEventListener("click", event => {
+    const target = event.target;
+    if (!target || !target.closest) return;
+    if (target.closest("[data-bf-open-standings], [data-bf-team-side]")) return;
 
-      const index =
-        Number(card.dataset.matchIndex);
+    const card = target.closest(".match-card, .bf-score-pro-card, .bf-score-professional-match, [data-search-type=\"match\"]");
+    if (!card) return;
 
-      if (!Number.isInteger(index) || index < 0) {
-        const cardIdentifier = String(
-          card.dataset.fixtureId ||
-          card.dataset.matchSlug ||
-          card.dataset.slug ||
-          card.dataset.fixture ||
-          ""
-        ).trim();
+    const identifier = String(
+      card.dataset.fixtureId || card.dataset.matchSlug ||
+      card.dataset.slug || card.dataset.fixture || ""
+    ).trim();
+    const rawIndex = card.dataset.matchIndex;
+    const index = rawIndex !== undefined && rawIndex !== "" ? Number(rawIndex) : -1;
 
-        if (!cardIdentifier) return;
+    let match = Number.isInteger(index) && index >= 0 ? getMatch(index) : null;
+    const keys = value => [
+      value?.fixture?.upstreamId, value?.upstreamId, value?.fixture?.id,
+      value?.fixture?.slug, value?.slug, value?.id, value?.match_id,
+      value?.fixture_id, value?.match_slug
+    ].filter(value => value !== null && value !== undefined && String(value).trim())
+      .map(value => String(value).trim().toLowerCase());
 
-        /*
-         * Home cards and a few competition lists don't carry data-match-index.
-         * Resolve their identifier against the API-backed currentMatches array
-         * before choosing a provider. Otherwise ESPN/SofaScore/TSDB fixtures
-         * incorrectly fall through to the SportScore-only details endpoint.
-         */
-        const identifierKeys = match => [
-          match?.fixture?.upstreamId,
-          match?.upstreamId,
-          match?.fixture?.id,
-          match?.fixture?.slug,
-          match?.slug,
-          match?.id,
-          match?.match_slug,
-          match?.fixture_id,
-          match?.match_id
-        ].filter(value => value !== null && value !== undefined && String(value).trim())
-          .map(value => String(value).trim().toLowerCase());
+    if (!match && identifier) {
+      const wanted = identifier.toLowerCase();
+      match = getMatches().find(item => keys(item).includes(wanted)) || null;
+    }
+    if (!match && identifier && window.__bfHomeMatchRegistry instanceof Map) {
+      match = window.__bfHomeMatchRegistry.get(identifier.toLowerCase()) || null;
+    }
+    if (!match && identifier) {
+      const low = identifier.toLowerCase();
+      const provider = low.startsWith("sofa-") ? "sofascore" :
+        low.startsWith("espn-") ? "espn" :
+        low.startsWith("tsdb-") ? "thesportsdb" : "sportscore";
+      match = { provider, id: identifier, slug: identifier, fixture: { id: identifier, slug: identifier } };
+    }
+    if (!match) return;
 
-        const clickedKey = cardIdentifier.toLowerCase();
-        const matches = getMatches();
-        const resolvedIndex = matches.findIndex(match =>
-          identifierKeys(match).includes(clickedKey)
-        );
-
-        if (resolvedIndex >= 0) {
-          const resolvedMatch = getMatch(resolvedIndex);
-          const resolvedSources = getExternalSources(resolvedMatch);
-
-          event.preventDefault();
-          event.stopImmediatePropagation();
-
-          if (resolvedSources.length) {
-            openNewMatch(resolvedIndex);
-          } else if (typeof window.bfOpenMatchDetails === "function") {
-            window.__bfActiveExpectedMatch = resolvedMatch;
-            window.__bfActiveExpectedIdentifier = cardIdentifier;
-            window.bfOpenMatchDetails(cardIdentifier);
-          }
-          return;
-        }
-
-        // Homepage fixtures are fetched separately from Scores. Resolve the exact
-        // clicked fixture from this registry instead of using the same numeric index.
-        const homeRegistry = window.__bfHomeMatchRegistry;
-        const homeMatch = homeRegistry instanceof Map ? homeRegistry.get(clickedKey) : null;
-        if (homeMatch) {
-          event.preventDefault();
-          event.stopImmediatePropagation();
-          const homeSources = getExternalSources(homeMatch);
-          if (homeSources.length) {
-            openNewMatch(-1, homeMatch, cardIdentifier);
-          } else if (typeof window.bfOpenMatchDetails === "function") {
-            window.__bfActiveExpectedMatch = homeMatch;
-            window.__bfActiveExpectedIdentifier = cardIdentifier;
-            window.bfOpenMatchDetails(cardIdentifier);
-          }
-          return;
-        }
-
-        /*
-         * If no matching list entry exists, preserve the old SportScore path.
-         * Never invent provider IDs or guess an external fixture from its label.
-         */
-        if (typeof window.bfOpenMatchDetails !== "function") return;
-        event.preventDefault();
-        event.stopImmediatePropagation();
-        window.bfOpenMatchDetails(cardIdentifier);
-        return;
-      }
-
-      const match =
-        getMatch(index);
-
-      if (!match) {
-        return;
-      }
-
-      const sources =
-        getExternalSources(match);
-
-      /*
-       * External-provider fixtures must use openNewMatch(index):
-       * it tries SofaScore, ESPN, then TheSportsDB if a provider fails.
-       * SportScore fixtures keep the legacy details handler.
-       */
-      if (sources.length) {
-        event.preventDefault();
-        event.stopImmediatePropagation();
-        openNewMatch(index);
-        return;
-      }
-
-      const identifier = String(
-        match?.fixture?.slug ||
-        match?.slug ||
-        match?.fixture?.id ||
-        match?.id ||
-        card?.dataset?.fixtureId ||
-        ""
-      ).trim();
-
-      if (!identifier || typeof window.bfOpenMatchDetails !== "function") {
-        return;
-      }
-
-      event.preventDefault();
-      event.stopImmediatePropagation();
-
-      window.__bfActiveExpectedMatch = match;
-      window.__bfActiveExpectedIdentifier = identifier;
-      window.bfOpenMatchDetails(identifier);
-
-    },
-
-    true
-  );
+    event.preventDefault();
+    event.stopPropagation();
+    event.stopImmediatePropagation();
+    openNewMatch(index >= 0 ? index : -1, match, identifier);
+  }, true);
 
   /* =========================================================
      ESC
