@@ -6003,22 +6003,33 @@ async function fetchHistoricalESPNStandings(espnCode, season) {
 const historicalESPNEntityCache = new Map();
 const historicalESPNPlayersCache = new Map();
 
-async function fetchHistoricalJSONWithTimeout(url, timeoutMs = 7000) {
+async function fetchHistoricalJSONWithTimeout(url, timeoutMs = 7000, force = false) {
+  /* Historical data lives behind our own API. Reuse the shared cache rather
+     than appending a timestamp/retry token that defeats CDN caching. */
+  if (
+    typeof url === "string" &&
+    url.startsWith("/api/") &&
+    window.BFAPI &&
+    typeof window.BFAPI.getJSON === "function"
+  ) {
+    return window.BFAPI.getJSON(url, {
+      ttlMs: 3600000,
+      staleIfErrorMs: 86400000,
+      timeoutMs,
+      force
+    });
+  }
+
   const controller = new AbortController();
   let timer;
 
   try {
     const request = fetch(url, {
       method: "GET",
-      headers: {
-        Accept: "application/json"
-      },
+      headers: { Accept: "application/json" },
       signal: controller.signal
     }).then(async response => {
-      if (!response.ok) {
-        throw new Error(`HTTP ${response.status}`);
-      }
-
+      if (!response.ok) throw new Error(`HTTP ${response.status}`);
       return response.json();
     });
 
@@ -6493,9 +6504,7 @@ async function fetchHistoricalESPNPlayers(competitionSlug, season) {
     // Les sources historiques échouent parfois ponctuellement : seconde tentative.
     for (let attempt = 0; attempt < 2; attempt++) {
       try {
-        const requestUrl = url + (url.includes("?") ? "&" : "?") +
-          "retry=" + (attempt + 1) + "-" + Date.now();
-        const payload = await fetchHistoricalJSONWithTimeout(requestUrl, 13500);
+        const payload = await fetchHistoricalJSONWithTimeout(url, 13500, attempt > 0);
 
         if (payload?.error) {
           throw new Error(payload.details || payload.error);
