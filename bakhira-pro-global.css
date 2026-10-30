@@ -80,3 +80,64 @@ body>header #search{border-radius:999px!important;background:#06131c!important;b
 #home .bf-world-featured-scoreline:hover{background:rgba(53,230,164,.09);color:#79f0bd}
 #home .bf-world-main>.home-live-section .bf-score-card-footer{font-size:9px!important}
 @media(max-width:760px){#home .bf-world-dashboard{display:flex!important;flex-direction:column}#home .bf-world-main{order:1;width:100%}#home .bf-world-rail-left{order:2;width:100%}#home .bf-world-rail-right{order:3;width:100%}}
+
+
+/* ACCUEIL — cleaner first screen, less crowded match cards */
+#home .home-shortcuts {
+  display:grid!important;grid-template-columns:repeat(3,minmax(0,1fr))!important;
+  gap:10px!important;margin:6px 0 17px!important;
+}
+#home .home-shortcut {
+  min-height:78px!important;grid-template-columns:38px minmax(0,1fr) 14px!important;
+  gap:10px!important;padding:12px 13px!important;border:1px solid rgba(74,205,158,.22)!important;
+  border-radius:12px!important;background:linear-gradient(135deg,#0d202a,#07141d)!important;
+  box-shadow:0 5px 16px rgba(0,0,0,.12)!important;
+}
+#home .home-shortcut-icon {width:38px!important;height:38px!important;border-radius:10px!important;font-size:19px!important}
+#home .home-shortcut-copy small {font-size:8px!important;letter-spacing:.12em!important}
+#home .home-shortcut-copy strong {font-size:13px!important;line-height:1.2!important}
+#home .home-shortcut-copy>span {font-size:10px!important;line-height:1.35!important;color:#9fb4c2!important}
+#home .home-live-section {
+  margin:0 0 20px!important;padding:clamp(14px,2vw,22px)!important;border:1px solid rgba(75,205,158,.22)!important;
+  border-radius:14px!important;background:linear-gradient(150deg,#0b1922,#07121a)!important;
+  box-shadow:0 12px 32px rgba(0,0,0,.12)!important;
+}
+#home .home-live-heading {align-items:center!important;margin-bottom:14px!important}
+#home .home-live-heading h2 {font-size:clamp(21px,2.3vw,27px)!important;letter-spacing:-.035em!important}
+#home .home-live-heading p {max-width:560px!important;font-size:11px!important;color:#91a9b9!important;line-height:1.55!important}
+#home .home-live-matches {
+  display:grid!important;grid-template-columns:repeat(2,minmax(0,1fr))!important;gap:10px!important;align-items:stretch!important;
+}
+#home .home-live-matches>.home-live-loading,
+#home .home-live-matches>.ss-empty,
+#home .home-live-matches>.ss-error {grid-column:1/-1!important}
+#home .home-live-matches .match-card {
+  min-width:0!important;min-height:132px!important;margin:0!important;overflow:hidden!important;
+  border:1px solid rgba(120,164,184,.20)!important;border-radius:12px!important;
+  background:linear-gradient(155deg,#102432,#0a1922)!important;box-shadow:0 5px 14px rgba(0,0,0,.14)!important;
+  transition:transform .18s ease,border-color .18s ease,box-shadow .18s ease!important;
+}
+#home .home-live-matches .match-card:hover {transform:translateY(-2px)!important;border-color:rgba(53,230,164,.56)!important;box-shadow:0 10px 22px rgba(0,0,0,.22)!important}
+#home .home-live-matches .bf-score-card-header {padding:9px 11px!important}
+#home .home-live-matches .bf-score-card-body {padding:13px 10px!important}
+#home .home-live-matches .bf-score-card-footer {padding:7px 10px 9px!important}
+#home .home-news-heading {margin:24px 0 12px!important}
+#home .home-news-heading h2 {font-size:clamp(20px,2.2vw,26px)!important}
+#home .ad-top {margin:16px 0!important;border-radius:12px!important;overflow:hidden!important}
+@media(max-width:900px) {
+  #home .home-live-matches {grid-template-columns:repeat(2,minmax(0,1fr))!important}
+  #home .home-shortcut-copy>span {display:none!important}
+}
+@media(max-width:650px) {
+  #home .home-shortcuts {grid-template-columns:1fr!important;gap:7px!important}
+  #home .home-shortcut {min-height:62px!important;padding:9px 10px!important;grid-template-columns:34px minmax(0,1fr) 12px!important}
+  #home .home-shortcut-icon {width:34px!important;height:34px!important}
+  #home .home-shortcut-copy>span {display:block!important}
+  #home .home-live-section {padding:13px 10px!important}
+  #home .home-live-heading {align-items:flex-start!important;flex-direction:column!important}
+  #home .home-live-heading p {font-size:10px!important}
+  #home .home-live-matches {grid-template-columns:minmax(0,1fr)!important;gap:8px!important}
+  #home .home-live-matches .match-card {min-height:0!important}
+  #home .home-live-more {align-self:flex-start!important}
+}
+
