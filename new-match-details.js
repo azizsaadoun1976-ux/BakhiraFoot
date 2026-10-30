@@ -3517,9 +3517,18 @@ ${esc(String(playerName(player) || "P").split(/\s+/).map(part => part[0] || "").
     document.body.style.overflow =
       "hidden";
 
-    if (typeof window.bfSetupMatchCenter === "function") {
-      const matchIdentifier = first(source?.value, source?.id, window.__bfActiveExpectedIdentifier, "");
-      window.bfSetupMatchCenter(matchIdentifier, {home,away}, competition, date, content);
+    if (window.BFMatchEnhancements && typeof window.BFMatchEnhancements.attach === "function") {
+      const matchIdentifier = String(first(
+        window.__bfActiveExpectedIdentifier,
+        details?.fixture?.upstreamId, details?.fixture?.id, details?.id,
+        details?.fixture?.slug, details?.slug,
+        home.name + "-" + away.name + "-" + date
+      ) || "");
+      window.BFMatchEnhancements.attach({
+        content, details, home, away, competition, date,
+        source: String(source || ""),
+        key: matchIdentifier
+      });
     }
   }
 
@@ -3546,56 +3555,25 @@ ${esc(String(playerName(player) || "P").split(/\s+/).map(part => part[0] || "").
       url
     );
 
-    const response =
-      await fetch(
-        url,
-        {
-          cache:
-            "no-store",
-
-          headers: {
-            Accept:
-              "application/json"
-          }
-        }
-      );
-
-    const raw =
-      await response.text();
-
     let payload;
-
-    try {
-
-      payload =
-        JSON.parse(
-          raw
-        );
-
-    } catch {
-
-      throw new Error(
-        "Réponse JSON invalide"
-      );
-
-    }
-
-    if (
-      !response.ok
-    ) {
-
-      const error =
-        new Error(
-          `API HTTP ${response.status}`
-        );
-
-      error.status =
-        response.status;
-
-      error.payload =
-        payload;
-
-      throw error;
+    if (window.BFAPI && typeof window.BFAPI.getJSON === "function") {
+      payload = await window.BFAPI.getJSON(url, {
+        ttlMs: 15000,
+        staleIfErrorMs: 45000,
+        timeoutMs: 15000
+      });
+    } else {
+      const response = await fetch(url, {
+        cache: "no-store",
+        headers: { Accept: "application/json" }
+      });
+      payload = await response.json().catch(() => ({}));
+      if (!response.ok) {
+        const error = new Error(`API HTTP ${response.status}`);
+        error.status = response.status;
+        error.payload = payload;
+        throw error;
+      }
     }
 
     const details =
