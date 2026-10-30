@@ -3802,13 +3802,16 @@ function bfSameFixtureMetadata(candidate,expected,requireDate=false) {
         /* Keep raw events and match officials for SportScore in the unified centre. */
         if (source.source === "sportscore") {
           try {
-            const enrichmentResponse = await fetch(
-              "/api/match-event-enrichment?fixture=" + encodeURIComponent(source.value),
-              { cache: "no-store", headers: { Accept: "application/json" } }
-            );
-            const enrichmentPayload = await enrichmentResponse.json().catch(() => ({}));
+            const enrichmentUrl = "/api/match-event-enrichment?fixture=" + encodeURIComponent(source.value);
+            const enrichmentPayload = window.BFAPI && typeof window.BFAPI.getJSON === "function"
+              ? await window.BFAPI.getJSON(enrichmentUrl, {ttlMs:60000,staleIfErrorMs:180000,timeoutMs:15000})
+              : await fetch(enrichmentUrl,{cache:"no-store",headers:{Accept:"application/json"}}).then(async response => {
+                  const payload = await response.json().catch(() => ({}));
+                  if (!response.ok) throw new Error(payload?.error || "Event enrichment unavailable");
+                  return payload;
+                });
             const enrichment = enrichmentPayload?.data || {};
-            if (enrichmentResponse.ok && enrichment && typeof enrichment === "object") {
+            if (enrichment && typeof enrichment === "object") {
               const rawEvents = Array.isArray(enrichment.events) ? enrichment.events : [];
               const merged = { ...details };
               if (rawEvents.length) {
@@ -3844,13 +3847,16 @@ function bfSameFixtureMetadata(candidate,expected,requireDate=false) {
                 away: String(awayName),
                 date: String(lookupDate)
               });
-              const response = await fetch("/api?" + params.toString(), {
-                cache: "no-store",
-                headers: { Accept: "application/json" }
-              });
-              const payload = await response.json();
+              const lookupUrl = "/api?" + params.toString();
+              const payload = window.BFAPI && typeof window.BFAPI.getJSON === "function"
+                ? await window.BFAPI.getJSON(lookupUrl, {ttlMs:180000,staleIfErrorMs:600000,timeoutMs:15000})
+                : await fetch(lookupUrl,{cache:"no-store",headers:{Accept:"application/json"}}).then(async response => {
+                    const body = await response.json().catch(() => ({}));
+                    if (!response.ok) throw new Error(body?.error || "Official lineup lookup unavailable");
+                    return body;
+                  });
               const official = payload?.data || payload?.match || payload;
-              if (response.ok && bfSameFixtureMetadata(official, match, true) &&
+              if (bfSameFixtureMetadata(official, match, true) &&
                   bfSameFixtureMetadata(official, details, true) &&
                   hasOfficialLineupCoordinates(official)) {
                 details = { ...details, lineups: official.lineups };
