@@ -1928,6 +1928,170 @@ function bfAssignFormationRoles(players, formation, readPosition) {
         .bf-new-safe-mvp-chip { min-width:18px; width:18px; height:18px; }
         #bfMatchDetailsModal .bfmd-chip .bfmd-vector-icon { width:11px!important; height:11px!important; flex-basis:11px; }
       }
+/* Professional combined pitch: player performance beside each card. */
+      #bf-new-match-safe-modal .bf-new-safe-combined-player { overflow:visible; }
+      #bf-new-match-safe-modal .bf-new-safe-combined-performance { position:absolute; top:10px; left:calc(100% - 1px); right:auto; z-index:15; display:flex; flex-direction:column; align-items:center; gap:3px; width:20px; max-width:20px; overflow:visible; }
+      #bf-new-match-safe-modal .bf-new-safe-combined-player--perf-left .bf-new-safe-combined-performance { left:auto; right:calc(100% - 1px); }
+      #bf-new-match-safe-modal .bf-new-safe-combined-performance .bf-new-safe-event-badge,
+      #bf-new-match-safe-modal .bf-new-safe-combined-performance .bf-new-safe-player-rate,
+      #bf-new-match-safe-modal .bf-new-safe-combined-performance .bf-new-safe-mvp-chip { display:inline-flex; align-items:center; justify-content:center; min-width:15px; min-height:14px; padding:2px; border-radius:4px; box-shadow:0 2px 5px rgba(0,0,0,.25); font-size:7px; line-height:1; }
+      #bf-new-match-safe-modal .bf-new-safe-combined-performance .bf-new-safe-player-rate { background:#f8fafc; color:#122033; font-weight:950; }
+      #bf-new-match-safe-modal .bf-new-safe-combined-performance .bf-new-safe-mvp-chip { background:#facc15; color:#422006; }
+      #bf-new-match-safe-modal .bf-new-safe-head .bf-new-safe-info { width:100%; grid-column:1/-1; flex:0 0 100%; justify-content:flex-start; margin-top:15px; padding-top:13px; border-top:1px solid rgba(148,163,184,.22); }
+      #bf-new-match-safe-modal .bfmd-center-nav { background:transparent; border-bottom:1px solid rgba(127,127,127,.13); }
+      body.dark #bf-new-match-safe-modal .bf-new-safe-box { color:#edf4ff; background:#0b1422; border:1px solid rgba(148,176,211,.2); }
+      body.dark #bf-new-match-safe-modal .bf-new-safe-section,
+      body.dark #bf-new-match-safe-modal .bfmd-section { color:#edf4ff; background:linear-gradient(145deg,rgba(19,34,54,.94),rgba(12,23,38,.96)); border-color:rgba(157,181,211,.18); }
+      body.dark #bf-new-match-safe-modal .bf-new-safe-title,
+      body.dark #bf-new-match-safe-modal .bf-new-safe-team,
+      body.dark #bf-new-match-safe-modal .bf-new-safe-score { color:#f3f7ff; }
+      body.dark #bf-new-match-safe-modal .bf-new-safe-info span { color:#d9e7fa; background:#132238; border-color:rgba(157,181,211,.18); }
+      body.dark #bf-new-match-safe-modal .bfmd-center-nav button { color:#edf4ff; }
+      body:not(.dark) #bf-new-match-safe-modal .bf-new-safe-box { color:#172033; background:#f7f9fc; border:1px solid #d9e2ee; }
+      body:not(.dark) #bf-new-match-safe-modal .bf-new-safe-section,
+      body:not(.dark) #bf-new-match-safe-modal .bfmd-section { color:#172033; background:linear-gradient(145deg,#fff,#f7f9fc); border-color:#d8e2ed; }
+      body:not(.dark) #bf-new-match-safe-modal .bf-new-safe-title,
+      body:not(.dark) #bf-new-match-safe-modal .bf-new-safe-team { color:#172033; }
+      body:not(.dark) #bf-new-match-safe-modal .bf-new-safe-score { color:#101828; }
+      body:not(.dark) #bf-new-match-safe-modal .bf-new-safe-info span { color:#334155; background:#edf2f7; border-color:#d6e0eb; }
+      body:not(.dark) #bf-new-match-safe-modal .bfmd-center-nav { background:rgba(247,249,252,.96); }
+      body:not(.dark) #bf-new-match-safe-modal .bfmd-center-nav button { color:#27364b; }
+      @media(max-width:650px) {
+        #bf-new-match-safe-modal .bf-new-safe-combined-performance { top:8px; width:16px; max-width:16px; gap:2px; }
+        #bf-new-match-safe-modal .bf-new-safe-combined-performance .bf-new-safe-event-badge,
+        #bf-new-match-safe-modal .bf-new-safe-combined-performance .bf-new-safe-player-rate,
+        #bf-new-match-safe-modal .bf-new-safe-combined-performance .bf-new-safe-mvp-chip { min-width:12px; min-height:12px; padding:1px; font-size:6px; }
+      }
+
+      /* Landscape pitch: home occupies the left half, away the right half. */
+      #bf-new-match-safe-modal .bf-new-safe-combined-pitch { width:min(100%,900px); aspect-ratio:1.48; height:auto; min-height:0; max-height:none; margin:0 auto; overflow:visible; }
+      #bf-new-match-safe-modal .bf-new-safe-combined-pitch .bf-new-safe-combined-half { left:50%; right:auto; top:8px; bottom:8px; width:2px; height:auto; }
+      #bf-new-match-safe-modal .bf-new-safe-combined-pitch .bf-new-safe-combined-box { left:0; right:auto; top:25%; bottom:25%; width:15%; height:auto; }
+      #bf-new-match-safe-modal .bf-new-safe-combined-pitch .bf-new-safe-combined-box--top { left:8px; right:auto; top:25%; bottom:25%; }
+      #bf-new-match-safe-modal .bf-new-safe-combined-pitch .bf-new-safe-combined-box--bottom { left:auto; right:8px; top:25%; bottom:25%; }
+      #bf-new-match-safe-modal .bf-new-safe-combined-goal { position:absolute; top:39%; width:3%; height:22%; border:1px solid rgba(255,255,255,.85); pointer-events:none; }
+      #bf-new-match-safe-modal .bf-new-safe-combined-goal--left { left:0; border-left:0; }
+      #bf-new-match-safe-modal .bf-new-safe-combined-goal--right { right:0; border-right:0; }
+      #bf-new-match-safe-modal .bf-new-safe-combined-spot { position:absolute; top:calc(50% - 2px); width:4px; height:4px; border-radius:50%; background:#fff; }
+      #bf-new-match-safe-modal .bf-new-safe-combined-spot--left { left:20%; }
+      #bf-new-match-safe-modal .bf-new-safe-combined-spot--right { right:20%; }
+      #bf-new-match-safe-modal .bf-new-safe-combined-player { width:clamp(52px,6vw,84px); }
+      #bf-new-match-safe-modal .bf-new-safe-combined-player img,
+      #bf-new-match-safe-modal .bf-new-safe-combined-avatar { width:clamp(24px,2.8vw,38px); height:clamp(24px,2.8vw,38px); }
+      #bf-new-match-safe-modal .bf-new-safe-combined-name { max-width:76px; font-size:clamp(7px,.65vw,9px); padding:2px 4px; }
+      #bf-new-match-safe-modal .bf-new-safe-combined-performance { top:0; }
+      #bf-new-match-safe-modal .bf-new-safe-combined-info i { font-style:normal; }
+      #bf-new-match-safe-modal .bf-new-safe-info i { font-style:normal; }
+      #bf-new-match-safe-modal .bf-new-safe-info b { font-weight:850; }
+      @media(max-width:650px) {
+        #bf-new-match-safe-modal .bf-new-safe-combined-pitch { width:100%; aspect-ratio:1.12; }
+        #bf-new-match-safe-modal .bf-new-safe-combined-player { width:clamp(42px,11vw,58px); }
+        #bf-new-match-safe-modal .bf-new-safe-combined-player img,
+        #bf-new-match-safe-modal .bf-new-safe-combined-avatar { width:clamp(20px,5.4vw,27px); height:clamp(20px,5.4vw,27px); }
+        #bf-new-match-safe-modal .bf-new-safe-combined-name { max-width:55px; font-size:6.5px; padding:2px; }
+        #bf-new-match-safe-modal .bf-new-safe-combined-performance { top:0; width:15px; max-width:15px; }
+      }
+
+      /* MATCH CENTRE — polished SofaScore-style performance rail */
+      #bf-new-match-safe-modal .bf-new-safe-combined-wrap {
+        overflow:visible!important;border:1px solid rgba(70,150,116,.30)!important;border-radius:18px!important;
+        background:linear-gradient(145deg,rgba(8,25,19,.98),rgba(7,17,24,.98))!important;
+        box-shadow:0 16px 42px rgba(0,0,0,.18)!important;
+      }
+      #bf-new-match-safe-modal .bf-new-safe-combined-head {
+        display:grid!important;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr)!important;
+        align-items:center!important;gap:12px!important;padding:14px 16px!important;
+        border-bottom:1px solid rgba(80,170,125,.24)!important;
+        background:linear-gradient(110deg,rgba(15,66,43,.72),rgba(12,31,43,.86),rgba(15,66,43,.72))!important;
+      }
+      #bf-new-match-safe-modal .bf-new-safe-combined-team {
+        display:flex!important;align-items:center!important;justify-content:center!important;flex-wrap:wrap!important;
+        gap:7px!important;min-width:0!important;color:#f0fff7!important;font-size:12px!important;text-align:center!important;
+      }
+      #bf-new-match-safe-modal .bf-new-safe-combined-team img {
+        width:30px!important;height:30px!important;object-fit:contain!important;filter:drop-shadow(0 3px 5px #0005);
+      }
+      #bf-new-match-safe-modal .bf-new-safe-combined-team strong {
+        font-size:clamp(10px,1vw,13px)!important;font-weight:950!important;overflow-wrap:anywhere!important;
+      }
+      #bf-new-match-safe-modal .bf-new-safe-combined-team em {
+        padding:4px 7px!important;border:1px solid rgba(120,220,170,.22)!important;border-radius:7px!important;
+        background:rgba(3,16,12,.5)!important;color:#a8e9c2!important;font-size:9px!important;font-style:normal!important;font-weight:900!important;
+      }
+      #bf-new-match-safe-modal .bf-new-safe-combined-vs { color:#94b5a5!important;font-size:10px!important;font-weight:950!important;letter-spacing:.12em!important; }
+      #bf-new-match-safe-modal .bf-new-safe-combined-pitch {
+        position:relative!important;overflow:visible!important;border:1px solid rgba(224,255,236,.82)!important;
+        box-shadow:0 12px 28px rgba(0,0,0,.26),inset 0 0 0 1px rgba(255,255,255,.08)!important;
+      }
+      #bf-new-match-safe-modal .bf-new-safe-combined-player { overflow:visible!important;isolation:isolate!important; }
+      #bf-new-match-safe-modal .bf-new-safe-combined-performance {
+        position:absolute!important;top:0!important;left:calc(100% - 1px)!important;right:auto!important;
+        z-index:16!important;display:flex!important;flex-direction:column!important;align-items:center!important;
+        justify-content:flex-start!important;gap:3px!important;width:22px!important;max-width:22px!important;min-height:0!important;
+        margin:0!important;padding:0!important;overflow:visible!important;transform:none!important;
+        pointer-events:none!important;background:transparent!important;
+      }
+      #bf-new-match-safe-modal .bf-new-safe-combined-player--perf-left .bf-new-safe-combined-performance { left:auto!important;right:calc(100% - 1px)!important; }
+      #bf-new-match-safe-modal .bf-new-safe-combined-performance .bf-new-safe-event-badge {
+        position:relative!important;display:inline-flex!important;flex:0 0 20px!important;align-items:center!important;
+        justify-content:center!important;gap:1px!important;width:20px!important;min-width:20px!important;height:20px!important;
+        min-height:20px!important;padding:2px!important;border:1px solid rgba(255,255,255,.42)!important;border-radius:6px!important;
+        box-shadow:0 2px 7px rgba(0,0,0,.32)!important;font-size:7px!important;line-height:1!important;
+      }
+      #bf-new-match-safe-modal .bf-new-safe-combined-performance .bf-new-safe-event-svg {
+        display:block!important;width:13px!important;height:13px!important;flex:0 0 13px!important;
+      }
+      #bf-new-match-safe-modal .bf-new-safe-combined-performance .bf-new-safe-event-count { min-width:9px!important;height:10px!important;font-size:7px!important; }
+      #bf-new-match-safe-modal .bf-new-safe-combined-performance .bf-new-safe-card-glyph { width:8px!important;height:13px!important;border-radius:2px!important; }
+      #bf-new-match-safe-modal .bf-new-safe-combined-performance .bf-new-safe-player-rate,
+      #bf-new-match-safe-modal .bf-new-safe-combined-performance .bf-new-safe-mvp-chip {
+        position:relative!important;top:auto!important;left:auto!important;right:auto!important;display:inline-flex!important;
+        flex:0 0 auto!important;align-items:center!important;justify-content:center!important;min-width:20px!important;
+        width:auto!important;height:20px!important;min-height:20px!important;margin:0!important;padding:2px 4px!important;
+        transform:none!important;border-radius:6px!important;box-shadow:0 2px 7px rgba(0,0,0,.32)!important;
+      }
+      #bf-new-match-safe-modal .bf-new-safe-combined-performance .bf-new-safe-player-rate {
+        background:#f8fafc!important;color:#122033!important;border:1px solid #dbeafe!important;font-size:8px!important;font-weight:950!important;
+      }
+      #bf-new-match-safe-modal .bf-new-safe-combined-performance .bf-new-safe-mvp-chip {
+        background:#facc15!important;color:#422006!important;border:1px solid #fff0a3!important;
+      }
+      #bf-new-match-safe-modal .bf-new-safe-combined-performance:empty { display:none!important; }
+      #bf-new-match-safe-modal .bf-new-safe-event-badge--goal { color:#d1fae5!important;background:linear-gradient(145deg,#087f5b,#065f46)!important; }
+      #bf-new-match-safe-modal .bf-new-safe-event-badge--assist { color:#dbeafe!important;background:linear-gradient(145deg,#1d4ed8,#1e40af)!important; }
+      #bf-new-match-safe-modal .bf-new-safe-event-badge--injury { color:#e0f2fe!important;background:linear-gradient(145deg,#475569,#334155)!important; }
+      #bf-new-match-safe-modal .bf-new-safe-event-badge--yellow { background:#a16207!important; }
+      #bf-new-match-safe-modal .bf-new-safe-event-badge--red { background:#b91c1c!important; }
+      #bf-new-match-safe-modal .bf-new-safe-event-badge--penalty { color:#ffedd5!important;background:#9a3412!important; }
+      #bf-new-match-safe-modal .bf-new-safe-performance-legend {
+        display:flex!important;align-items:center!important;justify-content:center!important;flex-wrap:wrap!important;
+        gap:7px 13px!important;padding:10px 12px 13px!important;border-top:1px solid rgba(80,170,125,.16)!important;color:#b5c9bf!important;
+      }
+      #bf-new-match-safe-modal .bf-new-safe-legend-item { display:inline-flex!important;align-items:center!important;gap:5px!important;min-height:20px!important;font-size:9px!important;font-weight:800!important; }
+      #bf-new-match-safe-modal .bf-new-safe-legend-item .bf-new-safe-event-svg { width:13px!important;height:13px!important; }
+      #bf-new-match-safe-modal .bf-new-safe-legend-item .bf-new-safe-card-glyph { width:8px!important;height:13px!important; }
+      #bf-new-match-safe-modal .bf-new-safe-legend-item small { font-size:9px!important; }
+      #bf-new-match-safe-modal .bf-new-safe-combined-caption { display:flex!important;justify-content:space-between!important;gap:7px!important;padding:10px 13px 5px!important;color:#91aa9e!important;font-size:9px!important;font-weight:900!important; }
+      #bf-new-match-safe-modal .bf-new-safe-player-detail-panel:not([hidden]) {
+        margin:10px 12px!important;padding:13px!important;border:1px solid rgba(65,220,162,.34)!important;border-radius:13px!important;
+        background:linear-gradient(120deg,rgba(11,75,48,.26),rgba(8,23,32,.9))!important;
+      }
+      @media(max-width:650px) {
+        #bf-new-match-safe-modal .bf-new-safe-combined-head { grid-template-columns:minmax(0,1fr) auto minmax(0,1fr)!important;padding:10px 7px!important;gap:5px!important; }
+        #bf-new-match-safe-modal .bf-new-safe-combined-team { gap:4px!important;font-size:9px!important; }
+        #bf-new-match-safe-modal .bf-new-safe-combined-team img { width:23px!important;height:23px!important; }
+        #bf-new-match-safe-modal .bf-new-safe-combined-team em { font-size:7px!important;padding:3px 5px!important; }
+        #bf-new-match-safe-modal .bf-new-safe-combined-performance { width:18px!important;max-width:18px!important;gap:2px!important; }
+        #bf-new-match-safe-modal .bf-new-safe-combined-performance .bf-new-safe-event-badge { width:17px!important;min-width:17px!important;height:17px!important;min-height:17px!important;flex-basis:17px!important;padding:1px!important; }
+        #bf-new-match-safe-modal .bf-new-safe-combined-performance .bf-new-safe-event-svg { width:11px!important;height:11px!important;flex-basis:11px!important; }
+        #bf-new-match-safe-modal .bf-new-safe-combined-performance .bf-new-safe-player-rate,
+        #bf-new-match-safe-modal .bf-new-safe-combined-performance .bf-new-safe-mvp-chip { min-width:17px!important;height:17px!important;min-height:17px!important;font-size:7px!important;padding:1px 3px!important; }
+        #bf-new-match-safe-modal .bf-new-safe-combined-caption { font-size:7px!important;padding:8px 7px 4px!important; }
+        #bf-new-match-safe-modal .bf-new-safe-performance-legend { gap:5px 9px!important;padding:8px 7px 10px!important; }
+        #bf-new-match-safe-modal .bf-new-safe-legend-item,
+        #bf-new-match-safe-modal .bf-new-safe-legend-item small { font-size:8px!important; }
+      }
+
     `;
 
     document.head.appendChild(
@@ -2316,7 +2480,7 @@ ${esc(String(playerName(player) || "P").split(/\s+/).map(part => part[0] || "").
             '<span class="bf-new-safe-combined-avatar">' + esc(String(playerName(player) || "P").split(/\s+/).map(part=>part[0]||"").join("").slice(0,2).toUpperCase()) + '</span>') +
           '<span class="bf-new-safe-combined-shirt">' + esc(playerNumber(player)) + '</span>' +
           '<span class="bf-new-safe-combined-name">' + esc(playerName(player) || "Joueur") + '</span>' +
-          '<span class="bf-new-safe-combined-performance">' + performance + '</span>' +
+          (performance ? '<span class="bf-new-safe-combined-performance" aria-label="Performances de ' + esc(playerName(player)) + '">' + performance + '</span>' : '') +
           detailTemplate(player, team, side) + '</div>';
       }).join("");
     };
@@ -2326,7 +2490,10 @@ ${esc(String(playerName(player) || "P").split(/\s+/).map(part => part[0] || "").
     return '<div class="bf-new-safe-combined-wrap"><div class="bf-new-safe-combined-head">' +
       head(homeLineup,home,"Domicile") + '<span class="bf-new-safe-combined-vs">VS</span>' + head(awayLineup,away,"Extérieur") +
       '</div><div class="bf-new-safe-combined-pitch">' + markings + renderTeam(homeLineup,home,"home") + renderTeam(awayLineup,away,"away") +
-      '</div><div class="bf-new-safe-player-detail-panel" hidden></div><div class="bf-new-safe-combined-caption"><span>DOMICILE · CÔTÉ GAUCHE</span><span>EXTÉRIEUR · CÔTÉ DROIT</span><small>Clique sur un joueur pour ouvrir sa fiche</small></div></div>';
+      '</div><div class="bf-new-safe-player-detail-panel" hidden></div><div class="bf-new-safe-combined-caption"><span>DOMICILE · CÔTÉ GAUCHE</span><span>EXTÉRIEUR · CÔTÉ DROIT</span><small>Clique sur un joueur pour ouvrir sa fiche</small></div>' +
+      '<div class="bf-new-safe-performance-legend" aria-label="Légende des performances">' +
+      [["goal","But"],["assist","Passe D"],["yellow","Jaune"],["red","Rouge"],["injury","Blessure"]].map(([kind,label]) => '<span class="bf-new-safe-legend-item">' + playerPerformanceIcon(kind) + '<small>' + label + '</small></span>').join("") +
+      '</div></div>';
   }
 
   /* =========================================================
@@ -3635,69 +3802,7 @@ function bfSameFixtureMetadata(candidate,expected,requireDate=false) {
 
       </div>
 
-      /* Professional combined pitch: player performance beside each card. */
-      #bf-new-match-safe-modal .bf-new-safe-combined-player { overflow:visible; }
-      #bf-new-match-safe-modal .bf-new-safe-combined-performance { position:absolute; top:10px; left:calc(100% - 1px); right:auto; z-index:15; display:flex; flex-direction:column; align-items:center; gap:3px; width:20px; max-width:20px; overflow:visible; }
-      #bf-new-match-safe-modal .bf-new-safe-combined-player--perf-left .bf-new-safe-combined-performance { left:auto; right:calc(100% - 1px); }
-      #bf-new-match-safe-modal .bf-new-safe-combined-performance .bf-new-safe-event-badge,
-      #bf-new-match-safe-modal .bf-new-safe-combined-performance .bf-new-safe-player-rate,
-      #bf-new-match-safe-modal .bf-new-safe-combined-performance .bf-new-safe-mvp-chip { display:inline-flex; align-items:center; justify-content:center; min-width:15px; min-height:14px; padding:2px; border-radius:4px; box-shadow:0 2px 5px rgba(0,0,0,.25); font-size:7px; line-height:1; }
-      #bf-new-match-safe-modal .bf-new-safe-combined-performance .bf-new-safe-player-rate { background:#f8fafc; color:#122033; font-weight:950; }
-      #bf-new-match-safe-modal .bf-new-safe-combined-performance .bf-new-safe-mvp-chip { background:#facc15; color:#422006; }
-      #bf-new-match-safe-modal .bf-new-safe-head .bf-new-safe-info { width:100%; grid-column:1/-1; flex:0 0 100%; justify-content:flex-start; margin-top:15px; padding-top:13px; border-top:1px solid rgba(148,163,184,.22); }
-      #bf-new-match-safe-modal .bfmd-center-nav { background:transparent; border-bottom:1px solid rgba(127,127,127,.13); }
-      body.dark #bf-new-match-safe-modal .bf-new-safe-box { color:#edf4ff; background:#0b1422; border:1px solid rgba(148,176,211,.2); }
-      body.dark #bf-new-match-safe-modal .bf-new-safe-section,
-      body.dark #bf-new-match-safe-modal .bfmd-section { color:#edf4ff; background:linear-gradient(145deg,rgba(19,34,54,.94),rgba(12,23,38,.96)); border-color:rgba(157,181,211,.18); }
-      body.dark #bf-new-match-safe-modal .bf-new-safe-title,
-      body.dark #bf-new-match-safe-modal .bf-new-safe-team,
-      body.dark #bf-new-match-safe-modal .bf-new-safe-score { color:#f3f7ff; }
-      body.dark #bf-new-match-safe-modal .bf-new-safe-info span { color:#d9e7fa; background:#132238; border-color:rgba(157,181,211,.18); }
-      body.dark #bf-new-match-safe-modal .bfmd-center-nav button { color:#edf4ff; }
-      body:not(.dark) #bf-new-match-safe-modal .bf-new-safe-box { color:#172033; background:#f7f9fc; border:1px solid #d9e2ee; }
-      body:not(.dark) #bf-new-match-safe-modal .bf-new-safe-section,
-      body:not(.dark) #bf-new-match-safe-modal .bfmd-section { color:#172033; background:linear-gradient(145deg,#fff,#f7f9fc); border-color:#d8e2ed; }
-      body:not(.dark) #bf-new-match-safe-modal .bf-new-safe-title,
-      body:not(.dark) #bf-new-match-safe-modal .bf-new-safe-team { color:#172033; }
-      body:not(.dark) #bf-new-match-safe-modal .bf-new-safe-score { color:#101828; }
-      body:not(.dark) #bf-new-match-safe-modal .bf-new-safe-info span { color:#334155; background:#edf2f7; border-color:#d6e0eb; }
-      body:not(.dark) #bf-new-match-safe-modal .bfmd-center-nav { background:rgba(247,249,252,.96); }
-      body:not(.dark) #bf-new-match-safe-modal .bfmd-center-nav button { color:#27364b; }
-      @media(max-width:650px) {
-        #bf-new-match-safe-modal .bf-new-safe-combined-performance { top:8px; width:16px; max-width:16px; gap:2px; }
-        #bf-new-match-safe-modal .bf-new-safe-combined-performance .bf-new-safe-event-badge,
-        #bf-new-match-safe-modal .bf-new-safe-combined-performance .bf-new-safe-player-rate,
-        #bf-new-match-safe-modal .bf-new-safe-combined-performance .bf-new-safe-mvp-chip { min-width:12px; min-height:12px; padding:1px; font-size:6px; }
-      }
-
-      /* Landscape pitch: home occupies the left half, away the right half. */
-      #bf-new-match-safe-modal .bf-new-safe-combined-pitch { width:min(100%,900px); aspect-ratio:1.48; height:auto; min-height:0; max-height:none; margin:0 auto; overflow:visible; }
-      #bf-new-match-safe-modal .bf-new-safe-combined-pitch .bf-new-safe-combined-half { left:50%; right:auto; top:8px; bottom:8px; width:2px; height:auto; }
-      #bf-new-match-safe-modal .bf-new-safe-combined-pitch .bf-new-safe-combined-box { left:0; right:auto; top:25%; bottom:25%; width:15%; height:auto; }
-      #bf-new-match-safe-modal .bf-new-safe-combined-pitch .bf-new-safe-combined-box--top { left:8px; right:auto; top:25%; bottom:25%; }
-      #bf-new-match-safe-modal .bf-new-safe-combined-pitch .bf-new-safe-combined-box--bottom { left:auto; right:8px; top:25%; bottom:25%; }
-      #bf-new-match-safe-modal .bf-new-safe-combined-goal { position:absolute; top:39%; width:3%; height:22%; border:1px solid rgba(255,255,255,.85); pointer-events:none; }
-      #bf-new-match-safe-modal .bf-new-safe-combined-goal--left { left:0; border-left:0; }
-      #bf-new-match-safe-modal .bf-new-safe-combined-goal--right { right:0; border-right:0; }
-      #bf-new-match-safe-modal .bf-new-safe-combined-spot { position:absolute; top:calc(50% - 2px); width:4px; height:4px; border-radius:50%; background:#fff; }
-      #bf-new-match-safe-modal .bf-new-safe-combined-spot--left { left:20%; }
-      #bf-new-match-safe-modal .bf-new-safe-combined-spot--right { right:20%; }
-      #bf-new-match-safe-modal .bf-new-safe-combined-player { width:clamp(52px,6vw,84px); }
-      #bf-new-match-safe-modal .bf-new-safe-combined-player img,
-      #bf-new-match-safe-modal .bf-new-safe-combined-avatar { width:clamp(24px,2.8vw,38px); height:clamp(24px,2.8vw,38px); }
-      #bf-new-match-safe-modal .bf-new-safe-combined-name { max-width:76px; font-size:clamp(7px,.65vw,9px); padding:2px 4px; }
-      #bf-new-match-safe-modal .bf-new-safe-combined-performance { top:0; }
-      #bf-new-match-safe-modal .bf-new-safe-combined-info i { font-style:normal; }
-      #bf-new-match-safe-modal .bf-new-safe-info i { font-style:normal; }
-      #bf-new-match-safe-modal .bf-new-safe-info b { font-weight:850; }
-      @media(max-width:650px) {
-        #bf-new-match-safe-modal .bf-new-safe-combined-pitch { width:100%; aspect-ratio:1.12; }
-        #bf-new-match-safe-modal .bf-new-safe-combined-player { width:clamp(42px,11vw,58px); }
-        #bf-new-match-safe-modal .bf-new-safe-combined-player img,
-        #bf-new-match-safe-modal .bf-new-safe-combined-avatar { width:clamp(20px,5.4vw,27px); height:clamp(20px,5.4vw,27px); }
-        #bf-new-match-safe-modal .bf-new-safe-combined-name { max-width:55px; font-size:6.5px; padding:2px; }
-        #bf-new-match-safe-modal .bf-new-safe-combined-performance { top:0; width:15px; max-width:15px; }
-      }
+      
 
     `;
 
