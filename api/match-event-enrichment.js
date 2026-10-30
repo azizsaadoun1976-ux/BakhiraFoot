@@ -4,7 +4,12 @@ const SPORTSCORE = "https://sportscore.com/api/v1";
 const WIDGET = "https://sportscore.com/api/widget";
 
 function send(res, status, payload) {
-  res.setHeader("Cache-Control", "no-store, max-age=0");
+  res.setHeader(
+    "Cache-Control",
+    status === 200
+      ? "public, s-maxage=60, stale-while-revalidate=180"
+      : "no-store, max-age=0"
+  );
   res.setHeader("Content-Type", "application/json; charset=utf-8");
   res.setHeader("X-Content-Type-Options", "nosniff");
   return res.status(status).json(payload);
