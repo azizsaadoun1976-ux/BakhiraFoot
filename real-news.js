@@ -256,12 +256,14 @@
     }
 
     try {
-      const response = await fetch(NEWS_API, {
-        headers: { "Accept": "application/json" },
-        cache: "no-store"
-      });
-      if (!response.ok) throw new Error("News API HTTP " + response.status);
-      const data = await response.json();
+      const data = window.BFAPI && typeof window.BFAPI.getJSON === "function"
+        ? await window.BFAPI.getJSON(NEWS_API, { ttlMs: 300000, staleIfErrorMs: 1200000, timeoutMs: 12000 })
+        : await fetch(NEWS_API, { headers: { "Accept": "application/json" }, cache: "no-store" })
+            .then(async response => {
+              const payload = await response.json().catch(() => ({}));
+              if (!response.ok) throw new Error("News API HTTP " + response.status);
+              return payload;
+            });
       if (!Array.isArray(data.articles) || !data.articles.length) throw new Error("No articles returned");
 
       saveCachedNews(data);
