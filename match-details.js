@@ -1533,6 +1533,61 @@
         #bfMatchDetailsModal .bfmd-performance-legend,#bfMatchDetailsModal .bfmd-legend-item small { font-size:8px!important; }
       }
 
+
+      /* Player markers: rating under face, name includes shirt number, event SVGs float beside */
+      #bfMatchDetailsModal .bfmd-combined-player {width:clamp(58px,6vw,82px)!important;gap:0!important;overflow:visible!important;isolation:isolate!important}
+      #bfMatchDetailsModal .bfmd-combined-player .bfmd-photo-wrap,
+      #bfMatchDetailsModal .bfmd-combined-player .bfmd-number-only {width:39px!important;height:39px!important;border:2px solid #fff!important;box-shadow:0 2px 8px #0005!important}
+      #bfMatchDetailsModal .bfmd-combined-player .bfmd-number {display:none!important}
+      #bfMatchDetailsModal .bfmd-combined-player .bfmd-name {
+        display:block!important;max-width:106px!important;margin-top:3px!important;padding:0!important;
+        border:0!important;border-radius:0!important;background:transparent!important;color:#f4f7f8!important;
+        font-size:clamp(8px,.72vw,10px)!important;line-height:1.12!important;font-weight:850!important;
+        text-align:center!important;text-shadow:0 1px 3px #000!important;white-space:normal!important;overflow-wrap:anywhere!important;
+      }
+      #bfMatchDetailsModal .bfmd-lineup-rating {
+        position:relative!important;z-index:6!important;display:inline-flex!important;align-items:center!important;justify-content:center!important;
+        min-width:31px!important;height:18px!important;margin-top:-4px!important;padding:1px 4px!important;
+        border:1px solid rgba(255,255,255,.8)!important;border-radius:2px!important;color:#fff!important;
+        font-size:11px!important;line-height:1!important;font-weight:1000!important;font-variant-numeric:tabular-nums!important;box-shadow:0 2px 4px #0003!important;
+      }
+      #bfMatchDetailsModal .bfmd-lineup-rating--poor {background:#dc0c00!important}
+      #bfMatchDetailsModal .bfmd-lineup-rating--below {background:#ed7e07!important}
+      #bfMatchDetailsModal .bfmd-lineup-rating--average {background:#d9af00!important}
+      #bfMatchDetailsModal .bfmd-lineup-rating--good {background:#00c424!important}
+      #bfMatchDetailsModal .bfmd-lineup-rating--very-good {background:#00adc4!important}
+      #bfMatchDetailsModal .bfmd-lineup-rating--elite {background:#374df5!important}
+      #bfMatchDetailsModal .bfmd-combined-player .bfmd-event-mini {
+        position:absolute!important;top:-3px!important;left:calc(100% - 3px)!important;right:auto!important;transform:none!important;
+        z-index:18!important;display:flex!important;flex-direction:column!important;align-items:center!important;justify-content:flex-start!important;
+        gap:2px!important;width:20px!important;max-width:20px!important;min-height:0!important;margin:0!important;padding:0!important;
+        background:transparent!important;border:0!important;border-radius:0!important;box-shadow:none!important;overflow:visible!important;pointer-events:none!important;
+      }
+      #bfMatchDetailsModal .bfmd-combined-player--perf-left .bfmd-event-mini {left:auto!important;right:calc(100% - 3px)!important}
+      #bfMatchDetailsModal .bfmd-combined-player .bfmd-event-mini .bfmd-chip {
+        display:inline-flex!important;align-items:center!important;justify-content:center!important;gap:1px!important;
+        min-width:19px!important;width:19px!important;height:19px!important;min-height:19px!important;padding:2px!important;
+        border:1px solid #d7dee4!important;border-radius:50%!important;background:#fff!important;color:#17212b!important;box-shadow:0 2px 5px #0005!important;
+      }
+      #bfMatchDetailsModal .bfmd-combined-player .bfmd-event-mini .bfmd-vector-icon {width:12px!important;height:12px!important;flex:0 0 12px!important}
+      #bfMatchDetailsModal .bfmd-combined-player .bfmd-event-mini .bfmd-performance-glyph-card {width:7px!important;height:11px!important;border-radius:1px!important}
+      #bfMatchDetailsModal .bfmd-combined-player .bfmd-event-mini .bfmd-chip--goal,
+      #bfMatchDetailsModal .bfmd-combined-player .bfmd-event-mini .bfmd-chip--assist,
+      #bfMatchDetailsModal .bfmd-combined-player .bfmd-event-mini .bfmd-chip--injury,
+      #bfMatchDetailsModal .bfmd-combined-player .bfmd-event-mini .bfmd-chip--yellow,
+      #bfMatchDetailsModal .bfmd-combined-player .bfmd-event-mini .bfmd-chip--red {background:#fff!important;color:#17212b!important}
+      #bfMatchDetailsModal .bfmd-combined-player .bfmd-event-mini .bfmd-chip--injury {color:#dc2626!important}
+      @media(max-width:650px) {
+        #bfMatchDetailsModal .bfmd-combined-player {width:clamp(48px,11vw,62px)!important}
+        #bfMatchDetailsModal .bfmd-combined-player .bfmd-photo-wrap,
+        #bfMatchDetailsModal .bfmd-combined-player .bfmd-number-only {width:31px!important;height:31px!important}
+        #bfMatchDetailsModal .bfmd-lineup-rating {min-width:28px!important;height:16px!important;font-size:9px!important}
+        #bfMatchDetailsModal .bfmd-combined-player .bfmd-name {max-width:66px!important;font-size:7px!important}
+        #bfMatchDetailsModal .bfmd-combined-player .bfmd-event-mini {width:17px!important;max-width:17px!important;gap:1px!important}
+        #bfMatchDetailsModal .bfmd-combined-player .bfmd-event-mini .bfmd-chip {width:16px!important;min-width:16px!important;height:16px!important;min-height:16px!important;flex-basis:16px!important;padding:1px!important}
+        #bfMatchDetailsModal .bfmd-combined-player .bfmd-event-mini .bfmd-vector-icon {width:10px!important;height:10px!important;flex-basis:10px!important}
+      }
+
     `;
 
     document.head.appendChild(style);
@@ -4405,7 +4460,18 @@ function normalizeEvent(event, index) {
   return null;
  }
 
- function playerBadges(player, statsMap) {
+ function lineupRatingClass(value) {
+    const rating = Number(value);
+    if (!Number.isFinite(rating)) return "bfmd-lineup-rating--none";
+    if (rating >= 9) return "bfmd-lineup-rating--elite";
+    if (rating >= 8) return "bfmd-lineup-rating--very-good";
+    if (rating >= 7) return "bfmd-lineup-rating--good";
+    if (rating >= 6.5) return "bfmd-lineup-rating--average";
+    if (rating >= 6) return "bfmd-lineup-rating--below";
+    return "bfmd-lineup-rating--poor";
+  }
+
+  function playerBadges(player, statsMap, options = {}) {
   const stats = statsMap.get(playerKey(player)) || {
     goals:0, penalties:0, ownGoals:0, assists:0, yellow:0, red:0, injury:0, in:0, out:0
   };
@@ -4429,7 +4495,7 @@ function normalizeEvent(event, index) {
   add("subOut", stats.out, "Sortie du terrain");
 
   const rating = getPlayerRating(player);
-  if (rating !== null && rating !== undefined && rating !== "" && Number.isFinite(Number(rating))) {
+  if (options.includeRating !== false && rating !== null && rating !== undefined && rating !== "" && Number.isFinite(Number(rating))) {
     const ratingValue = Number(rating);
     const ratingTone = ratingValue >= 8 ? "excellent" : ratingValue >= 7 ? "good" :
       ratingValue >= 6 ? "average" : ratingValue >= 5.5 ? "low" : "poor";
@@ -4528,9 +4594,16 @@ function normalizeEvent(event, index) {
         const fieldX = side === "home" ? 5 + item.y * 0.43 : 57 + item.y * 0.38;
         const fieldY = side === "home" ? 8 + item.x * 0.84 : 92 - item.x * 0.84;
         const performanceSide = side === "home" ? "right" : "left";
+        const rating = getPlayerRating(player);
+        const ratingMarkup = rating !== null && rating !== undefined && rating !== "" && Number.isFinite(Number(rating))
+          ? '<span class="bfmd-lineup-rating ' + lineupRatingClass(rating) + '" title="Note du joueur ' + esc(Number(rating).toFixed(1)) + '/10">' + esc(Number(rating).toFixed(1)) + '</span>'
+          : '';
+        const number = String(getPlayerNumber(player) ?? "").trim();
+        const playerLabel = (number && number !== "—" ? number + " " : "") + (getPlayerName(player) || "Joueur");
+        const eventBadges = playerBadges(player, statsMap, {includeRating:false});
         return '<div role="button" tabindex="0" aria-expanded="false" data-bf-player-toggle="1" class="bfmd-player bfmd-combined-player bfmd-combined-player--' + side + ' bfmd-combined-player--perf-' + performanceSide + '" style="left:' + Math.max(10,Math.min(90,fieldX)) + '%;top:' + Math.max(10,Math.min(90,fieldY)) + '%" title="Cliquer pour afficher les détails de ' + esc(getPlayerName(player)) + '">' +
-          playerAvatar(player) + pitchNumberBadge(player) + '<div class="bfmd-name">' + esc(getPlayerName(player)) + '</div>' + playerBadges(player, statsMap) +
-          playerDetail(player) + '</div>';
+          playerAvatar(player) + ratingMarkup + '<div class="bfmd-name">' + esc(playerLabel) + '</div>' +
+          (eventBadges ? eventBadges : '') + playerDetail(player) + '</div>';
       }).join("");
     };
     const teamHead = (lineup, fallback) => '<div class="bfmd-combined-team"><span>' +
