@@ -4653,6 +4653,12 @@ function normalizeEvent(event, index) {
      RENDER PITCH
   ========================================================= */
 
+  function pitchNumberBadge(player) {
+    const number = String(getPlayerNumber(player) ?? "").trim();
+    if (!number || number === "—" || !getPlayerPhoto(player)) return "";
+    return '<span class="bfmd-pitch-shirt" style="position:absolute;top:-4px;left:calc(50% + 5px);z-index:20;min-width:18px;height:18px;padding:0 3px;display:grid;place-items:center;border:1px solid rgba(255,255,255,.9);border-radius:5px;background:#07121d;color:#fff;font-size:9px;line-height:1;font-weight:950;box-shadow:0 2px 5px #0008;">' + esc(number) + '</span>';
+  }
+
   function renderPitch(lineup, side, statsMap) {
     const team = lineup?.team || {};
     const teamHeader = '<div class="bfmd-pitch-head"><div class="bfmd-pitch-team">' +
@@ -4672,10 +4678,10 @@ function normalizeEvent(event, index) {
         arr(lineup.xi).length + ' titulaires</div><div class="bfmd-pitch-bench">' + renderBenchPerformance(lineup, statsMap) + '</div></div>';
     }
     const playersHTML = positions.map(item => {
-      const player = item.player, name = getPlayerName(player), position = getPlayerPosition(player);
+      const player = item.player, name = getPlayerName(player);
       return '<div class="bfmd-player" style="left:' + item.x + '%;top:' + item.y + '%;" title="' + esc(name) + '">' +
-        playerAvatar(player) + '<div class="bfmd-name">' + esc(name) + '</div>' +
-        (position ? '<div class="bfmd-role">' + esc(position) + '</div>' : '') + playerBadges(player, statsMap) + '</div>';
+        playerAvatar(player) + pitchNumberBadge(player) + '<div class="bfmd-name">' + esc(name) + '</div>' +
+        playerBadges(player, statsMap) + '</div>';
     }).join("");
     return '<div class="bfmd-pitch-card" data-side="' + side + '">' + teamHeader +
       '<div class="bfmd-pitch bfmd-pitch--' + side + '">' + markings + playersHTML + '</div>' +
@@ -4690,6 +4696,8 @@ function normalizeEvent(event, index) {
       const rating = getPlayerRating(player);
       const name = getPlayerName(player) || "Joueur";
       const photo = getPlayerPhoto(player);
+      const shirtNumber = getPlayerNumber(player);
+      const shirtLabel = shirtNumber && String(shirtNumber) !== "—" ? "N° " + shirtNumber : "Numéro non communiqué";
       const summary = [];
       if (rating !== null && rating !== undefined && rating !== "") summary.push("Note " + Number(rating).toFixed(1) + "/10");
       if (stats.goals) summary.push("Buts " + stats.goals);
@@ -4701,7 +4709,7 @@ function normalizeEvent(event, index) {
       if (stats.injury) summary.push("Blessure signalée");
       return '<template class="bfmd-player-detail-template"><div class="bfmd-selected-player-inner">' +
         (photo ? '<img class="bfmd-selected-player-photo" src="' + esc(photo) + '" alt="" loading="lazy">' : '<span class="bfmd-selected-player-photo bfmd-selected-player-photo--fallback">⚽</span>') +
-        '<div class="bfmd-selected-player-copy"><strong>' + esc(name) + '</strong><span>' + esc(getPlayerPosition(player) || "Position non communiquée") + ' · #' + esc(getPlayerNumber(player)) + '</span>' +
+        '<div class="bfmd-selected-player-copy"><strong>' + esc(name) + '</strong><span>' + esc(shirtLabel) + '</span>' +
         '<p>' + esc(summary.length ? summary.join(" · ") : "Aucune statistique individuelle fournie pour ce joueur.") + '</p>' +
         '<div class="bfmd-selected-player-events">' + playerBadges(player, statsMap) + '</div></div></div></template>';
     };
@@ -4721,7 +4729,7 @@ function normalizeEvent(event, index) {
         const fieldY = side === "home" ? 8 + item.x * 0.84 : 92 - item.x * 0.84;
         const performanceSide = side === "home" ? "right" : "left";
         return '<div role="button" tabindex="0" aria-expanded="false" data-bf-player-toggle="1" class="bfmd-player bfmd-combined-player bfmd-combined-player--' + side + ' bfmd-combined-player--perf-' + performanceSide + '" style="left:' + Math.max(10,Math.min(90,fieldX)) + '%;top:' + Math.max(10,Math.min(90,fieldY)) + '%" title="Cliquer pour afficher les détails de ' + esc(getPlayerName(player)) + '">' +
-          playerAvatar(player) + '<div class="bfmd-name">' + esc(getPlayerName(player)) + '</div>' + playerBadges(player, statsMap) +
+          playerAvatar(player) + pitchNumberBadge(player) + '<div class="bfmd-name">' + esc(getPlayerName(player)) + '</div>' + playerBadges(player, statsMap) +
           playerDetail(player) + '</div>';
       }).join("");
     };
