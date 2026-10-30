@@ -35,7 +35,10 @@ const ESPN_CODES = [
 ];
 
 function send(res, status, payload) {
-  res.setHeader("Cache-Control", "no-store, max-age=0");
+  const cache = status === 200
+    ? "public, s-maxage=180, stale-while-revalidate=600"
+    : "no-store, max-age=0";
+  res.setHeader("Cache-Control", cache);
   res.setHeader("Content-Type", "application/json; charset=utf-8");
   res.setHeader("X-Content-Type-Options", "nosniff");
   return res.status(status).json(payload);
@@ -126,37 +129,57 @@ async function loadHeadToHead(homeName, awayName) {
   ]);
   const homeTeam = homeSearch.status === "fulfilled" ? homeSearch.value : null;
   const awayTeam = awaySearch.status === "fulfilled" ? awaySearch.value : null;
-  if (!homeTeam || !awayTeam) return [];
+  if (!homeTeam || !awayTeam) {
+    return { headToHead: [], homeRecent: [], awayRecent: [] };
+  }
 
   const [homeEvents, awayEvents] = await Promise.allSettled([
     sofaJSON("/team/" + encodeURIComponent(homeTeam.id) + "/events/last/0"),
     sofaJSON("/team/" + encodeURIComponent(awayTeam.id) + "/events/last/0")
   ]);
-  const all = [];
-  for (const result of [homeEvents, awayEvents]) {
-    if (result.status !== "fulfilled") continue;
-    const list = result.value?.events || result.value?.events?.events || [];
-    if (Array.isArray(list)) all.push(...list);
-  }
 
-  const unique = new Map();
-  for (const event of all) {
+  const eventsFrom = result => {
+    if (result.status !== "fulfilled") return [];
+    const list = result.value?.events || result.value?.events?.events || [];
+    return Array.isArray(list) ? list : [];
+  };
+  const summarize = event => {
     const h = event?.homeTeam?.name || "";
     const a = event?.awayTeam?.name || "";
-    if (!(sameTeam(h, homeName) && sameTeam(a, awayName)) &&
-        !(sameTeam(h, awayName) && sameTeam(a, homeName))) continue;
-    const key = String(event.id ?? [h, a, eventTime(event)].join("|"));
-    unique.set(key, {
-      id: key,
+    return {
+      id: String(event.id ?? [h, a, eventTime(event)].join("|")),
       date: eventTime(event),
       home: h,
       away: a,
       score: eventScore(event),
-      competition: event?.tournament?.name || event?.uniqueTournament?.name || "",
+      competition: event?.tournament?.name || event?.tournament?.uniqueTournament?.name || event?.uniqueTournament?.name || "",
       status: event?.status?.description || event?.status?.type || ""
-    });
+    };
+  };
+  const sortRecent = events => events
+    .filter(event => event?.homeTeam?.name && event?.awayTeam?.name)
+    .map(summarize)
+    .sort((a, b) => (Date.parse(b.date) || 0) - (Date.parse(a.date) || 0));
+
+  const homeRaw = eventsFrom(homeEvents);
+  const awayRaw = eventsFrom(awayEvents);
+  const homeRecent = sortRecent(homeRaw).slice(0, 5);
+  const awayRecent = sortRecent(awayRaw).slice(0, 5);
+
+  const unique = new Map();
+  for (const event of [...homeRaw, ...awayRaw]) {
+    const h = event?.homeTeam?.name || "";
+    const a = event?.awayTeam?.name || "";
+    if (!(sameTeam(h, homeName) && sameTeam(a, awayName)) &&
+        !(sameTeam(h, awayName) && sameTeam(a, homeName))) continue;
+    const item = summarize(event);
+    unique.set(item.id, item);
   }
-  return [...unique.values()].sort((a, b) => (Date.parse(b.date) || 0) - (Date.parse(a.date) || 0)).slice(0, 8);
+  const headToHead = [...unique.values()]
+    .sort((a, b) => (Date.parse(b.date) || 0) - (Date.parse(a.date) || 0))
+    .slice(0, 8);
+
+  return { headToHead, homeRecent, awayRecent };
 }
 
 function metadataText(value, depth = 0) {
@@ -559,20 +582,26 @@ module.exports = async function matchCenter(req, res) {
   const date = String(req.query?.date || "").trim().slice(0, 30);
   if (!home || !away) return send(res, 400, { error: "home_and_away_required" });
 
-  const [sofaH2H, standings, metadataResult] = await Promise.all([
-    withDeadline(loadHeadToHead(home, away), 5000, []),
+  const [formData, standings, metadataResult] = await Promise.all([
+    withDeadline(loadHeadToHead(home, away), 5000, {headToHead:[],homeRecent:[],awayRecent:[]}),
     withDeadline(loadStandings(competition, date, home, away), 8000, { league: competition, rows: [] }),
     withDeadline(loadFixtureMetadata(home, away, date, competition), 8000, {metadata:{},headToHead:[]})
   ]);
   const metadata = metadataResult?.metadata || {};
   const enrichedH2H = Array.isArray(metadataResult?.headToHead) ? metadataResult.headToHead : [];
-  const headToHead = sofaH2H.length ? sofaH2H : enrichedH2H;
+  const headToHead = formData.headToHead?.length ? formData.headToHead : enrichedH2H;
+  const homeRecent = Array.isArray(formData.homeRecent) ? formData.homeRecent : [];
+  const awayRecent = Array.isArray(formData.awayRecent) ? formData.awayRecent : [];
   return send(res, 200, {
     headToHead,
+    homeRecent,
+    awayRecent,
     standings,
     metadata,
     availability: {
       headToHead: headToHead.length > 0,
+      homeRecent: homeRecent.length > 0,
+      awayRecent: awayRecent.length > 0,
       standings: Array.isArray(standings?.rows) && standings.rows.length > 0,
       metadata: !!(metadata.venue || metadata.referee || metadata.broadcastChannel || metadata.commentator)
     }
