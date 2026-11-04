@@ -74,7 +74,7 @@
     $("#bf-entity-content",$("#bf-entity-modal")).innerHTML=content;
   }
   function playerName(node){if(!node)return"";const attr=node.getAttribute?.("data-player-name")||node.getAttribute?.("data-bf-player-name");if(attr)return attr.trim();return String(($(".bfmd-player-name,.bf-new-safe-player-name,.bf-new-safe-name,.ss-player-name,.bf-pitch-name",node)||node).textContent||"").trim().replace(/\s+/g," ")}
-  function playerRow(n){return n?.closest?.(".ss-player-row,.bf-new-safe-list-player,.bf-new-safe-player,.bf-pitch-player,[data-bf-player-row],.ss-player")||n?.closest?.(".bfmd-player-name")?.parentElement?.parentElement||n?.parentElement||null}
+  function playerRow(n){const scorer=n?.closest?.(".ss-player");return scorer?.closest?.(".ss-player-row")||n?.closest?.(".ss-player-row,.bf-new-safe-list-player,.bf-new-safe-player,.bf-pitch-player,[data-bf-player-row],.bf-new-safe-combined-player")||n?.closest?.(".bfmd-player-name")?.parentElement?.parentElement||n?.parentElement||null}
   function openPlayer(n,opts={}){
     n=String(n||"").trim();if(!n)return;
     const node=opts.trigger||$$('[data-player-name],[data-bf-player-name],.ss-player-name,.bfmd-player-name,.bf-new-safe-player-name,.bf-new-safe-name,.bf-pitch-name,.bf-pitch-player,.bf-new-safe-player').find(el=>norm(playerName(el))===norm(n));
