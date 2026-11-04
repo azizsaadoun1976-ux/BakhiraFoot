@@ -1,0 +1,43 @@
+/* BakhiraFoot — profile detail polish */
+#bf-entity-modal .bf-entity-profile-kicker{
+  display:block;margin:0 0 6px;color:#70e4b2;font-size:9px;font-weight:950;letter-spacing:.16em
+}
+#bf-entity-modal .bf-entity-meta{
+  display:flex;flex-wrap:wrap;gap:6px;margin-top:9px
+}
+#bf-entity-modal .bf-entity-meta .bf-epill{
+  max-width:100%;overflow-wrap:anywhere
+}
+#bf-entity-modal .bf-entity-stat-grid{
+  grid-template-columns:repeat(3,minmax(0,1fr))
+}
+#bf-entity-modal .bf-entity-stat-grid .bf-estat{
+  min-height:74px;display:flex;flex-direction:column;justify-content:center
+}
+#bf-entity-modal .bf-entity-stat-grid .bf-estat strong{
+  font-size:clamp(17px,2vw,22px);font-variant-numeric:tabular-nums
+}
+#bf-entity-modal .bf-entity-stat-grid .bf-estat span{
+  font-size:9px;letter-spacing:.02em
+}
+#bf-entity-modal .bf-entity-event-line{
+  padding:12px 14px;border:1px solid #29465a;border-radius:12px;
+  background:linear-gradient(135deg,#102b37,#101d2b);color:#dcebf4;
+  font-size:12px;line-height:1.8;overflow-wrap:anywhere
+}
+#bf-entity-modal .bf-ehero>div{min-width:0}
+#bf-entity-modal .bf-ehero .bf-etitle{overflow-wrap:anywhere}
+#bf-entity-modal .bf-enote{max-width:760px}
+.bf-score-card-team,.bf-home-featured-team,.ss-club,.ss-player,.bf-new-safe-player-name,
+.bf-new-safe-player,.bfmd-player-name,[data-player-name],[data-bf-player-name]{
+  cursor:pointer
+}
+.bf-score-card-team:focus-visible,.ss-club:focus-visible,.ss-player:focus-visible,
+.bf-new-safe-player:focus-visible,[data-player-name]:focus-visible,[data-bf-player-name]:focus-visible{
+  outline:2px solid #20d99a;outline-offset:3px;border-radius:8px
+}
+@media(max-width:600px){
+  #bf-entity-modal .bf-entity-stat-grid{grid-template-columns:repeat(2,minmax(0,1fr))}
+  #bf-entity-modal .bf-ehero{align-items:flex-start}
+  #bf-entity-modal .bf-entity-event-line{font-size:11px}
+}
