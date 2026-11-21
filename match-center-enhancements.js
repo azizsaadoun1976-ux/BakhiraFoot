@@ -181,8 +181,8 @@
 
   function sameTeamName(a, b) {
     const clean = value => norm(value)
-      .replace(/\\b(fc|cf|sc|afc|cfc|club)\\b/g, " ")
-      .replace(/\\s+/g, " ").trim();
+      .replace(/\b(fc|cf|sc|afc|cfc|club)\b/g, " ")
+      .replace(/\s+/g, " ").trim();
     const x = clean(a), y = clean(b);
     if (!x || !y) return false;
     if (x === y) return true;
@@ -199,7 +199,7 @@
     (Array.isArray(matches) ? matches : []).forEach(match => {
       const status = norm(match?.status);
       if (/not started|scheduled|live|in progress|first half|second half|half time|postponed|cancelled|canceled|suspended|delayed/.test(status)) return;
-      const score = String(match?.score ?? "").match(/^\\s*(\\d{1,2})\\s*[-–:]\\s*(\\d{1,2})/);
+      const score = String(match?.score ?? "").match(/^\s*(\d{1,2})\s*[-–:]\s*(\d{1,2})/);
       if (!score) return;
       const homeSide = sameTeamName(match?.home, teamName);
       const awaySide = sameTeamName(match?.away, teamName);
