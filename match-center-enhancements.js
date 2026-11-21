@@ -768,13 +768,15 @@
       ["Corners",/corner/],
       ["Expected goals",/expected goals|\bxg\b/]
     ];
-    const metrics = statPatterns.map(([label,pattern]) =>
-      statRows.find(row => pattern.test(norm(row.label)) &&
-        row.home !== null && row.home !== undefined && row.away !== null && row.away !== undefined)
-    ).filter(Boolean).slice(0,4);
+    const metrics = statPatterns.map(([displayLabel,pattern]) => {
+      const row = statRows.find(item => pattern.test(norm(item.label)) &&
+        item.home !== null && item.home !== undefined &&
+        item.away !== null && item.away !== undefined);
+      return row ? {...row,displayLabel} : null;
+    }).filter(Boolean).slice(0,4);
     const date = args?.date ? dateLabel(args.date) : "";
     const metricHtml = metrics.length ? metrics.map(row =>
-      '<div class="bfmc-overview-metric"><span>' + esc(row.label) + '</span><strong>' +
+      '<div class="bfmc-overview-metric"><span>' + esc(row.displayLabel || row.label) + '</span><strong>' +
       esc(row.home) + '<i>—</i>' + esc(row.away) + '</strong></div>'
     ).join("") : '<div class="bf-new-safe-empty">Les statistiques clés ne sont pas encore publiées par le fournisseur pour cette rencontre.</div>';
     const events = overviewEvents(details);
