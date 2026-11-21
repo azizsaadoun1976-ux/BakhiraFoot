@@ -157,8 +157,11 @@ async function loadHeadToHead(homeName, awayName) {
 
   const eventsFrom = result => {
     if (result.status !== "fulfilled") return [];
-    const list = result.value?.events || result.value?.events?.events || [];
-    return Array.isArray(list) ? list : [];
+    const root = result.value?.events;
+    if (Array.isArray(root)) return root;
+    if (Array.isArray(root?.events)) return root.events;
+    if (Array.isArray(result.value?.eventsList)) return result.value.eventsList;
+    return [];
   };
   const summarize = event => {
     const h = event?.homeTeam?.name || "";
