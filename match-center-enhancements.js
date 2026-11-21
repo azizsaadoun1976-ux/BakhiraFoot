@@ -202,7 +202,11 @@
     const result = {played:0,wins:0,draws:0,losses:0,goalsFor:0,goalsAgainst:0,form:[]};
     (Array.isArray(matches) ? matches : []).forEach(match => {
       const status = norm(match?.status);
-      if (/not started|scheduled|live|in progress|first half|second half|half time|postponed|cancelled|canceled|suspended|delayed/.test(status)) return;
+      const statusType = norm(match?.statusType);
+      const explicitlyFinished = statusType
+        ? statusType === "finished"
+        : /^(finished|full time|ft|ended|after extra time|after penalties|aet)$/.test(status);
+      if (!explicitlyFinished) return;
       const score = String(match?.score ?? "").match(/^\s*(\d{1,2})\s*[-–:]\s*(\d{1,2})/);
       if (!score) return;
       const homeSide = sameTeamName(match?.home, teamName);
