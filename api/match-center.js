@@ -118,9 +118,26 @@ function eventTime(event) {
 function eventScore(event) {
   const home = event?.homeScore || {};
   const away = event?.awayScore || {};
-  const h = home.current ?? home.display ?? home.normaltime ?? event?.homeScore;
-  const a = away.current ?? away.display ?? away.normaltime ?? event?.awayScore;
+  const scalar = value => (typeof value === "number" || typeof value === "string") && String(value).trim() !== ""
+    ? value : null;
+  const h = firstValue(home.current, home.display, home.normaltime, home.extra1, event?.homeScore);
+  const a = firstValue(away.current, away.display, away.normaltime, away.extra1, event?.awayScore);
   return h == null || a == null ? "—" : String(h) + " - " + String(a);
+
+  function firstValue(...values) {
+    for (const value of values) {
+      const safe = scalar(value);
+      if (safe !== null) return safe;
+    }
+    return null;
+  }
+}
+
+function isFinishedEvent(event) {
+  const type = String(event?.status?.type || "").toLowerCase();
+  if (type === "finished") return true;
+  const description = String(event?.status?.description || "").trim().toLowerCase();
+  return /^(finished|full time|ft|ended|after extra time|after penalties|aet|penalties)$/.test(description);
 }
 
 async function loadHeadToHead(homeName, awayName) {
@@ -153,11 +170,13 @@ async function loadHeadToHead(homeName, awayName) {
       away: a,
       score: eventScore(event),
       competition: event?.tournament?.name || event?.tournament?.uniqueTournament?.name || event?.uniqueTournament?.name || "",
-      status: event?.status?.description || event?.status?.type || ""
+      status: event?.status?.description || event?.status?.type || "",
+      statusType: String(event?.status?.type || ""),
+      finished: isFinishedEvent(event)
     };
   };
   const sortRecent = events => events
-    .filter(event => event?.homeTeam?.name && event?.awayTeam?.name)
+    .filter(event => event?.homeTeam?.name && event?.awayTeam?.name && isFinishedEvent(event))
     .map(summarize)
     .sort((a, b) => (Date.parse(b.date) || 0) - (Date.parse(a.date) || 0));
 
@@ -168,6 +187,7 @@ async function loadHeadToHead(homeName, awayName) {
 
   const unique = new Map();
   for (const event of [...homeRaw, ...awayRaw]) {
+    if (!isFinishedEvent(event)) continue;
     const h = event?.homeTeam?.name || "";
     const a = event?.awayTeam?.name || "";
     if (!(sameTeam(h, homeName) && sameTeam(a, awayName)) &&
