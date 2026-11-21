@@ -52,6 +52,18 @@
 #bf-new-match-safe-modal .bf-new-safe-player-detail-panel{position:sticky!important;bottom:0!important;z-index:15!important;margin:8px!important;padding:11px!important;border:1px solid rgba(65,220,162,.3)!important;border-radius:11px!important;background:rgba(7,21,28,.97)!important;color:#eaf5fa!important;backdrop-filter:blur(9px)!important}
 #bf-new-match-safe-modal .bf-new-safe-list-player{grid-template-columns:38px 28px minmax(0,1fr) auto!important;gap:8px!important;min-width:0!important;border:1px solid rgba(63,102,123,.19)!important;border-radius:9px!important;background:#0b1d29!important}
 #bf-new-match-safe-modal .bf-new-safe-list-player img,#bf-new-match-safe-modal .bf-new-safe-list-avatar{width:36px!important;height:36px!important;object-fit:cover!important}
+
+#bf-new-match-safe-modal .bf-new-safe-player-copy{display:grid;gap:3px;min-width:0}
+#bf-new-match-safe-modal .bf-new-safe-player-position{color:#8da8b9;font-size:8px;font-weight:750;letter-spacing:.04em}
+#bf-new-match-safe-modal .bf-new-safe-player-stats{display:flex;flex-wrap:wrap;gap:4px;margin-top:3px}
+#bf-new-match-safe-modal .bf-new-safe-player-stat{display:inline-flex;align-items:center;gap:4px;padding:3px 5px;border:1px solid rgba(72,153,128,.22);border-radius:5px;background:rgba(10,63,48,.4);color:#b7d8ca;font-size:8px;line-height:1.2}
+#bf-new-match-safe-modal .bf-new-safe-player-stat b{color:#8df0c2;font-weight:950;font-variant-numeric:tabular-nums}
+#bf-new-match-safe-modal .bf-new-safe-player-stat small{color:#a8bcc7;font-size:7px}
+body:not(.dark) #bf-new-match-safe-modal .bf-new-safe-player-position{color:#687f8b}
+body:not(.dark) #bf-new-match-safe-modal .bf-new-safe-player-stat{background:#edf8f2;border-color:#d5eadd;color:#45675a}
+body:not(.dark) #bf-new-match-safe-modal .bf-new-safe-player-stat b{color:#087c50}
+body:not(.dark) #bf-new-match-safe-modal .bf-new-safe-player-stat small{color:#607b6d}
+
 #bf-new-match-safe-modal .bf-new-safe-name,#bf-new-match-safe-modal .bf-new-safe-player-name{overflow-wrap:anywhere!important}
 #bf-new-match-safe-modal .bf-new-safe-section details>summary{cursor:pointer!important}
 #bf-entity-modal{z-index:2147482500!important}
