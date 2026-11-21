@@ -2605,122 +2605,69 @@ ${esc(String(playerName(player) || "P").split(/\s+/).map(part => part[0] || "").
      RENDER PLAYERS
      ========================================================= */
 
-  function renderPlayers(
-    lineup,
-    details
-  ) {
-
-    if (
-      !lineup.players.length
-    ) {
-
-      return `
-
-        <div
-          class="bf-new-safe-empty"
-        >
-          Joueurs indisponibles
-        </div>
-
-      `;
-
+  function playerStatChips(player) {
+    const p = getPlayerObject(player);
+    const containers = [
+      player?.stats, player?.statistics, player?.performance,
+      p?.stats, p?.statistics, p?.performance,
+      player?.raw?.stats, player?.raw?.statistics
+    ].filter(Boolean);
+    const aliases = {
+      goals:"Buts",goal:"Buts",assists:"Passes D",shots:"Tirs",totalshots:"Tirs",
+      shotsontarget:"Tirs cadrés",keypasses:"Passes clés",passes:"Passes",
+      accuratepasses:"Passes réussies",passaccuracy:"Précision passes",
+      tackles:"Tacles",interceptions:"Interceptions",saves:"Arrêts",
+      minutesplayed:"Minutes",minutes:"Minutes",fouls:"Fautes",
+      duelswon:"Duels gagnés",crosses:"Centres",dribbles:"Dribbles"
+    };
+    const found = new Map();
+    for (const source of containers) {
+      const entries = Array.isArray(source)
+        ? source.map(item => [
+            item?.name || item?.label || item?.key || item?.type?.name || "",
+            item?.displayValue ?? item?.value ?? item?.total ?? item?.stat?.value
+          ])
+        : source && typeof source === "object" ? Object.entries(source) : [];
+      for (const [rawKey,rawValue] of entries) {
+        const key = String(rawKey || "").toLowerCase().replace(/[^a-z0-9]/g,"");
+        if (!aliases[key] || rawValue === null || rawValue === undefined || rawValue === "") continue;
+        const value = rawValue && typeof rawValue === "object"
+          ? (rawValue.displayValue ?? rawValue.value ?? rawValue.total ?? null)
+          : rawValue;
+        if (value === null || value === undefined || value === "") continue;
+        found.set(key,{label:aliases[key],value});
+      }
     }
+    const priority = ["goals","assists","shots","shotsontarget","keypasses","passes","accuratepasses","tackles","interceptions","saves","minutesplayed"];
+    return priority.filter(key => found.has(key)).slice(0,5).map(key => {
+      const item = found.get(key);
+      return '<span class="bf-new-safe-player-stat"><b>' + esc(item.value) +
+        '</b><small>' + esc(item.label) + '</small></span>';
+    }).join("");
+  }
 
-    return lineup.players
-      .map(
-        player => {
-
-          const photo =
-            playerPhoto(
-              player
-            );
-
-          const rating =
-            playerRating(
-              player
-            );
-
-          return `
-
-            <div
-              class="bf-new-safe-list-player"
-            >
-
-              ${
-                photo
-
-                  ? `
-
-                    <img
-                      src="${esc(
-                        photo
-                      )}"
-                      alt="${esc(
-                        playerName(
-                          player
-                        )
-                      )}"
-                    >
-
-                  `
-
-                  : `
-
-                    <div class="bf-new-safe-list-avatar">
-                      ${esc(String(playerName(player) || "P").split(/\s+/).map(part => part[0] || "").join("").slice(0,2).toUpperCase())}
-                    </div>
-
-                  `
-              }
-
-              <div
-                class="bf-new-safe-number"
-              >
-                ${esc(
-                  playerNumber(
-                    player
-                  )
-                )}
-              </div>
-
-              <div>
-
-                <div
-                  class="bf-new-safe-name"
-                >
-                  ${esc(
-                    playerName(
-                      player
-                    )
-                  )}
-                </div>
-<div class="bf-new-safe-player-events">${playerEventBadges(player, details)}</div>
-
-              </div>
-
-              <div
-                class="bf-new-safe-rating"
-              >
-
-                ${
-                  rating !== null
-                    ? `Note ${esc(
-                        Number(
-                          rating
-                        ).toFixed(1)
-                      )}`
-                    : "—"
-                }
-
-              </div>
-
-            </div>
-
-          `;
-
-        }
-      )
-      .join("");
+  function renderPlayers(lineup, details) {
+    if (!lineup.players.length) {
+      return '<div class="bf-new-safe-empty">Aucune donnée de joueurs ou de composition n’a été fournie pour cette rencontre.</div>';
+    }
+    return lineup.players.map(player => {
+      const photo = playerPhoto(player);
+      const rating = playerRating(player);
+      const position = playerPosition(player);
+      const stats = playerStatChips(player);
+      return '<article class="bf-new-safe-list-player">' +
+        (photo
+          ? '<img src="' + esc(photo) + '" alt="' + esc(playerName(player)) + '" loading="lazy" referrerpolicy="no-referrer">'
+          : '<div class="bf-new-safe-list-avatar">' + esc(String(playerName(player)||"P").split(/\s+/).map(part=>part[0]||"").join("").slice(0,2).toUpperCase()) + '</div>') +
+        '<div class="bf-new-safe-number">' + esc(playerNumber(player)) + '</div>' +
+        '<div class="bf-new-safe-player-copy"><div class="bf-new-safe-name">' + esc(playerName(player)) + '</div>' +
+        (position ? '<div class="bf-new-safe-player-position">' + esc(position) + '</div>' : '') +
+        '<div class="bf-new-safe-player-events">' + playerEventBadges(player,details) + '</div>' +
+        (stats ? '<div class="bf-new-safe-player-stats">' + stats + '</div>' : '') +
+        '</div><div class="bf-new-safe-rating">' +
+        (rating !== null ? 'Note ' + esc(Number(rating).toFixed(1)) : '—') +
+        '</div></article>';
+    }).join("");
   }
 
   /* =========================================================
@@ -3493,8 +3440,8 @@ ${esc(String(playerName(player) || "P").split(/\s+/).map(part => part[0] || "").
         ${renderStatistics(details)}
       </div>
 
-      <details class="bf-new-safe-section bf-new-safe-player-list">
-        <summary class="bf-new-safe-title">Joueurs et statistiques individuelles · ouvrir</summary>
+      <section class="bf-new-safe-section bf-new-safe-player-list">
+        <div class="bf-new-safe-title">Joueurs et performances individuelles</div>
 
         <div
           class="bf-new-safe-columns"
@@ -3537,7 +3484,7 @@ ${esc(String(playerName(player) || "P").split(/\s+/).map(part => part[0] || "").
 
         </div>
 
-      </details>
+      </section>
 
 
       <div
