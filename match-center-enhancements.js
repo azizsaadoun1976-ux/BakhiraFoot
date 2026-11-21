@@ -671,7 +671,7 @@
   }
 
   function overviewStatRows(details) {
-    const raw = details?.statistics || details?.stats || details?.matchStatistics || [];
+    const raw = details?.statistics?.length ? details.statistics : details?.stats?.length ? details.stats : details?.matchStatistics?.length ? details.matchStatistics : details?.statistics || details?.stats || details?.matchStatistics || [];
     const rows = [];
     const nameOf = item => String(item?.name || item?.label || item?.key ||
       item?.type?.name || item?.type || item?.displayName || "").trim();
@@ -752,7 +752,7 @@
     const status = String(details?.fixture?.status?.long || details?.fixture?.status?.short ||
       details?.status_text || details?.status || "Match");
     const statusKey = norm(status);
-    const finished = /^(ft|finished|full time|ended|after extra time|after penalties)$/.test(statusKey);
+    const finished = /(^| )(ft|finished|full time|ended|after extra time|after penalties|aet)( |$)/.test(statusKey);
     const live = /live|in play|in progress|first half|second half|1st half|2nd half|half time|extra time|penalt/.test(statusKey);
     let result = "Résultat non communiqué";
     if (scoreKnown && finished) {
