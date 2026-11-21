@@ -24,6 +24,40 @@
     node.id = "bfMatchEnhancementsStyle";
     node.textContent = `
       #bf-new-match-safe-modal .bfmc-context-columns{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+      #bf-new-match-safe-modal .bfmc-result-list{display:grid;gap:8px}
+      #bf-new-match-safe-modal .bfmc-result-card{display:grid;gap:8px;min-width:0;padding:11px 12px;border:1px solid rgba(88,144,168,.22);border-radius:11px;background:linear-gradient(135deg,rgba(12,34,48,.95),rgba(8,24,35,.92));box-shadow:0 5px 16px #0002}
+      #bf-new-match-safe-modal .bfmc-result-meta{display:flex;justify-content:space-between;gap:10px;align-items:center;color:#89a8bb;font-size:8px}
+      #bf-new-match-safe-modal .bfmc-result-meta span{overflow:hidden;text-overflow:ellipsis;white-space:nowrap}
+      #bf-new-match-safe-modal .bfmc-result-line{display:grid;grid-template-columns:minmax(0,1fr) auto minmax(0,1fr);align-items:center;gap:9px}
+      #bf-new-match-safe-modal .bfmc-result-line strong{min-width:0;color:#eaf4f8;font-size:10px;line-height:1.35;overflow-wrap:anywhere}
+      #bf-new-match-safe-modal .bfmc-result-line strong:last-child{text-align:right}
+      #bf-new-match-safe-modal .bfmc-result-score{min-width:58px;padding:6px 8px;border:1px solid rgba(74,201,152,.2);border-radius:7px;background:#0a2a24;color:#8cf0c1;text-align:center;font-size:11px;font-weight:950;font-variant-numeric:tabular-nums;white-space:nowrap}
+      #bf-new-match-safe-modal .bfmc-comparison{display:grid;gap:14px}
+      #bf-new-match-safe-modal .bfmc-comparison-head{display:flex;align-items:center;justify-content:space-between;gap:12px;padding:15px 17px;border:1px solid rgba(65,211,161,.25);border-radius:13px;background:radial-gradient(circle at 90% 0%,rgba(42,181,126,.18),transparent 38%),linear-gradient(115deg,#0d2c32,#10273a)}
+      #bf-new-match-safe-modal .bfmc-comparison-head span{color:#72e5b4;font-size:8px;font-weight:950;letter-spacing:.16em}
+      #bf-new-match-safe-modal .bfmc-comparison-head h3{margin:5px 0;color:#f3fbff;font-size:16px;font-weight:950}
+      #bf-new-match-safe-modal .bfmc-comparison-head p{margin:0;color:#9ab4c4;font-size:9px}
+      #bf-new-match-safe-modal .bfmc-comparison-head>b{padding:6px 9px;border:1px solid rgba(105,184,158,.28);border-radius:999px;background:#0b3b31;color:#9cf0cb;font-size:8px;white-space:nowrap}
+      #bf-new-match-safe-modal .bfmc-comparison-form-grid{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
+      #bf-new-match-safe-modal .bfmc-comparison-team{min-width:0;padding:13px;border:1px solid rgba(91,142,164,.22);border-radius:12px;background:linear-gradient(145deg,#102738,#0b1c29)}
+      #bf-new-match-safe-modal .bfmc-comparison-team-name{display:grid;gap:3px;min-width:0}
+      #bf-new-match-safe-modal .bfmc-comparison-team-name small{color:#73dcb5;font-size:8px;font-weight:950;letter-spacing:.12em}
+      #bf-new-match-safe-modal .bfmc-comparison-team-name strong{color:#f0f7fa;font-size:12px;overflow-wrap:anywhere}
+      #bf-new-match-safe-modal .bfmc-comparison-team p{margin:9px 0 0;color:#8da6b7;font-size:8px}
+      #bf-new-match-safe-modal .bfmc-form-chips{display:flex;flex-wrap:wrap;gap:5px;margin-top:10px}
+      #bf-new-match-safe-modal .bfmc-form-chip{display:grid;place-items:center;width:25px;height:25px;border:1px solid transparent;border-radius:7px;font-size:9px;font-weight:1000}
+      #bf-new-match-safe-modal .bfmc-form-chip--w{background:#0d4a36;border-color:#1b7956;color:#89f0bd}
+      #bf-new-match-safe-modal .bfmc-form-chip--d{background:#3c3821;border-color:#72632d;color:#f6db82}
+      #bf-new-match-safe-modal .bfmc-form-chip--l{background:#48252c;border-color:#793d48;color:#ff9da8}
+      #bf-new-match-safe-modal .bfmc-form-empty{color:#9aafbd;font-size:9px}
+      #bf-new-match-safe-modal .bfmc-comparison-table-wrap{width:100%;overflow-x:auto;border:1px solid rgba(95,137,159,.22);border-radius:11px}
+      #bf-new-match-safe-modal .bfmc-comparison-table{width:100%;min-width:470px;border-collapse:collapse;color:#e5f0f5;font-size:10px}
+      #bf-new-match-safe-modal .bfmc-comparison-table th,#bf-new-match-safe-modal .bfmc-comparison-table td{padding:10px 12px;border-bottom:1px solid rgba(110,150,172,.15);text-align:center;font-variant-numeric:tabular-nums}
+      #bf-new-match-safe-modal .bfmc-comparison-table thead th{background:#102d3b;color:#9dbdce;font-size:8px;font-weight:950}
+      #bf-new-match-safe-modal .bfmc-comparison-table th:first-child{text-align:left}
+      #bf-new-match-safe-modal .bfmc-comparison-table tbody th{color:#b5c9d5;font-size:9px;font-weight:750}
+      #bf-new-match-safe-modal .bfmc-comparison-table td.is-better{background:rgba(18,137,94,.14);color:#8af0bd;font-weight:1000}
+      #bf-new-match-safe-modal .bfmc-comparison-footnote{margin:0;color:#8da4b4;font-size:9px;line-height:1.65}
       #bf-new-match-safe-modal .bfmc-context-columns>section{min-width:0;padding:10px;border:1px solid rgba(90,135,155,.2);border-radius:10px;background:rgba(7,22,32,.38)}
       #bf-new-match-safe-modal .bfmc-context-columns h4{margin:0 0 8px;color:#a4edcf;font-size:11px}
       #bf-new-match-safe-modal .bfmc-result-list{display:grid;gap:7px}
@@ -76,6 +110,11 @@
       #bf-new-match-safe-modal .bfmc-comment p{margin:6px 0 0;color:#c3d2dc;font-size:10px;line-height:1.55;white-space:pre-wrap;overflow-wrap:anywhere}
       #bf-new-match-safe-modal [data-bf-match-panel]{scroll-margin-top:68px}
       @media(max-width:700px){
+        #bf-new-match-safe-modal .bfmc-comparison-form-grid{grid-template-columns:1fr}
+        #bf-new-match-safe-modal .bfmc-comparison-head{align-items:flex-start;flex-direction:column}
+        #bf-new-match-safe-modal .bfmc-result-line{gap:5px}
+        #bf-new-match-safe-modal .bfmc-result-line strong{font-size:9px}
+        #bf-new-match-safe-modal .bfmc-result-score{min-width:49px;font-size:10px}
         #bf-new-match-safe-modal .bfmc-context-columns{grid-template-columns:1fr}
         #bf-new-match-safe-modal .bfmc-highlights,#bf-new-match-safe-modal .bfmc-news{grid-template-columns:1fr}
         #bf-new-match-safe-modal .bfmc-result{grid-template-columns:55px minmax(0,1fr) auto;padding:7px;gap:6px}
@@ -83,6 +122,19 @@
         #bf-new-match-safe-modal .bfmc-table{min-width:470px}
       }
       body:not(.dark) #bf-new-match-safe-modal .bfmc-context-columns>section{background:#f2f7fa;border-color:#dae5ec}
+      body:not(.dark) #bf-new-match-safe-modal .bfmc-result-card,
+      body:not(.dark) #bf-new-match-safe-modal .bfmc-comparison-team{background:linear-gradient(145deg,#f8fbfd,#edf4f7);border-color:#d8e4eb}
+      body:not(.dark) #bf-new-match-safe-modal .bfmc-result-line strong,
+      body:not(.dark) #bf-new-match-safe-modal .bfmc-comparison-team-name strong,
+      body:not(.dark) #bf-new-match-safe-modal .bfmc-comparison-table{color:#20394b}
+      body:not(.dark) #bf-new-match-safe-modal .bfmc-comparison-table thead th{background:#eaf2f7;color:#4b6f84}
+      body:not(.dark) #bf-new-match-safe-modal .bfmc-comparison-table tbody th{color:#536a78}
+      body:not(.dark) #bf-new-match-safe-modal .bfmc-comparison-table td.is-better{background:#e5f7ee;color:#087c50}
+      body:not(.dark) #bf-new-match-safe-modal .bfmc-comparison-head{background:linear-gradient(115deg,#e9f8f0,#eff6fb);border-color:#cbe7d9}
+      body:not(.dark) #bf-new-match-safe-modal .bfmc-comparison-head h3{color:#173b34}
+      body:not(.dark) #bf-new-match-safe-modal .bfmc-comparison-head p,
+      body:not(.dark) #bf-new-match-safe-modal .bfmc-comparison-footnote,
+      body:not(.dark) #bf-new-match-safe-modal .bfmc-comparison-team p{color:#607785}
       body:not(.dark) #bf-new-match-safe-modal .bfmc-result,
       body:not(.dark) #bf-new-match-safe-modal .bfmc-highlight,
       body:not(.dark) #bf-new-match-safe-modal .bfmc-news-card,
@@ -118,12 +170,107 @@
     const rows = Array.isArray(items) ? items : [];
     if (!rows.length) return '<div class="bf-new-safe-empty">' + esc(emptyText) + '</div>';
     return '<div class="bfmc-result-list">' + rows.map(item =>
-      '<article class="bfmc-result"><time>' + esc(dateLabel(item.date)) + '</time>' +
-      '<div class="bfmc-result-teams"><strong>' + esc(item.home || "Équipe") + '</strong>' +
-      '<small>' + esc(item.competition || item.status || "Football") + '</small>' +
-      '<strong>' + esc(item.away || "Équipe") + '</strong></div>' +
-      '<b class="bfmc-result-score">' + esc(item.score || "—") + '</b></article>'
+      '<article class="bfmc-result-card">' +
+        '<div class="bfmc-result-meta"><time>' + esc(dateLabel(item.date)) + '</time>' +
+        '<span>' + esc(item.competition || item.status || "Football") + '</span></div>' +
+        '<div class="bfmc-result-line"><strong>' + esc(item.home || "Équipe") + '</strong>' +
+        '<b class="bfmc-result-score">' + esc(item.score || "—") + '</b>' +
+        '<strong>' + esc(item.away || "Équipe") + '</strong></div></article>'
     ).join("") + '</div>';
+  }
+
+  function sameTeamName(a, b) {
+    const clean = value => norm(value)
+      .replace(/\\b(fc|cf|sc|afc|cfc|club)\\b/g, " ")
+      .replace(/\\s+/g, " ").trim();
+    const x = clean(a), y = clean(b);
+    if (!x || !y) return false;
+    if (x === y) return true;
+    const xt = x.split(" ").filter(token => token.length > 2);
+    const yt = y.split(" ").filter(token => token.length > 2);
+    const common = xt.filter(token => yt.includes(token));
+    const minimum = Math.min(xt.length, yt.length);
+    return minimum > 0 && common.length >= (minimum === 1 ? 1 : 2) &&
+      common.length / minimum >= 0.8;
+  }
+
+  function recentTeamStats(matches, teamName) {
+    const result = {played:0,wins:0,draws:0,losses:0,goalsFor:0,goalsAgainst:0,form:[]};
+    (Array.isArray(matches) ? matches : []).forEach(match => {
+      const status = norm(match?.status);
+      if (/not started|scheduled|live|in progress|first half|second half|half time|postponed|cancelled|canceled|suspended|delayed/.test(status)) return;
+      const score = String(match?.score ?? "").match(/^\\s*(\\d{1,2})\\s*[-–:]\\s*(\\d{1,2})/);
+      if (!score) return;
+      const homeSide = sameTeamName(match?.home, teamName);
+      const awaySide = sameTeamName(match?.away, teamName);
+      if (homeSide === awaySide) return;
+      const homeGoals = Number(score[1]), awayGoals = Number(score[2]);
+      const goalsFor = homeSide ? homeGoals : awayGoals;
+      const goalsAgainst = homeSide ? awayGoals : homeGoals;
+      const outcome = goalsFor > goalsAgainst ? "W" : goalsFor < goalsAgainst ? "L" : "D";
+      result.played++;
+      result.goalsFor += goalsFor;
+      result.goalsAgainst += goalsAgainst;
+      if (outcome === "W") result.wins++;
+      else if (outcome === "D") result.draws++;
+      else result.losses++;
+      result.form.push({outcome,date:match?.date || "",opponent:homeSide ? match?.away : match?.home});
+    });
+    result.points = result.wins * 3 + result.draws;
+    result.goalDifference = result.goalsFor - result.goalsAgainst;
+    result.winRate = result.played ? result.wins / result.played * 100 : 0;
+    result.goalsForAverage = result.played ? result.goalsFor / result.played : 0;
+    result.goalsAgainstAverage = result.played ? result.goalsAgainst / result.played : 0;
+    return result;
+  }
+
+  function renderTeamComparison(homeRecent, awayRecent, homeName, awayName) {
+    const home = recentTeamStats(homeRecent, homeName);
+    const away = recentTeamStats(awayRecent, awayName);
+    if (!home.played && !away.played) {
+      return '<div class="bf-new-safe-empty">La comparaison sera affichée dès que le Match Centre reçoit des résultats récents terminés pour les deux équipes. Aucune statistique n’est inventée.</div>';
+    }
+    const form = stats => stats.form.length
+      ? stats.form.slice(0,5).map(item =>
+          '<span class="bfmc-form-chip bfmc-form-chip--' + item.outcome.toLowerCase() +
+          '" title="' + esc(item.opponent || "Adversaire") + (item.date ? " · " + esc(dateLabel(item.date)) : "") + '">' +
+          item.outcome + '</span>').join("")
+      : '<span class="bfmc-form-empty">Données insuffisantes</span>';
+    const fmt = (value, digits=0) => new Intl.NumberFormat("fr-FR",{
+      minimumFractionDigits:digits,maximumFractionDigits:digits
+    }).format(value);
+    const rows = [
+      ["Matchs joués",home.played,away.played,0,false],
+      ["Points",home.points,away.points,0,false],
+      ["Victoires",home.wins,away.wins,0,false],
+      ["Matchs nuls",home.draws,away.draws,0,false],
+      ["Défaites",home.losses,away.losses,0,true],
+      ["Buts marqués / match",home.goalsForAverage,away.goalsForAverage,2,false],
+      ["Buts encaissés / match",home.goalsAgainstAverage,away.goalsAgainstAverage,2,true],
+      ["Différence de buts",home.goalDifference,away.goalDifference,0,false],
+      ["Taux de victoire",home.winRate,away.winRate,1,false," %"]
+    ];
+    const rowHtml = rows.map(([label,h,a,digits,lowerBetter,suffix=""]) => {
+      const hBetter = lowerBetter ? h < a : h > a;
+      const aBetter = lowerBetter ? a < h : a > h;
+      return '<tr><th scope="row">' + esc(label) + '</th>' +
+        '<td class="' + (hBetter ? "is-better" : "") + '">' + fmt(h,digits) + suffix + '</td>' +
+        '<td class="' + (aBetter ? "is-better" : "") + '">' + fmt(a,digits) + suffix + '</td></tr>';
+    }).join("");
+    return '<div class="bfmc-comparison">' +
+      '<div class="bfmc-comparison-head"><div><span>FORME RÉCENTE</span><h3>Comparaison des équipes</h3>' +
+      '<p>Basée sur les derniers matchs terminés disponibles</p></div><b>5 MATCHS MAX.</b></div>' +
+      '<div class="bfmc-comparison-form-grid">' +
+        '<section class="bfmc-comparison-team"><div class="bfmc-comparison-team-name"><small>DOMICILE</small><strong>' + esc(homeName) + '</strong></div>' +
+        '<div class="bfmc-form-chips">' + form(home) + '</div><p>' + home.played + ' match(s) analysé(s)</p></section>' +
+        '<section class="bfmc-comparison-team"><div class="bfmc-comparison-team-name"><small>EXTÉRIEUR</small><strong>' + esc(awayName) + '</strong></div>' +
+        '<div class="bfmc-form-chips">' + form(away) + '</div><p>' + away.played + ' match(s) analysé(s)</p></section>' +
+      '</div>' +
+      '<div class="bfmc-comparison-table-wrap"><table class="bfmc-comparison-table">' +
+      '<thead><tr><th>INDICATEUR</th><th>' + esc(homeName) + '</th><th>' + esc(awayName) + '</th></tr></thead>' +
+      '<tbody>' + rowHtml + '</tbody></table></div>' +
+      '<p class="bfmc-comparison-footnote">Calculs effectués à partir des résultats récents fournis par le Match Centre. La meilleure valeur est mise en évidence ; pour les buts encaissés et les défaites, une valeur plus faible est préférable. Les matchs sans score final exploitable sont ignorés.</p>' +
+    '</div>';
   }
 
   function renderStandings(rows, homeName, awayName) {
@@ -185,7 +332,7 @@
     });
   }
 
-  async function loadContext(content, args, recentNode, h2hNode, standingsNode) {
+  async function loadContext(content, args, recentNode, h2hNode, standingsNode, comparisonNode) {
     const params = new URLSearchParams({
       home: String(args.home.name || ""),
       away: String(args.away.name || ""),
@@ -211,6 +358,11 @@
         formatRows(data.awayRecent,"Historique récent non disponible pour cette équipe.") + '</section></div>';
 
       h2hNode.innerHTML = formatRows(data.headToHead,"Aucune confrontation directe récente n’a été trouvée.");
+      if (comparisonNode) {
+        comparisonNode.innerHTML = renderTeamComparison(
+          data.homeRecent, data.awayRecent, args.home.name, args.away.name
+        );
+      }
       const table = data.standings || {};
       standingsNode.innerHTML = (table.league
         ? '<p class="bfmc-caption">' + esc(table.league) + (table.season ? " · " + esc(table.season) : "") + '</p>'
@@ -232,6 +384,7 @@
       recentNode.innerHTML = fallback;
       h2hNode.innerHTML = fallback;
       standingsNode.innerHTML = fallback;
+      if (comparisonNode) comparisonNode.innerHTML = fallback;
     }
   }
 
@@ -475,7 +628,7 @@
     nav.setAttribute("aria-label","Sections du Match Centre");
     const tabs = [
       ["bfmc-overview","Résumé"],["bfmc-lineups","Compos"],["bfmc-stats","Stats"],
-      ["bfmc-players","Stats joueurs"],["bfmc-events","Événements"],
+      ["bfmc-comparison","Comparaison"],["bfmc-players","Stats joueurs"],["bfmc-events","Événements"],
       ["bfmc-form","Derniers matchs"],["bfmc-standings","Classement"],
       ["bfmc-highlights","Highlights"],["bfmc-news","Actualités"],["bfmc-comments","Commentaires"]
     ];
@@ -494,6 +647,10 @@
       '<div class="bf-new-safe-title bf-new-safe-subtitle">Confrontations directes</div><div data-bf-h2h><div class="bf-new-safe-empty">Chargement des confrontations…</div></div>');
     const standingsNode = addPanel(content,"bfmc-standings","Classement de la compétition",
       '<div class="bf-new-safe-empty">Chargement du classement…</div>');
+    const comparisonNode = addPanel(content,"bfmc-comparison","Comparaison des équipes",
+      '<div class="bf-new-safe-empty">Calcul de la forme récente des deux équipes…</div>');
+    const statsPanel = content.querySelector("#bfmc-stats");
+    if (statsPanel) statsPanel.insertAdjacentElement("afterend", comparisonNode);
     const highlights = findHighlights(args.details);
     const highlightsHtml = highlights.length
       ? '<div class="bfmc-highlights">' + highlights.map(item =>
@@ -515,7 +672,7 @@
     content.dataset.bfMatchEnhancementsReady = "1";
     content.dataset.bfMatchEnhancementKey = matchKey;
     const matchArgs = {...args,key:String(args.key || "")};
-    loadContext(content,matchArgs,recentNode,h2hNode,standingsNode);
+    loadContext(content,matchArgs,recentNode,h2hNode,standingsNode,comparisonNode);
     loadNews(content,matchArgs,newsNode);
     setupComments(content,matchArgs,commentsRoot,commentList);
   }
