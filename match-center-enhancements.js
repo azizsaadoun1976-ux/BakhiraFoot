@@ -156,6 +156,8 @@
     panel.id = id;
     panel.dataset.bfMatchPanel = "1";
     panel.className = "bf-new-safe-section";
+    panel.setAttribute("role","tabpanel");
+    panel.tabIndex = 0;
     const heading = document.createElement("div");
     heading.className = "bf-new-safe-title";
     heading.textContent = title;
@@ -320,16 +322,24 @@
   }
 
   function setupTabs(content, nav) {
-    nav.querySelectorAll("[data-bf-match-tab]").forEach(button => {
-      button.addEventListener("click", () => {
-        const target = content.querySelector("#" + button.dataset.bfMatchTab);
-        if (!target) return;
-        nav.querySelectorAll("[data-bf-match-tab]").forEach(item =>
-          item.setAttribute("aria-pressed", item === button ? "true" : "false")
-        );
-        target.scrollIntoView({behavior:"smooth",block:"start"});
+    const buttons = Array.from(nav.querySelectorAll("[data-bf-match-tab]"));
+    const panels = Array.from(content.querySelectorAll("[data-bf-match-panel]"));
+    const activate = (button, shouldScroll) => {
+      const target = content.querySelector("#" + button.dataset.bfMatchTab);
+      if (!target) return;
+      buttons.forEach(item => {
+        const active = item === button;
+        item.setAttribute("aria-pressed", active ? "true" : "false");
+        item.setAttribute("aria-selected", active ? "true" : "false");
+        item.tabIndex = active ? 0 : -1;
       });
-    });
+      panels.forEach(panel => { panel.hidden = panel !== target; });
+      target.hidden = false;
+      if (shouldScroll) target.scrollIntoView({behavior:"smooth",block:"start"});
+    };
+    buttons.forEach(button => button.addEventListener("click", () => activate(button,true)));
+    const initial = buttons.find(button => button.getAttribute("aria-selected") === "true") || buttons[0];
+    if (initial) activate(initial,false);
   }
 
   async function loadContext(content, args, recentNode, h2hNode, standingsNode, comparisonNode) {
@@ -617,6 +627,8 @@
     panels.slice(0,5).forEach((panel,index) => {
       panel.id = panelIds[index];
       panel.dataset.bfMatchPanel = "1";
+      panel.setAttribute("role","tabpanel");
+      panel.tabIndex = 0;
       if (index === 1) {
         const heading = panel.querySelector(".bf-new-safe-title");
         if (heading) heading.textContent = panelNames[index];
@@ -626,6 +638,7 @@
     const nav = document.createElement("nav");
     nav.className = "bfmd-center-nav";
     nav.setAttribute("aria-label","Sections du Match Centre");
+    nav.setAttribute("role","tablist");
     const tabs = [
       ["bfmc-overview","Résumé"],["bfmc-lineups","Compos"],["bfmc-stats","Stats"],
       ["bfmc-comparison","Comparaison"],["bfmc-players","Stats joueurs"],["bfmc-events","Événements"],
@@ -633,8 +646,9 @@
       ["bfmc-highlights","Highlights"],["bfmc-news","Actualités"],["bfmc-comments","Commentaires"]
     ];
     nav.innerHTML = tabs.map((tab,index) =>
-      '<button type="button" data-bf-match-tab="' + tab[0] + '" aria-pressed="' +
-      (index===0?"true":"false") + '">' + tab[1] + '</button>'
+      '<button type="button" role="tab" data-bf-match-tab="' + tab[0] +
+      '" aria-controls="' + tab[0] + '" aria-selected="' + (index===0?"true":"false") +
+      '" aria-pressed="' + (index===0?"true":"false") + '">' + tab[1] + '</button>'
     ).join("");
     const info = content.querySelector(".bf-new-safe-info");
     if (info) info.insertAdjacentElement("afterend",nav);
