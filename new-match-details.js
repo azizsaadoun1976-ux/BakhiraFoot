@@ -2629,10 +2629,17 @@ ${esc(String(playerName(player) || "P").split(/\s+/).map(part => part[0] || "").
     const aliases = {
       goals:"Buts",goal:"Buts",assists:"Passes D",shots:"Tirs",totalshots:"Tirs",
       shotsontarget:"Tirs cadrés",keypasses:"Passes clés",passes:"Passes",
-      accuratepasses:"Passes réussies",passaccuracy:"Précision passes",
-      tackles:"Tacles",interceptions:"Interceptions",saves:"Arrêts",
+      totalpass:"Passes",accuratepass:"Passes réussies",accuratepasses:"Passes réussies",
+      passaccuracy:"Précision passes",totalcross:"Centres",accuratecross:"Centres réussis",
+      totalcrosses:"Centres",accuratecrosses:"Centres réussis",
+      tackles:"Tacles",totaltackle:"Tacles",tackleswon:"Tacles réussis",
+      interceptions:"Interceptions",interceptionwon:"Interceptions",
+      saves:"Arrêts",penaltysave:"Penalties arrêtés",goalsprevented:"Buts évités",
       minutesplayed:"Minutes",minutes:"Minutes",fouls:"Fautes",
-      duelswon:"Duels gagnés",crosses:"Centres",dribbles:"Dribbles"
+      duelswon:"Duels gagnés",duellost:"Duels perdus",aerialwon:"Duels aériens gagnés",
+      dribbles:"Dribbles",successfuldribbles:"Dribbles réussis",
+      expectedgoals:"xG",expectedassists:"xA",totalshotsontarget:"Tirs cadrés",
+      totalshotsblocked:"Tirs bloqués"
     };
     const found = new Map();
     for (const source of containers) {
@@ -2652,7 +2659,7 @@ ${esc(String(playerName(player) || "P").split(/\s+/).map(part => part[0] || "").
         found.set(key,{label:aliases[key],value});
       }
     }
-    const priority = ["goals","assists","shots","shotsontarget","keypasses","passes","accuratepasses","tackles","interceptions","saves","minutesplayed"];
+    const priority = ["goals","assists","shots","shotsontarget","expectedgoals","expectedassists","keypasses","passes","totalpass","accuratepass","tackles","interceptions","duelswon","saves","minutesplayed"];
     return priority.filter(key => found.has(key)).slice(0,5).map(key => {
       const item = found.get(key);
       return '<span class="bf-new-safe-player-stat"><b>' + esc(item.value) +
