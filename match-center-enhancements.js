@@ -665,8 +665,9 @@
       '<div class="bf-new-safe-empty">Chargement du classement…</div>');
     const comparisonNode = addPanel(content,"bfmc-comparison","Comparaison des équipes",
       '<div class="bf-new-safe-empty">Calcul de la forme récente des deux équipes…</div>');
+    const comparisonPanel = content.querySelector("#bfmc-comparison");
     const statsPanel = content.querySelector("#bfmc-stats");
-    if (statsPanel) statsPanel.insertAdjacentElement("afterend", comparisonNode);
+    if (statsPanel && comparisonPanel) statsPanel.insertAdjacentElement("afterend", comparisonPanel);
     const highlights = findHighlights(args.details);
     const highlightsHtml = highlights.length
       ? '<div class="bfmc-highlights">' + highlights.map(item =>
