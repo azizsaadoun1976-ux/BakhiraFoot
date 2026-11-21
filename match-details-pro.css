@@ -50,6 +50,23 @@
 #bf-new-match-safe-modal .bf-new-safe-player img,#bf-new-match-safe-modal .bf-new-safe-avatar{width:clamp(27px,3vw,40px)!important;height:clamp(27px,3vw,40px)!important;object-fit:cover!important}
 #bf-new-match-safe-modal .bf-new-safe-player-name{max-width:100px!important;font-size:clamp(7px,.68vw,10px)!important;line-height:1.2!important}
 #bf-new-match-safe-modal .bf-new-safe-player-detail-panel{position:sticky!important;bottom:0!important;z-index:15!important;margin:8px!important;padding:11px!important;border:1px solid rgba(65,220,162,.3)!important;border-radius:11px!important;background:rgba(7,21,28,.97)!important;color:#eaf5fa!important;backdrop-filter:blur(9px)!important}
+
+#bf-new-match-safe-modal .bf-new-safe-player-groups{display:grid;gap:14px;min-width:0}
+#bf-new-match-safe-modal .bf-new-safe-player-group{min-width:0;padding:12px;border:1px solid rgba(65,142,119,.22);border-radius:12px;background:rgba(8,25,35,.36)}
+#bf-new-match-safe-modal .bf-new-safe-player-group>header{display:flex;align-items:center;justify-content:space-between;gap:10px;margin:0 0 9px;padding-bottom:8px;border-bottom:1px solid rgba(83,139,151,.18)}
+#bf-new-match-safe-modal .bf-new-safe-player-group>header h3{margin:0;color:#91edc5;font-size:11px;font-weight:950}
+#bf-new-match-safe-modal .bf-new-safe-player-group>header span{display:grid;place-items:center;min-width:23px;height:23px;padding:0 6px;border-radius:7px;background:#103b31;color:#83eabd;font-size:9px;font-weight:950}
+#bf-new-match-safe-modal .bf-new-safe-player-group-list{display:grid;gap:7px;min-width:0}
+#bf-new-match-safe-modal .bf-new-safe-combined-coach{display:block;margin-top:4px;color:#9ab8a9;font-size:8px;font-style:normal;font-weight:700;line-height:1.4}
+body:not(.dark) #bf-new-match-safe-modal .bf-new-safe-player-group{background:#f7fbf9;border-color:#d9e9e1}
+body:not(.dark) #bf-new-match-safe-modal .bf-new-safe-player-group>header h3{color:#087c50}
+body:not(.dark) #bf-new-match-safe-modal .bf-new-safe-player-group>header span{background:#e3f6ec;color:#087c50}
+body:not(.dark) #bf-new-match-safe-modal .bf-new-safe-combined-coach{color:#5b7869}
+@media(max-width:700px){
+#bf-new-match-safe-modal .bf-new-safe-player-group{padding:9px}
+#bf-new-match-safe-modal .bf-new-safe-player-group-list{gap:6px}
+}
+
 #bf-new-match-safe-modal .bf-new-safe-list-player{grid-template-columns:38px 28px minmax(0,1fr) auto!important;gap:8px!important;min-width:0!important;border:1px solid rgba(63,102,123,.19)!important;border-radius:9px!important;background:#0b1d29!important}
 #bf-new-match-safe-modal .bf-new-safe-list-player img,#bf-new-match-safe-modal .bf-new-safe-list-avatar{width:36px!important;height:36px!important;object-fit:cover!important}
 
