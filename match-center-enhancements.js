@@ -609,6 +609,133 @@
     refresh();
   }
 
+  function overviewStatRows(details) {
+    const raw = details?.statistics || details?.stats || details?.matchStatistics || [];
+    const rows = [];
+    const nameOf = item => String(item?.name || item?.label || item?.key ||
+      item?.type?.name || item?.type || item?.displayName || "").trim();
+    const valueOf = (item, side) => {
+      const value = item?.[side] ?? item?.[side + "Value"] ?? item?.[side + "_value"] ??
+        item?.[side + "Team"] ?? null;
+      return value && typeof value === "object" ? (value.displayValue ?? value.value ?? value.total ?? null) : value;
+    };
+    const blocks = Array.isArray(raw) ? raw : [];
+    const periods = blocks.filter(block => Array.isArray(block?.groups));
+    if (periods.length) {
+      const chosen = periods.find(block => norm(block.period) === "all") || periods[0];
+      for (const group of chosen.groups || []) {
+        for (const item of group.statisticsItems || group.statistics || []) {
+          const label = nameOf(item), home = valueOf(item,"home"), away = valueOf(item,"away");
+          if (label && (home !== null || away !== null)) rows.push({label,home,away});
+        }
+      }
+      return rows;
+    }
+    const direct = blocks.flatMap(block => Array.isArray(block?.statistics) ? block.statistics :
+      Array.isArray(block?.stats) ? block.stats : Array.isArray(block?.statisticsItems) ? block.statisticsItems : []);
+    if (direct.some(item => item?.home !== undefined || item?.away !== undefined)) {
+      return direct.map(item => ({label:nameOf(item),home:valueOf(item,"home"),away:valueOf(item,"away")}))
+        .filter(item => item.label);
+    }
+    if (blocks.length >= 2) {
+      const forSide = block => Array.isArray(block?.statistics) ? block.statistics :
+        Array.isArray(block?.stats) ? block.stats : Array.isArray(block?.statisticsItems) ? block.statisticsItems : [];
+      const h = new Map(forSide(blocks[0]).map(item => [norm(nameOf(item)),item]).filter(entry=>entry[0]));
+      const a = new Map(forSide(blocks[1]).map(item => [norm(nameOf(item)),item]).filter(entry=>entry[0]));
+      return [...new Set([...h.keys(),...a.keys()])].map(key => ({
+        label:nameOf(h.get(key)||a.get(key)),
+        home:h.has(key) ? (h.get(key).value ?? h.get(key).displayValue ?? null) : null,
+        away:a.has(key) ? (a.get(key).value ?? a.get(key).displayValue ?? null) : null
+      }));
+    }
+    return rows;
+  }
+
+  function overviewEvents(details) {
+    const roots = [details?.events,details?.incidents,details?.timeline,details?.match_events,
+      details?.match?.events,details?.match?.incidents].filter(Array.isArray);
+    const seen = new Set(), events = [];
+    roots.flat().forEach(event => {
+      if (!event || typeof event !== "object") return;
+      const type = norm([
+        event.type?.name,event.type?.text,event.type,event.eventType,event.event_type,
+        event.incidentType?.name,event.incidentType,event.detail?.name,event.detail,
+        event.description,event.text,event.incidentClass?.name
+      ].filter(Boolean).join(" "));
+      if (!/goal|score|scoring|but|red card|yellow card|carton|substitut|replacement|remplacement/.test(type)) return;
+      const id = String(event.id ?? [event.time?.minute,event.minute,event.player?.name,type].join("|"));
+      if (seen.has(id)) return;
+      seen.add(id);
+      const player = event.player?.name || event.player?.displayName || event.scorer?.name ||
+        event.athlete?.name || event.player_name || event.name || "";
+      const minute = event.minute ?? event.time?.minute ?? event.time?.elapsed ?? event.clock?.displayValue ?? "";
+      const team = event.team?.name || event.team_name ||
+        (event.isHome === true ? details?.teams?.home?.name : null) ||
+        (event.isHome === false ? details?.teams?.away?.name : null) || "";
+      events.push({type,player,minute,team});
+    });
+    return events.sort((a,b) => {
+      const minute = value => Number(String(value).match(/\d+/)?.[0] || 999);
+      return minute(a.minute)-minute(b.minute);
+    }).slice(0,8);
+  }
+
+  function renderMatchOverview(args) {
+    const details = args?.details || {};
+    const homeName = args?.home?.name || "Domicile";
+    const awayName = args?.away?.name || "Extérieur";
+    const homeScore = details?.score?.home ?? details?.goals?.home ?? details?.home_score ?? null;
+    const awayScore = details?.score?.away ?? details?.goals?.away ?? details?.away_score ?? null;
+    const scoreKnown = homeScore !== null && awayScore !== null &&
+      Number.isFinite(Number(homeScore)) && Number.isFinite(Number(awayScore));
+    const status = String(details?.fixture?.status?.long || details?.fixture?.status?.short ||
+      details?.status_text || details?.status || "Match");
+    const statusKey = norm(status);
+    const finished = /^(ft|finished|full time|ended|after extra time|after penalties)$/.test(statusKey);
+    const live = /live|in play|in progress|first half|second half|1st half|2nd half|half time|extra time|penalt/.test(statusKey);
+    let result = "Résultat non communiqué";
+    if (scoreKnown && finished) {
+      result = Number(homeScore) === Number(awayScore) ? "Match nul" :
+        Number(homeScore) > Number(awayScore) ? "Victoire de " + homeName : "Victoire de " + awayName;
+    } else if (live) result = "Rencontre en cours";
+    else if (!scoreKnown) result = "En attente du coup d’envoi ou du score final";
+    const statRows = overviewStatRows(details);
+    const statPatterns = [
+      ["Possession",/possession/],
+      ["Tirs cadrés",/shots on target|tir[s]? cadr|cadrés/],
+      ["Tirs",/total shots|shots total|total tirs|tirs$/],
+      ["Corners",/corner/],
+      ["Expected goals",/expected goals|\bxg\b/]
+    ];
+    const metrics = statPatterns.map(([label,pattern]) =>
+      statRows.find(row => pattern.test(norm(row.label)) &&
+        row.home !== null && row.home !== undefined && row.away !== null && row.away !== undefined)
+    ).filter(Boolean).slice(0,4);
+    const date = args?.date ? dateLabel(args.date) : "";
+    const metricHtml = metrics.length ? metrics.map(row =>
+      '<div class="bfmc-overview-metric"><span>' + esc(row.label) + '</span><strong>' +
+      esc(row.home) + '<i>—</i>' + esc(row.away) + '</strong></div>'
+    ).join("") : '<div class="bf-new-safe-empty">Les statistiques clés ne sont pas encore publiées par le fournisseur pour cette rencontre.</div>';
+    const events = overviewEvents(details);
+    const eventHtml = events.length ? '<div class="bfmc-overview-events">' + events.map(event =>
+      '<div class="bfmc-overview-event"><time>' + esc(event.minute || "—") +
+      (String(event.minute).includes("'") ? "" : (event.minute ? "'" : "")) + '</time><span class="bfmc-overview-event-dot"></span>' +
+      '<div><strong>' + esc(event.player || (event.type.includes("goal") || event.type.includes("but") ? "But" : "Événement")) +
+      '</strong><small>' + esc(event.team || event.type) + '</small></div></div>'
+    ).join("") + '</div>' : '<div class="bf-new-safe-empty">Aucun but ou événement clé détaillé n’a été fourni par la source.</div>';
+    return '<div class="bfmc-overview">' +
+      '<section class="bfmc-overview-result"><span class="bfmc-overview-kicker">SYNTHÈSE DE LA RENCONTRE</span>' +
+      '<div class="bfmc-overview-match"><strong>' + esc(homeName) + '</strong><b>' +
+      (scoreKnown ? esc(homeScore) + ' <i>:</i> ' + esc(awayScore) : '— : —') +
+      '</b><strong>' + esc(awayName) + '</strong></div><div class="bfmc-overview-verdict">' +
+      esc(result) + '</div><div class="bfmc-overview-meta">' + esc(args?.competition || "Football") +
+      (date ? ' · ' + esc(date) : "") + ' · ' + esc(status) + '</div></section>' +
+      '<section class="bfmc-overview-block"><h3>Chiffres clés</h3><div class="bfmc-overview-metrics">' +
+      metricHtml + '</div><p class="bfmc-overview-note">Les chiffres affichés proviennent du fournisseur de données de la rencontre. Les éléments absents ne sont pas estimés.</p></section>' +
+      '<section class="bfmc-overview-block"><h3>Moments importants</h3>' + eventHtml + '</section>' +
+      '</div>';
+  }
+
   function attach(args) {
     const content = args?.content;
     if (!content) return;
@@ -624,8 +751,8 @@
       node.classList?.contains("bf-new-safe-section") ||
       (node.tagName === "DETAILS" && node.classList?.contains("bf-new-safe-player-list"))
     );
-    const panelIds = ["bfmc-lineups","bfmc-overview","bfmc-stats","bfmc-players","bfmc-events"];
-    const panelNames = ["Formations et compositions","Résumé et meilleure note","Statistiques du match","Statistiques des joueurs","Événements"];
+    const panelIds = ["bfmc-lineups","bfmc-mvp","bfmc-stats","bfmc-players","bfmc-events"];
+    const panelNames = ["Formations et compositions","Joueur du match","Statistiques du match","Statistiques des joueurs","Événements"];
     panels.slice(0,5).forEach((panel,index) => {
       panel.id = panelIds[index];
       panel.dataset.bfMatchPanel = "1";
@@ -643,7 +770,8 @@
     nav.setAttribute("role","tablist");
     const tabs = [
       ["bfmc-overview","Résumé"],["bfmc-lineups","Compos"],["bfmc-stats","Stats"],
-      ["bfmc-comparison","Comparaison"],["bfmc-players","Stats joueurs"],["bfmc-events","Événements"],
+      ["bfmc-comparison","Comparaison"],["bfmc-mvp","Joueur du match"],
+      ["bfmc-players","Stats joueurs"],["bfmc-events","Événements"],
       ["bfmc-form","Derniers matchs"],["bfmc-standings","Classement"],
       ["bfmc-highlights","Highlights"],["bfmc-news","Actualités"],["bfmc-comments","Commentaires"]
     ];
@@ -683,8 +811,12 @@
     const h2hNode = recentNode.querySelector("[data-bf-h2h]");
     const commentList = commentsRoot.querySelector("[data-bf-comment-list]");
 
+    const overviewNode = addPanel(content,"bfmc-overview","Résumé du match",renderMatchOverview(args));
+    const overviewPanel = content.querySelector("#bfmc-overview");
+    const firstPanel = content.querySelector("#bfmc-lineups");
+    if (overviewPanel && firstPanel) firstPanel.insertAdjacentElement("beforebegin",overviewPanel);
+
     setupTabs(content,nav);
-    const overviewNode = content.querySelector("#bfmc-overview");
     if (overviewNode) setupVote(content,args,overviewNode);
     content.dataset.bfMatchEnhancementsReady = "1";
     content.dataset.bfMatchEnhancementKey = matchKey;
