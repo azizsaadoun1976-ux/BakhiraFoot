@@ -302,12 +302,14 @@
       ["Différence de buts",home.goalDifference,away.goalDifference,0,false],
       ["Taux de victoire",home.winRate,away.winRate,1,false," %"]
     ];
+    const hasHome = home.played > 0;
+    const hasAway = away.played > 0;
     const rowHtml = rows.map(([label,h,a,digits,lowerBetter,suffix=""]) => {
-      const hBetter = lowerBetter ? h < a : h > a;
-      const aBetter = lowerBetter ? a < h : a > h;
+      const hBetter = hasHome && hasAway && (lowerBetter ? h < a : h > a);
+      const aBetter = hasHome && hasAway && (lowerBetter ? a < h : a > h);
       return '<tr><th scope="row">' + esc(label) + '</th>' +
-        '<td class="' + (hBetter ? "is-better" : "") + '">' + fmt(h,digits) + suffix + '</td>' +
-        '<td class="' + (aBetter ? "is-better" : "") + '">' + fmt(a,digits) + suffix + '</td></tr>';
+        '<td class="' + (hBetter ? "is-better" : "") + '">' + (hasHome ? fmt(h,digits) + suffix : "—") + '</td>' +
+        '<td class="' + (aBetter ? "is-better" : "") + '">' + (hasAway ? fmt(a,digits) + suffix : "—") + '</td></tr>';
     }).join("");
     return '<div class="bfmc-comparison">' +
       '<div class="bfmc-comparison-head"><div><span>FORME RÉCENTE</span><h3>Comparaison des équipes</h3>' +
@@ -321,7 +323,11 @@
       '<div class="bfmc-comparison-table-wrap"><table class="bfmc-comparison-table">' +
       '<thead><tr><th>INDICATEUR</th><th>' + esc(homeName) + '</th><th>' + esc(awayName) + '</th></tr></thead>' +
       '<tbody>' + rowHtml + '</tbody></table></div>' +
-      '<p class="bfmc-comparison-footnote">Calculs effectués à partir des résultats récents fournis par le Match Centre. La meilleure valeur est mise en évidence ; pour les buts encaissés et les défaites, une valeur plus faible est préférable. Les matchs sans score final exploitable sont ignorés.</p>' +
+      '<p class="bfmc-comparison-footnote">' +
+      (hasHome && hasAway
+        ? 'Calculs effectués à partir des résultats récents terminés. La meilleure valeur est mise en évidence ; pour les buts encaissés et les défaites, une valeur plus faible est préférable.'
+        : 'Comparaison partielle : certaines données récentes ne sont pas disponibles pour les deux équipes. Les cellules manquantes restent indiquées par un tiret.') +
+      ' Les matchs sans score final exploitable sont ignorés.</p>' +
     '</div>';
   }
 
