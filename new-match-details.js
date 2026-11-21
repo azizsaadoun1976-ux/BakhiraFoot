@@ -2661,10 +2661,14 @@ ${esc(String(playerName(player) || "P").split(/\s+/).map(part => part[0] || "").
   }
 
   function renderPlayers(lineup, details) {
-    if (!lineup.players.length) {
+    const players = Array.isArray(lineup?.players) ? lineup.players : [];
+    const starters = Array.isArray(lineup?.starters) ? lineup.starters : [];
+    const substitutes = Array.isArray(lineup?.substitutes) ? lineup.substitutes : [];
+    if (!players.length && !starters.length && !substitutes.length) {
       return '<div class="bf-new-safe-empty">Aucune donnée de joueurs ou de composition n’a été fournie pour cette rencontre.</div>';
     }
-    return lineup.players.map(player => {
+
+    const renderPlayer = player => {
       const photo = playerPhoto(player);
       const rating = playerRating(player);
       const position = playerPosition(player);
@@ -2672,7 +2676,7 @@ ${esc(String(playerName(player) || "P").split(/\s+/).map(part => part[0] || "").
       return '<article class="bf-new-safe-list-player">' +
         (photo
           ? '<img src="' + esc(photo) + '" alt="' + esc(playerName(player)) + '" loading="lazy" referrerpolicy="no-referrer">'
-          : '<div class="bf-new-safe-list-avatar">' + esc(String(playerName(player)||"P").split(/\s+/).map(part=>part[0]||"").join("").slice(0,2).toUpperCase()) + '</div>') +
+          : '<div class="bf-new-safe-list-avatar">' + esc(String(playerName(player)||"P").split(/\\s+/).map(part=>part[0]||"").join("").slice(0,2).toUpperCase()) + '</div>') +
         '<div class="bf-new-safe-number">' + esc(playerNumber(player)) + '</div>' +
         '<div class="bf-new-safe-player-copy"><div class="bf-new-safe-name">' + esc(playerName(player)) + '</div>' +
         (position ? '<div class="bf-new-safe-player-position">' + esc(position) + '</div>' : '') +
@@ -2681,7 +2685,23 @@ ${esc(String(playerName(player) || "P").split(/\s+/).map(part => part[0] || "").
         '</div><div class="bf-new-safe-rating">' +
         (rating !== null ? 'Note ' + esc(Number(rating).toFixed(1)) : '—') +
         '</div></article>';
-    }).join("");
+    };
+
+    const group = (title, items, className) => {
+      if (!items.length) return "";
+      return '<section class="bf-new-safe-player-group ' + className + '">' +
+        '<header><h3>' + esc(title) + '</h3><span>' + items.length + '</span></header>' +
+        '<div class="bf-new-safe-player-group-list">' + items.map(renderPlayer).join("") + '</div></section>';
+    };
+
+    if (starters.length || substitutes.length) {
+      return '<div class="bf-new-safe-player-groups">' +
+        group("Onze de départ",starters,"bf-new-safe-player-group--starters") +
+        group("Remplaçants",substitutes,"bf-new-safe-player-group--subs") +
+        '</div>';
+    }
+
+    return group("Joueurs communiqués par la source",players,"bf-new-safe-player-group--all");
   }
 
   /* =========================================================
