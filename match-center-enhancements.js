@@ -23,6 +23,8 @@
     const node = document.createElement("style");
     node.id = "bfMatchEnhancementsStyle";
     node.textContent = `
+      #bf-new-match-safe-modal [data-bf-match-panel][hidden]{display:none!important}
+      #bf-new-match-safe-modal .bfmd-center-nav [role="tab"]:focus-visible{outline:2px solid #74edbd;outline-offset:2px}
       #bf-new-match-safe-modal .bfmc-context-columns{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:10px}
       #bf-new-match-safe-modal .bfmc-result-list{display:grid;gap:8px}
       #bf-new-match-safe-modal .bfmc-result-card{display:grid;gap:8px;min-width:0;padding:11px 12px;border:1px solid rgba(88,144,168,.22);border-radius:11px;background:linear-gradient(135deg,rgba(12,34,48,.95),rgba(8,24,35,.92));box-shadow:0 5px 16px #0002}
