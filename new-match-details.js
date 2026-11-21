@@ -756,7 +756,10 @@ function bfAssignFormationRoles(players, formation, readPosition) {
 
       return {
         formation: "—",
-        players: []
+        coach: "",
+        players: [],
+        starters: [],
+        substitutes: []
       };
 
     }
@@ -811,8 +814,18 @@ function bfAssignFormationRoles(players, formation, readPosition) {
       const role = rolesByKey.get(keyOfPlayer(player));
       return role ? { ...player, tacticalPosition: role } : player;
     });
+    const coachValue = first(
+      block?.coach?.name, block?.coach?.displayName,
+      block?.manager?.name, block?.manager?.displayName,
+      block?.coachName, block?.coach_name,
+      block?.managerName, block?.manager_name
+    );
+    const coach = typeof coachValue === "object"
+      ? String(first(coachValue?.name,coachValue?.displayName,"") || "")
+      : String(coachValue || "");
     return {
       formation: finalFormation,
+      coach,
       players: labelledPlayers,
       starters: labelledStarters,
       substitutes,
@@ -2591,7 +2604,8 @@ ${esc(String(playerName(player) || "P").split(/\s+/).map(part => part[0] || "").
     };
     const head = (lineup, team, fallback) => '<div class="bf-new-safe-combined-team">' +
       (team.logo ? '<img src="' + esc(team.logo) + '" alt="" loading="lazy">' : '<span>⚽</span>') +
-      '<strong>' + esc(team.name || fallback) + '</strong><em>' + esc(lineup.formation || "—") + '</em></div>';
+      '<strong>' + esc(team.name || fallback) + '</strong><em>' + esc(lineup.formation || "—") + '</em>' +
+      (lineup.coach ? '<small class="bf-new-safe-combined-coach">Entraîneur · ' + esc(lineup.coach) + '</small>' : '') + '</div>';
     return '<div class="bf-new-safe-combined-wrap"><div class="bf-new-safe-combined-head">' +
       head(homeLineup,home,"Domicile") + '<span class="bf-new-safe-combined-vs">VS</span>' + head(awayLineup,away,"Extérieur") +
       '</div><div class="bf-new-safe-combined-pitch">' + markings + renderTeam(homeLineup,home,"home") + renderTeam(awayLineup,away,"away") +
