@@ -382,16 +382,29 @@
         item.setAttribute("aria-pressed", active ? "true" : "false");
         item.setAttribute("aria-selected", active ? "true" : "false");
         item.tabIndex = active ? 0 : -1;
+        const panel = content.querySelector("#" + item.dataset.bfMatchTab);
+        if (panel) panel.setAttribute("aria-labelledby", item.id);
       });
       panels.forEach(panel => { panel.hidden = panel !== target; });
       target.hidden = false;
       if (shouldScroll) target.scrollIntoView({behavior:"smooth",block:"start"});
     };
     buttons.forEach(button => button.addEventListener("click", () => activate(button,true)));
+    nav.addEventListener("keydown", event => {
+      if (!["ArrowLeft","ArrowRight","Home","End"].includes(event.key)) return;
+      const current = Math.max(0,buttons.indexOf(document.activeElement));
+      let next = current;
+      if (event.key === "ArrowRight") next = (current + 1) % buttons.length;
+      if (event.key === "ArrowLeft") next = (current - 1 + buttons.length) % buttons.length;
+      if (event.key === "Home") next = 0;
+      if (event.key === "End") next = buttons.length - 1;
+      event.preventDefault();
+      buttons[next]?.focus();
+      if (buttons[next]) activate(buttons[next],true);
+    });
     const initial = buttons.find(button => button.getAttribute("aria-selected") === "true") || buttons[0];
     if (initial) activate(initial,false);
   }
-
   async function loadContext(content, args, recentNode, h2hNode, standingsNode, comparisonNode) {
     const params = new URLSearchParams({
       home: String(args.home.name || ""),
@@ -824,7 +837,7 @@
       ["bfmc-highlights","Highlights"],["bfmc-news","Actualités"],["bfmc-comments","Commentaires"]
     ];
     nav.innerHTML = tabs.map((tab,index) =>
-      '<button type="button" role="tab" data-bf-match-tab="' + tab[0] +
+      '<button type="button" role="tab" id="bfmd-tab-' + tab[0] + '" data-bf-match-tab="' + tab[0] +
       '" aria-controls="' + tab[0] + '" aria-selected="' + (index===0?"true":"false") +
       '" aria-pressed="' + (index===0?"true":"false") + '">' + tab[1] + '</button>'
     ).join("");
