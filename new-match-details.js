@@ -2728,13 +2728,26 @@ ${esc(String(playerName(player) || "P").split(/\s+/).map(part => part[0] || "").
      ========================================================= */
 
   function renderEvents(details) {
-    const events = getEvents(details);
+    const events = getEvents(details).slice().sort((a,b) => {
+      const minute = event => {
+        const match = String(eventMinute(event) ?? "").match(/\d+/);
+        return match ? Number(match[0]) : 999;
+      };
+      return minute(a) - minute(b);
+    });
     if (!events.length) {
       return '<div class="bf-new-safe-empty">Aucun événement détaillé disponible.</div>';
     }
     return events.map(event => {
       const type = eventType(event);
-      const team = String(first(event?.team?.name, event?.team_name, event?.club?.name, ""));
+      const team = String(first(
+      event?.team?.name, event?.team_name, event?.club?.name,
+      event?.isHome === true ? details?.teams?.home?.name : null,
+      event?.isHome === false ? details?.teams?.away?.name : null,
+      norm(event?.side) === "home" ? details?.teams?.home?.name : null,
+      norm(event?.side) === "away" ? details?.teams?.away?.name : null,
+      ""
+    ));
       const isGoal = eventIsGoal(event);
       const isSub = eventIsSubstitution(event);
       const assist = isGoal ? eventAssist(event) : "";
@@ -2768,53 +2781,116 @@ ${esc(String(playerName(player) || "P").split(/\s+/).map(part => part[0] || "").
   }
 
     function statRows(details) {
-    const raw = first(details?.statistics, details?.stats, details?.matchStatistics, []);
-    const label = item => String(first(item?.type?.name, typeof item?.type === "string" ? item.type : null,
-      item?.name, item?.label, item?.key, item?.stat?.name, ""));
-    const value = item => first(item?.value, item?.displayValue, item?.stat?.value, item?.total, item?.display, null);
+    const raw = first(
+      details?.statistics?.length ? details.statistics : null,
+      details?.stats?.length ? details.stats : null,
+      details?.matchStatistics?.length ? details.matchStatistics : null,
+      details?.statistics, details?.stats, details?.matchStatistics, []
+    );
+    const label = item => String(first(
+      item?.type?.name, item?.type?.displayName,
+      typeof item?.type === "string" ? item.type : null,
+      item?.name, item?.label, item?.key, item?.stat?.name, item?.displayName, ""
+    ) || "").trim();
+    const list = value => Array.isArray(value) ? value :
+      value && typeof value === "object" ? Object.entries(value).map(([name,v]) =>
+        v && typeof v === "object" ? {name,...v} : {name,value:v}) : [];
+    const scalar = value => value !== undefined && value !== null && typeof value !== "object" ? value : null;
+    const sideValue = (item, side) => first(
+      scalar(item?.[side]),
+      scalar(item?.[side + "Value"]),
+      scalar(item?.[side + "_value"]),
+      scalar(item?.[side + "Team"]),
+      scalar(item?.value), scalar(item?.displayValue), scalar(item?.stat?.value),
+      scalar(item?.total), scalar(item?.display), null
+    );
     const blocks = Array.isArray(raw) ? raw : (raw && typeof raw === "object" ? [
-      { side: "home", statistics: first(raw.home, raw.host, raw.homeTeam, raw.homeStatistics, []) },
-      { side: "away", statistics: first(raw.away, raw.guest, raw.awayTeam, raw.awayStatistics, []) }
+      {side:"home",statistics:first(raw.home,raw.host,raw.homeTeam,raw.homeStatistics,[])},
+      {side:"away",statistics:first(raw.away,raw.guest,raw.awayTeam,raw.awayStatistics,[])}
     ] : []);
     if (!blocks.length) return [];
-    const homeName = norm(details?.teams?.home?.name), awayName = norm(details?.teams?.away?.name);
-    const homeBlock = blocks.find(x => norm(x?.team?.name || x?.team_name || x?.side) === homeName || ["home","host"].includes(norm(x?.side)));
-    const awayBlock = blocks.find(x => norm(x?.team?.name || x?.team_name || x?.side) === awayName || ["away","guest"].includes(norm(x?.side)));
-    const homeStats = arr(homeBlock?.statistics || homeBlock?.stats || homeBlock?.statisticsItems || homeBlock?.data);
-    const awayStats = arr(awayBlock?.statistics || awayBlock?.stats || awayBlock?.statisticsItems || awayBlock?.data);
-    const allLabels = [...new Set([...homeStats.map(label), ...awayStats.map(label)].filter(Boolean))];
-    if (allLabels.length) return allLabels.map(name => {
-      const h = homeStats.find(item => norm(label(item)) === norm(name));
-      const a = awayStats.find(item => norm(label(item)) === norm(name));
-      return { label: name, home: h ? value(h) : null, away: a ? value(a) : null };
-    });
+
+    /* SofaScore format: periods -> groups -> statisticsItems, with home/away values on each item. */
+    const periodBlocks = blocks.filter(block => Array.isArray(block?.groups));
+    if (periodBlocks.length) {
+      const selected = periodBlocks.find(block => norm(block?.period) === "all") || periodBlocks[0];
+      const rows = [];
+      for (const group of arr(selected?.groups)) {
+        for (const item of arr(group?.statisticsItems || group?.statistics || group?.items)) {
+          const name = label(item);
+          const home = sideValue(item,"home"), away = sideValue(item,"away");
+          if (name && (home !== null || away !== null)) rows.push({label:name,home,away});
+        }
+      }
+      if (rows.length) return rows;
+    }
+
+    /* Flat rows may also contain both sides directly. */
+    const flatRows = blocks.flatMap(block =>
+      arr(block?.statistics || block?.stats || block?.statisticsItems || block?.data ||
+        (block?.name || block?.key ? [block] : []))
+    ).filter(item => item && (
+      item.home !== undefined || item.away !== undefined ||
+      item.homeValue !== undefined || item.awayValue !== undefined
+    ));
+    if (flatRows.length) return flatRows.map(item => ({
+      label:label(item),home:sideValue(item,"home"),away:sideValue(item,"away")
+    })).filter(row => row.label);
+
+    const homeName = norm(details?.teams?.home?.name || details?.home_team?.name);
+    const awayName = norm(details?.teams?.away?.name || details?.away_team?.name);
+    const sideOf = block => {
+      const side = norm(block?.side || block?.team?.side || block?.homeAway);
+      const team = norm(block?.team?.name || block?.team_name || block?.name);
+      if (["home","host","local"].includes(side) || (homeName && team === homeName)) return "home";
+      if (["away","guest","visitor"].includes(side) || (awayName && team === awayName)) return "away";
+      return "";
+    };
+    const homeBlock = blocks.find(block => sideOf(block) === "home");
+    const awayBlock = blocks.find(block => sideOf(block) === "away");
+    const homeStats = list(first(homeBlock?.statistics,homeBlock?.stats,homeBlock?.statisticsItems,homeBlock?.data,[]));
+    const awayStats = list(first(awayBlock?.statistics,awayBlock?.stats,awayBlock?.statisticsItems,awayBlock?.data,[]));
+    const homeMap = new Map(homeStats.map(item=>[norm(label(item)),item]).filter(entry=>entry[0]));
+    const awayMap = new Map(awayStats.map(item=>[norm(label(item)),item]).filter(entry=>entry[0]));
+    const names = [...new Set([...homeMap.keys(),...awayMap.keys()])];
+    if (names.length) return names.map(name => ({
+      label:label(homeMap.get(name)||awayMap.get(name)),
+      home:homeMap.has(name)?sideValue(homeMap.get(name),"home"):null,
+      away:awayMap.has(name)?sideValue(awayMap.get(name),"away"):null
+    }));
+
+    /* Last-resort order-based fallback only when two provider side blocks exist. */
     if (blocks.length >= 2) {
-      const hs = arr(blocks[0]?.statistics || blocks[0]?.stats || blocks[0]?.statisticsItems);
-      const as = arr(blocks[1]?.statistics || blocks[1]?.stats || blocks[1]?.statisticsItems);
-      const names = [...new Set([...hs.map(label), ...as.map(label)].filter(Boolean))];
-      return names.map(name => {
-        const h=hs.find(item=>norm(label(item))===norm(name)), a=as.find(item=>norm(label(item))===norm(name));
-        return {label:name,home:h?value(h):null,away:a?value(a):null};
-      });
+      const hs=list(first(blocks[0]?.statistics,blocks[0]?.stats,blocks[0]?.statisticsItems,[]));
+      const as=list(first(blocks[1]?.statistics,blocks[1]?.stats,blocks[1]?.statisticsItems,[]));
+      const hm=new Map(hs.map(item=>[norm(label(item)),item]).filter(entry=>entry[0]));
+      const am=new Map(as.map(item=>[norm(label(item)),item]).filter(entry=>entry[0]));
+      return [...new Set([...hm.keys(),...am.keys()])].map(name=>({
+        label:label(hm.get(name)||am.get(name)),
+        home:hm.has(name)?sideValue(hm.get(name),"home"):null,
+        away:am.has(name)?sideValue(am.get(name),"away"):null
+      }));
     }
     return [];
   }
 
   function renderStatistics(details) {
-    const rows = statRows(details);
+    const rows = statRows(details).filter(row => row.label && (row.home !== null || row.away !== null));
     const priority = ["ball possession","possession","total shots","shots on target","shots off target","corner kicks","corners","fouls","yellow cards","red cards","offsides","passes","accurate passes","expected goals","xg"];
     rows.sort((a,b)=>{const rank=x=>{const i=priority.findIndex(p=>norm(x).includes(p));return i<0?999:i;};return rank(a.label)-rank(b.label);});
-    if (!rows.length) return '<div class="bf-new-safe-empty">Statistiques détaillées indisponibles pour cette rencontre.</div>';
+    if (!rows.length) return '<div class="bf-new-safe-empty">Statistiques détaillées indisponibles pour cette rencontre. La source ne fournit pas encore les chiffres pour ce match.</div>';
     const numeric=value=>{
-      if(value===null||value===undefined)return null;
-      const parsed=Number(String(value).replace("%","").replace(",",".").replace(/[^\d.\-]/g,""));
+      if(value===null||value===undefined||typeof value==="object")return null;
+      const match=String(value).trim().replace(",",".").match(/-?\d+(?:\.\d+)?/);
+      if(!match)return null;
+      const parsed=Number(match[0]);
       return Number.isFinite(parsed)?parsed:null;
     };
     return '<div class="bf-new-safe-stat-grid">' + rows.map(row=>{
       const h=numeric(row.home),a=numeric(row.away);
       const total=Math.max(0,h||0)+Math.max(0,a||0);
-      const hw=total>0&&h!==null?Math.max(0,Math.min(100,h/total*100)):50;
-      const aw=total>0&&a!==null?Math.max(0,Math.min(100,a/total*100)):50;
+      const hw=h===null?0:a===null?100:total>0?Math.max(0,Math.min(100,h/total*100)):50;
+      const aw=a===null?0:h===null?100:total>0?Math.max(0,Math.min(100,a/total*100)):50;
       return '<div class="bf-new-safe-stat"><div class="bf-new-safe-stat-label">' + esc(row.label) + '</div><div class="bf-new-safe-stat-values"><span>' + esc(row.home ?? "—") + '</span><span>' + esc(row.away ?? "—") + '</span></div><div class="bf-new-safe-stat-track"><span class="bf-new-safe-stat-home" style="width:' + hw.toFixed(1) + '%"></span><span class="bf-new-safe-stat-away" style="width:' + aw.toFixed(1) + '%"></span></div></div>';
     }).join("") + '</div>';
   }
