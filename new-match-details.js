@@ -2712,14 +2712,27 @@ ${esc(String(playerName(player) || "P").split(/\s+/).map(part => part[0] || "").
         '<div class="bf-new-safe-player-group-list">' + items.map(renderPlayer).join("") + '</div></section>';
     };
 
-    if (starters.length || substitutes.length) {
+    if (starters.length) {
+      const known = new Set([...starters,...substitutes].map(player =>
+        String(first(player?.id,player?.player_id,player?.playerId,
+          player?.player?.id,player?.player?.player_id,player?.name,player?.player?.name,""))
+      ));
+      const remaining = players.filter(player =>
+        !known.has(String(first(player?.id,player?.player_id,player?.playerId,
+          player?.player?.id,player?.player?.player_id,player?.name,player?.player?.name,"")))
+      );
       return '<div class="bf-new-safe-player-groups">' +
         group("Onze de départ",starters,"bf-new-safe-player-group--starters") +
         group("Remplaçants",substitutes,"bf-new-safe-player-group--subs") +
+        group("Autres joueurs communiqués",remaining,"bf-new-safe-player-group--other") +
         '</div>';
     }
 
-    return group("Joueurs communiqués par la source",players,"bf-new-safe-player-group--all");
+    /* If a provider sends a bench list but no confirmed starting XI,
+       show its player list without inventing a starting/substitute split. */
+    return group("Joueurs communiqués par la source",
+      players.length ? players : substitutes,
+      "bf-new-safe-player-group--all");
   }
 
   /* =========================================================
