@@ -205,7 +205,7 @@ function calculate(){
  catch(e){error.textContent=e.message;return false;}
 }
 form.addEventListener("submit",event=>{event.preventDefault();calculate();});
-form.addEventListener("input",()=>{if(error.textContent==="")calculate();});
+form.addEventListener("input",()=>calculate());
 form.addEventListener("reset",()=>{window.setTimeout(()=>{error.textContent="";calculate();},0);});
 calculate();
 })();
