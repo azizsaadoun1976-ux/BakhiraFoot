@@ -2233,6 +2233,9 @@ function bfAssignFormationRoles(players, formation, readPosition) {
 
     modal.id =
       "bf-new-match-safe-modal";
+    modal.setAttribute("role","dialog");
+    modal.setAttribute("aria-modal","true");
+    modal.setAttribute("aria-label","Détails de la rencontre");
 
     modal.innerHTML = `
 
@@ -2250,6 +2253,8 @@ function bfAssignFormationRoles(players, formation, readPosition) {
           <button
             type="button"
             class="bf-new-safe-close"
+            aria-label="Fermer les détails du match"
+            title="Fermer"
           >
             ✕
           </button>
@@ -3825,6 +3830,7 @@ function bfSameFixtureMetadata(candidate,expected,requireDate=false) {
 
     document.body.style.overflow =
       "hidden";
+    modal.querySelector(".bf-new-safe-close")?.focus({preventScroll:true});
 
     content.innerHTML = `
 
