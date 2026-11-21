@@ -18,6 +18,7 @@
 
   const API = "/api?fixture=";
   let activeNewDetailsRequest = 0;
+  let previousMatchFocus = null;
 
   const arr = value =>
     Array.isArray(value)
@@ -2306,6 +2307,11 @@ function bfAssignFormationRoles(players, formation, readPosition) {
 
     document.body.style.overflow =
       "";
+    if (previousMatchFocus && previousMatchFocus.isConnected &&
+        typeof previousMatchFocus.focus === "function") {
+      previousMatchFocus.focus({preventScroll:true});
+    }
+    previousMatchFocus = null;
   }
 
   /* =========================================================
@@ -3819,6 +3825,11 @@ function bfSameFixtureMetadata(candidate,expected,requireDate=false) {
 
     const modal =
       ensureModal();
+
+    const activeElement = document.activeElement;
+    if (activeElement && !modal.contains(activeElement)) {
+      previousMatchFocus = activeElement;
+    }
 
     const content =
       document.getElementById(
