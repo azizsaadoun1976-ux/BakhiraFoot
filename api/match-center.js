@@ -192,6 +192,114 @@ function collectESPNEvents(payload) {
   return [];
 }
 
+function collectFotMobTeams(payload) {
+  const found = new Map();
+  const queue = [payload];
+  const seen = new Set();
+  while (queue.length && seen.size < 1200) {
+    const node = queue.shift();
+    if (!node || typeof node !== "object" || seen.has(node)) continue;
+    seen.add(node);
+    if (Array.isArray(node)) {
+      for (const child of node) if (child && typeof child === "object") queue.push(child);
+      continue;
+    }
+    const candidate = node.entity || node.team || node;
+    const name = candidate?.name || candidate?.localizedName || candidate?.displayName;
+    if (candidate?.id != null && name &&
+        (!candidate.type || String(candidate.type).toLowerCase() === "team")) {
+      found.set(String(candidate.id),{id:String(candidate.id),name:String(name)});
+    }
+    for (const value of Object.values(node)) if (value && typeof value === "object") queue.push(value);
+  }
+  return [...found.values()];
+}
+
+async function findFotMobTeam(name) {
+  const url = "https://www.fotmob.com/api/data/search/suggest?term=" +
+    encodeURIComponent(name) + "&hits=30&lang=en";
+  const payload = await fetchJSON(url,2200);
+  const teams = collectFotMobTeams(payload);
+  return teams.find(team => norm(team.name) === norm(name)) ||
+    teams.find(team => sameTeam(team.name,name)) || null;
+}
+
+async function loadFotMobRecentForm(homeName, awayName) {
+  const [homeSearch,awaySearch] = await Promise.allSettled([
+    findFotMobTeam(homeName),findFotMobTeam(awayName)
+  ]);
+  const homeTeam=homeSearch.status==="fulfilled"?homeSearch.value:null;
+  const awayTeam=awaySearch.status==="fulfilled"?awaySearch.value:null;
+  if(!homeTeam&&!awayTeam)return {homeRecent:[],awayRecent:[],headToHead:[]};
+
+  const [homePayload,awayPayload]=await Promise.allSettled([
+    homeTeam?fetchJSON("https://www.fotmob.com/api/data/teams?id="+encodeURIComponent(homeTeam.id),2600):Promise.resolve(null),
+    awayTeam?fetchJSON("https://www.fotmob.com/api/data/teams?id="+encodeURIComponent(awayTeam.id),2600):Promise.resolve(null)
+  ]);
+  const teamLabel=(value,fallback="")=>{
+    if(typeof value==="string")return value;
+    if(value&&typeof value==="object")return String(value.name||value.longName||value.shortName||value.displayName||fallback);
+    return fallback;
+  };
+  const recentFrom=(result,team)=>{
+    if(result.status!=="fulfilled"||!result.value||!team)return [];
+    const payload=result.value;
+    const roots=[
+      payload?.overview?.teamForm,payload?.overview?.form,
+      payload?.overview?.recentMatches,payload?.teamForm,payload?.form,
+      payload?.overview?.lastMatches
+    ];
+    const items=roots.find(Array.isArray)||[];
+    const unique=new Map();
+    for(const item of items){
+      if(!item||typeof item!=="object")continue;
+      const homeObj=item.home||item.homeTeam||item.home_team||null;
+      const awayObj=item.away||item.awayTeam||item.away_team||null;
+      const homeIsUs=homeObj?.isOurTeam===true||item.isHome===true||item.homeAway==="home";
+      const awayIsUs=awayObj?.isOurTeam===true||item.isHome===false||item.homeAway==="away";
+      const opponent=teamLabel(item.opponent||item.opponentName||item.opponent_name,"");
+      let h=teamLabel(homeObj,item.homeName||item.home_name||"");
+      let a=teamLabel(awayObj,item.awayName||item.away_name||"");
+      if(!h||!a){
+        if(!opponent)continue;
+        const ourSide=homeIsUs?"home":awayIsUs?"away":
+          (sameTeam(team.name,h)?"home":sameTeam(team.name,a)?"away":"");
+        if(ourSide==="home"){h=team.name;a=opponent;}
+        else if(ourSide==="away"){a=team.name;h=opponent;}
+        else continue;
+      }
+      if(!sameTeam(h,team.name)&&!sameTeam(a,team.name))continue;
+      let score=item.score;
+      if(score&&typeof score==="object"){
+        const sh=score.home??score.homeScore??score.home_score;
+        const sa=score.away??score.awayScore??score.away_score;
+        score=sh!=null&&sa!=null?String(sh)+" - "+String(sa):"";
+      }
+      if(!/^\s*\d+\s*[-–:]\s*\d+/.test(String(score||""))){
+        const sh=item.homeScore??item.home_score??homeObj?.score;
+        const sa=item.awayScore??item.away_score??awayObj?.score;
+        score=sh!=null&&sa!=null?String(sh)+" - "+String(sa):"";
+      }
+      if(!/^\s*\d+\s*[-–:]\s*\d+/.test(String(score||"")))continue;
+      const dateValue=item.date?.utcTime||item.date?.date||item.date||item.utcDate||item.matchDate||item.startTime||"";
+      const date=eventTime({date:dateValue});
+      const id=String(item.id||item.matchId||item.linkToMatch||[h,a,date,score].join("|"));
+      unique.set(id,{
+        id,date,home:h,away:a,score:String(score),
+        competition:item.tournamentName||item.leagueName||item.competition||"",
+        status:"Final",statusType:"finished",finished:true
+      });
+    }
+    return [...unique.values()].sort((a,b)=>(Date.parse(b.date)||0)-(Date.parse(a.date)||0)).slice(0,8);
+  };
+  const homeRecent=recentFrom(homePayload,homeTeam);
+  const awayRecent=recentFrom(awayPayload,awayTeam);
+  const awayIds=new Set(awayRecent.map(item=>item.id));
+  const headToHead=homeRecent.filter(item=>awayIds.has(item.id)||
+    awayRecent.some(other=>other.date===item.date&&sameTeam(other.home,item.home)&&sameTeam(other.away,item.away)));
+  return {homeRecent,awayRecent,headToHead};
+}
+
 async function loadESPNRecentForm(homeName, awayName, competition) {
   const code = getESPNCode(competition);
   if (!code) return {homeRecent:[],awayRecent:[],headToHead:[]};
@@ -312,29 +420,34 @@ async function loadHeadToHead(homeName, awayName, competition) {
     .slice(0, 8);
 
   /*
-   * Use ESPN to complete (not only replace) SofaScore form. The last-events
-   * endpoint can return only a partial page for some clubs/competitions.
+   * Supplement incomplete recent form from two independent providers in
+   * parallel. Each team remains matched by its own identity; no guessed scores.
    */
   if (homeRecent.length < 5 || awayRecent.length < 5 || !headToHead.length) {
-    try {
-      const fallback = await loadESPNRecentForm(homeName,awayName,competition);
-      const mergeRecent = (primary, secondary) => {
-        const unique = new Map();
-        for (const item of [...primary,...secondary]) {
-          const key = String(item?.id || [
-            item?.home,item?.away,item?.date,item?.score
-          ].join("|")).toLowerCase();
-          if (!unique.has(key)) unique.set(key,item);
-        }
-        return [...unique.values()]
-          .sort((a,b)=>(Date.parse(b.date)||0)-(Date.parse(a.date)||0))
-          .slice(0,8);
-      };
-      homeRecent.splice(0,homeRecent.length,...mergeRecent(homeRecent,fallback.homeRecent || []));
-      awayRecent.splice(0,awayRecent.length,...mergeRecent(awayRecent,fallback.awayRecent || []));
-      if (!headToHead.length && Array.isArray(fallback.headToHead)) headToHead = fallback.headToHead;
-    } catch (error) {
-      console.warn("BAKHIRAFOOT ESPN recent-form fallback unavailable:",error?.message || error);
+    const [espnResult,fotmobResult]=await Promise.allSettled([
+      loadESPNRecentForm(homeName,awayName,competition),
+      loadFotMobRecentForm(homeName,awayName)
+    ]);
+    const mergeRecent = (primary, secondary) => {
+      const unique = new Map();
+      for (const item of [...primary,...secondary]) {
+        const key = String(item?.id || [
+          item?.home,item?.away,item?.date,item?.score
+        ].join("|")).toLowerCase();
+        if (!unique.has(key)) unique.set(key,item);
+      }
+      return [...unique.values()]
+        .sort((a,b)=>(Date.parse(b.date)||0)-(Date.parse(a.date)||0))
+        .slice(0,8);
+    };
+    const espn=espnResult.status==="fulfilled"?espnResult.value:{};
+    const fotmob=fotmobResult.status==="fulfilled"?fotmobResult.value:{};
+    homeRecent.splice(0,homeRecent.length,...mergeRecent(homeRecent,[...(espn.homeRecent||[]),...(fotmob.homeRecent||[])]));
+    awayRecent.splice(0,awayRecent.length,...mergeRecent(awayRecent,[...(espn.awayRecent||[]),...(fotmob.awayRecent||[])]));
+    if (!headToHead.length) {
+      const candidates=[...(espn.headToHead||[]),...(fotmob.headToHead||[])];
+      const unique=new Map(candidates.map(item=>[String(item.id||[item.home,item.away,item.date].join("|")),item]));
+      headToHead=[...unique.values()].sort((a,b)=>(Date.parse(b.date)||0)-(Date.parse(a.date)||0)).slice(0,8);
     }
   }
 
