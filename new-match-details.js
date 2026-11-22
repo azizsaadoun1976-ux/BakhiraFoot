@@ -3881,9 +3881,21 @@ ${esc(String(playerName(player) || "P").split(/\s+/).map(part => part[0] || "").
     return current.filter(Boolean);
   }
 
+  function lineupHasSpecificRoles(group) {
+    const starters = lineupPlayersForQuality(group);
+    if (starters.length < 11 || typeof bfNormalizeTacticalRole !== "function") return false;
+    const roles = starters.slice(0,11).map(player=>bfNormalizeTacticalRole(playerPosition(player)));
+    const broad = new Set(["DEF","MID","FWD"]);
+    return roles.every(role=>role && !broad.has(role)) &&
+      roles.filter(role=>role==="GK").length===1;
+  }
+
   function dataNeedsFallback(details) {
+    const groups = Array.isArray(details?.lineups) ? details.lineups.slice(0,2) : [];
     const counts = lineupStarterCounts(details);
-    const enoughLineup = counts.length === 2 && counts.every(count=>count >= 9);
+    const enoughLineup = groups.length === 2 && counts.length === 2 &&
+      counts.every(count=>count >= 11) &&
+      groups.every(group=>lineupHasCoordinates(group) || lineupHasSpecificRoles(group));
     const enoughStats = matchStatsRowCount(first(details?.statistics,details?.stats,details?.matchStatistics,[])) >= 4;
     return !enoughLineup || !enoughStats;
   }
