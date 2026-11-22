@@ -653,27 +653,37 @@ async function sofaDetails(
         ? home
         : away;
 
-    const players =
-      arr(
-        raw?.players
-      );
+    const players = [
+      ...arr(raw?.players),
+      ...arr(raw?.lineup),
+      ...arr(raw?.startingLineup),
+      ...arr(raw?.startingXI),
+      ...arr(raw?.startXI)
+    ].filter((player, index, list) => player && list.findIndex(item =>
+      String(item?.player?.id ?? item?.id ?? item?.player_id ?? item?.name ?? "") ===
+      String(player?.player?.id ?? player?.id ?? player?.player_id ?? player?.name ?? "")
+    ) === index);
 
-    const startXI =
-      players
-        .filter(
-          player =>
-            player?.substitute !== true
-        )
-        .slice(
-          0,
-          11
-        );
+    const isSubstitute = player =>
+      player?.substitute === true ||
+      player?.substitute === 1 ||
+      String(player?.substitute ?? "").toLowerCase() === "true" ||
+      player?.isSubstitute === true ||
+      player?.player?.substitute === true ||
+      player?.player?.isSubstitute === true;
 
-    const substitutes =
-      players.filter(
-        player =>
-          player?.substitute === true
-      );
+    const startXI = players
+      .filter(player => !isSubstitute(player))
+      .slice(0, 11);
+
+    const substitutes = [
+      ...arr(raw?.substitutes),
+      ...arr(raw?.subs),
+      ...players.filter(isSubstitute)
+    ].filter((player, index, list) => player && list.findIndex(item =>
+      String(item?.player?.id ?? item?.id ?? item?.player_id ?? item?.name ?? "") ===
+      String(player?.player?.id ?? player?.id ?? player?.player_id ?? player?.name ?? "")
+    ) === index);
 
     lineups.push({
 
@@ -709,13 +719,18 @@ async function sofaDetails(
       incidentsBody?.incidents
     );
 
-  const rawStatistics =
-    first(
-      statsBody?.statistics,
-      statsBody?.data?.statistics,
-      statsBody?.statisticsItems,
-      null
-    );
+  const statisticCandidates = [
+    statsBody?.statistics,
+    statsBody?.data?.statistics,
+    statsBody?.statisticsItems,
+    statsBody?.data?.statisticsItems,
+    statsBody?.stats,
+    statsBody?.data?.stats
+  ];
+  const hasStatisticContent = value => Array.isArray(value)
+    ? value.length > 0
+    : !!(value && typeof value === "object" && Object.keys(value).length > 0);
+  const rawStatistics = statisticCandidates.find(hasStatisticContent) || null;
 
   const statistics =
     Array.isArray(rawStatistics)
