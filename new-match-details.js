@@ -3922,7 +3922,29 @@ function bfFixtureNameKey(value) {
   .replace(/\b(football club|soccer club|fc|cf|sc|afc|f\.c\.|c\.f\.)\b/g," ")
   .replace(/[^a-z0-9\u0600-\u06ff]+/g,"").trim();
 }
-function bfFixtureNamesCompatible(a,b){if(!a||!b)return false;if(a===b)return true;return a.length>=5&&b.length>=5&&(a.includes(b)||b.includes(a));}
+function bfFixtureNamesCompatible(a,b){
+ const canonical=value=>String(value||"").normalize("NFD").replace(/[\u0300-\u036f]/g,"").toLowerCase()
+  .replace(/\bman utd\b|\bman united\b|\bmanchester utd\b/g,"manchester united")
+  .replace(/\bman city\b/g,"manchester city")
+  .replace(/\bpsg\b|\bparis sg\b/g,"paris saint germain")
+  .replace(/\batletico de madrid\b/g,"atletico madrid")
+  .replace(/\bspurs\b/g,"tottenham hotspur")
+  .replace(/\bwolves\b/g,"wolverhampton wanderers")
+  .replace(/\binter\b/g,"inter milan")
+  .replace(/\bbarca\b/g,"barcelona")
+  .replace(/\bfc\b|\bcf\b|\bafc\b|\bsc\b|\bfk\b|\bclub\b|\bde\b|\bthe\b/g," ")
+  .replace(/[^a-z0-9]+/g," ").trim().replace(/\s+/g," ");
+ const x=canonical(a),y=canonical(b);
+ if(!x||!y)return false;
+ if(x===y||x.includes(y)||y.includes(x))return true;
+ const ignored=new Set(["and","of"]);
+ const xt=x.split(" ").filter(token=>token.length>1&&!ignored.has(token));
+ const yt=y.split(" ").filter(token=>token.length>1&&!ignored.has(token));
+ const common=xt.filter(token=>yt.includes(token));
+ if(common.length>=2&&common.length/Math.min(xt.length,yt.length)>=0.8)return true;
+ const initials=value=>value.split(" ").filter(token=>token.length>1).map(token=>token[0]).join("");
+ return initials(x).length>=2&&initials(x)===initials(y);
+}
 function bfSameFixtureMetadata(candidate,expected,requireDate=false) {
  const ah=bfFixtureTeamName(candidate,"home"),aa=bfFixtureTeamName(candidate,"away"),eh=bfFixtureTeamName(expected,"home"),ea=bfFixtureTeamName(expected,"away");
  if(eh&&ea){
