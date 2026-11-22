@@ -296,21 +296,28 @@
         ?.detailsSlug
     );
 
-    /* External sources first; plain fixture slugs are SportScore. */
+    /*
+     * Keep SportScore as a final fallback even when a different provider ID
+     * exists. Some fixtures expose a SofaScore/ESPN reference that is stale,
+     * while their SportScore slug still resolves to the actual match.
+     */
+    const sportScoreSlug = String(first(
+      match?.fixture?.sportScoreSlug,
+      match?.sportScoreSlug,
+      match?.fixture?.slug,
+      match?.slug,
+      match?.match_slug,
+      ""
+    ) || "").trim();
+    if (sportScoreSlug && !sources.some(item=>item.source==="sportscore" && item.value===sportScoreSlug)) {
+      sources.push({ source:"sportscore", value:sportScoreSlug });
+    }
     if (!sources.length) {
-      const sportScoreSlug = String(first(
-        match?.fixture?.slug,
-        match?.slug,
-        match?.match_slug,
-        match?.fixture?.upstreamId,
-        match?.upstreamId,
-        match?.fixture?.id,
-        match?.id,
-        match?.fixture_id,
-        match?.match_id,
-        ""
+      const fallbackId = String(first(
+        match?.fixture?.upstreamId,match?.upstreamId,
+        match?.fixture?.id,match?.id,match?.fixture_id,match?.match_id,""
       ) || "").trim();
-      if (sportScoreSlug) sources.push({ source: "sportscore", value: sportScoreSlug });
+      if (fallbackId) sources.push({ source:"sportscore", value:fallbackId });
     }
 
     const priority = {
@@ -3441,17 +3448,10 @@ ${esc(String(playerName(player) || "P").split(/\s+/).map(part => part[0] || "").
     ]);
 
     const providerText =
-      source ===
-        "sofascore"
-
-        ? "SofaScore"
-
-        : source ===
-            "espn"
-
-          ? "ESPN"
-
-          : "TheSportsDB";
+      source === "sofascore" ? "SofaScore" :
+      source === "espn" ? "ESPN" :
+      source === "fotmob" ? "FotMob" :
+      source === "sportscore" ? "SportScore" : "TheSportsDB";
 
     content.innerHTML = `
 
@@ -3999,14 +3999,6 @@ function bfSameFixtureMetadata(candidate,expected,requireDate=false) {
      * كيمشي للكود القديم ديالو.
      */
 
-    if (
-      !sources.length
-    ) {
-
-      return false;
-
-    }
-
     const modal =
       ensureModal();
 
@@ -4197,6 +4189,54 @@ function bfSameFixtureMetadata(candidate,expected,requireDate=false) {
 
       }
 
+    }
+
+    /*
+     * Final independent fallback for major fixtures: locate the exact match
+     * in FotMob by home team, away team and kickoff date. This also covers
+     * cards whose provider identifier is missing or stale.
+     */
+    try {
+      const homeName = bfFixtureTeamName(match,"home") ||
+        bfFixtureTextName(getHome(match));
+      const awayName = bfFixtureTeamName(match,"away") ||
+        bfFixtureTextName(getAway(match));
+      const expectedTime = bfFixtureTime(match);
+      const rawDate = first(
+        match?.fixture?.date,match?.fixture?.utcDate,match?.date,
+        match?.utcDate,match?.time,match?.startTime,match?.start_time
+      );
+      const lookupDate = expectedTime !== null
+        ? new Date(expectedTime).toISOString()
+        : rawDate;
+      if (homeName && awayName && lookupDate) {
+        const params = new URLSearchParams({
+          fixture:"sofa-fotmob-lookup",
+          home:String(homeName),
+          away:String(awayName),
+          date:String(lookupDate)
+        });
+        const lookupUrl = "/api?" + params.toString();
+        const payload = window.BFAPI && typeof window.BFAPI.getJSON === "function"
+          ? await window.BFAPI.getJSON(lookupUrl,{ttlMs:180000,staleIfErrorMs:600000,timeoutMs:18000})
+          : await fetch(lookupUrl,{cache:"no-store",headers:{Accept:"application/json"}}).then(async response=>{
+              const body=await response.json().catch(()=>({}));
+              if(!response.ok)throw new Error(body?.details||body?.error||"FotMob match lookup unavailable");
+              return body;
+            });
+        if(requestId!==activeNewDetailsRequest)return true;
+        const official=payload?.data||payload?.match||payload;
+        if(bfSameFixtureMetadata(official,match,true)) {
+          console.info("BAKHIRAFOOT: opened match through exact FotMob fallback",{home:homeName,away:awayName});
+          renderDetails(official,"fotmob");
+          return true;
+        }
+        lastError=new Error(payload?.details||"La rencontre exacte n’a pas été confirmée par le fournisseur de secours.");
+      }
+    } catch(fallbackError) {
+      if(requestId!==activeNewDetailsRequest)return true;
+      lastError=fallbackError;
+      console.warn("BAKHIRAFOOT: final FotMob match lookup failed",fallbackError);
     }
 
     content.innerHTML = `
