@@ -228,7 +228,7 @@
   }
 
   function sameTeamName(a, b) {
-    const ignored = new Set(["fc","cf","sc","afc","cfc","club","football","soccer","the","de","of","and","united","city","real","sporting","athletic"]);
+    const ignored = new Set(["fc","cf","sc","afc","cfc","club","football","soccer","the","de","of","and"]);
     const clean = value => norm(value)
       .replace(/\bfootball club\b|\bsoccer club\b/g," ")
       .replace(/\b(fc|cf|sc|afc|cfc|club)\b/g," ")
