@@ -350,8 +350,13 @@ module.exports = async function matchEventEnrichment(req, res) {
     if (!root || typeof root !== "object") return send(res, 404, { error: "match_not_found" });
 
     const events = collectEvents(root).slice(0, 400);
+    const statistics = first(
+      root.statistics, root.stats, root.matchStatistics, root.match_statistics,
+      root.boxscore?.statistics, root.boxscore?.stats, null
+    );
     const metadata = {
       events,
+      ...(statistics && (Array.isArray(statistics) ? statistics.length > 0 : Object.keys(statistics).length > 0) ? { statistics } : {}),
       player_of_match: first(
         root.player_of_match, root.playerOfMatch, root.man_of_the_match,
         root.manOfTheMatch, root.mvp, root.best_player, null
