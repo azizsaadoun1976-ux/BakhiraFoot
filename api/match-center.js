@@ -96,7 +96,9 @@ function sameTeam(a, b) {
   const longer = x.length <= y.length ? y : x;
   const shortToken = shorter.replace(/[^a-z0-9]/g,"");
   const longInitials = initials(longer);
-  return shortToken.length >= 2 && shortToken.length <= 5 && shortToken === longInitials;
+  const shortInitials = initials(shorter);
+  return (shortToken.length >= 2 && shortToken.length <= 5 && shortToken === longInitials) ||
+    (shortInitials.length >= 2 && shortInitials === longInitials);
 }
 
 function selectSofaTeam(payload, desiredName) {
