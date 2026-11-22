@@ -3850,17 +3850,25 @@ ${esc(String(playerName(player) || "P").split(/\s+/).map(part => part[0] || "").
     const current = Array.isArray(currentDetails?.lineups) ? [...currentDetails.lineups] : [];
     const fallback = Array.isArray(fallbackDetails?.lineups) ? fallbackDetails.lineups : [];
     if (!fallback.length) return current;
+    const expectedHome = bfFixtureTeamName(currentDetails,"home");
+    const expectedAway = bfFixtureTeamName(currentDetails,"away");
     for (let i=0;i<Math.min(2,fallback.length);i++) {
       const candidate=fallback[i];
       const candidateTeam=candidate?.team || {};
-      const candidateName=norm(candidateTeam.name || candidateTeam.displayName || "");
+      const candidateName=String(candidateTeam.name || candidateTeam.displayName || "");
       const existingIndex=current.findIndex(group => {
         const team=group?.team || {};
-        const name=norm(team.name || team.displayName || "");
+        const name=String(team.name || team.displayName || "");
         return (candidateTeam.id && team.id && String(candidateTeam.id)===String(team.id)) ||
-          (candidateName && name && (candidateName===name || candidateName.includes(name) || name.includes(candidateName)));
+          (name && candidateName && bfFixtureNamesCompatible(name,candidateName));
       });
-      const index=existingIndex>=0?existingIndex:i;
+      let sideIndex = -1;
+      if (expectedHome && bfFixtureNamesCompatible(candidateName,expectedHome)) sideIndex=0;
+      else if (expectedAway && bfFixtureNamesCompatible(candidateName,expectedAway)) sideIndex=1;
+      const index = sideIndex >= 0 ? sideIndex :
+        existingIndex >= 0 ? existingIndex :
+        current[i] == null ? i : -1;
+      if (index < 0) continue;
       const existing=current[index];
       const candidateCount=lineupPlayersForQuality(candidate).length;
       const existingCount=lineupPlayersForQuality(existing).length;
