@@ -642,7 +642,12 @@ async function sofaDetails(
   ) {
 
     const raw =
-      lineupsBody?.[side];
+      lineupsBody?.[side] ||
+      lineupsBody?.data?.[side] ||
+      lineupsBody?.lineups?.[side] ||
+      lineupsBody?.lineup?.[side] ||
+      lineupsBody?.[side === "home" ? "homeTeam" : "awayTeam"] ||
+      null;
 
     if (!raw) {
       continue;
