@@ -76,13 +76,27 @@ function norm(value) {
 }
 
 function sameTeam(a, b) {
-  const x = norm(a), y = norm(b);
+  const ignored = new Set(["fc","cf","sc","afc","cfc","club","football","soccer","the","de","of","and","united","city","real","sporting","athletic"]);
+  const clean = value => norm(value)
+    .replace(/\\bfootball club\\b|\\bsoccer club\\b/g," ")
+    .replace(/\\b(fc|cf|sc|afc|cfc|club)\\b/g," ")
+    .replace(/\\s+/g," ").trim();
+  const x = clean(a), y = clean(b);
   if (!x || !y) return false;
   if (x === y) return true;
-  const xt = x.split(" ").filter(t => t.length > 2);
-  const yt = y.split(" ").filter(t => t.length > 2);
+  const xt = x.split(" ").filter(t => t.length > 2 && !ignored.has(t));
+  const yt = y.split(" ").filter(t => t.length > 2 && !ignored.has(t));
+  if (!xt.length || !yt.length) return false;
   const common = xt.filter(t => yt.includes(t));
-  return common.length >= 2 && common.length / Math.min(xt.length || 1, yt.length || 1) >= 0.8;
+  const minimum = Math.min(xt.length,yt.length);
+  if (common.length >= 2 && common.length / minimum >= 0.8) return true;
+  if (minimum === 1 && common.length === 1) return true;
+  const initials = value => value.split(" ").filter(t => t.length > 1).map(t => t[0]).join("");
+  const shorter = x.length <= y.length ? x : y;
+  const longer = x.length <= y.length ? y : x;
+  const shortToken = shorter.replace(/[^a-z0-9]/g,"");
+  const longInitials = initials(longer);
+  return shortToken.length >= 2 && shortToken.length <= 5 && shortToken === longInitials;
 }
 
 function selectSofaTeam(payload, desiredName) {
@@ -146,13 +160,15 @@ async function loadHeadToHead(homeName, awayName) {
   ]);
   const homeTeam = homeSearch.status === "fulfilled" ? homeSearch.value : null;
   const awayTeam = awaySearch.status === "fulfilled" ? awaySearch.value : null;
-  if (!homeTeam || !awayTeam) {
-    return { headToHead: [], homeRecent: [], awayRecent: [] };
-  }
-
+  /* Fetch recent form independently: one provider search failure must not hide
+     the other club's available history or make both comparison columns empty. */
   const [homeEvents, awayEvents] = await Promise.allSettled([
-    sofaJSON("/team/" + encodeURIComponent(homeTeam.id) + "/events/last/0"),
-    sofaJSON("/team/" + encodeURIComponent(awayTeam.id) + "/events/last/0")
+    homeTeam
+      ? sofaJSON("/team/" + encodeURIComponent(homeTeam.id) + "/events/last/0")
+      : Promise.resolve({events:[]}),
+    awayTeam
+      ? sofaJSON("/team/" + encodeURIComponent(awayTeam.id) + "/events/last/0")
+      : Promise.resolve({events:[]})
   ]);
 
   const eventsFrom = result => {
