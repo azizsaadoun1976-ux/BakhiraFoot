@@ -709,10 +709,20 @@ async function sofaDetails(
       incidentsBody?.incidents
     );
 
-  const statistics =
-    arr(
-      statsBody?.statistics
+  const rawStatistics =
+    first(
+      statsBody?.statistics,
+      statsBody?.data?.statistics,
+      statsBody?.statisticsItems,
+      null
     );
+
+  const statistics =
+    Array.isArray(rawStatistics)
+      ? rawStatistics
+      : rawStatistics && typeof rawStatistics === "object"
+        ? [rawStatistics]
+        : [];
 
   /* =========================================
      FINAL DETAILS
