@@ -112,3 +112,13 @@ body:not(.dark) #bf-new-match-safe-modal .bf-new-safe-player-stat small{color:#6
 #bf-new-match-safe-modal .bf-new-safe-head>.bf-new-safe-info{grid-column:1/-1!important;width:100%!important;min-width:0!important;margin:0!important}
 #bfMatchDetailsModal .bfmd-team,#bf-new-match-safe-modal .bf-new-safe-team{position:relative!important}
 #bfMatchDetailsModal .bfmd-team:focus-visible,#bf-new-match-safe-modal .bf-new-safe-team:focus-visible{outline:2px solid #59eeb6!important;outline-offset:3px!important;border-radius:10px!important}
+
+/* Consistent vector event icons for goals, assists and penalties. */
+
+#bf-new-match-safe-modal .bf-new-event-glyph .bf-new-safe-event-svg{display:block;width:16px;height:16px;flex:0 0 16px}
+#bf-new-match-safe-modal .bf-new-event-glyph--goal .bf-new-safe-event-svg{width:17px;height:17px;color:#a7f3d0}
+#bf-new-match-safe-modal .bf-new-event-glyph--assist .bf-new-safe-event-svg{width:17px;height:17px;color:#b9d7ff}
+#bf-new-match-safe-modal .bf-new-event-glyph--penalty .bf-new-safe-event-svg{width:16px;height:16px;color:#ffe5a0}
+#bf-new-match-safe-modal .bf-new-safe-assist-icon{display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;flex:0 0 20px;border-radius:6px;background:rgba(37,99,235,.16);color:#9bc5ff}
+#bf-new-match-safe-modal .bf-new-safe-assist-icon .bf-new-safe-event-svg{display:block;width:15px;height:15px}
+#bf-new-match-safe-modal .bf-new-safe-assist{display:flex;align-items:center;flex-wrap:wrap;gap:7px}
