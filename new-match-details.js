@@ -2383,9 +2383,15 @@ function bfAssignFormationRoles(players, formation, readPosition) {
           let depth = item.y;
 
           if (normalized) {
-            /* Normalized provider coordinates use X for pitch length and Y for pitch width. */
-            depth = 8 + item.x * 84;
-            lateral = 8 + item.y * 84;
+            if (item.oriented) {
+              /* FotMob layout is normalized as X=lane and Y=pitch depth. */
+              lateral = 8 + item.x * 84;
+              depth = 8 + item.y * 84;
+            } else {
+              /* Other providers commonly use X=pitch depth and Y=lane. */
+              depth = 8 + item.x * 84;
+              lateral = 8 + item.y * 84;
+            }
           } else if (integerGrid) {
             /* Integer row/column grids use X for lane and Y for the line. */
             lateral = 8 + ((item.x - 1) / 10) * 84;
@@ -2393,12 +2399,21 @@ function bfAssignFormationRoles(players, formation, readPosition) {
           } else if (pitchUnits) {
             const pitchLength = maxX > 105 ? 120 : 105;
             const pitchWidth = maxY > 68 ? 80 : 68;
-            depth = 8 + (item.x / pitchLength) * 84;
-            lateral = 8 + (item.y / pitchWidth) * 84;
+            if (item.oriented) {
+              lateral = 8 + (item.x / pitchWidth) * 84;
+              depth = 8 + (item.y / pitchLength) * 84;
+            } else {
+              depth = 8 + (item.x / pitchLength) * 84;
+              lateral = 8 + (item.y / pitchWidth) * 84;
+            }
           } else if (percentages) {
-            /* Percentage coordinates follow the same X-length / Y-width convention. */
-            depth = 8 + (item.x / 100) * 84;
-            lateral = 8 + (item.y / 100) * 84;
+            if (item.oriented) {
+              lateral = 8 + (item.x / 100) * 84;
+              depth = 8 + (item.y / 100) * 84;
+            } else {
+              depth = 8 + (item.x / 100) * 84;
+              lateral = 8 + (item.y / 100) * 84;
+            }
           }
 
           /* Keep home and away goalkeepers at opposite ends of the horizontal pitch. */
@@ -2406,6 +2421,44 @@ function bfAssignFormationRoles(players, formation, readPosition) {
             player: item.player,
             x: Math.max(6, Math.min(94, lateral)),
             y: Math.max(6, Math.min(94, depth))
+          };
+        });
+      }
+    }
+
+    /*
+     * Some providers publish an official XI and exact tactical roles but omit
+     * pitch coordinates. Plot only when all 11 players have specific roles.
+     * Broad DEF/MID/FWD labels are deliberately rejected to avoid fake lanes.
+     */
+    if (players.length === 11 && typeof bfNormalizeTacticalRole === "function") {
+      const exactRoles = players.map(player => bfNormalizeTacticalRole(playerPosition(player)));
+      const broad = new Set(["DEF","MID","FWD"]);
+      if (exactRoles.every(Boolean) && exactRoles.every(role => !broad.has(role)) &&
+          exactRoles.filter(role => role === "GK").length === 1) {
+        const depth = {
+          GK:8, LB:22, LCB:22, CB:22, RCB:22, RB:22, LWB:30, RWB:30,
+          CDM:39, LDM:39, RDM:39, LM:52, LCM:52, CM:52, RCM:52, RM:52,
+          CAM:65, LAM:65, RAM:65, LW:79, LF:79, ST:82, CF:82, RF:79, RW:79, SS:76
+        };
+        const lane = {
+          GK:50, LB:13, LCB:36, CB:50, RCB:64, RB:87, LWB:12, RWB:88,
+          CDM:50, LDM:36, RDM:64, LM:13, LCM:36, CM:50, RCM:64, RM:87,
+          CAM:50, LAM:34, RAM:66, LW:13, LF:34, ST:50, CF:50, RF:66, RW:87, SS:50
+        };
+        const counts = new Map();
+        exactRoles.forEach(role => counts.set(role,(counts.get(role)||0)+1));
+        const seen = new Map();
+        return players.map((player,index) => {
+          const role = exactRoles[index];
+          const count = counts.get(role) || 1;
+          const slot = seen.get(role) || 0;
+          seen.set(role,slot+1);
+          const offset = count <= 1 ? 0 : (slot - (count-1)/2) * Math.min(24,36/count);
+          return {
+            player,
+            x:Math.max(6,Math.min(94,(lane[role] ?? 50)+offset)),
+            y:Math.max(6,Math.min(94,depth[role] ?? 50))
           };
         });
       }
@@ -3732,58 +3785,95 @@ ${esc(String(playerName(player) || "P").split(/\s+/).map(part => part[0] || "").
   }
 
 
-  function hasOfficialLineupCoordinates(details) {
-    const groups = Array.isArray(details?.lineups) ? details.lineups : [];
-    if (groups.length < 2) return false;
-    return groups.slice(0,2).every(group => {
-      const starters = Array.isArray(group?.startXI) ? group.startXI
-        : Array.isArray(group?.starters) ? group.starters
-        : Array.isArray(group?.xi) ? group.xi : [];
-      if (starters.length !== 11) return false;
-      const points = starters.map(player => {
-        const p = getPlayerObject(player);
-        const objects = [player?.player,player,player?.raw?.player,player?.raw,p].filter(x=>x&&typeof x==="object");
-        for (const source of objects) {
-          const xRaw=source.x??source.coord_x??source.coordinate_x??source.pitch_x??source.pitchX;
-          const yRaw=source.y??source.coord_y??source.coordinate_y??source.pitch_y??source.pitchY;
-          if (xRaw===null||xRaw===undefined||xRaw===""||yRaw===null||yRaw===undefined||yRaw==="") continue;
-          const x=Number(xRaw),y=Number(yRaw);
-          if (Number.isFinite(x)&&Number.isFinite(y)&&x>=0&&x<=120&&y>=0&&y<=100) return {x,y};
-        }
-        return null;
-      });
-      if (points.every(Boolean)) {
-        const xs=points.map(p=>p.x), ys=points.map(p=>p.y);
-        const spreadX=Math.max(...xs)-Math.min(...xs), spreadY=Math.max(...ys)-Math.min(...ys);
-        const normalized=Math.max(...xs)<=1 && Math.max(...ys)<=1 && spreadX>=0.2 && spreadY>=0.2;
-        const integerGrid=xs.every(v=>Number.isInteger(v)&&v>=1&&v<=11) &&
-          ys.every(v=>Number.isInteger(v)&&v>=1&&v<=11) && spreadX>=3 && spreadY>=3;
-        if(normalized || integerGrid || (spreadX>=10 && spreadY>=10)) return true;
-      }
-      const grids=starters.map(player=>{
-        const p=getPlayerObject(player);
-        const sources=[player?.player,player,player?.raw?.player,player?.raw,p].filter(x=>x&&typeof x==="object");
-        for(const source of sources){
-          const value=source.grid??source.position_grid??source.positionGrid??source.formation_grid??source.formationGrid;
-          if(Array.isArray(value)&&value.length>=2){
-            const row=Number(value[0]),col=Number(value[1]);if(Number.isInteger(row)&&Number.isInteger(col))return {row,col};
-          }
-          if(value&&typeof value==="object"){
-            const row=Number(value.row??value.line??value.y),col=Number(value.column??value.col??value.slot??value.x);
-            if(Number.isInteger(row)&&Number.isInteger(col))return {row,col};
-          }
-          if(typeof value==="string"){
-            const match=value.trim().match(/^(\d+)\s*[:;,.-]\s*(\d+)$/);
-            if(match)return {row:Number(match[1]),col:Number(match[2])};
-          }
-        }
-        return null;
-      });
-      return grids.every(Boolean)&&new Set(grids.map(item=>item.row+":"+item.col)).size===11&&
-        new Set(grids.map(item=>item.row)).size>=3;
-    });
+  function lineupPlayersForQuality(group) {
+    if (!group || typeof group !== "object") return [];
+    const explicit = first(
+      Array.isArray(group.startXI) && group.startXI.length ? group.startXI : null,
+      Array.isArray(group.startingXI) && group.startingXI.length ? group.startingXI : null,
+      Array.isArray(group.starters) && group.starters.length ? group.starters : null,
+      Array.isArray(group.xi) && group.xi.length ? group.xi : null
+    );
+    if (Array.isArray(explicit)) return explicit;
+    const all = Array.isArray(group.players) ? group.players :
+      Array.isArray(group.lineup) ? group.lineup : [];
+    return all.filter(player => player?.substitute !== true && player?.starter !== false).slice(0,11);
   }
 
+  function lineupHasCoordinates(group) {
+    const starters = lineupPlayersForQuality(group);
+    if (starters.length < 8) return false;
+    const points = starters.map(player => {
+      const p = getPlayerObject(player);
+      const sources = [player,p,player?.raw,p?.raw].filter(value=>value&&typeof value==="object");
+      for (const source of sources) {
+        const xRaw = source.x ?? source.coord_x ?? source.coordinate_x ?? source.verticalLayout?.x ?? null;
+        const yRaw = source.y ?? source.coord_y ?? source.coordinate_y ?? source.verticalLayout?.y ?? null;
+        const x = Number(xRaw), y = Number(yRaw);
+        if (xRaw !== null && xRaw !== "" && yRaw !== null && yRaw !== "" &&
+            Number.isFinite(x) && Number.isFinite(y)) return {x,y};
+      }
+      return null;
+    });
+    return points.filter(Boolean).length >= 8;
+  }
+
+  function hasOfficialLineupCoordinates(details) {
+    const groups = Array.isArray(details?.lineups) ? details.lineups : [];
+    return groups.length >= 2 && groups.slice(0,2).every(group => lineupHasCoordinates(group));
+  }
+
+  function lineupStarterTotal(details) {
+    const groups = Array.isArray(details?.lineups) ? details.lineups : [];
+    return groups.slice(0,2).reduce((sum,group)=>sum+Math.min(11,lineupPlayersForQuality(group).length),0);
+  }
+
+  function matchStatsRowCount(value, depth=0, seen=new Set()) {
+    if (depth > 7 || value == null || typeof value !== "object" || seen.has(value)) return 0;
+    seen.add(value);
+    if (Array.isArray(value)) return value.reduce((sum,item)=>sum+matchStatsRowCount(item,depth+1,seen),0);
+    const hasLabel = !!(value.name || value.label || value.key || value.type || value.displayName);
+    const hasSides = value.home !== undefined || value.away !== undefined ||
+      value.homeValue !== undefined || value.awayValue !== undefined;
+    if (hasLabel && (hasSides || value.value !== undefined || value.displayValue !== undefined || value.total !== undefined)) return 1;
+    let total=0;
+    for (const key of ["statisticsItems","statistics","stats","groups","periods","data","home","away","homeTeam","awayTeam"]) {
+      if (value[key] && typeof value[key] === "object") total+=matchStatsRowCount(value[key],depth+1,seen);
+    }
+    return total;
+  }
+
+  function bestLineupMerge(currentDetails, fallbackDetails) {
+    const current = Array.isArray(currentDetails?.lineups) ? [...currentDetails.lineups] : [];
+    const fallback = Array.isArray(fallbackDetails?.lineups) ? fallbackDetails.lineups : [];
+    if (!fallback.length) return current;
+    for (let i=0;i<Math.min(2,fallback.length);i++) {
+      const candidate=fallback[i];
+      const candidateTeam=candidate?.team || {};
+      const candidateName=norm(candidateTeam.name || candidateTeam.displayName || "");
+      const existingIndex=current.findIndex(group => {
+        const team=group?.team || {};
+        const name=norm(team.name || team.displayName || "");
+        return (candidateTeam.id && team.id && String(candidateTeam.id)===String(team.id)) ||
+          (candidateName && name && (candidateName===name || candidateName.includes(name) || name.includes(candidateName)));
+      });
+      const index=existingIndex>=0?existingIndex:i;
+      const existing=current[index];
+      const candidateCount=lineupPlayersForQuality(candidate).length;
+      const existingCount=lineupPlayersForQuality(existing).length;
+      const candidateCoords=lineupHasCoordinates(candidate);
+      const existingCoords=lineupHasCoordinates(existing);
+      if (candidateCount>=8 && (!existing || existingCount<8 || candidateCount>existingCount || (candidateCoords&&!existingCoords))) {
+        current[index]=candidate;
+      }
+    }
+    return current.filter(Boolean);
+  }
+
+  function dataNeedsFallback(details) {
+    const enoughLineup = lineupStarterTotal(details) >= 18;
+    const enoughStats = matchStatsRowCount(first(details?.statistics,details?.stats,details?.matchStatistics,[])) >= 4;
+    return !enoughLineup || !enoughStats;
+  }
   /* =========================================================
      OPEN NEW MATCH
      ========================================================= */
@@ -3984,7 +4074,7 @@ function bfSameFixtureMetadata(candidate,expected,requireDate=false) {
           }
         }
 
-        if (!hasOfficialLineupCoordinates(details)) {
+        if (dataNeedsFallback(details)) {
           try {
             const homeName = details?.teams?.home?.name || details?.home_team?.name ||
               details?.home?.name || details?.lineups?.[0]?.team?.name || match?.home?.name || "";
@@ -4001,29 +4091,50 @@ function bfSameFixtureMetadata(candidate,expected,requireDate=false) {
               });
               const lookupUrl = "/api?" + params.toString();
               const payload = window.BFAPI && typeof window.BFAPI.getJSON === "function"
-                ? await window.BFAPI.getJSON(lookupUrl, {ttlMs:180000,staleIfErrorMs:600000,timeoutMs:15000})
+                ? await window.BFAPI.getJSON(lookupUrl, {ttlMs:180000,staleIfErrorMs:600000,timeoutMs:18000})
                 : await fetch(lookupUrl,{cache:"no-store",headers:{Accept:"application/json"}}).then(async response => {
                     const body = await response.json().catch(() => ({}));
-                    if (!response.ok) throw new Error(body?.error || "Official lineup lookup unavailable");
+                    if (!response.ok) throw new Error(body?.details || body?.error || "Official match-data lookup unavailable");
                     return body;
                   });
               const official = payload?.data || payload?.match || payload;
               if (bfSameFixtureMetadata(official, match, true) &&
-                  bfSameFixtureMetadata(official, details, true) &&
-                  hasOfficialLineupCoordinates(official)) {
-                details = { ...details, lineups: official.lineups };
-                console.info("BAKHIRAFOOT: exact official lineup coordinates loaded", {
-                  provider: official?.provider || "FotMob",
-                  home: homeName,
-                  away: awayName
+                  bfSameFixtureMetadata(official, details, true)) {
+                const merged = { ...details };
+                const betterLineups = bestLineupMerge(details,official);
+                if (betterLineups.length) merged.lineups = betterLineups;
+
+                const currentStatsCount = matchStatsRowCount(first(details?.statistics,details?.stats,details?.matchStatistics,[]));
+                const fallbackStatsCount = matchStatsRowCount(first(official?.statistics,official?.stats,official?.matchStatistics,[]));
+                if (fallbackStatsCount > currentStatsCount) {
+                  merged.statistics = official.statistics || official.stats || official.matchStatistics;
+                  merged.stats = merged.statistics;
+                }
+
+                const currentEvents = firstArray => Array.isArray(firstArray) ? firstArray.length : 0;
+                const currentEventList = arr(details?.events).length ? details.events :
+                  arr(details?.incidents).length ? details.incidents : arr(details?.match_events);
+                const fallbackEventList = arr(official?.events).length ? official.events :
+                  arr(official?.incidents).length ? official.incidents : arr(official?.match_events);
+                if (currentEvents(currentEventList) === 0 && currentEvents(fallbackEventList) > 0) {
+                  merged.events = fallbackEventList;
+                  merged.incidents = fallbackEventList;
+                  merged.match_events = fallbackEventList;
+                }
+                if (!merged.player_of_match && official?.player_of_match) merged.player_of_match = official.player_of_match;
+                details = merged;
+                console.info("BAKHIRAFOOT: exact FotMob fallback merged", {
+                  home:homeName,away:awayName,
+                  lineups:lineupStarterTotal(details),
+                  stats:Math.max(currentStatsCount,fallbackStatsCount)
                 });
               } else {
-                console.warn("BAKHIRAFOOT: no exact official layout for this fixture",
-                  payload?.details || payload?.error || "No complete lineups");
+                console.warn("BAKHIRAFOOT: exact match-data fallback rejected because teams/date do not match",
+                  payload?.details || payload?.error || "Fixture mismatch");
               }
             }
           } catch (layoutError) {
-            console.warn("BAKHIRAFOOT: official lineup fallback failed", layoutError);
+            console.warn("BAKHIRAFOOT: FotMob match-data fallback failed", layoutError);
           }
         }
 
