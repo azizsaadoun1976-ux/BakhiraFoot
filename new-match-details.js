@@ -2358,7 +2358,6 @@ function bfAssignFormationRoles(players, formation, readPosition) {
         const colIndex = columns.indexOf(item.col);
         const x = columns.length <= 1 ? 50 : 10 + 80 * colIndex / (columns.length - 1);
         let y = maxRow === minRow ? 50 : 8 + 84 * (item.row - minRow) / (maxRow - minRow);
-        if (side === "away") y = 100 - y;
         return { player: item.player, x: Math.max(6, Math.min(94, x)), y: Math.max(6, Math.min(94, y)) };
       });
     }
@@ -2403,7 +2402,6 @@ function bfAssignFormationRoles(players, formation, readPosition) {
           }
 
           /* Keep home and away goalkeepers at opposite ends of the horizontal pitch. */
-          if (side === "away" && !item.oriented) depth = 100 - depth;
           return {
             player: item.player,
             x: Math.max(6, Math.min(94, lateral)),
@@ -2595,16 +2593,24 @@ ${esc(String(playerName(player) || "P").split(/\s+/).map(part => part[0] || "").
           esc(team.name || "Équipe") + ' · ' + esc(unavailable) + '</div>';
       }
       let orientedPositions = positions;
-      const keepers = positions.filter(item => /goalkeeper|goalie|\bgk\b|gardien|portier|portero|guardameta/i.test(String(playerPosition(item.player) || "")));
+      const keepers = positions.filter(item => /goalkeeper|goalie|\bgk\b|\bg\b|gardien|portier|portero|guardameta/i.test(String(playerPosition(item.player) || "")));
       const keeperAverage = keepers.length ? keepers.reduce((sum,item)=>sum+item.y,0)/keepers.length : null;
-      /* When a provider reverses the visitors, rotate the full formation in both axes. */
-      if (keeperAverage !== null && ((side === "home" && keeperAverage > 50) || (side === "away" && keeperAverage < 50))) {
-        orientedPositions = positions.map(item => ({...item,x:100-item.x,y:100-item.y}));
+      /*
+       * The combined pitch is horizontal: home attacks left-to-right and away
+       * right-to-left. Reverse only pitch depth. Never rotate the whole XI,
+       * because that also mirrors the lateral/top-bottom lanes and makes the
+       * formation appear upside down.
+       */
+      const reverseDepth = keeperAverage !== null
+        ? (side === "home" ? keeperAverage > 50 : keeperAverage < 50)
+        : side === "away";
+      if (reverseDepth) {
+        orientedPositions = positions.map(item => ({...item,y:100-item.y}));
       }
       return orientedPositions.map(item => {
         const player = item.player;
         const fieldX = side === "home" ? 5 + item.y * 0.43 : 57 + item.y * 0.38;
-        const fieldY = side === "home" ? 8 + item.x * 0.84 : 92 - item.x * 0.84;
+        const fieldY = 8 + item.x * 0.84;
         const photo = playerPhoto(player);
         const rating = playerRating(player);
         const badges = playerEventBadges(player, details);
@@ -2842,7 +2848,7 @@ ${esc(String(playerName(player) || "P").split(/\s+/).map(part => part[0] || "").
       scalar(item?.value), scalar(item?.displayValue), scalar(item?.stat?.value),
       scalar(item?.total), scalar(item?.display), null
     );
-    const blocks = Array.isArray(raw) ? raw :
+    let blocks = Array.isArray(raw) ? raw :
       raw && typeof raw === "object" && Array.isArray(raw.groups) ? [raw] :
       raw && typeof raw === "object" && Array.isArray(raw.periods) ? raw.periods :
       raw && typeof raw === "object" && Array.isArray(raw.statistics) ? raw.statistics :
@@ -2851,6 +2857,9 @@ ${esc(String(playerName(player) || "P").split(/\s+/).map(part => part[0] || "").
         {side:"away",statistics:first(raw.away,raw.guest,raw.awayTeam,[])}
       ] : [];
     if (!blocks.length) return [];
+
+    /* Some APIs wrap periods in a single statistics object. Unwrap once. */
+    blocks = blocks.flatMap(block => Array.isArray(block?.periods) ? block.periods : [block]);
 
     /* SofaScore format: periods -> groups -> statisticsItems, with home/away values on each item. */
     const periodBlocks = blocks.filter(block => Array.isArray(block?.groups));
@@ -3946,6 +3955,18 @@ function bfSameFixtureMetadata(candidate,expected,requireDate=false) {
                 merged.events = rawEvents;
                 merged.incidents = rawEvents;
                 merged.match_events = rawEvents;
+              }
+              const rawStatistics = first(
+                enrichment.statistics, enrichment.stats, enrichment.matchStatistics,
+                enrichment.match_statistics, null
+              );
+              const hasStatistics = value => Array.isArray(value)
+                ? value.length > 0
+                : !!(value && typeof value === "object" && Object.keys(value).length > 0);
+              const currentStatistics = first(details.statistics, details.stats, details.matchStatistics, null);
+              if (hasStatistics(rawStatistics) && !hasStatistics(currentStatistics)) {
+                merged.statistics = rawStatistics;
+                merged.stats = rawStatistics;
               }
               [
                 "player_of_match", "playerOfMatch", "venue", "referee",
