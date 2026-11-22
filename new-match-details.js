@@ -2816,10 +2816,13 @@ ${esc(String(playerName(player) || "P").split(/\s+/).map(part => part[0] || "").
   }
 
     function statRows(details) {
+    const hasContent = value => Array.isArray(value)
+      ? value.length > 0
+      : !!(value && typeof value === "object" && Object.keys(value).length > 0);
     const raw = first(
-      details?.statistics?.length ? details.statistics : null,
-      details?.stats?.length ? details.stats : null,
-      details?.matchStatistics?.length ? details.matchStatistics : null,
+      hasContent(details?.statistics) ? details.statistics : null,
+      hasContent(details?.stats) ? details.stats : null,
+      hasContent(details?.matchStatistics) ? details.matchStatistics : null,
       details?.statistics, details?.stats, details?.matchStatistics, []
     );
     const label = item => String(first(
