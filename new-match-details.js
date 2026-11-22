@@ -1048,9 +1048,9 @@ function bfAssignFormationRoles(players, formation, readPosition) {
     if (eventIsSubstitution(event)) return '<span class="bf-new-event-glyph bf-new-event-glyph--sub" title="Remplacement">⇄</span>';
     if (/injur|hurt|medical|bless/.test(type)) return '<span class="bf-new-event-glyph bf-new-event-glyph--injury" title="Blessure">✚</span>';
     if (/missed.*penalty|penalty.*missed|penalty.*saved/.test(type)) return '<span class="bf-new-event-glyph bf-new-event-glyph--missed" title="Penalty raté">×</span>';
-    if (/penalt/.test(type)) return '<span class="bf-new-event-glyph bf-new-event-glyph--penalty" title="Penalty">🎯</span>';
-    if (/goal|score|scoring|but\b/.test(type)) return '<span class="bf-new-event-glyph bf-new-event-glyph--goal" title="But">⚽</span>';
-    if (/assist|passe decisive/.test(type)) return '<span class="bf-new-event-glyph bf-new-event-glyph--assist" title="Passe décisive">👟</span>';
+    if (/penalt/.test(type)) return '<span class="bf-new-event-glyph bf-new-event-glyph--penalty" title="Penalty" aria-label="Penalty">' + playerPerformanceIcon("penalty") + '</span>';
+    if (/goal|score|scoring|but\b/.test(type)) return '<span class="bf-new-event-glyph bf-new-event-glyph--goal" title="But" aria-label="But">' + playerPerformanceIcon("goal") + '</span>';
+    if (/assist|passe decisive/.test(type)) return '<span class="bf-new-event-glyph bf-new-event-glyph--assist" title="Passe décisive" aria-label="Passe décisive">' + playerPerformanceIcon("assist") + '</span>';
     if (/var|video review/.test(type)) return '<span class="bf-new-event-glyph bf-new-event-glyph--var" title="VAR">VAR</span>';
     return '<span class="bf-new-event-glyph bf-new-event-glyph--other" title="Événement">•</span>';
   }
@@ -2803,7 +2803,7 @@ ${esc(String(playerName(player) || "P").split(/\s+/).map(part => part[0] || "").
           '<div class="bf-new-safe-event-player">' + esc(playerLine) + '</div>' +
           (description || '') +
           (team ? '<div class="bf-new-safe-event-team">' + esc(team) + '</div>' : '') +
-          (assist ? '<div class="bf-new-safe-assist"><span class="bf-new-safe-assist-icon">👟</span><strong>Passe décisive</strong><span>' + esc(assist) + '</span></div>' : '') +
+          (assist ? '<div class="bf-new-safe-assist"><span class="bf-new-safe-assist-icon">' + playerPerformanceIcon("assist") + '</span><strong>Passe décisive</strong><span>' + esc(assist) + '</span></div>' : '') +
           (!isSub && !assist && event?.detail && isGoal ? '<div class="bf-new-safe-event-detail">' + esc(event.detail) + '</div>' : '') +
         '</div></article>';
     }).join("");
@@ -2824,7 +2824,16 @@ ${esc(String(playerName(player) || "P").split(/\s+/).map(part => part[0] || "").
     const list = value => Array.isArray(value) ? value :
       value && typeof value === "object" ? Object.entries(value).map(([name,v]) =>
         v && typeof v === "object" ? {name,...v} : {name,value:v}) : [];
-    const scalar = value => value !== undefined && value !== null && typeof value !== "object" ? value : null;
+    const scalar = value => {
+      if (value === undefined || value === null) return null;
+      if (typeof value !== "object") return value;
+      if (Array.isArray(value)) return null;
+      return first(
+        value.displayValue, value.display_value, value.display,
+        value.value, value.total, value.count, value.amount,
+        value.percentage, value.statValue, value.stat_value, null
+      );
+    };
     const sideValue = (item, side) => first(
       scalar(item?.[side]),
       scalar(item?.[side + "Value"]),
@@ -2833,10 +2842,14 @@ ${esc(String(playerName(player) || "P").split(/\s+/).map(part => part[0] || "").
       scalar(item?.value), scalar(item?.displayValue), scalar(item?.stat?.value),
       scalar(item?.total), scalar(item?.display), null
     );
-    const blocks = Array.isArray(raw) ? raw : (raw && typeof raw === "object" ? [
-      {side:"home",statistics:first(raw.home,raw.host,raw.homeTeam,raw.homeStatistics,[])},
-      {side:"away",statistics:first(raw.away,raw.guest,raw.awayTeam,raw.awayStatistics,[])}
-    ] : []);
+    const blocks = Array.isArray(raw) ? raw :
+      raw && typeof raw === "object" && Array.isArray(raw.groups) ? [raw] :
+      raw && typeof raw === "object" && Array.isArray(raw.periods) ? raw.periods :
+      raw && typeof raw === "object" && Array.isArray(raw.statistics) ? raw.statistics :
+      raw && typeof raw === "object" ? [
+        {side:"home",statistics:first(raw.home,raw.host,raw.homeTeam,raw.homeStatistics,[])},
+        {side:"away",statistics:first(raw.away,raw.guest,raw.awayTeam,[])}
+      ] : [];
     if (!blocks.length) return [];
 
     /* SofaScore format: periods -> groups -> statisticsItems, with home/away values on each item. */
@@ -2929,10 +2942,10 @@ ${esc(String(playerName(player) || "P").split(/\s+/).map(part => part[0] || "").
       return '<span class="bf-new-safe-card-glyph bf-new-safe-card-glyph--' + kind + '" aria-hidden="true"></span>';
     }
     const drawings = {
-      goal: '<circle cx="12" cy="12" r="9" stroke="currentColor" stroke-width="1.7"/><path d="m9.2 7.8 2.8-1.5 2.9 1.5.9 3.2-2.1 2.5h-3.8l-2.1-2.5zM9.2 7.8 6.5 6.9M15 7.8l2.5-.9M7.8 11l-2.6 1.4M16.2 11l2.6 1.4M9.9 13.5l-1.3 3.1M14.1 13.5l1.3 3.1M12 13.5v4.8" stroke="currentColor" stroke-width="1.25" fill="none" stroke-linecap="round" stroke-linejoin="round"/>',
+      goal: '<path d="M3 5.5h18v13H3zM3 9.8h18M3 14.2h18M8 5.5v13M16 5.5v13" stroke="currentColor" stroke-width="1.15" fill="none"/><path d="m12 9.1 2.1 1.4-.8 2.5h-2.6l-.8-2.5z" stroke="currentColor" stroke-width="1.35" fill="none" stroke-linejoin="round"/><path d="m12 9.1 1-1.8M14.1 10.5l2-.5M13.3 13l1.2 1.5M10.7 13l-1.2 1.5M9.9 10.5l-2-.5" stroke="currentColor" stroke-width="1.15" fill="none" stroke-linecap="round"/>',
       penalty: '<circle cx="12" cy="12" r="8.5" stroke="currentColor" stroke-width="1.8"/><circle cx="12" cy="12" r="4.5" stroke="currentColor" stroke-width="1.6"/><circle cx="12" cy="12" r="1.3" fill="currentColor"/>',
       own: '<path d="M6 18 18 6M9 6h9v9" stroke="currentColor" stroke-width="2.2" fill="none" stroke-linecap="round" stroke-linejoin="round"/><path d="M5 5v5M5 5h5" stroke="currentColor" stroke-width="1.7" fill="none"/>',
-      assist: '<path d="M4 16.2c1.6-.4 2.5-1.2 3.1-2.8l1.6-4.5c.3-.9 1.1-1.3 2-1l2.6 1 2.9-.8c.8-.2 1.5.2 1.8 1l1.4 3.8-2.4 2.4-5.6 2.2-4.4-.4zM6.2 16.1l11.5-.1M9 12.1l2.2 1.1M12.1 10.9l2.2 1.1" stroke="currentColor" stroke-width="1.55" fill="none" stroke-linecap="round" stroke-linejoin="round"/><path d="m7.7 9.7-2.3-1.2" stroke="currentColor" stroke-width="1.55" stroke-linecap="round"/>',
+      assist: '<circle cx="5.2" cy="17.8" r="2.1" stroke="currentColor" stroke-width="1.5" fill="none"/><path d="M7.4 16.5c2.5-1 4.2-2.9 5.8-5.2 1.3-1.8 2.7-3.1 5-3.4" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round"/><path d="m14.9 5.7 3.8 2.1-2.1 3.8" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round"/><path d="m4.2 17.8 1-1.2 1.2.7-.2 1.4-1.3.5z" fill="currentColor"/>',
       injury: '<path d="M10 3.5h4v6.5h6.5v4H14v6.5h-4V14H3.5v-4H10z" fill="currentColor"/>',
       subIn: '<path d="M4 7.5h13.5m-4-4 4 4-4 4M20 16.5H6.5m4 4-4-4 4-4" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round"/>',
       subOut: '<path d="M20 7.5H6.5m4-4-4 4 4 4M4 16.5h13.5m-4 4 4-4-4-4" stroke="currentColor" stroke-width="1.8" fill="none" stroke-linecap="round" stroke-linejoin="round"/>',
