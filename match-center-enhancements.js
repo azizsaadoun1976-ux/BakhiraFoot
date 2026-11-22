@@ -247,7 +247,10 @@
     const shorter = x.length <= y.length ? x : y;
     const longer = x.length <= y.length ? y : x;
     const shortToken = shorter.replace(/[^a-z0-9]/g,"");
-    return shortToken.length >= 2 && shortToken.length <= 5 && shortToken === initials(longer);
+    const shortInitials = initials(shorter);
+    const longInitials = initials(longer);
+    return (shortToken.length >= 2 && shortToken.length <= 5 && shortToken === longInitials) ||
+      (shortInitials.length >= 2 && shortInitials === longInitials);
   }
 
   function recentTeamStats(matches, teamName) {
