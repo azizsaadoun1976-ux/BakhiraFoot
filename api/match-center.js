@@ -150,13 +150,104 @@ function eventScore(event) {
 }
 
 function isFinishedEvent(event) {
-  const type = String(event?.status?.type || "").toLowerCase();
-  if (type === "finished") return true;
-  const description = String(event?.status?.description || "").trim().toLowerCase();
-  return /^(finished|full time|ft|ended|after extra time|after penalties|aet|penalties)$/.test(description);
+  const rawType = event?.status?.type;
+  const type = String(
+    rawType && typeof rawType === "object"
+      ? (rawType.name || rawType.type || rawType.state || "")
+      : rawType || ""
+  ).toLowerCase();
+  const state = String(rawType && typeof rawType === "object" ? rawType.state || "" : event?.status?.state || "").toLowerCase();
+  const description = String(
+    event?.status?.description || event?.status?.shortDetail ||
+    event?.status?.detail || event?.statusText || ""
+  ).trim().toLowerCase();
+  if (type === "finished" || state === "post") return true;
+  return /^(final|finished|full time|ft|ended|after extra time|after penalties|aet|penalties)$/.test(description);
 }
 
-async function loadHeadToHead(homeName, awayName) {
+function collectESPNTeams(payload) {
+  const teams = new Map();
+  const queue = [payload];
+  const seen = new Set();
+  while (queue.length && seen.size < 1800) {
+    const node = queue.shift();
+    if (!node || typeof node !== "object" || seen.has(node)) continue;
+    seen.add(node);
+    if (Array.isArray(node)) {
+      for (const child of node) if (child && typeof child === "object") queue.push(child);
+      continue;
+    }
+    const candidate = node.team && typeof node.team === "object" ? node.team : node;
+    const name = candidate.displayName || candidate.name || candidate.shortDisplayName;
+    if (candidate.id != null && name) teams.set(String(candidate.id), candidate);
+    for (const value of Object.values(node)) if (value && typeof value === "object") queue.push(value);
+  }
+  return [...teams.values()];
+}
+
+function collectESPNEvents(payload) {
+  if (Array.isArray(payload?.events)) return payload.events;
+  if (Array.isArray(payload?.schedule?.events)) return payload.schedule.events;
+  if (Array.isArray(payload?.team?.events)) return payload.team.events;
+  return [];
+}
+
+async function loadESPNRecentForm(homeName, awayName, competition) {
+  const code = getESPNCode(competition);
+  if (!code) return {homeRecent:[],awayRecent:[],headToHead:[]};
+  const base = "https://site.api.espn.com/apis/site/v2/sports/soccer/" + encodeURIComponent(code);
+  const teamPayload = await fetchJSON(base + "/teams?limit=1000", 2600);
+  const teams = collectESPNTeams(teamPayload);
+  const findTeam = name =>
+    teams.find(team => norm(team.displayName || team.name) === norm(name)) ||
+    teams.find(team => sameTeam(team.displayName || team.name, name)) || null;
+  const homeTeam = findTeam(homeName);
+  const awayTeam = findTeam(awayName);
+  if (!homeTeam && !awayTeam) return {homeRecent:[],awayRecent:[],headToHead:[]};
+
+  const [homeSchedule, awaySchedule] = await Promise.allSettled([
+    homeTeam ? fetchJSON(base + "/teams/" + encodeURIComponent(homeTeam.id) + "/schedule", 2600) : Promise.resolve({events:[]}),
+    awayTeam ? fetchJSON(base + "/teams/" + encodeURIComponent(awayTeam.id) + "/schedule", 2600) : Promise.resolve({events:[]})
+  ]);
+  const eventsFrom = result => result.status === "fulfilled" ? collectESPNEvents(result.value) : [];
+  const summarize = event => {
+    const pair = espnCompetitors(event);
+    const date = espnEventDate(event);
+    return {
+      id:String(event.id || [pair.home,pair.away,date].join("|")),
+      date:eventTime({date}),
+      home:pair.home,
+      away:pair.away,
+      score:espnEventScore(event),
+      competition:event?.competitions?.[0]?.name || event?.season?.name || competition,
+      status:"Final",
+      statusType:"finished",
+      finished:true
+    };
+  };
+  const recentFor = (events, teamName) => events
+    .filter(event => isFinishedEvent(event))
+    .map(summarize)
+    .filter(item => item.home && item.away &&
+      (sameTeam(item.home,teamName) || sameTeam(item.away,teamName)) &&
+      /^\s*\d+\s*[-–:]\s*\d+/.test(item.score))
+    .sort((a,b)=>(Date.parse(b.date)||0)-(Date.parse(a.date)||0))
+    .slice(0,8);
+  const homeRaw = eventsFrom(homeSchedule);
+  const awayRaw = eventsFrom(awaySchedule);
+  const homeRecent = homeTeam ? recentFor(homeRaw,homeName) : [];
+  const awayRecent = awayTeam ? recentFor(awayRaw,awayName) : [];
+  const awayIds = new Set(awayRaw.filter(isFinishedEvent).map(event=>String(event.id || "")));
+  const headToHead = homeRaw
+    .filter(event => isFinishedEvent(event) && awayIds.has(String(event.id || "")))
+    .map(summarize)
+    .filter(item => item.home && item.away)
+    .sort((a,b)=>(Date.parse(b.date)||0)-(Date.parse(a.date)||0))
+    .slice(0,8);
+  return {homeRecent,awayRecent,headToHead};
+}
+
+async function loadHeadToHead(homeName, awayName, competition) {
   const [homeSearch, awaySearch] = await Promise.allSettled([
     findSofaTeam(homeName), findSofaTeam(awayName)
   ]);
@@ -216,9 +307,21 @@ async function loadHeadToHead(homeName, awayName) {
     const item = summarize(event);
     unique.set(item.id, item);
   }
-  const headToHead = [...unique.values()]
+  let headToHead = [...unique.values()]
     .sort((a, b) => (Date.parse(b.date) || 0) - (Date.parse(a.date) || 0))
     .slice(0, 8);
+
+  /* ESPN schedules are a fallback when SofaScore cannot resolve one club. */
+  if (!homeRecent.length || !awayRecent.length) {
+    try {
+      const fallback = await loadESPNRecentForm(homeName,awayName,competition);
+      if (!homeRecent.length) homeRecent.push(...fallback.homeRecent);
+      if (!awayRecent.length) awayRecent.push(...fallback.awayRecent);
+      if (!headToHead.length) headToHead = fallback.headToHead;
+    } catch (error) {
+      console.warn("BAKHIRAFOOT ESPN recent-form fallback unavailable:",error?.message || error);
+    }
+  }
 
   return { headToHead, homeRecent, awayRecent };
 }
@@ -624,7 +727,7 @@ module.exports = async function matchCenter(req, res) {
   if (!home || !away) return send(res, 400, { error: "home_and_away_required" });
 
   const [formData, standings, metadataResult] = await Promise.all([
-    withDeadline(loadHeadToHead(home, away), 5000, {headToHead:[],homeRecent:[],awayRecent:[]}),
+    withDeadline(loadHeadToHead(home, away, competition), 7600, {headToHead:[],homeRecent:[],awayRecent:[]}),
     withDeadline(loadStandings(competition, date, home, away), 8000, { league: competition, rows: [] }),
     withDeadline(loadFixtureMetadata(home, away, date, competition), 8000, {metadata:{},headToHead:[]})
   ]);
