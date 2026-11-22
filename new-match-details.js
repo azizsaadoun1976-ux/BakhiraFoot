@@ -2930,10 +2930,14 @@ ${esc(String(playerName(player) || "P").split(/\s+/).map(part => part[0] || "").
     };
     return '<div class="bf-new-safe-stat-grid">' + rows.map(row=>{
       const h=numeric(row.home),a=numeric(row.away);
+      const complete=h!==null&&a!==null;
       const total=Math.max(0,h||0)+Math.max(0,a||0);
-      const hw=h===null?0:a===null?100:total>0?Math.max(0,Math.min(100,h/total*100)):50;
-      const aw=a===null?0:h===null?100:total>0?Math.max(0,Math.min(100,a/total*100)):50;
-      return '<div class="bf-new-safe-stat"><div class="bf-new-safe-stat-label">' + esc(row.label) + '</div><div class="bf-new-safe-stat-values"><span>' + esc(row.home ?? "—") + '</span><span>' + esc(row.away ?? "—") + '</span></div><div class="bf-new-safe-stat-track"><span class="bf-new-safe-stat-home" style="width:' + hw.toFixed(1) + '%"></span><span class="bf-new-safe-stat-away" style="width:' + aw.toFixed(1) + '%"></span></div></div>';
+      const hw=complete?(total>0?Math.max(0,Math.min(100,h/total*100)):50):0;
+      const aw=complete?(total>0?Math.max(0,Math.min(100,a/total*100)):50):0;
+      const track=complete
+        ? '<div class="bf-new-safe-stat-track"><span class="bf-new-safe-stat-home" style="width:' + hw.toFixed(1) + '%"></span><span class="bf-new-safe-stat-away" style="width:' + aw.toFixed(1) + '%"></span></div>'
+        : '<div class="bf-new-safe-stat-track bf-new-safe-stat-track--incomplete" aria-hidden="true"></div>';
+      return '<div class="bf-new-safe-stat"><div class="bf-new-safe-stat-label">' + esc(row.label) + '</div><div class="bf-new-safe-stat-values"><span>' + esc(row.home ?? "—") + '</span><span>' + esc(row.away ?? "—") + '</span></div>' + track + '</div>';
     }).join("") + '</div>';
   }
 
