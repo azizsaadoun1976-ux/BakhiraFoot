@@ -2380,22 +2380,39 @@ function bfAssignFormationRoles(players, formation, readPosition) {
       const percentages = !pitchUnits && maxX > 11 && maxY > 11 && maxX - minX >= 15 && maxY - minY >= 15;
       if (normalized || integerGrid || pitchUnits || percentages) {
         return coords.map(item => {
-          let x = item.x, y = item.y;
-          if (normalized) { x = 8 + x * 84; y = 8 + y * 84; }
-          else if (integerGrid) { x = 8 + ((x - 1) / 10) * 84; y = 8 + ((y - 1) / 10) * 84; }
-          else if (pitchUnits) {
+          let lateral = item.x;
+          let depth = item.y;
+
+          if (normalized) {
+            /* Normalized provider coordinates use X for pitch length and Y for pitch width. */
+            depth = 8 + item.x * 84;
+            lateral = 8 + item.y * 84;
+          } else if (integerGrid) {
+            /* Integer row/column grids use X for lane and Y for the line. */
+            lateral = 8 + ((item.x - 1) / 10) * 84;
+            depth = 8 + ((item.y - 1) / 10) * 84;
+          } else if (pitchUnits) {
             const pitchLength = maxX > 105 ? 120 : 105;
             const pitchWidth = maxY > 68 ? 80 : 68;
-            x = 8 + (x / pitchLength) * 84;
-            y = 8 + (y / pitchWidth) * 84;
+            depth = 8 + (item.x / pitchLength) * 84;
+            lateral = 8 + (item.y / pitchWidth) * 84;
+          } else if (percentages) {
+            /* Percentage coordinates follow the same X-length / Y-width convention. */
+            depth = 8 + (item.x / 100) * 84;
+            lateral = 8 + (item.y / 100) * 84;
           }
-          if (side === "away" && !item.oriented) y = 100 - y;
-          return { player: item.player, x: Math.max(6, Math.min(94, x)), y: Math.max(6, Math.min(94, y)) };
+
+          /* Keep home and away goalkeepers at opposite ends of the horizontal pitch. */
+          if (side === "away" && !item.oriented) depth = 100 - depth;
+          return {
+            player: item.player,
+            x: Math.max(6, Math.min(94, lateral)),
+            y: Math.max(6, Math.min(94, depth))
+          };
         });
       }
     }
 
-    return [];
     return [];
   }
 
