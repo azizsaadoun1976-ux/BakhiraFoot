@@ -228,18 +228,26 @@
   }
 
   function sameTeamName(a, b) {
+    const ignored = new Set(["fc","cf","sc","afc","cfc","club","football","soccer","the","de","of","and","united","city","real","sporting","athletic"]);
     const clean = value => norm(value)
-      .replace(/\b(fc|cf|sc|afc|cfc|club)\b/g, " ")
-      .replace(/\s+/g, " ").trim();
+      .replace(/\bfootball club\b|\bsoccer club\b/g," ")
+      .replace(/\b(fc|cf|sc|afc|cfc|club)\b/g," ")
+      .replace(/\s+/g," ").trim();
     const x = clean(a), y = clean(b);
     if (!x || !y) return false;
     if (x === y) return true;
-    const xt = x.split(" ").filter(token => token.length > 2);
-    const yt = y.split(" ").filter(token => token.length > 2);
+    const xt = x.split(" ").filter(token => token.length > 2 && !ignored.has(token));
+    const yt = y.split(" ").filter(token => token.length > 2 && !ignored.has(token));
+    if (!xt.length || !yt.length) return false;
     const common = xt.filter(token => yt.includes(token));
     const minimum = Math.min(xt.length, yt.length);
-    return minimum > 0 && common.length >= (minimum === 1 ? 1 : 2) &&
-      common.length / minimum >= 0.8;
+    if (common.length >= 2 && common.length / minimum >= 0.8) return true;
+    if (minimum === 1 && common.length === 1) return true;
+    const initials = value => value.split(" ").filter(token => token.length > 1).map(token => token[0]).join("");
+    const shorter = x.length <= y.length ? x : y;
+    const longer = x.length <= y.length ? y : x;
+    const shortToken = shorter.replace(/[^a-z0-9]/g,"");
+    return shortToken.length >= 2 && shortToken.length <= 5 && shortToken === initials(longer);
   }
 
   function recentTeamStats(matches, teamName) {
@@ -247,9 +255,12 @@
     (Array.isArray(matches) ? matches : []).forEach(match => {
       const status = norm(match?.status);
       const statusType = norm(match?.statusType);
-      const explicitlyFinished = statusType
-        ? statusType === "finished"
-        : /^(finished|full time|ft|ended|after extra time|after penalties|aet)$/.test(status);
+      const finishedStates = new Set([
+        "finished","full time","ft","ended","after extra time",
+        "after penalties","aet","penalties","finished after extra time",
+        "finished after penalties"
+      ]);
+      const explicitlyFinished = finishedStates.has(statusType) || finishedStates.has(status);
       if (!explicitlyFinished) return;
       const score = String(match?.score ?? "").match(/^\s*(\d{1,2})\s*[-–:]\s*(\d{1,2})/);
       if (!score) return;
@@ -677,16 +688,28 @@
   }
 
   function overviewStatRows(details) {
-    const raw = details?.statistics?.length ? details.statistics : details?.stats?.length ? details.stats : details?.matchStatistics?.length ? details.matchStatistics : details?.statistics || details?.stats || details?.matchStatistics || [];
+    const raw = details?.statistics?.length ? details.statistics :
+      details?.stats?.length ? details.stats :
+      details?.matchStatistics?.length ? details.matchStatistics :
+      details?.statistics || details?.stats || details?.matchStatistics || [];
     const rows = [];
     const nameOf = item => String(item?.name || item?.label || item?.key ||
       item?.type?.name || item?.type || item?.displayName || "").trim();
     const valueOf = (item, side) => {
       const value = item?.[side] ?? item?.[side + "Value"] ?? item?.[side + "_value"] ??
         item?.[side + "Team"] ?? null;
-      return value && typeof value === "object" ? (value.displayValue ?? value.value ?? value.total ?? null) : value;
+      return value && typeof value === "object"
+        ? (value.displayValue ?? value.display_value ?? value.value ?? value.total ?? value.count ?? value.amount ?? null)
+        : value;
     };
-    const blocks = Array.isArray(raw) ? raw : [];
+    const blocks = Array.isArray(raw) ? raw :
+      raw && Array.isArray(raw.groups) ? [raw] :
+      raw && Array.isArray(raw.periods) ? raw.periods :
+      raw && Array.isArray(raw.statistics) ? raw.statistics :
+      raw && typeof raw === "object" ? [
+        {side:"home",statistics:raw.home || raw.host || raw.homeTeam || []},
+        {side:"away",statistics:raw.away || raw.guest || raw.awayTeam || []}
+      ] : [];
     const periods = blocks.filter(block => Array.isArray(block?.groups));
     if (periods.length) {
       const chosen = periods.find(block => norm(block.period) === "all") || periods[0];
