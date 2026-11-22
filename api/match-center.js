@@ -311,13 +311,28 @@ async function loadHeadToHead(homeName, awayName, competition) {
     .sort((a, b) => (Date.parse(b.date) || 0) - (Date.parse(a.date) || 0))
     .slice(0, 8);
 
-  /* ESPN schedules are a fallback when SofaScore cannot resolve one club. */
-  if (!homeRecent.length || !awayRecent.length) {
+  /*
+   * Use ESPN to complete (not only replace) SofaScore form. The last-events
+   * endpoint can return only a partial page for some clubs/competitions.
+   */
+  if (homeRecent.length < 5 || awayRecent.length < 5 || !headToHead.length) {
     try {
       const fallback = await loadESPNRecentForm(homeName,awayName,competition);
-      if (!homeRecent.length) homeRecent.push(...fallback.homeRecent);
-      if (!awayRecent.length) awayRecent.push(...fallback.awayRecent);
-      if (!headToHead.length) headToHead = fallback.headToHead;
+      const mergeRecent = (primary, secondary) => {
+        const unique = new Map();
+        for (const item of [...primary,...secondary]) {
+          const key = String(item?.id || [
+            item?.home,item?.away,item?.date,item?.score
+          ].join("|")).toLowerCase();
+          if (!unique.has(key)) unique.set(key,item);
+        }
+        return [...unique.values()]
+          .sort((a,b)=>(Date.parse(b.date)||0)-(Date.parse(a.date)||0))
+          .slice(0,8);
+      };
+      homeRecent.splice(0,homeRecent.length,...mergeRecent(homeRecent,fallback.homeRecent || []));
+      awayRecent.splice(0,awayRecent.length,...mergeRecent(awayRecent,fallback.awayRecent || []));
+      if (!headToHead.length && Array.isArray(fallback.headToHead)) headToHead = fallback.headToHead;
     } catch (error) {
       console.warn("BAKHIRAFOOT ESPN recent-form fallback unavailable:",error?.message || error);
     }
@@ -727,7 +742,7 @@ module.exports = async function matchCenter(req, res) {
   if (!home || !away) return send(res, 400, { error: "home_and_away_required" });
 
   const [formData, standings, metadataResult] = await Promise.all([
-    withDeadline(loadHeadToHead(home, away, competition), 7600, {headToHead:[],homeRecent:[],awayRecent:[]}),
+    withDeadline(loadHeadToHead(home, away, competition), 9200, {headToHead:[],homeRecent:[],awayRecent:[]}),
     withDeadline(loadStandings(competition, date, home, away), 8000, { league: competition, rows: [] }),
     withDeadline(loadFixtureMetadata(home, away, date, competition), 8000, {metadata:{},headToHead:[]})
   ]);
