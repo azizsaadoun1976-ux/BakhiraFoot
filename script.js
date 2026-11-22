@@ -913,10 +913,6 @@ function go(page) {
     behavior: "smooth"
   });
 
-  if (page === "home") {
-    renderHome();
-  }
-
   if (page === "scores") {
     createDateBar();
     loadMatches(currentDate);
@@ -9472,9 +9468,8 @@ document.addEventListener(
 
     currentDate = bfLocalDateISO();
 
-    createDateBar();
-
-    renderHome();
+    // Open directly on Scores; the former Accueil page has been removed.
+    go("scores");
     renderLeagues();
     renderNews();
 
