@@ -62,9 +62,7 @@
   </script>
   <link rel="stylesheet" href="/bakhira-design-2026.css?v=20261028-03">
   <link rel="stylesheet" href="/bakhira-pro-global.css?v=20261030-05">
-  <link rel="stylesheet" href="/match-details-pro.css?v=20261121-04">
-  <link rel="stylesheet" href="/home-redesign.css?v=20261104-01">
-  <link rel="stylesheet" href="/bakhira-entity-pro.css?v=20261104-01">
+  <link rel="stylesheet" href="/match-details-pro.css?v=20261121-04"><link rel="stylesheet" href="/bakhira-entity-pro.css?v=20261104-01">
 </head>
 
 <body>
@@ -75,8 +73,8 @@
     </div>
 
     <nav>
-      <button class="active" data-page="home">Accueil</button>
-      <button data-page="scores">Scores</button>
+      
+      <button class="active" data-page="scores">Scores</button>
       <button data-page="leagues">Compétitions</button>
       <button data-page="news">Actualités</button>
       <a href="articles.html" style="color:#aeb9c1;text-decoration:none;padding:12px;font-weight:800;">Articles</a>
@@ -95,154 +93,8 @@
     <main>
 
       <!-- ================= HOME ================= -->
-      <section id="home" class="page active">
-  <div class="bf-home-dashboard">
-    <header class="bf-home-dashboard-head">
-      <div>
-        <span class="bf-home-dashboard-kicker">BAKHIRAFOOT / FOOTBALL CENTRE</span>
-        <h1>Le jeu se vit <em>ici.</em></h1>
-        <p>Scores en direct, classements, analyses et fiches détaillées des clubs et joueurs, du football marocain aux grandes scènes mondiales.</p>
-      </div>
-      <button type="button" class="bf-home-dashboard-action" onclick="go('scores')">
-        Ouvrir le centre des scores <span aria-hidden="true">↗</span>
-      </button>
-    </header>
-
-    <div class="bf-home-dashboard-kpis" aria-label="Résumé des matchs du jour">
-      <div class="bf-home-kpi bf-home-kpi-live">
-        <span><i></i> MATCHS EN DIRECT</span>
-        <strong id="bfHomeLiveCount">—</strong>
-        <small>Rencontres actuellement en cours</small>
-      </div>
-      <div class="bf-home-kpi">
-        <span><b class="bf-home-kpi-dot"></b> PROGRAMME DU JOUR</span>
-        <strong id="bfHomeMatchCount">—</strong>
-        <small>Matchs reçus pour aujourd’hui</small>
-      </div>
-      <div class="bf-home-kpi">
-        <span><b class="bf-home-kpi-dot bf-home-kpi-dot-blue"></b> COMPÉTITIONS</span>
-        <strong id="bfHomeLeagueCount">—</strong>
-        <small>Ligues représentées aujourd’hui</small>
-      </div>
-    </div>
-
-    <div class="bf-home-dashboard-grid">
-      <main class="bf-home-dashboard-main">
-        <section class="bf-home-featured-section" aria-labelledby="bf-home-featured-title">
-          <div class="bf-home-section-heading">
-            <div>
-              <span class="bf-home-eyebrow">À SUIVRE MAINTENANT</span>
-              <h2 id="bf-home-featured-title">Affiche à la une</h2>
-            </div>
-            <span class="bf-home-section-index">01 / LIVE</span>
-          </div>
-          <div id="bfHomeFeatured" aria-live="polite">
-            <div class="bf-home-featured-empty"><span>⚽</span><strong>Chargement des rencontres…</strong><small>Les informations seront affichées dès réception des données.</small></div>
-          </div>
-        </section>
-
-        <section class="bf-home-competition-panel" aria-labelledby="bf-home-competitions-title">
-          <header class="bf-home-section-heading">
-            <div>
-              <span class="bf-home-eyebrow">LE PROGRAMME</span>
-              <h2 id="bf-home-competitions-title">Matchs par compétition</h2>
-              <p>Les rencontres du jour sont classées selon leur championnat.</p>
-            </div>
-            <button type="button" class="bf-home-text-link" onclick="go('scores')">Tous les matchs <span>↗</span></button>
-          </header>
-          <div id="homeMatches" class="bf-home-league-list" aria-live="polite">
-            <div class="bf-home-empty"><strong>Chargement des matchs…</strong><span>Connexion aux données sportives.</span></div>
-          </div>
-        </section>
-      </main>
-
-      <aside class="bf-home-dashboard-rail" aria-label="Actualités et accès rapides">
-        <section class="bf-home-news-panel" aria-labelledby="bf-home-news-title">
-          <header class="bf-home-rail-heading">
-            <div>
-              <span class="bf-home-eyebrow">LE FIL FOOTBALL</span>
-              <h2 id="bf-home-news-title">À la une</h2>
-            </div>
-            <button type="button" class="bf-home-text-link" onclick="go('news')">Tout voir <span>↗</span></button>
-          </header>
-          <div id="homeNews" class="cards"></div>
-        </section>
-
-        <section class="bf-home-quick-panel" aria-labelledby="bf-home-quick-title">
-          <span class="bf-home-eyebrow">EXPLORER BAKHIRAFOOT</span>
-          <h2 id="bf-home-quick-title">Tout le football, au même endroit.</h2>
-          <button type="button" onclick="go('leagues')"><span class="bf-home-quick-icon">🏆</span><span><strong>Compétitions</strong><small>Classements et qualifications</small></span><b>↗</b></button>
-          <button type="button" onclick="go('news')"><span class="bf-home-quick-icon">▤</span><span><strong>Actualités</strong><small>Les dernières informations</small></span><b>↗</b></button>
-          <a href="articles.html"><span class="bf-home-quick-icon">▧</span><span><strong>Guides & analyses</strong><small>Comprendre le jeu et les chiffres</small></span><b>↗</b></a>
-        </section>
-      </aside>
-    </div>
-
-    <div class="ad-top">
-  <ins class="adsbygoogle"
-       style="display:block"
-       data-ad-client="ca-pub-4186453820862227"
-       data-ad-slot="8803102521"
-       data-ad-format="auto"
-       data-full-width-responsive="true"></ins>
-
-  <script>
-    (adsbygoogle = window.adsbygoogle || []).push({});
-  </script>
-</div>
-  </div>
-
-  <section class="bf-editorial-guide" aria-labelledby="bf-editorial-guide-title">
-          <div class="bf-editorial-guide-head">
-            <div>
-              <span class="bf-editorial-guide-kicker">GUIDES & ANALYSES</span>
-              <h2 id="bf-editorial-guide-title">Comprendre le football, au-delà du score</h2>
-              <p>Des dossiers pratiques pour lire les statistiques, comprendre les classements et suivre le football marocain.</p>
-            </div>
-            <a href="articles.html" class="bf-editorial-guide-all">Tous les guides <span aria-hidden="true">→</span></a>
-          </div>
-          <div class="bf-editorial-guide-grid">
-            <article class="bf-editorial-guide-card">
-              <span class="bf-editorial-guide-number">01 / ANALYSE</span>
-              <h3>Comment lire les statistiques d’un match</h3>
-              <p>Possession, tirs cadrés, cartons et contexte : apprendre ce que les chiffres disent vraiment, et ce qu’ils ne prouvent pas.</p>
-              <a href="article-statistiques-foot.html">Lire le guide <span aria-hidden="true">↗</span></a>
-            </article>
-            <article class="bf-editorial-guide-card">
-              <span class="bf-editorial-guide-number">02 / COMPÉTITIONS</span>
-              <h3>Comprendre un classement de championnat</h3>
-              <p>Découvrez comment les points, la différence de buts, les matchs en retard et les règlements influencent le classement.</p>
-              <a href="article-championnat.html">Lire le guide <span aria-hidden="true">↗</span></a>
-            </article>
-            <article class="bf-editorial-guide-card">
-              <span class="bf-editorial-guide-number">03 / MAROC</span>
-              <h3>Football marocain : formation et Botola</h3>
-              <p>Un dossier consacré aux clubs, aux jeunes, aux infrastructures et aux ressources officielles pour vérifier les règlements.</p>
-              <a href="article-football-maroc.html">Lire le dossier <span aria-hidden="true">↗</span></a>
-            </article>
-          </div>
-        </section>
-
-
-  <section id="bfCommunity" class="bf-community" aria-labelledby="bfCommunityTitle">
-          <div class="bf-community-head">
-            <div>
-              <span class="bf-community-eyebrow">BAKHIRAFOOT COMMUNITY</span>
-              <h2 id="bfCommunityTitle">Débat des supporters</h2>
-              <p class="bf-community-intro">Réagis aux matchs, partage ton analyse et débat librement avec les autres supporters.</p>
-            </div>
-            <span id="bfCommunityCount" class="bf-community-count">Chargement…</span>
-          </div>
-          <div class="bf-community-grid">
-            <div style="width:100%;min-height:120px;grid-column:1/-1;color:var(--bf-muted,#71808a);font-size:12px;">
-              Chargement des commentaires partagés…
-            </div>
-          </div>
-        </section>
-</section>
-
 <!-- ================= SCORES ================= -->
-      <section id="scores" class="page">
+      <section id="scores" class="page active">
         <div class="scores-header">
           <div class="scores-header-text">
             <small>FOOTBALL EN DIRECT</small>
