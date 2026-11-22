@@ -122,3 +122,4 @@ body:not(.dark) #bf-new-match-safe-modal .bf-new-safe-player-stat small{color:#6
 #bf-new-match-safe-modal .bf-new-safe-assist-icon{display:inline-flex;align-items:center;justify-content:center;width:20px;height:20px;flex:0 0 20px;border-radius:6px;background:rgba(37,99,235,.16);color:#9bc5ff}
 #bf-new-match-safe-modal .bf-new-safe-assist-icon .bf-new-safe-event-svg{display:block;width:15px;height:15px}
 #bf-new-match-safe-modal .bf-new-safe-assist{display:flex;align-items:center;flex-wrap:wrap;gap:7px}
+#bf-new-match-safe-modal .bf-new-safe-stat-track--incomplete{border-radius:99px;background:repeating-linear-gradient(90deg,rgba(128,148,164,.38) 0 5px,transparent 5px 9px);opacity:.55}
