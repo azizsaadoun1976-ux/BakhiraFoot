@@ -3822,9 +3822,13 @@ ${esc(String(playerName(player) || "P").split(/\s+/).map(part => part[0] || "").
     return groups.length >= 2 && groups.slice(0,2).every(group => lineupHasCoordinates(group));
   }
 
-  function lineupStarterTotal(details) {
+  function lineupStarterCounts(details) {
     const groups = Array.isArray(details?.lineups) ? details.lineups : [];
-    return groups.slice(0,2).reduce((sum,group)=>sum+Math.min(11,lineupPlayersForQuality(group).length),0);
+    return groups.slice(0,2).map(group=>Math.min(11,lineupPlayersForQuality(group).length));
+  }
+
+  function lineupStarterTotal(details) {
+    return lineupStarterCounts(details).reduce((sum,count)=>sum+count,0);
   }
 
   function matchStatsRowCount(value, depth=0, seen=new Set()) {
@@ -3870,7 +3874,8 @@ ${esc(String(playerName(player) || "P").split(/\s+/).map(part => part[0] || "").
   }
 
   function dataNeedsFallback(details) {
-    const enoughLineup = lineupStarterTotal(details) >= 18;
+    const counts = lineupStarterCounts(details);
+    const enoughLineup = counts.length === 2 && counts.every(count=>count >= 9);
     const enoughStats = matchStatsRowCount(first(details?.statistics,details?.stats,details?.matchStatistics,[])) >= 4;
     return !enoughLineup || !enoughStats;
   }
